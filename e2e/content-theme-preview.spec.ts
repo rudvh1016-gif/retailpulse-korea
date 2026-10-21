@@ -31,11 +31,14 @@ for(const theme of themes)for(const width of [390,1440])test(`content-preserving
  await page.route('**/api/airport/calendar',route=>route.fulfill({json:{status:'PARTIAL',events:calendar.events,calendarReplacementScopes:[],sources:[],checkedAt:null}}));
  await page.route('**/api/live/passenger-reference*',route=>route.fulfill({json:{status:'UNAVAILABLE',data:null}}));
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,route=>route.abort());
+ await page.route('**/__preview/story-photo.jpg',route=>route.fulfill({contentType:'image/jpeg',body:readFileSync('design/content-theme-preview/story-photo.jpg')}));
  const css=readFileSync(`design/content-theme-preview/${theme}.css`,'utf8');
  for(const [route,label] of views){
   await page.goto(`/ko/${route}?date=2026-10-19`,{waitUntil:'domcontentloaded'});
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await page.evaluate(()=>document.fonts.ready);
+  // Capture both baselines with all virtualized holiday content rendered; no text is removed.
+  await page.addStyleTag({content:'.focus-holiday-list li{content-visibility:visible}'});
   const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');
   await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(5);
   await expect(nav.getByRole('link',{name:label,exact:true})).toHaveAttribute('aria-current','page');
@@ -54,6 +57,7 @@ for(const theme of themes)for(const width of [390,1440])test(`content-preserving
   await page.screenshot({path:info.outputPath(`${route}-baseline.png`),fullPage:true});
   await page.evaluate(theme=>document.documentElement.dataset.contentTheme=theme,theme);
   await page.addStyleTag({content:css});
+  if(theme==='story')await page.evaluate(async()=>{const image=new Image();image.src='/__preview/story-photo.jpg';await image.decode();});
   const after=await inventory(page);
   writeFileSync(info.outputPath(`${route}-inventory.json`),JSON.stringify({theme,width,route,label,fixtureDate:'2026-10-19',before,after},null,2));
   expect(after).toEqual(before);

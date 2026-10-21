@@ -24,9 +24,9 @@ More keeps its existing links to Seoul, district detail, consumption, business, 
 
 1. **Beautiful Jekyll:** light-gray masthead, centered strong editorial title, readable bounded column, generous section rules. Primary recommendation selected by owner.
 2. **Casper:** wider publication layout, bold centered heading, responsive editorial feed, larger country-card headings.
-3. **Story:** light-weight left-aligned headings, wider spotlight spacing and quiet rules. Existing data-panel layout retained rather than substituting a generic photography landing page.
+3. **Story:** real 50/50 desktop split banner (stacked on mobile), light-weight headings, wider spotlight sections and quiet rules. Every existing data module and control stays in place.
 
-Existing KORETAIL fonts, all imagery and modules remain. No new AI artwork, airport/aircraft stock photos, external fonts, packages or demo imagery. These original small CSS adaptations borrow visual grammar, not source CSS. They are not pixel-exact template copies. Original existing data artwork is not being replaced by newly generated imagery.
+Existing KORETAIL fonts, all original imagery and modules remain. Story adds one owner-approved real non-airport courtyard photograph as a decorative banner panel, served only by the test route `/__preview/story-photo.jpg`; provenance/license is in `story-photo-license.json`. No new AI artwork, airport/aircraft stock photos, external fonts, packages or template demo imagery. These original small CSS adaptations borrow visual grammar, not source CSS. They are not pixel-exact template copies. Original existing data artwork is not being replaced by newly generated imagery.
 
 ## Reference evidence
 
@@ -62,3 +62,6 @@ This is bounded preservation evidence, not an exhaustive proof of every interact
 Local Chromium launch was not authorized and **was not attempted**. Locally only discovery/lint/static checks are allowed. Ordinary PR CI on `preview/content-preserving-themes-20261021` runs the dedicated config in the existing bounded country-route job and uploads `content-preserving-theme-previews` for seven days. It neither deploys nor modifies providers/storage.
 
 Pending: coordinator review, draft PR, normal CI, artifact inspection and fixes if needed. No screenshots or browser PASS claimed before CI evidence exists.
+
+## Second visual review
+Initial screenshots were rejected by coordinator as too similar to the old dashboard. Current local revision adds a truly centered Beautiful Jekyll headline/100px divider, 16–18px editorial prose and one-column article feed; Casper feature lead and responsive article grids; Story split courtyard-image banner and spacious spotlight bands. It does not replace the app DOM. New CSS remains pending normal CI screenshots and owner review.
