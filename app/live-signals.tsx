@@ -927,8 +927,8 @@ const unfinishedYear = (value: string) => value < "1000-01-01";
  * Retain only navigation context on a failed date request, never its numbers.
  */
 export function DateNavigator({
-  lang, date, onChange, historyHref, airportDates = false, modernCalendar = false,
-}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean; modernCalendar?: boolean }) {
+  lang, date, onChange, historyHref, airportDates = false, modernCalendar = false, compactDatePicker = false,
+}: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean; modernCalendar?: boolean; compactDatePicker?: boolean }) {
   const summary = useLiveSummary(date);
   const [navigation, setNavigation] = useState(summary);
   if (summary && summary !== navigation) setNavigation(summary);
@@ -989,22 +989,8 @@ export function DateNavigator({
     [today, dateNavText.today[lang]],
     [shiftDay(today, 1), dateNavText.tomorrow[lang]],
   ];
-  return <nav className="date-nav" aria-label={dateNavText.label[lang]}>
-    <div className="date-nav-shortcuts" role="group">
-      {shortcuts.map(([value, label]) => <button
-        key={value}
-        type="button"
-        className={selected === value ? "active" : ""}
-        aria-current={selected === value ? "date" : undefined}
-        aria-pressed={selected === value}
-        aria-label={label}
-        onClick={() => onChange(value === today ? null : value)}
-      ><span>{label}</span><time dateTime={value}>{new Intl.DateTimeFormat(airportLocale(lang), {
-        timeZone: "Asia/Seoul", month: "numeric", day: "numeric", weekday: "short",
-      }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
-    </div>
-    <div className="date-nav-tools">
-    {modernCalendar ? <AirportCalendarWithAvailability lang={lang} date={date} selected={selected} today={today} onChange={value=>onChange(value===today?null:value)}/> : <label className="date-nav-picker">
+  // Airport uses the existing stored-date disclosure instead of a large calendar card.
+  const datePicker = modernCalendar ? <AirportCalendarWithAvailability lang={lang} date={date} selected={selected} today={today} onChange={value=>onChange(value===today?null:value)}/> : <label className="date-nav-picker">
       <span>{dateNavText.pick[lang]}</span>
       <input
         type="date"
@@ -1026,10 +1012,26 @@ export function DateNavigator({
           commitDate(next);
         }}
       />
-    </label>}
-    {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
+    </label>;
+  return <nav className="date-nav" data-selected-date={selected} aria-label={dateNavText.label[lang]}>
+    <div className="date-nav-shortcuts" role="group">
+      {shortcuts.map(([value, label]) => <button
+        key={value}
+        type="button"
+        className={selected === value ? "active" : ""}
+        aria-current={selected === value ? "date" : undefined}
+        aria-pressed={selected === value}
+        aria-label={label}
+        onClick={() => onChange(value === today ? null : value)}
+      ><span>{label}</span><time dateTime={value}>{new Intl.DateTimeFormat(airportLocale(lang), {
+        timeZone: "Asia/Seoul", month: "numeric", day: "numeric", weekday: "short",
+      }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
     </div>
-    {airportDates && <StoredAirportDates lang={lang} date={date} selected={selected} onChange={onChange} />}
+    {(!compactDatePicker || historyHref) && <div className="date-nav-tools">
+    {!compactDatePicker && datePicker}
+    {historyHref && <a className="period-outlook-link" href={historyHref}>7DAYS · {contextText(lang,"지난 기록","Past records","历史记录","過去の記録")}</a>}
+    </div>}
+    {(airportDates || compactDatePicker) && <StoredAirportDates lang={lang} date={date} selected={selected} onChange={onChange} showStored={airportDates}>{compactDatePicker ? datePicker : null}</StoredAirportDates>}
   </nav>;
 }
 
@@ -1052,13 +1054,13 @@ const storedDateText = {
   note: { ko: '저장된 날짜만 표시합니다. 예정편은 변경될 수 있고, 과거 승객 예보는 실제 여객 실적이 아닙니다.', en: 'Only stored dates are listed. Scheduled flights may change; past passenger forecasts are not actual passenger results.', zh: '仅列出已存日期。计划航班可能变更；过去的旅客预测并非实际旅客统计。', ja: '保存済みの日付のみ表示。予定便は変更される場合があり、過去の旅客予報は実績ではありません。' },
 } as const;
 
-function StoredAirportDates({ lang, date, selected, onChange }: {
-  lang: Lang; date: string | null; selected: string; onChange: (date: string | null) => void;
+function StoredAirportDates({ lang, date, selected, onChange, children, showStored = true }: {
+  lang: Lang; date: string | null; selected: string; onChange: (date: string | null) => void; children?: ReactNode; showStored?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return <details className="stored-date-picker" onToggle={event => setOpen(event.currentTarget.open)}>
-    <summary>{storedDateText.dates[lang]}</summary>
-    {open && <StoredAirportMonth lang={lang} date={date} selected={selected} onChange={onChange} />}
+    <summary>{showStored ? storedDateText.dates[lang] : dateNavText.pick[lang]}</summary>
+    {open && <>{children}{showStored && <StoredAirportMonth lang={lang} date={date} selected={selected} onChange={onChange} />}</>}
   </details>;
 }
 

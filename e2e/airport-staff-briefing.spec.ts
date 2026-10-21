@@ -3,7 +3,7 @@ import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
-for(const width of [390,1440])test(`additional staff briefing below unchanged glance ${width}`,async({page},info)=>{
+for(const width of [390,1440])test(`one airport-flow section joins key metrics and staff details ${width}`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
@@ -11,11 +11,25 @@ for(const width of [390,1440])test(`additional staff briefing below unchanged gl
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page.locator('.focus-report')).toContainText('단순합계 112,403명');
- const briefing=page.locator('.airport-staff-briefing');await expect(briefing).toContainText('주목할 공항 흐름');await expect(briefing).toContainText('출발 예정편');
+ const flow=page.getByRole('region',{name:'주목할 공항 흐름',exact:true});
+ await expect(page.getByRole('heading',{name:'주목할 공항 흐름',exact:true})).toHaveCount(1);
+ await expect(page.getByRole('heading',{name:/오늘 업무에서 먼저 확인|선택일 업무 지표/})).toHaveCount(0);
+ for(const metric of ['wait','upcoming','growth'])await expect(flow.getByTestId(`glance-key-${metric}`)).toHaveCount(1);
+ const briefing=flow.locator('.airport-staff-briefing');await expect(page.locator('.airport-staff-briefing')).toHaveCount(1);await expect(briefing).toContainText('출발 예정편');
  await expect(briefing.locator('.staff-brief-grid>section')).toHaveCount(3);
  await expect(briefing).toContainText('고객 수나 매장 혼잡 예측은 아닙니다');
  await expect(briefing.locator('a[href*="airport-prepare"]')).toHaveAttribute('href',/date=2026-10-19#arrival-allowances$/);
- expect(await briefing.evaluate(e=>Boolean(e.compareDocumentPosition(document.querySelector('.glance-overview-extras')!)&Node.DOCUMENT_POSITION_PRECEDING))).toBe(true);
+ await expect(briefing.locator('.staff-brief-heading')).toContainText('2026-10-19');
+ await expect(briefing.locator('.staff-brief-heading')).toContainText('KST 수집');
+ expect(await flow.getByTestId('glance-key-growth').evaluate(e=>e.nextElementSibling?.classList.contains('airport-staff-briefing'))).toBe(true);
+ expect(await briefing.evaluate(e=>e.nextElementSibling?.classList.contains('glance-overview-extras'))).toBe(true);
+ const flowBox=await flow.boundingBox(),briefingBox=await briefing.boundingBox();
+ expect(briefingBox!.width).toBeCloseTo(flowBox!.width,0);
+ await expect(briefing.locator('.staff-brief-heading small')).toHaveCSS('font-size','11px');
+ await expect(briefing.locator('details').first()).toHaveAttribute('open','');
+ const cosmetics=briefing.locator('details').filter({has:page.getByText('화장품·향수',{exact:true})});
+ await cosmetics.locator('summary').click();await expect(cosmetics).toHaveAttribute('open','');
+ await cosmetics.locator('summary').click();await expect(cosmetics).not.toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`navy-home-${width}.png`)});
  await briefing.scrollIntoViewIfNeeded();await briefing.screenshot({path:info.outputPath(`navy-staff-${width}.png`)});

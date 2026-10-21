@@ -1,0 +1,35 @@
+{
+  "reviewedAt": "2026-10-20",
+  "coverage": "PARTIAL_SCHOOL_EXAMPLE",
+  "sourceNoticeURL": "https://naerisup-e.goehs.kr/naerisoop-e/na/ntt/selectNttInfo.do?bbsId=11702&mi=20995&nttSn=1235039",
+  "events": [
+    {
+      "id": "KR-NAERISUP-2026-SUMMER",
+      "country": "KR",
+      "region": "경기 화성 내리숲초등학교",
+      "scope": "institutional",
+      "name": "여름방학",
+      "kind": "school_break",
+      "start": "2026-07-28",
+      "end": "2026-08-19",
+      "status": "verified",
+      "sourceURL": "https://www.goehs.kr/dext5editordata/2026/04/20260408_080339438_39377.pdf",
+      "verifiedAt": "2026-10-20",
+      "reviewValidUntil": "2027-02-28"
+    },
+    {
+      "id": "KR-NAERISUP-2026-WINTER",
+      "country": "KR",
+      "region": "경기 화성 내리숲초등학교",
+      "scope": "institutional",
+      "name": "겨울방학",
+      "kind": "school_break",
+      "start": "2027-01-01",
+      "end": "2027-02-28",
+      "status": "verified",
+      "sourceURL": "https://www.goehs.kr/dext5editordata/2026/04/20260408_080339438_39377.pdf",
+      "verifiedAt": "2026-10-20",
+      "reviewValidUntil": "2027-02-28"
+    }
+  ]
+}

@@ -9,6 +9,9 @@ import calendar from '../data/airport-focus-preview/calendar-context.json';
 import {compareHolidayPeriod,describeHolidayPeriod} from '../lib/holiday-period-comparison.mjs';
 import {matchCalendarContext,previousMonth,type CalendarEvent} from '../lib/calendar-context.mjs';
 import {kstDayOf} from '../lib/kst';
+import {KoreanVacationContext} from './korean-vacation-context';
+import MonthlyLineChart from './airport-monthly-line-chart';
+import './airport-monthly-line-chart.css';
 const CountryDailyHistory=createContext<DailyObservation[]>([]);
 function useCountryDailyHistory(asOf:string){
  const [state,setState]=useState<{date:string;rows:DailyObservation[]}|null>(null);
@@ -19,16 +22,6 @@ function useCountryDailyHistory(asOf:string){
 }
 const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:1});
 function monthsBefore(month:string|null,count:number):string|null{let cursor=month;for(let i=0;i<count&&cursor;i++)cursor=previousMonth(cursor);return cursor;}
-function MonthlyLineChart({row}:{row:FocusTrend}){
- const values=row.points.flatMap(point=>point.departures===null?[]:[point.departures]);
- if(!values.length)return <p>월별 자료 확인 중</p>;
- const low=Math.max(0,Math.floor(Math.min(...values)*0.9/10000)*10000),high=Math.max(low+10000,Math.ceil(Math.max(...values)*1.1/10000)*10000);
- const y=(value:number)=>130-(value-low)/(high-low)*104;
- const ticks=[low,(low+high)/2,high];
- return <figure className="focus-line-chart"><svg viewBox="0 0 320 166" role="img" aria-label={`${row.label} ${row.points[0]?.month}부터 ${row.points.at(-1)?.month}까지 월 출발 여객. 세로축 ${number.format(low)}명부터 ${number.format(high)}명.`}>
- {ticks.map(tick=><g key={tick}><line x1="48" x2="304" y1={y(tick)} y2={y(tick)} stroke="#e3e8ed" strokeWidth="1"/><text x="40" y={y(tick)+3} textAnchor="end" className="focus-chart-tick">{`${number.format(tick/10000)}만`}</text></g>)}
- {row.points.map((point,i)=>{const x=48+i*51.2,previous=row.points[i-1];return <g key={point.month}><text x={x} y="154" textAnchor="middle" className="focus-chart-tick">{`${Number(point.month.slice(5))}월`}</text>{point.departures!==null&&<>{previous?.departures!==null&&previous?.departures!==undefined&&<line x1={48+(i-1)*51.2} y1={y(previous.departures)} x2={x} y2={y(point.departures)} stroke="#28445f" strokeWidth="2" strokeLinecap="round"/>}<circle cx={x} cy={y(point.departures)} r="3.5" fill="white" stroke="#28445f" strokeWidth="2"><title>{`${point.month} ${number.format(point.departures)}명`}</title></circle></>}</g>;})}</svg><figcaption>세로축 {number.format(low)}–{number.format(high)}명 · 국가별 범위 다름</figcaption></figure>;
-}
 function TrendSummary({row}:{row:FocusTrend}){
  const last=row.points.at(-1),prev=row.points.at(-2);
  if(last?.departures===null||last?.departures===undefined||prev?.departures===null||prev?.departures===undefined||previousMonth(last.month)!==prev.month)return <p className="focus-trend-summary">최근 월 비교 자료가 일부 없어 연속 변화를 판단하지 않습니다.</p>;
@@ -45,11 +38,12 @@ function CalendarContext({row}:{row:FocusTrend}){
  if(!asOf)return null;
  const last=row.points.at(-1);if(!last||last.departures===null)return null;
  const matched=matchCalendarContext(events,{country:row.code,selectedMonth:last.month,actualDataMonths:row.points.filter(point=>point.departures!==null).map(point=>point.month),asOf:asOf,includePreviousMonth:true});
- if(!matched.details.length)return <RecentCalendarContext country={row.code}/>;
+ const origin=<KoreanVacationContext country={row.code} asOf={asOf} selectedMonth={last.month} actualDataMonths={row.points.filter(point=>point.departures!==null).map(point=>point.month)}/>;
+ if(!matched.details.length)return <>{origin}<RecentCalendarContext country={row.code}/></>;
  const current=matched.details.find(item=>item.relation==='selected'),school=matched.details.find(item=>item.relation==='previous'&&item.kind==='school_break');
  const summary=[...new Map([current,school,...matched.summary].filter(item=>item!==undefined).map(item=>[item.eventId,item])).values()].slice(0,2);
  const text=(item:typeof matched.details[number])=>`${Number(item.month.slice(5))}월${item.relation==='previous'?'(직전 월)':''}: ${item.scope==='national'?'':`${item.region} · `}${events.find(event=>event.id===item.eventId)?.name} ${item.start.slice(5).replace('-','/')}~${item.end.slice(5).replace('-','/')}`;
- return <div className="focus-calendar-context">{summary.map(item=><p className="focus-source" key={item.eventId}>{text(item)}</p>)}<p className="focus-source">같은 시기의 일정입니다. 여객 증감의 원인으로 확인된 것은 아닙니다.</p><details className="focus-source"><summary>관련 일정과 공식 근거</summary>{matched.details.map(item=><p key={`${item.eventId}-${item.month}`}>{text(item)} · <a href={item.sourceURL} target="_blank" rel="noreferrer">공식 원문 ↗</a><br/>확인일 {item.verifiedAt}</p>)}</details><RecentCalendarContext country={row.code}/></div>;
+ return <div className="focus-calendar-context">{summary.map(item=><p className="focus-source" key={item.eventId}>{text(item)}</p>)}<p className="focus-source">같은 시기의 일정입니다. 여객 증감의 원인으로 확인된 것은 아닙니다.</p><details className="focus-source"><summary>관련 일정과 공식 근거</summary>{matched.details.map(item=><p key={`${item.eventId}-${item.month}`}>{text(item)} · <a href={item.sourceURL} target="_blank" rel="noreferrer">공식 원문 ↗</a><br/>확인일 {item.verifiedAt}</p>)}</details>{origin}<RecentCalendarContext country={row.code}/></div>;
 }
 function RecentCalendarContext({country}:{country:string}){
  const {asOf,calendarEvents}=useAirportFocusData(),dailyRows=useContext(CountryDailyHistory);

@@ -11,3 +11,4 @@
 .update-notice-items{min-height:0;overflow-y:auto;overscroll-behavior:contain;flex:1 1 auto}
 
 .update-notice .update-notice-date{font-size:11px;color:#62666c;margin:-12px 0 12px}
+.update-notice-trigger{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px}

@@ -102,7 +102,7 @@ export function AirportView({
       </nav>}
 
       {(concourse||(section !== "history" && section !== "stores")) && <div className={`airport-date-reserved${concourse?' airport-date-concourse':''}`}>
-        <DateNavigator lang={lang} date={date} onChange={setDate} airportDates={!concourse} modernCalendar />
+        <DateNavigator lang={lang} date={date} onChange={setDate} airportDates={!concourse} compactDatePicker />
         {!concourse&&<DateScopeNote lang={lang} date={date} scope={section === "arrivals" ? "arrivals" : "departures"} />}
       </div>}
 

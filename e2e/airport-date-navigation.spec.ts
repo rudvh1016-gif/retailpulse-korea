@@ -78,7 +78,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of lang =
     await expectDateSelection(page, oldDate);
     await expect(page.locator('.date-scope-note')).toContainText(labels[lang].past);
     await expect(page.locator('.airport-current-brief')).not.toContainText('99,991');
-    await expect(nav.getByTestId('date-calendar-trigger')).not.toHaveAttribute('min');
+    await expect(nav.locator('input[type=date]')).not.toHaveAttribute('min');
 
     await nav.getByLabel(labels[lang].month, { exact: true }).fill('2026-09');
     await expect(stored.locator(`option[value="${futureDate}"]`)).toContainText(labels[lang].planned);

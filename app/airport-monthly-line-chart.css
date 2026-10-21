@@ -1,0 +1,10 @@
+.focus-month-plot{position:relative;isolation:isolate}
+.focus-interactive-line-chart .focus-month-target{position:absolute;top:0;bottom:0;min-width:24px;min-height:44px;padding:0;margin:0;transform:translateX(-50%);border:0;border-radius:0;background:transparent;color:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;scroll-margin-block:100px}
+.focus-interactive-line-chart .focus-month-target:focus-visible{outline:1px solid var(--navy,#24272c);outline-offset:-1px}
+.focus-month-point[data-selected=true]{fill:var(--navy,#24272c)}
+.focus-month-halo{opacity:0;transition:opacity 160ms ease-out}
+.focus-month-halo[data-selected=true]{opacity:.55}
+.focus-chart-tick[data-selected=true]{fill:var(--navy,#24272c);font-weight:650}
+.focus-month-tooltip{position:absolute;z-index:1;box-sizing:border-box;width:152px;max-width:calc(100% - 16px);padding:7px 9px;border:1px solid #dce2e7;background:#fff;color:var(--navy,#24272c);font:inherit;font-size:12px;line-height:1.4;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;animation:focus-month-readout 160ms ease-out}
+@keyframes focus-month-readout{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.focus-month-halo{transition:none}.focus-month-tooltip,.focus-trend-grid .focus-interactive-line-chart svg{animation:none}}

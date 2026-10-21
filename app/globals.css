@@ -2950,5 +2950,20 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .clarity-purpose-scenes img,.tourism-background-item dt img { object-fit: contain; }
 
 /* Approved release: secondary destinations remain reachable through More. */
-.more-section-links{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:18px}
-.more-section-links a{display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+.more-section-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;margin-bottom:18px}
+.more-section-links :is(a,button.update-notice-trigger){display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:10px 0;border:0;border-bottom:1px solid #e5e8eb;background:transparent;color:inherit;font:inherit;text-align:left;text-decoration:none;line-height:1.5}
+.more-section-links :is(a,button.update-notice-trigger)::after{content:"›";color:#65707c;flex:none}
+.more-section-links :is(a,button.update-notice-trigger):focus-visible{outline:2px solid var(--navy,#24272c);outline-offset:2px}
+@media(min-width:821px){.more-section-links{grid-template-columns:repeat(3,minmax(0,1fr));gap:0 28px}}
+
+/* Owner correction: airport selectors are text and a hairline, not white tiles. */
+.app .airport-view .terminal-selector button,
+.app .airport-view .terminal-selector button:is(.active,[aria-selected="true"]) { background:transparent; }
+/* Neutral translucent selection only: no sky fill or backdrop layer on the page. */
+.app .airport-view .date-nav .date-nav-shortcuts button:is(.active,[aria-pressed="true"]) {
+  background:rgb(255 255 255 / 72%); box-shadow:inset 0 0 0 1px rgb(36 39 44 / 10%),inset 0 1px 0 rgb(255 255 255 / 95%);
+}
+.app .airport-view .date-nav .date-nav-shortcuts button:hover { background:rgb(255 255 255 / 90%); }
+.app .airport-view .date-nav .date-nav-shortcuts button:is(.active,[aria-pressed="true"]):hover { background:rgb(255 255 255 / 96%); }
+.airport-view .stored-date-picker > summary { min-height:44px; display:list-item; align-content:center; }
+.airport-view .stored-date-picker > summary:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
