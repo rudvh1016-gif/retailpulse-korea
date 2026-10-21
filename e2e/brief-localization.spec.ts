@@ -20,8 +20,9 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
  await expect(brief.locator('.focus-passenger-total')).toContainText(lang==='ko'?'단순합계 112,403명':lang==='en'?'arithmetic sum 112,403 people':'简单合计 112,403人');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(await brief.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
- // Localization must reuse the existing font cascade, sizes and sign styling.
- const font=await brief.evaluate(el=>getComputedStyle(el).fontFamily);expect(font).toMatch(/KORETAIL|Pretendard/);
+ // Match the existing locale cascades in globals.css; Chinese already uses Noto Sans SC.
+ const font=await brief.evaluate(el=>getComputedStyle(el).fontFamily);
+ expect(font).toBe(lang==='zh'?'"Noto Sans SC Variable", system-ui, sans-serif':'"KORETAIL Sans Variable", system-ui, sans-serif');
  await brief.screenshot({path:info.outputPath(`brief-${lang}-${width}.png`)});
  for(const detail of await brief.locator('details').all()){await detail.locator('summary').click();await expect(detail).not.toHaveAttribute('open','');}
 });
