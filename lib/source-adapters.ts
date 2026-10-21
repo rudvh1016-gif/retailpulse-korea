@@ -498,7 +498,7 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
   const terminal: "T1" | "T2" | "CONCOURSE" | null = ["P01", "T1", "1"].includes(rawTerminal ?? "") ? "T1" : ["P03", "T2", "2"].includes(rawTerminal ?? "") ? "T2" : rawTerminal === "P02" ? "CONCOURSE" : null;
   const rawStatus = optionalString(record, ["remark", "status", "flightStatus"])?.toLowerCase() ?? "";
   const status = rawStatus.includes("cancel") || rawStatus.includes("결항") ? "cancelled" : rawStatus.includes("delay") || rawStatus.includes("지연") ? "delayed" : rawStatus.includes("on time") || rawStatus.includes("정상") ? "on_time" : rawStatus ? "scheduled" : "unknown";
-  const changedValue = optionalString(record, ["estimatedDateTime", "changedDateTime", "changedAt"]);
+  const changedValue = optionalString(record, ["estimatedDateTime", "estimatedDatetime", "changedDateTime", "changedAt"]);
   const changedAt = changedValue ? normalizeKstTimestamp(changedValue) : null;
   const qualityStatus: QualityStatus = terminal ? "VALID" : "PARTIAL";
   const freshness: SourceStatus = "LIVE";

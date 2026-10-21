@@ -690,10 +690,10 @@ function BusinessView({
           <p className="eyebrow">KORETAIL FOR BUSINESS</p>
           <h1>{localText(lang, { ko: "지금 무엇을\n준비하면 좋을까요?", en: "What should you\nprepare right now?", zh: "现在应该\n准备什么？", ja: "いま何を\n準備すればいい？" })}</h1>
           <p>{localText(lang, {
-            ko: "공식 신호를 매장 준비 관점으로 다시 읽습니다. 아래 점검 목록은 일반 운영 가이드이며, 숫자를 예측하지 않습니다.",
-            en: "The same official signals, read for store preparation. The checklists below are general operating guidance and do not predict any number.",
-            zh: "以门店准备的视角重新解读官方信号。下方清单为一般运营指南，不预测任何数值。",
-            ja: "同じ公式シグナルを店舗準備の視点で読み直します。以下のチェックリストは一般的な運用ガイドで、数値を予測するものではありません。",
+            ko: "인천공항 흐름과 업종별 점검 목록을 확인합니다. 서울 지역 참고자료도 함께 제공합니다. 일반 운영 안내이며 매출이나 방문객 수를 예측하지 않습니다.",
+            en: "Review Incheon Airport flows and industry checklists, with additional Seoul-area reference data. General operating guidance, not a sales or visitor forecast.",
+            zh: "查看仁川机场客流与各业态检查清单，并参考首尔地区资料。此为一般运营指南，不预测销售额或访客人数。",
+            ja: "仁川空港の動向と業種別チェックリストを確認できます。ソウル地域の参考資料も提供します。一般的な運営案内であり、売上や来訪者数の予測ではありません。",
           })}</p>
         </div>
       </div>
@@ -1034,7 +1034,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
         <div>
           <p className="eyebrow">ABOUT KORETAIL</p>
           <h1>{localText(lang, { ko: "공식 데이터만,\n있는 그대로", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
-          <p>{localText(lang, { ko: "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다", en: "KORETAIL combines Korea and Retail.", zh: "KORETAIL 由 Korea 与 Retail 组合而成。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。" })}</p>
+          <p>{localText(lang, { ko: "인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.", en: "KORETAIL combines Korea and Retail, focusing on Incheon Airport flights, passenger trends and travel preparation, with source dates and references.", zh: "KORETAIL 由 Korea 与 Retail 组合而成，以仁川机场航班、旅客趋势与出行准备为中心，并标明资料日期和来源。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。仁川空港のフライト・旅客動向・旅行準備を中心に、資料の日付と出典を案内します。" })}</p>
         </div>
       </div>
 

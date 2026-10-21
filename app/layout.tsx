@@ -70,7 +70,7 @@ export default async function RootLayout({
           alternateName: ["코리테일", "KORETAIL · Retail Demand Signals for Korea"],
           url: siteOrigin,
           inLanguage: ["ko-KR", "en", "zh-CN", "ja-JP"],
-          description: "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에",
+          description: shareDescription,
         }) }} />
       </body>
     </html>
