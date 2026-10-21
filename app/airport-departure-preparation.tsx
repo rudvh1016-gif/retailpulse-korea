@@ -47,7 +47,7 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
     })}
    </div>
    <DeparturePlanSummary input={input} plan={plan} lang={lang}/>
-   <h3 className="passenger-guide-heading">{g.overview}</h3>
+   <h3 data-heading="subsection" className="passenger-guide-heading"><span className="heading-marker" aria-hidden="true"/>{g.overview}</h3>
    <ol className="passenger-guide-steps" data-testid="passenger-basic-steps">{basic.map(([asset,detail],index)=><li key={asset}>
     <PassengerGuideImage asset={asset as PassengerGuideAsset}/><h4>{index+1} · {g.titles[index]}</h4><p>{g.sentences[index]}</p>
     <details><summary>{g.details}</summary><p>{detail}</p><a href={departureStepOfficialLink[(['CONFIRM','CHECK_IN','SECURITY','IMMIGRATION','GATE'] as const)[index]]} target="_blank" rel="noreferrer">{c.official} ↗</a></details>
@@ -58,7 +58,7 @@ export function AirportDeparturePreparation({lang}:{lang:Lang}) {
     {plan.unknown.length>0&&<p data-testid="prep-unknown-choices">{c.unknownNote}</p>}
     {input.route==='T1_CONCOURSE'&&<p data-testid="prep-concourse-note">{c.concourseNote}</p>}
     <details className="departure-preparation-plan" data-testid="prep-plan" open={plan.unknown.length<3}><summary>{g.plan}</summary>
-     {(['BEFORE_SECURITY','SECURITY','AFTER_SECURITY'] as const).map(phase=><section key={phase} data-phase={phase}><h3>{({BEFORE_SECURITY:c.before,SECURITY:c.security,AFTER_SECURITY:c.after})[phase]}</h3><ol>{plan.steps.filter(step=>step.phase===phase).map(step=><li key={step.id} data-step={step.id} data-conditional={step.conditional||undefined}><p>{stepText[step.id]}</p><a href={departureStepOfficialLink[step.id]} target="_blank" rel="noreferrer">{c.official} ↗</a></li>)}</ol></section>)}
+     {(['BEFORE_SECURITY','SECURITY','AFTER_SECURITY'] as const).map(phase=><section key={phase} data-phase={phase}><h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{({BEFORE_SECURITY:c.before,SECURITY:c.security,AFTER_SECURITY:c.after})[phase]}</h3><ol>{plan.steps.filter(step=>step.phase===phase).map(step=><li key={step.id} data-step={step.id} data-conditional={step.conditional||undefined}><p>{stepText[step.id]}</p><a href={departureStepOfficialLink[step.id]} target="_blank" rel="noreferrer">{c.official} ↗</a></li>)}</ol></section>)}
     </details>
     {input.taxRefund==='YES'&&<><p className="departure-customs-directed" data-testid="prep-carry-customs">{c.carryNote}</p><AirportTaxRefundGuide fixedTerminal lang={lang} terminal={input.route==='T2'?'T2':input.route==='T1_CONCOURSE'?'CONCOURSE':'T1'}/></>}
    </>}

@@ -198,7 +198,7 @@ function TerminalBriefingCards({ lang, airport, nowIso, dayRelation }: {
     : terminalBriefText.noAttention[lang];
   return <section className="terminal-briefing" data-signal-key="terminal-briefing" aria-labelledby="terminal-briefing-title">
     <div className="terminal-briefing-head">
-      <div><p className="eyebrow">TERMINAL BRIEFING · OFFICIAL</p><h3 id="terminal-briefing-title">{terminalBriefText.title[lang]}</h3></div>
+      <div><p className="eyebrow">TERMINAL BRIEFING · OFFICIAL</p><h3 data-heading="subsection" id="terminal-briefing-title"><span className="heading-marker" aria-hidden="true"/>{terminalBriefText.title[lang]}</h3></div>
       <p>{terminalBriefText.intro[lang]}</p>
     </div>
     <p className="terminal-attention" data-attention-terminal={set.attention?.terminal ?? ""}><strong>{attention}</strong></p>
@@ -326,7 +326,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
   return <>
     <section className="airport-arrival-brief" aria-labelledby="airport-arrival-title">
       <p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p>
-      <h2 id="airport-arrival-title">{headline ?? emptyTitle}</h2>
+      <h2 data-heading="section" id="airport-arrival-title"><span className="heading-marker" aria-hidden="true"/>{headline ?? emptyTitle}</h2>
       {totalLine && nowLine && <strong className="airport-arrival-current">{nowLine}</strong>}
       <ul className="airport-arrival-lines">
         {peak && <li>{arrivalSectionText.peak[lang]} {formatKstBand(peak.targetStartAt, peak.targetEndAt).replace(" KST", "")} · {people(peak.expectedPassengers)}</li>}
@@ -337,7 +337,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
 
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-arrival-flow-title">
       <div className="airport-detail-head">
-        <div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-arrival-flow-title">{arrivalSectionText.flowTitle[lang]}</h3></div>
+        <div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 data-heading="subsection" id="airport-arrival-flow-title"><span className="heading-marker" aria-hidden="true"/>{arrivalSectionText.flowTitle[lang]}</h3></div>
         <p>{arrivalSectionText.flowOnly[lang]}</p>
       </div>
       <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isPartial ? ` ${airportTodayText.partialBody[lang]}` : ""}</p>
@@ -362,7 +362,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
     </section>
 
     {isAll && <section className="airport-detail-section" aria-labelledby="airport-arrival-terminal-title">
-      <div className="airport-detail-head"><div><h3 id="airport-arrival-terminal-title">{arrivalSectionText.byTerminal[lang]}</h3></div></div>
+      <div className="airport-detail-head"><div><h3 data-heading="subsection" id="airport-arrival-terminal-title"><span className="heading-marker" aria-hidden="true"/>{arrivalSectionText.byTerminal[lang]}</h3></div></div>
       <ul className="airport-arrival-terminals">
         {["T1", "T2"].map((id) => {
           const value = arrival?.todayExpectedPassengersByTerminal?.[id] ?? null;
@@ -442,7 +442,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         order; the personal home renders the same brief with no chart. */}
     <AirportAtAGlance summary={summary} lang={lang} terminal={terminal} flow={
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
-      <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 id="airport-forecast-title">{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
+      <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 data-heading="subsection" id="airport-forecast-title"><span className="heading-marker" aria-hidden="true"/>{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
       <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isForecastPartial ? ` ${airportTodayText.partialBody[lang]}` : ''}</p>
       {timeline.length > 0
         ? <AirportFlowFigure
@@ -472,7 +472,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <details className="airport-summary-details"><summary>{contextText(lang,"터미널별 상세·집계 기준 보기","Terminal details and counting basis","航站楼详情与统计标准","ターミナル詳細・集計基準を見る")}</summary>
     {isAll && <TerminalBriefingCards lang={lang} airport={airport} nowIso={nowIso} dayRelation={summary?.dayRelation ?? "TODAY"} />}
     <div className="section-head">
-      <div><p className="eyebrow">OFFICIAL · {scopeLabel} · KST</p><h2 id="airport-today-title">{airportTodayText.title[lang]}</h2></div>
+      <div><p className="eyebrow">OFFICIAL · {scopeLabel} · KST</p><h2 data-heading="section" id="airport-today-title"><span className="heading-marker" aria-hidden="true"/>{airportTodayText.title[lang]}</h2></div>
       <span className="airport-period-label">{airport.serviceDateKst ? formatKstServicePeriod(airport.serviceDateKst, lang) : airportTodayText.unavailable[lang]}</span>
     </div>
 
@@ -494,7 +494,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     <section className="airport-composition" aria-labelledby="airport-composition-title">
       <div className="airport-composition-head">
         <div>
-          <h3 id="airport-composition-title">{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).title}</h3>
+          <h3 data-heading="subsection" id="airport-composition-title"><span className="heading-marker" aria-hidden="true"/>{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).title}</h3>
           <p className="airport-composition-scope">{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).scope}</p>
           <p>{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).intro}</p>
           <small>{airportTodayText.compositionTruth[lang]}</small>
@@ -583,7 +583,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
     </section>
 
     <section className="airport-detail-section airport-checkpoints" aria-labelledby="airport-checkpoints-title">
-      <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 id="airport-checkpoints-title">{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
+      <div className="airport-detail-head"><div><p className="eyebrow">CURRENT OBSERVATION · {scopeLabel}</p><h3 data-heading="subsection" id="airport-checkpoints-title"><span className="heading-marker" aria-hidden="true"/>{airportTodayText.current[lang]}</h3></div><p>{airportTodayText.currentNote[lang]}</p></div>
       <Suspense fallback={<div style={{minBlockSize:340}} aria-busy="true"/>}><div className="airport-checkpoint-schematics" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,320px),1fr))',gap:20}}>{(['T1','T2'] as const).filter(value=>isAll||value===terminal).map(value=><AirportCheckpointSchematic key={value} terminal={value} rows={rankedCheckpoints[value]??[]} now={presentationNow} lang={lang}/>)}</div></Suspense>
     </section>
   </section>;
@@ -919,7 +919,7 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
   const rows = state?.rows ?? [];
   return <section className="airport-facilities" aria-labelledby="airport-facilities-title">
     <div className="section-head">
-      <div><p className="eyebrow">OFFICIAL FACILITY DIRECTORY</p><h2 id="airport-facilities-title">{facilityText.title[lang]}</h2></div>
+      <div><p className="eyebrow">OFFICIAL FACILITY DIRECTORY</p><h2 data-heading="section" id="airport-facilities-title"><span className="heading-marker" aria-hidden="true"/>{facilityText.title[lang]}</h2></div>
       {state && !state.failed && <span className="official-label">{facilityText.count[lang](rows.length)}</span>}
     </div>
     {/*
@@ -1192,7 +1192,7 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
 
   return <section className="my-store" aria-labelledby="my-store-title">
     <div className="section-head">
-      <div><p className="eyebrow">KORETAIL · MY STORE</p><h2 id="my-store-title">{myStoreText.title[lang]}</h2></div>
+      <div><p className="eyebrow">KORETAIL · MY STORE</p><h2 data-heading="section" id="my-store-title"><span className="heading-marker" aria-hidden="true"/>{myStoreText.title[lang]}</h2></div>
       {facilityId && <button type="button" className="event-list-toggle" onClick={() => { setFacilityId(null); setQuery(""); }}>{myStoreText.change[lang]}</button>}
     </div>
     <p className="section-intro">{myStoreText.intro[lang]}</p>
@@ -1370,7 +1370,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
       return `${flight.flightNumber} ${flight.airlineCode ?? ""} ${flight.airportCode ?? ""}`.toUpperCase().includes(needle);
     });
   }, [flights, direction, terminal, query, zone]);
-  if (flights === null || loaded?.failed) return <section className="flight-board" aria-labelledby="flight-board-title"><div className="section-head"><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div><LiveLoadMessage loading={flights === null} lang={lang} /></section>;
+  if (flights === null || loaded?.failed) return <section className="flight-board" aria-labelledby="flight-board-title"><div className="section-head"><h2 data-heading="section" id="flight-board-title"><span className="heading-marker" aria-hidden="true"/>{flightBoardText.search[lang]}</h2></div><LiveLoadMessage loading={flights === null} lang={lang} /></section>;
   const visible = scoped.slice(0, visibleCount);
   const planned = selected?.basis === 'OFFICIAL_DEPARTURE_SCHEDULE';
   const ranking = planned ? null : terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
@@ -1383,7 +1383,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
 
   return <section className="flight-board" aria-labelledby="flight-board-title">
     <div className="section-head">
-      <div><p className="eyebrow">{planned ? 'SCHEDULED DEPARTURES' : 'OFFICIAL FLIGHT RECORD'} · KST</p><h2 id="flight-board-title">{flightBoardText.search[lang]}</h2></div>
+      <div><p className="eyebrow">{planned ? 'SCHEDULED DEPARTURES' : 'OFFICIAL FLIGHT RECORD'} · KST</p><h2 data-heading="section" id="flight-board-title"><span className="heading-marker" aria-hidden="true"/>{flightBoardText.search[lang]}</h2></div>
     </div>
     {planned && <p className="flow-note" data-testid="planned-flight-basis">{requestDate} · {contextText(lang,
       '확보한 예정 출발편 · 변경·취소될 수 있으며 확정 운항 결과가 아닙니다.',

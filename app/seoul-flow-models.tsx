@@ -42,7 +42,7 @@ export function SeoulFlowModels({summary,area,lang,publication}:{summary:LiveSum
  const whole=new Intl.NumberFormat(locales[lang],{maximumFractionDigits:0});
  const livingStale=staleSince(living?.referenceAt,summary?.generatedAt,lang);
  return <section className={styles.models} data-testid="seoul-flow-models" data-area={area} aria-label={t.title}>
-  <h3>{t.title}</h3>
+  <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{t.title}</h3>
   <div className={styles.row} data-flow="station">
    <ModelImage name="station"/>
    <div className={styles.content}><h4>{t.station}{station?.stationName?` · ${station.stationName.replaceAll('|',' · ')}`:''}</h4>

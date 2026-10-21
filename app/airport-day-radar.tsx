@@ -128,7 +128,7 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
   const comparable = items.some((item) => item.kind.startsWith('WEEKDAY'));
 
   return <div data-testid="day-radar">
-    <h3>{copy.radarTitle[lang]}</h3>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{copy.radarTitle[lang]}</h3>
     <ol className="prep-facts" data-testid="radar-items">
       {items.map((item, index) => <li key={index} data-kind={item.kind}><strong>{radarLine(item, terminal, lang, kstClock, current.day)}</strong></li>)}
     </ol>
@@ -140,7 +140,7 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
       <p className="prep-note">{copy.basis[lang]}</p>
     </details>
 
-    <h3 style={{ marginTop: 18 }}>{dayRelation==='TODAY'?copy.conciseSimilarTitle[lang]:`${copy.selectedSimilarTitle[lang]} · ${current.day}`} · {terminal}</h3>
+    <h3 data-heading="subsection" style={{ marginTop: 18 }}><span className="heading-marker" aria-hidden="true"/>{dayRelation==='TODAY'?copy.conciseSimilarTitle[lang]:`${copy.selectedSimilarTitle[lang]} · ${current.day}`} · {terminal}</h3>
     <details className="prep-evidence"><summary>{copy.evidence[lang]}</summary>
       <p className="prep-note" data-testid="similar-scope">{copy.similarScope(current.day, eligible[0]?.day ?? null, eligible.at(-1)?.day ?? null, eligible.length, lang)}</p>
       <p className="prep-note">{copy.similarRule[lang]}</p><p className="prep-note">{copy.similarNote[lang]}</p>

@@ -133,7 +133,7 @@ test("renders the KORETAIL production shell", async () => {
   assert.match(html, /<title>코리테일 KORETAIL \| 인천공항 항공편·여객 흐름·여행 준비 정보<\/title>/i);
   assert.doesNotMatch(html, /codex-preview/i);
   // "내 브리핑" used to pass only through the retired meta description; the page itself is the glance.
-  assert.match(html, /<h1>인천공항 한눈에<\/h1>/);
+  assert.match(html, /<h1 data-heading="page"><span class="heading-marker" aria-hidden="true"><\/span>인천공항 한눈에<\/h1>/);
   assert.doesNotMatch(html, /<section[^>]+class="demand-home"/);
   assert.match(html, /KORETAIL/);
 });
@@ -158,7 +158,7 @@ test("the three Tourism Desk pages render unique area SEO and headings", async (
     const html = await response.text();
     assert.equal(response.status, 200, path);
     assert.match(html, new RegExp(`<title>${copy.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}<\\/title>`));
-    assert.match(html, new RegExp(`<h1[^>]*>${copy.name} 관광안내<\\/h1>`));
+    assert.match(html, new RegExp(`<h1[^>]*><span class="heading-marker" aria-hidden="true"><\\/span>${copy.name} 관광안내<\\/h1>`));
     assert.match(html, new RegExp(`<link rel="canonical" href="[^"]*${path}"`));
     assert.match(html, new RegExp(`/en/tourism-desk/${area}`), "x-default/English alternate must preserve the area");
     assert.match(html, new RegExp(`/zh/tourism-desk/${area}`), "Chinese alternate must preserve the area");
@@ -183,7 +183,7 @@ test("Tourism Desk methodology renders in every locale and area without a live s
       const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
       assert.equal(response.status, 200, path);
       const html = await response.text();
-      assert.ok(html.includes(`<h2 id="tourism-limits-title">${copy.heading}</h2>`), path);
+      assert.ok(html.includes(`<h2 data-heading="section" id="tourism-limits-title"><span class="heading-marker" aria-hidden="true"></span>${copy.heading}</h2>`), path);
       const limits = html.match(/<ul class="tourism-limits">([\s\S]*?)<\/ul>/)?.[1];
       assert.ok(limits, `${path}: methodology must not wait for live data`);
       assert.equal((limits.match(/<li>/g) ?? []).length, 7, path);

@@ -7,7 +7,7 @@ const read=(path:string)=>readFileSync(new URL(`../${path}`,import.meta.url),'ut
 test('all notice locales share the exact durable owner heading without changing accessible identity',()=>{
  assert.equal(UPDATE_NOTICE_TITLE,'new update!');
  const source=read('app/update-notice.tsx');
- assert.match(source,/<h2 id="update-notice-title" tabIndex=\{-1\}>\{UPDATE_NOTICE_TITLE\}<\/h2>/);
+ assert.match(source,/<h2 data-heading="section" id="update-notice-title" tabIndex=\{-1\}><span className="heading-marker" aria-hidden="true"\/>\{UPDATE_NOTICE_TITLE\}<\/h2>/);
  assert.match(source,/aria-labelledby="update-notice-title"/);
  assert.doesNotMatch(source,/title:'(?:새로운 정보|Airport information|机场信息|空港情報)/);
  assert.match(source,/<span className="update-notice-new">NEW<\/span>/);

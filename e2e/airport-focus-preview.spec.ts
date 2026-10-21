@@ -85,7 +85,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(detail.getByRole('link',{name:'공식 일정 ↗'})).toBeVisible();
  await detail.locator('summary').click();
  await expect(detail).not.toHaveAttribute('open','');
- await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size',width<=700?'16px':'15px');
+ await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size',width<=700?'22px':'26px');
  await expect(page.locator('.focus-preparation-brief>div>small').first()).toHaveCSS('font-size','12px');
  expect(await page.getByTestId('glance-key-growth').evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('#focus-holidays')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
  await page.locator('#focus-holidays').scrollIntoViewIfNeeded();

@@ -94,7 +94,7 @@ export function MonthlyRecordsView({ lang, area, onArea }: { lang: Lang; area: R
       <label><span>{t('area')}</span><Image unoptimized className="records-select-scene" src={`/visuals/seoul-comparison/${area}-320.webp`} width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async"/><select value={area} onChange={event => onArea(event.target.value as RecordArea)}>{RECORD_AREAS.map(id => <option key={id} value={id}>{areaNames[id][lang] ?? areaNames[id].en}</option>)}</select></label>
       <label><span>{t('month')}</span><Image unoptimized className="records-select-scene" src="/visuals/clarity/v1/calendar-256.webp" width="44" height="44" alt="" aria-hidden="true" loading="lazy" decoding="async"/><select value={selectedMonth} disabled={!choices.length} onChange={event => setMonth(event.target.value)}>{!choices.length && <option value="">—</option>}{choices.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
     </div>
-    <div className="section-head"><div><p className="eyebrow">SEOUL · MONTHLY RECORDS</p><h2 id="records-metric-title">{t('metric')}</h2></div></div>
+    <div className="section-head"><div><p className="eyebrow">SEOUL · MONTHLY RECORDS</p><h2 data-heading="section" id="records-metric-title"><span className="heading-marker" aria-hidden="true"/>{t('metric')}</h2></div></div>
     <p className="records-note">{t('peopleNote')}</p>
     {!data && <p role="status">{error ? t('error') : t('loading')}{error && <button className="records-retry" onClick={() => setRetry(value => value + 1)}>{t('retry')}</button>}</p>}
     {data && <div aria-live="polite" aria-atomic="false" data-testid="monthly-records-result">

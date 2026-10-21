@@ -128,7 +128,7 @@ export function FlightSplitCard({ lang, summary, sides, terminal, nowIso, showDi
     {side: 'UNVERIFIED', value: s.unverified, color: '#e7ecef'},
   ] as const;
   return <div className="prep-block" data-testid="flight-split" data-state="OK" data-larger={s.larger ?? 'NONE'}>
-    <h3>{splitCopy.heading(terminal, when, lang)}</h3>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{splitCopy.heading(terminal, when, lang)}</h3>
     {showDistribution && <div className="flight-side-distribution" role="img" aria-label={flightsBody(s, lang)}>
       {parts.map(part => <span key={part.side} style={{width: `${s.total > 0 ? part.value / s.total * 100 : 0}%`, background: part.color}} />)}
     </div>}
@@ -182,11 +182,11 @@ export function AirportSidesBlock({ lang, summary, terminal, side, hours, nowIso
     <FlightSplitCard lang={lang} summary={summary} sides={sides} terminal={terminal} nowIso={nowIso}/>
     <DepartureMapSection lang={lang} summary={summary} terminal={terminal} nowIso={nowIso} holidays={holidays}/>
     <DayRadarSection lang={lang} summary={summary} terminal={terminal} nowIso={nowIso} holidays={holidays} isHoliday={isHoliday}/>
-    <h3>{copy.hallTitle[lang]}</h3>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{copy.hallTitle[lang]}</h3>
     {sides.halls
       ? <HallDay lang={lang} day={sides.halls[terminal]} other={sides.halls[terminal === 'T1' ? 'T2' : 'T1']} side={side} serviceDate={serviceDate} hours={hours} nowIso={nowIso} today={today}/>
       : <p className="prep-note" data-testid="halls-withheld">{copy.withheld[lang]} <a href="https://www.airport.kr/ap_ko/883/subview.do" target="_blank" rel="noopener noreferrer">{copy.officialPage[lang]}</a></p>}
-    <h3>{copy.gateTitle[lang]}</h3>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{copy.gateTitle[lang]}</h3>
     {gates && splitStatus === 'STALE' ? <>
       {/* Old flight records are not shown as counts anywhere in the block; only when they were collected. */}
       <p className="prep-note" data-testid="gates-stale">{splitCopy.unavailable.STALE[lang]}</p>

@@ -118,7 +118,7 @@ export function PrepShare({ lang, doc, fileName, analytics = {} }: { lang: Lang;
   };
 
   return <div className="prep-block prep-share" ref={section} data-testid="prep-share" aria-labelledby={`${id}-title`}>
-    <h3 id={`${id}-title`}>{shareCopy.title[lang]}</h3>
+    <h3 data-heading="subsection" id={`${id}-title`}><span className="heading-marker" aria-hidden="true"/>{shareCopy.title[lang]}</h3>
     <div className="prep-share-actions">
       <button type="button" className={styles.button} onClick={copy}>{shareCopy.copy[lang]}<svg ref={confirmation} className={styles.check} data-copied={status==='copied'} viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m3 8 3 3 7-7" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg></button>
       <button type="button" onClick={image}>{shareCopy.image[lang]}</button>

@@ -15,7 +15,7 @@ const labels:Record<Lang,Record<DepartureStepId,string>>={
 export function DeparturePlanSummary({input,plan,lang}:{input:DeparturePreparationInput;plan:ReturnType<typeof departurePreparation>;lang:Lang}){
  const c=departurePreparationCopy[lang],short=departureChoiceCopy(lang);
  return <section className={styles.summary} data-testid="prep-live-summary" aria-live="polite" aria-atomic="true">
-  <h3>{title[lang]}</h3>
+  <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{title[lang]}</h3>
   <DepartureOrderMotion plan={plan} lang={lang} choice={`${input.route}|${input.checkedBaggage}|${input.taxRefund}|${input.dutyFreePickup}`}/>
   {!plan.supported?<p>{c.confirm}</p>:<>
    <p className={styles.route}>{({T1:c.t1,T2:c.t2,T1_CONCOURSE:c.concourse,UNKNOWN:c.unknown})[input.route]}</p>

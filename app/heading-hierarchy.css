@@ -1,0 +1,46 @@
+/* Owner-approved site-wide heading hierarchy (2026-10-22 KST).
+ * Explicit roles only: leave body labels, table headers, buttons and the glass dock alone.
+ * Important typography intentionally supersedes older compact !important heading rules.
+ */
+:root body :is(h1,h2,h3)[data-heading] {
+ position:relative;
+ box-sizing:border-box;
+ min-width:0;
+ max-width:100%;
+ padding-inline-start:.72em;
+ overflow-wrap:anywhere;
+ white-space:normal;
+ line-height:1.35!important;
+ font-weight:var(--weight-strong,600)!important;
+ letter-spacing:-.025em;
+}
+:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important}
+:root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,26px)!important}
+:root body :is(h1,h2,h3)[data-heading="subsection"] {font-size:clamp(18px,1.7vw,20px)!important}
+/* The airport-flow parent stays above its three requested major briefing titles. */
+:root body .glance-workday-heading[data-heading="section"] {font-size:clamp(26px,2.6vw,30px)!important}
+/* Preserve deliberately larger editorial introductions rather than shrinking them. */
+:root body :is(.hero,.view-intro,.tourism-desk-head,.not-found) [data-heading="page"] {font-size:clamp(32px,4vw,48px)!important}
+:root body .airport-view .view-intro [data-heading="page"] {font-size:clamp(28px,3vw,36px)!important}
+/* An empty, hidden-from-AT circle is decorative, never part of the accessible name.
+ * Absolute positioning keeps wrapped title lines aligned with text, not with the dot. */
+:root body [data-heading] > .heading-marker {
+ position:absolute;
+ inset-inline-start:0;
+ top:.55em;
+ display:block;
+ width:.26em;
+ height:.26em;
+ min-width:0;
+ margin:0;
+ padding:0;
+ border:0;
+ border-radius:50%;
+ background:currentColor;
+ color:inherit;
+ font-size:inherit;
+ line-height:inherit;
+ pointer-events:none;
+}
+:root body [data-heading] > small {white-space:normal;overflow-wrap:anywhere}
+@media(forced-colors:active){:root body [data-heading] > .heading-marker{background:CanvasText}}

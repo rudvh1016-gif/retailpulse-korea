@@ -1409,7 +1409,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {/* OWNER PRIORITY LOCK 6-8: this month so far, the same span of the month
           before, and the shape of how it accumulated. Scope-isolated like every
           other figure here — T2 sums T2's own days and nothing else. */}
-      {mtd && <><h3>{mtdCopy.sectionTitle[lang]}</h3><section className="airport-mtd" data-scope={terminal} data-testid="airport-mtd" aria-label={mtdCopy.heading[lang]}>
+      {mtd && <><h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{mtdCopy.sectionTitle[lang]}</h3><section className="airport-mtd" data-scope={terminal} data-testid="airport-mtd" aria-label={mtdCopy.heading[lang]}>
         <p className="airport-mtd-head"><span>{mtdCopy.heading[lang]}</span><small>{shortRange(mtd.current.start, mtd.current.end)}</small></p>
         {mtd.current.total !== null
           ? <strong className="airport-mtd-total">{Math.round(mtd.current.total).toLocaleString(numberLocale)}{peopleUnit}</strong>
@@ -1482,7 +1482,7 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null, includeA
     <p className="demand-section-label">{demandCopy.selected[lang]} · {summary.serviceDateKst} KST</p>
     <AreaDemandCard summary={summary} area={selected} lang={lang} linkHref={`/${lang}/${selected}${dateSuffix}`}/>
     <section className="home-area-briefs" aria-labelledby="home-area-briefs-title">
-      <h2 id="home-area-briefs-title">{contextText(lang,"다른 상권 살펴보기","Explore the districts","查看其他商圈","ほかの商圏を見る")}</h2>
+      <h2 data-heading="section" id="home-area-briefs-title"><span className="heading-marker" aria-hidden="true"/>{contextText(lang,"다른 상권 살펴보기","Explore the districts","查看其他商圈","ほかの商圏を見る")}</h2>
       <div className="home-area-brief-rows">{AREA_IDS.map(area => {
         const row = summary.areas[area]?.realtime;
         const valid = validPopulationRange(row) && kstDay(row!.observedAt) === summary.serviceDateKst;
@@ -1496,9 +1496,9 @@ export function HomeTodayBrief({ lang, selected, onSelect, date = null, includeA
       })}</div>
       <p className="flow-note">{contextText(lang,"각 측정 구역의 범위가 달라, 인구 크기로 지역의 인기나 혼잡 밀도를 비교하지 않습니다.","Measured areas differ. Headcounts are not a ranking of popularity or crowd density.","测量区域范围不同，人数不能作为人气或拥挤密度排名。","測定区域が異なるため、人口の大きさで人気や混雑密度は比較できません。")}</p>
     </section>
-    {changes.length > 0 && <section className="demand-changes"><h2>{contextText(lang,"주목할 변화","Changes to watch","值得关注的变化","注目する変化")}</h2><ul>{changes.map(change => <li key={change.area}><strong>{areaNames[change.area][lang]}</strong><p><RateText text={change.line} lang={lang}/></p></li>)}</ul></section>}
-    {includeAirport && <section className="home-airport"><div className="demand-section-head"><h2>{contextText(lang,"인천공항","Incheon Airport","仁川机场","仁川空港")}</h2><a href={`/${lang}/airport${dateSuffix}`}>{contextText(lang,"공항 자세히 보기","Explore airport","机场详情","空港の詳細")} →</a></div><AirportAtAGlance summary={summary} lang={lang}/></section>}
-    <section className="home-support"><h2>{contextText(lang,"날씨와 주변 일정","Weather and nearby events","天气与周边日程","天気と周辺の予定")}</h2>
+    {changes.length > 0 && <section className="demand-changes"><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{contextText(lang,"주목할 변화","Changes to watch","值得关注的变化","注目する変化")}</h2><ul>{changes.map(change => <li key={change.area}><strong>{areaNames[change.area][lang]}</strong><p><RateText text={change.line} lang={lang}/></p></li>)}</ul></section>}
+    {includeAirport && <section className="home-airport"><div className="demand-section-head"><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{contextText(lang,"인천공항","Incheon Airport","仁川机场","仁川空港")}</h2><a href={`/${lang}/airport${dateSuffix}`}>{contextText(lang,"공항 자세히 보기","Explore airport","机场详情","空港の詳細")} →</a></div><AirportAtAGlance summary={summary} lang={lang}/></section>}
+    <section className="home-support"><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{contextText(lang,"날씨와 주변 일정","Weather and nearby events","天气与周边日程","天気と周辺の予定")}</h2>
       {supportLines.length ? supportLines.map(line => <p key={line}>{line}</p>) : <p>{contextText(lang,"선택 날짜에 확인된 보조자료가 없습니다.","No supporting data for the selected date.","所选日期暂无辅助资料。","選択日の補足資料はありません。")}</p>}
       <p className="flow-note">{contextText(lang,"기상청 예보·공식 행사기간 기준. 실제 운영시간은 상세 화면의 공식 안내를 확인하세요.","KMA forecasts and official event periods. Check official links in the area details for operating hours.","按气象厅预测与官方活动期间，实际营业时间请查看地区详情内的官方信息。","気象庁予報・公式イベント期間。実際の開催時間はエリア詳細の公式案内をご確認ください。")}</p>
       <a href={`/${lang}/${selected}${dateSuffix}`}>{areaNames[selected][lang]} · {contextText(lang,"날씨·행사·소비·지하철 보기","Weather, events, spending and subway","查看天气、活动、消费及地铁","天気・イベント・消費・地下鉄を見る")} →</a>
@@ -2279,7 +2279,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
       <div className="section-head">
         <div>
           <p className="eyebrow">{text.eyebrow}</p>
-          <h2 id="live-signals-title">{text.title[lang]}</h2>
+          <h2 data-heading="section" id="live-signals-title"><span className="heading-marker" aria-hidden="true"/>{text.title[lang]}</h2>
         </div>
       </div>
       <p className="section-intro">{text.intro[lang]}</p>
@@ -2298,7 +2298,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
             const hasObservation = [observedWeather?.pm10, observedWeather?.pm25].some(value => value !== null && value !== undefined) || [observedWeather?.pm10Grade, observedWeather?.pm25Grade].some(grade => Boolean(grade?.trim()));
           return <section className={`signal-group signal-group-${groupId}`} key={groupId}>
             <header className="signal-group-head">
-              <h3 className="signal-group-title">{groupCopy.title[lang]}</h3>
+              <h3 data-heading="subsection" className="signal-group-title"><span className="heading-marker" aria-hidden="true"/>{groupCopy.title[lang]}</h3>
               <span>{groupCopy.state[lang]}</span>
             </header>
             <div className="signal-group-body">

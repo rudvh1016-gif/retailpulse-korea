@@ -73,7 +73,7 @@ export function AreaDemandCard({ summary, area, lang, linkHref, linkLabel }: { s
   const peakSentence = peak ? ({ ko: `공개된 예보 중 ${peakDay} ${kstStamp(peak.targetAt).slice(6)}에 가장 붐빌 전망 · ${demandLevel(peak.congestionLevel, lang)}`, en: `Busiest among published forecasts: ${peakDay} ${kstStamp(peak.targetAt).slice(6)} · ${demandLevel(peak.congestionLevel, lang)}`, zh: `已发布预测中最拥挤：${peakDay} ${kstStamp(peak.targetAt).slice(6)} · ${demandLevel(peak.congestionLevel, lang)}`, ja: `公表済み予報の中で最混雑：${peakDay} ${kstStamp(peak.targetAt).slice(6)} · ${demandLevel(peak.congestionLevel, lang)}` })[lang] : demandCopy.noForecast[lang];
   const unit = { ko: '명', en: 'people', zh: '人', ja: '人' }[lang];
   return <section className="current-brief area-current-brief demand-card" data-testid="area-demand-card" aria-labelledby={`${id}-title`}>
-    <header className="demand-card-head"><h2 id={`${id}-title`}>{demandAreaNames[area][lang]}</h2><span className="demand-data-state">{demandCopy[!realtime ? 'missing' : isCurrent ? 'observed' : 'previous'][lang]}</span></header>
+    <header className="demand-card-head"><h2 data-heading="section" id={`${id}-title`}><span className="heading-marker" aria-hidden="true"/>{demandAreaNames[area][lang]}</h2><span className="demand-data-state">{demandCopy[!realtime ? 'missing' : isCurrent ? 'observed' : 'previous'][lang]}</span></header>
     <div className="demand-card-body"><div className="demand-reading">
       <p className="demand-level" data-level={realtime?.congestionLevel ?? 0}>{realtime ? lang==='ko'&&realtime.congestionLabel?realtime.congestionLabel:demandLevel(realtime.congestionLevel, lang) : demandCopy.missing[lang]}</p>
       <p className="demand-metric-label">{demandCopy.latest[lang]}</p>

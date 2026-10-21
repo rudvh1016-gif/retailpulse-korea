@@ -664,7 +664,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
     <header className="tourism-desk-head">
       <div>
         <p className="tourism-desk-kicker">KORETAIL · Tourism Desk</p>
-        <h1 id="tourism-desk-title">{titleFor(lang, areaName)}</h1>
+        <h1 data-heading="page" id="tourism-desk-title"><span className="heading-marker" aria-hidden="true"/>{titleFor(lang, areaName)}</h1>
       </div>
       <span className="tourism-pilot-label">{copy.pilot}</span>
     </header>
@@ -688,7 +688,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
     {!summary ? <LiveLoadMessage loading={summary === undefined} lang={lang} /> : <>
       <section className="tourism-guide-section tourism-shift-brief" aria-labelledby="tourism-brief-title">
         <header className="tourism-section-head">
-          <h2 id="tourism-brief-title">{copy.sectionBrief}</h2>
+          <h2 data-heading="section" id="tourism-brief-title"><span className="heading-marker" aria-hidden="true"/>{copy.sectionBrief}</h2>
           <p>{copy.briefIntro}</p>
         </header>
         {brief.length
@@ -698,7 +698,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
 
       <section className="tourism-guide-section" aria-labelledby="tourism-events-title">
         <header className="tourism-section-head">
-          <h2 id="tourism-events-title">{copy.sectionGuide}</h2>
+          <h2 data-heading="section" id="tourism-events-title"><span className="heading-marker" aria-hidden="true"/>{copy.sectionGuide}</h2>
           <p>{copy.guideIntro}</p>
         </header>
         {preparedEvents.length
@@ -719,7 +719,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
 
       <section className="tourism-guide-section" aria-labelledby="tourism-subway-title">
         <header className="tourism-section-head">
-          <h2 id="tourism-subway-title">{copy.sectionTransport}</h2>
+          <h2 data-heading="section" id="tourism-subway-title"><span className="heading-marker" aria-hidden="true"/>{copy.sectionTransport}</h2>
           <p>{copy.transportIntro}</p>
         </header>
         {subway && station ? <article className="tourism-subway">
@@ -749,7 +749,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
 
       <section className="tourism-guide-section" aria-labelledby="tourism-current-title">
         <header className="tourism-section-head">
-          <h2 id="tourism-current-title">{copy.sectionCurrent}</h2>
+          <h2 data-heading="section" id="tourism-current-title"><span className="heading-marker" aria-hidden="true"/>{copy.sectionCurrent}</h2>
           <p>{copy.currentIntro}</p>
         </header>
         {block?.realtime?.freshness === "LIVE" ? <article className="tourism-current-reading">
@@ -770,19 +770,19 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
 
       <section className="tourism-guide-section" aria-labelledby="tourism-background-title">
         <header className="tourism-section-head">
-          <h2 id="tourism-background-title">{copy.sectionBackground}</h2>
+          <h2 data-heading="section" id="tourism-background-title"><span className="heading-marker" aria-hidden="true"/>{copy.sectionBackground}</h2>
           <p>{copy.backgroundIntro}</p>
         </header>
         {hasBackground ? <div className="tourism-background-list">
           {block?.foreignPresence && <article className="tourism-background-item">
-            <h3>{copy.foreignPresence}</h3>
+            <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{copy.foreignPresence}</h3>
             <p className="tourism-background-value">{numberText(block.foreignPresence.value, lang)} {copy.people}</p>
             <p className="tourism-background-period">{formatKstDateTime(block.foreignPresence.referenceAt,lang)} KST</p>{foreignPeriod && <PeriodNote period={foreignPeriod} />}
             <p className="tourism-source">{copy.foreignSource}</p>
             <p className="tourism-limit-note">{copy.foreignCaveat}</p>
           </article>}
           {hasForeignPurpose && block?.foreignPurposeMobility && <article className="tourism-background-item">
-            <h3>{copy.foreignPurpose}</h3>
+            <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{copy.foreignPurpose}</h3>
             <dl className="tourism-background-values">
               {block.foreignPurposeMobility.shopping !== null && <div>
                 <dt><Image unoptimized src="/visuals/clarity/v1/shopping-bag-256.webp" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async"/>{copy.shoppingPurpose}</dt>
@@ -798,7 +798,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
             <p className="tourism-limit-note">{copy.purposeCaveat}</p>
           </article>}
           {(arrivalBand || arrivalDayTotal !== null) && <article className="tourism-background-item">
-            <h3>{copy.airportArrival}</h3>
+            <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{copy.airportArrival}</h3>
             {arrivalBand ? <>
               <p className="tourism-background-label">{copy.airportNextBand}</p>
               <p className="tourism-background-value">{numberText(arrivalBand.expectedPassengers, lang, 0)} {copy.people}</p>
@@ -820,7 +820,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
 
     <section className="tourism-guide-section" aria-labelledby="tourism-limits-title">
       <header className="tourism-section-head">
-        <h2 id="tourism-limits-title">{copy.sectionLimits}</h2>
+        <h2 data-heading="section" id="tourism-limits-title"><span className="heading-marker" aria-hidden="true"/>{copy.sectionLimits}</h2>
         <p>{copy.limitsIntro}</p>
       </header>
       <ul className="tourism-limits">

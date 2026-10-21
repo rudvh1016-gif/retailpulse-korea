@@ -59,7 +59,7 @@ export function AirportWeather({ lang }: { lang: Lang }) {
     ja: '現在の仁川空港の観測天気を確認できません。',
   }[lang];
   return <section className="airport-detail-section airport-weather" aria-labelledby="airport-weather-title" data-testid="airport-weather" data-state={state}>
-    <div className="airport-detail-head"><h3 id="airport-weather-title">{title}</h3></div>
+    <div className="airport-detail-head"><h3 data-heading="subsection" id="airport-weather-title"><span className="heading-marker" aria-hidden="true"/>{title}</h3></div>
     <div className={styles.body} aria-live="polite">
     {!observation?<p className="airport-empty-line" role="status">{loading?t.loading:unavailable}</p>:<>
       <p className={styles.basis}>{t.ground}{!current?` · ${t.stale}`:''}</p>

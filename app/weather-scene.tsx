@@ -48,7 +48,7 @@ export function WeatherScene({ lang, forecast, source, issuedAt = [], targetAt =
     {showScene && !metricScenes && <SignalScene kind="temperature"/>}
     <div className="weather-scene-content">
       {(forecastFacts.length > 0 || guide) && <section className="weather-scene-forecast" aria-label={text(lang, '날씨 예보', 'Weather forecast', '天气预报', '天気予報')}>
-        {forecastTitle !== null && <h3>{forecastTitle ?? text(lang, '날씨 예보', 'Weather forecast', '天气预报', '天気予報')}</h3>}
+        {forecastTitle !== null && <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{forecastTitle ?? text(lang, '날씨 예보', 'Weather forecast', '天气预报', '天気予報')}</h3>}
         <ul className="weather-scene-values">{forecastFacts.map((value, index) => <li key={value}>{metricScenes && forecastKinds[index] && <WeatherMetricScene kind={forecastKinds[index]}/>}<span>{value}</span></li>)}</ul>
         <small className="weather-scene-source">{source}{issues.length > 0 && <> · {text(lang, '예보 발표', 'Forecast issued', '预报发布', '予報発表')} {issues.map(value => stamp(value, lang)).join(' · ')}</>}</small>
       </section>}

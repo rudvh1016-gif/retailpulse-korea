@@ -27,7 +27,7 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
   return <section id={airport ? 'airport-industry-guide' : 'store-industry-guide'} className="industry-section operating-guide" data-testid="industry-guide" aria-labelledby={`${id}-title`}>
     <div className="section-head"><div>
       <p className="eyebrow">KORETAIL · {text(lang, '상시 운영 참고', 'GENERAL OPERATING GUIDE', '日常运营参考', '日常運営の参考')}</p>
-      <h2 id={`${id}-title`}>{airport
+      <h2 data-heading="section" id={`${id}-title`}><span className="heading-marker" aria-hidden="true"/>{airport
         ? text(lang, '공항 매장, 이렇게 준비하세요', 'Prepare your airport store', '机场店铺准备指南', '空港店舗の準備ガイド')
         : text(lang, '우리 업종에 맞는 실행 가이드', 'Put the signals to work for your store', '适合本业态的执行指南', '業種に合った実行ガイド')}</h2>
     </div></div>
@@ -62,7 +62,7 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
           sizes="(max-width: 760px) calc(100vw - 48px), 440px" width="960" height="720" alt="" loading="lazy" decoding="async"/>
         <figcaption className="prep-note">{text(lang, '운영 공간 예시 · 실제 매장 배치가 아닙니다.', 'Example operating space, not an actual store layout.', '运营空间示意，并非实际店铺布局。', '運営空間の例です。実際の店舗配置ではありません。')}</figcaption>
       </figure>
-      <div className="operating-focus"><h3>{profile.label[lang]}</h3><p>{playbook.focus[lang]}</p></div>
+      <div className="operating-focus"><h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{profile.label[lang]}</h3><p>{playbook.focus[lang]}</p></div>
     </div>}
     {airport && <div className="operating-focus"><p>{playbook.focus[lang]}</p></div>}
     <div className="operating-priorities" key={industry}>
@@ -76,7 +76,7 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
     <details className="operating-checklist" key={`${industry}-checklist`}>
       <summary>{text(lang, '오픈 전 · 혼잡 시간 · 마감 체크리스트', 'Opening · busy period · closing checklist', '开店前·繁忙时段·打烊清单', '開店前・混雑時・閉店のチェックリスト')}</summary>
       <div className="checklist-groups">{checklistPhaseOrder.map(phase => <section className="checklist-phase" key={phase}>
-        <h3>{checklistPhaseLabels[phase][lang]}</h3>
+        <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{checklistPhaseLabels[phase][lang]}</h3>
         <ul className="checklist-rows">{profile.checklist[lang].filter(row => row[0] === phase).map(([, label, action]) => <li key={label}><strong>{label}</strong><p>{action}</p></li>)}</ul>
       </section>)}</div>
     </details>

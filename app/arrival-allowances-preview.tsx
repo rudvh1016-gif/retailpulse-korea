@@ -35,7 +35,7 @@ export default function ArrivalAllowancesPreview({scrollOnMount=false}:{scrollOn
  const complete=!!country&&visibleConditions.every(condition=>!!answers[condition.id]);
  const result=complete?country.results.find(item=>matches(item.when)):undefined;
  return <section className="arrival-allowances" id="arrival-allowances" aria-labelledby="arrival-allowances-title">
-  <div className="focus-section-heading"><div><h2 id="arrival-allowances-title">도착국 반입 면세한도</h2><p>구매 한도가 아닌, 도착지 입국 시 적용되는 기준입니다.</p></div></div>
+  <div className="focus-section-heading"><div><h2 data-heading="section" id="arrival-allowances-title"><span className="heading-marker" aria-hidden="true"/>도착국 반입 면세한도</h2><p>구매 한도가 아닌, 도착지 입국 시 적용되는 기준입니다.</p></div></div>
   <label className="arrival-filter">도착 국가·지역<select aria-label="도착 국가·지역" value={countryId} onChange={event=>{setCountryId(event.target.value);setAnswers({});}}><option value="">선택하세요</option>{data.countries.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
   {country&&<>
    {country.id==='JP'&&checks?.japan?.changedAt&&<p className="focus-source" role="status">[공지] 일본 세관 현행 안내 수치 업데이트: {japanChangeText(checks.japan)}. 확인 {checks.japan.changedAt.slice(0,10)} · 시행일은 원문에서 별도 확인하세요.</p>}

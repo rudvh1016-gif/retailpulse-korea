@@ -18,7 +18,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: only optional ex
  assert.ok(visible.includes(passengerCopy.limitation[lang]));
  assert.ok(visible.includes(passengerCopy.noSum[lang]));
  assert.match(visible,/class="site-usage-limit"/);
- assert.equal((visible.match(/<h3>/g)??[]).length,1);
+ assert.equal((visible.match(/<h3\b[^>]*>/g)??[]).length,1);
 });
 test('native disclosures need no client state, hidden content deletion or new backgrounds',()=>{
  const source=readFileSync('app/site-usage-guide.tsx','utf8');
