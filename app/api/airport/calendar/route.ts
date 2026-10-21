@@ -1,3 +1,4 @@
+import {readApprovedNoticeChecks,projectApprovedNoticeChecks} from '../../../../lib/approved-notice-runtime';
 import {getDb} from '../../../../db';
 import {projectOfficialCalendars,readOfficialCalendars} from '../../../../lib/official-calendar-runtime';
 import type {CalendarEvent} from '../../../../lib/calendar-context.mjs';
@@ -19,8 +20,10 @@ function seedEvents():CalendarEvent[]{
 }
 const manualCalendarReview={checkedOn:reviewed.checkedOn,automaticCollectionEnabled:false,coverage:reviewed.coverage};
 export async function officialCalendarResponse(db:Pick<D1Database,'prepare'>|null,now=new Date()){
- try{return Response.json({...projectOfficialCalendars(db?await readOfficialCalendars(db):[],seedEvents(),now),manualCalendarReview},{headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG,'cache-control':'public, max-age=300','x-content-type-options':'nosniff'}});}
- catch{return Response.json({...projectOfficialCalendars([],seedEvents(),now),status:'UNAVAILABLE',manualCalendarReview},{headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG,'cache-control':'no-store'}});}
+ let sourceChecks=projectApprovedNoticeChecks([],false);
+ if(db){try{sourceChecks=projectApprovedNoticeChecks(await readApprovedNoticeChecks(db));}catch{/* Notice metadata failure must not suppress last-good calendars. */}}
+ try{return Response.json({...projectOfficialCalendars(db?await readOfficialCalendars(db):[],seedEvents(),now),manualCalendarReview,sourceChecks},{headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG,'cache-control':'public, max-age=300','x-content-type-options':'nosniff'}});}
+ catch{return Response.json({...projectOfficialCalendars([],seedEvents(),now),status:'UNAVAILABLE',manualCalendarReview,sourceChecks},{headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG,'cache-control':'no-store'}});}
 }
 /** No provider calls or writes in visitor requests. */
 export async function GET(){try{return officialCalendarResponse((await getDb()).$client);}catch{return officialCalendarResponse(null);}}

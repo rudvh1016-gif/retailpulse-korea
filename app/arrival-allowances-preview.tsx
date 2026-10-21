@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {arrivalReviewDateLabel} from '../lib/arrival-review-date';
+import {arrivalReviewSentence} from '../lib/arrival-review-date';
 import snapshot from '../data/airport-focus-preview/arrival-allowances.json';
 type JapanNumbers={liquorBottles:number;liquorBottleMl:number;cigarettes:number;perfumeOunces:number};
 type JapanUpdate={values:JapanNumbers;previous?:JapanNumbers|null;updatedAt:string;changedAt:string|null;sourceUrl:string};
@@ -29,7 +29,7 @@ export default function ArrivalAllowancesPreview({scrollOnMount=false}:{scrollOn
  const original=data.countries.find(item=>item.id===countryId);
  const country=original?.id==='JP'&&checks?.japan?applyJapanValues(original,checks.japan):original;
  const check=checks?.countries.find(item=>item.id===countryId);
- const checkLabel=check?({NUMERIC_VERIFIED:'일본 주류·궐련·향수 수치 자동 확인 · 그 외 조건은 검토본 기준',SOURCE_UNCHANGED:'공식 원문 변경 없음 · 법령 전체 현행성 보장 아님',REVIEW_REQUIRED:'공식 원문 변경 확인 중 · 마지막 검토값 유지',CHECK_UNAVAILABLE:'자동 확인 불가 · 마지막 검토값 유지',BASELINE_REQUIRED:'원문 기준본 검토 필요 · 마지막 검토값 유지',STALE:'자동 확인 지연 · 마지막 검토값 유지'}[check.state]??'확인 상태 점검 중'):'자동 확인 기록 대기 · 아래 원문 확인일 기준';
+ const checkLabel=check?({NUMERIC_VERIFIED:'일본 주류·궐련·향수 수치는 자동으로 확인했어요. 그 외 조건은 마지막 검토 내용을 기준으로 보여드려요.',SOURCE_UNCHANGED:'공식 원문은 이전과 같아요. 다만 모든 법령이 최신인지 확인한 것은 아니에요.',REVIEW_REQUIRED:'공식 원문이 달라져 내용을 확인하고 있어요. 지금은 마지막 검토 내용을 보여드리니 공식 안내를 다시 확인해 주세요.',CHECK_UNAVAILABLE:'공식 자료를 다시 확인하지 못해 마지막 검토 내용을 보여드려요. 이용 전에 공식 안내를 다시 확인해 주세요.',BASELINE_REQUIRED:'자동 확인에 사용할 원문을 검토해야 해요. 지금은 마지막 검토 내용을 보여드리니 공식 안내를 다시 확인해 주세요.',STALE:'공식 자료 확인이 늦어져 마지막 검토 내용을 보여드려요. 이용 전에 공식 안내를 다시 확인해 주세요.'}[check.state]??'자료 확인 상태를 살펴보고 있어요.'):'아직 자동 확인 기록이 없어요. 아래에 표시된 날짜에 검토한 내용을 보여드려요.';
  const matches=(when:Conditions)=>Object.entries(when).every(([key,values])=>values.includes(answers[key]));
  const visibleConditions=country?.conditions.filter(condition=>!condition.when||matches(condition.when))??[];
  const complete=!!country&&visibleConditions.every(condition=>!!answers[condition.id]);
@@ -39,14 +39,14 @@ export default function ArrivalAllowancesPreview({scrollOnMount=false}:{scrollOn
   <label className="arrival-filter">도착 국가·지역<select aria-label="도착 국가·지역" value={countryId} onChange={event=>{setCountryId(event.target.value);setAnswers({});}}><option value="">선택하세요</option>{data.countries.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
   {country&&<>
    {country.id==='JP'&&checks?.japan?.changedAt&&<p className="focus-source" role="status">[공지] 일본 세관 현행 안내 수치 업데이트: {japanChangeText(checks.japan)}. 확인 {checks.japan.changedAt.slice(0,10)} · 시행일은 원문에서 별도 확인하세요.</p>}
-   <p className="arrival-scope">{country.scope}</p><p className="focus-source" role={check?.state==='REVIEW_REQUIRED'?'status':undefined}>{checkLabel}{check?` · 최근 자동 확인 ${check.lastCheckedAt.slice(0,10)}`:''}</p>
+   <p className="arrival-scope">{country.scope}</p><p className="focus-source" role={check?.state==='REVIEW_REQUIRED'?'status':undefined}>{checkLabel}{check?` · 최근 자동 확인 시도 ${check.lastCheckedAt.slice(0,10)}`:''}</p>
    <div className="arrival-filters">{visibleConditions.map(condition=><label className="arrival-filter" key={condition.id}>{condition.label}<select aria-label={condition.label} value={answers[condition.id]??''} onChange={event=>setAnswers({...answers,[condition.id]:event.target.value})}><option value="">선택하세요</option>{condition.options.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}</select></label>)}</div>
    {!complete?<p className="arrival-empty">여행자 조건을 선택하면 해당 기준을 확인할 수 있습니다.</p>:result?<div className="arrival-result" aria-live="polite"><h3>{result.label}</h3><h4>패션·명품 등 일반물품 기준</h4><dl>{result.facts.filter(fact=>!['주류','담배','향수'].includes(fact.label)).map(fact=><div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl><details className="arrival-category"><summary>화장품·향수</summary><p>화장품은 위 일반물품 기준과 적용 조건을 함께 확인하세요.</p><dl>{result.facts.filter(fact=>fact.label==='향수').map(fact=><div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl>{!result.facts.some(fact=>fact.label==='향수')&&<p>이 안내에는 향수 별도 수량을 확인한 항목이 없습니다. 세관 원문을 확인하세요.</p>}</details><details className="arrival-category"><summary>주류·담배</summary><dl>{result.facts.filter(fact=>['주류','담배'].includes(fact.label)).map(fact=><div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}</dl></details>{result.notes.length>0&&<details className="arrival-category"><summary>적용 조건·품목별 주의사항</summary><ul>{result.notes.map(note=><li key={note}>{note}</li>)}</ul></details>}</div>:<p className="arrival-empty" aria-live="polite">이 조건은 기본 한도를 그대로 적용할 수 없습니다. 아래 세관 원문에서 별도 기준을 확인하세요.</p>}
-   <small className="focus-source arrival-review-date">원문 확인 {arrivalReviewDateLabel(country)} · {country.effectiveLabel}</small>
+   <small className="focus-source arrival-review-date">{arrivalReviewSentence(country)} · {country.effectiveLabel}</small>
    <details className="arrival-source"><summary>주의사항 · 공식 근거</summary><ul>{country.notes.map(note=><li key={note}>{note}</li>)}</ul>{country.sources.map(source=><a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.label} ↗</a>)}</details>
   </>}
   <p className="arrival-disclaimer">1인 일반 여행자 참고정보입니다. 판매용·특수 여행자와 금지·제한품은 별도이며, 최종 판단은 도착지 세관이 합니다.</p>
-  <small className="focus-source">{checks?.status==='STORED'?'하루 1회 공식 원문 자동 확인 · 접근 가능한 출처부터 적용. 일본의 검증된 수치 항목만 자동 갱신하며, 조건·형식 변경은 검토 후 반영합니다. 시행일은 임의로 확정하지 않습니다.':'공식 자료 확인본 · 자동 확인 기록 대기. 마지막 원문 확인일과 국가별 확인 상태를 확인하세요.'}</small>
+  <small className="focus-source">{checks?.status==='STORED'?'하루 1회 공식 원문 자동 확인 · 접근 가능한 출처부터 적용. 일본의 검증된 수치 항목만 자동 갱신하며, 조건·형식 변경은 검토 후 반영합니다. 시행일은 임의로 확정하지 않습니다.':'아직 자동 확인 기록이 없어요. 국가를 선택하면 공식 자료를 검토한 날짜와 확인 상태를 볼 수 있어요.'}</small>
  </section>;
 }
 
