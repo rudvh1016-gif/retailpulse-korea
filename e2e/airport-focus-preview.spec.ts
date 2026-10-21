@@ -92,7 +92,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-month-values').first().locator('tbody tr').first()).toContainText('비교자료 없음');
  await expect(page.locator('.focus-trend-context[data-country="CN"] .change-rate[data-direction=down]')).toHaveCSS('color','rgb(161, 45, 63)');
  await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('국경절');
- await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('여객 증감의 원인으로 확인된 것은 아닙니다.');
+ await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('증감 원인 단정 불가');
  if(width===390){const china=page.locator('#focus-country-trends article').filter({has:page.locator('.focus-trend-context[data-country="CN"]')});await china.evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-18,behavior:'instant'}));await page.screenshot({path:testInfo.outputPath('countries-china-viewport-390.png')});const monthlyTable=china.locator('.focus-month-values');await monthlyTable.evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-90,behavior:'instant'}));await page.screenshot({path:testInfo.outputPath('countries-monthly-table-390.png')});await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));}
  await page.screenshot({path:testInfo.outputPath(`countries-${width}.png`),fullPage:true});
  await captureMobileViewports(page,testInfo,'countries',width);
