@@ -19,7 +19,7 @@ type WidgetFrame = {tag:string;widget?:Widget;target?:{widget:Widget;text:string
 function currentShillaAnchor(text:string):Widget|null {
   const context=entities(text);
   if(!context.includes('오늘의 환율')||!/[\d$]|\bUSD\b/i.test(context))return null;
-  if(/(?:내일|익일|어제|전일|tomorrow|yesterday|翌日|明日)/i.test(context))throw new RateFailure('SOURCE_DATE_MISMATCH',true);
+  if(/(?:내일|\uC775일|어제|전일|tomorrow|yesterday|翌日|明日)/i.test(context))throw new RateFailure('SOURCE_DATE_MISMATCH',true);
   // Only one literal current-day label plus one complete USD1 equation, in either order.
   // Unobserved mixed text, explicit dates, other currencies and extra numbers fail closed.
   const label='오늘의 환율',number='(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d{1,2})?';
