@@ -39,11 +39,11 @@ test('Google, Naver and OpenAI search can render only the exact new public conte
 });
 
 function storedCalendar(status:CalendarStoredRow['status']='VERIFIED',at=now.toISOString()):CalendarStoredRow[]{
- return (['JP','US'] as const).map(country=>({country,checked_at:at,last_verified_at:at,status,reason:null,semantic_hash:null,source_hash:null,
+ return (['JP','US','SG'] as const).map(country=>({country,checked_at:at,last_verified_at:at,status,reason:null,semantic_hash:null,source_hash:null,
   payload:JSON.stringify({events:[],coverage:[],sourceURL:'https://example.invalid/synthetic-calendar',verificationMethod:'OFFICIAL_STRUCTURED_SCHEMA'})}));
 }
 function calendarDb(rows:CalendarStoredRow[]){
- return {prepare(query:string){assert.match(query,/^SELECT .* LIMIT 2$/);return {async all(){return {success:true,results:rows};}};}} as unknown as Pick<D1Database,'prepare'>;
+ return {prepare(query:string){assert.match(query,/^SELECT .* LIMIT 3$/);return {async all(){return {success:true,results:rows};}};}} as unknown as Pick<D1Database,'prepare'>;
 }
 
 for(const [name,rows,status] of [
@@ -117,6 +117,6 @@ test('the two public reads remain bounded and provider-free',()=>{
   const source=readFileSync(`app${path}/route.ts`,'utf8');
   assert.doesNotMatch(source,/\bfetch\s*\(|refreshOfficialCalendars\s*\(|collectAirport/);
  }
- assert.match(readFileSync('lib/official-calendar-runtime.ts','utf8'),/FROM official_calendar_current ORDER BY country LIMIT 2/);
+ assert.match(readFileSync('lib/official-calendar-runtime.ts','utf8'),/FROM official_calendar_current ORDER BY country LIMIT 3/);
  assert.match(readFileSync('lib/airport-monthly-stats-read.ts','utf8'),/ORDER BY month DESC, operation_id LIMIT 4/);
 });
