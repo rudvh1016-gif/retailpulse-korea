@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {transform} from 'lightningcss';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {preparationEvents,preparationEventsInMonth,preparationEventsOn,preparationMonthDays,shiftPreparationMonth} from '../lib/preparation-calendar';
@@ -56,4 +57,15 @@ test('full list retains explanations and scope/check date while compact mode has
 test('arrival action preserves exact anchor and reused icon, without video, new image or unbounded motion',()=>{
  const html=renderToStaticMarkup(React.createElement(PreparationArrivalLink));assert.match(html,/href="#arrival-allowances"/);assert.match(html,/도착국 반입 면세한도 확인하기/);assert.match(html,/navigation-icon/);assert.doesNotMatch(html,/<video|<img/);
  const css=readFileSync('app/preparation-calendar.css','utf8');assert.match(css,/prefers-reduced-motion:reduce/);assert.match(css,/560ms ease-out 1/);assert.doesNotMatch(css,/infinite|transition:all/);assert.match(css,/min-width:44px;min-height:44px/);
+});
+test('compiled compact preparation glass keeps the standard blur and accessible opaque fallbacks',()=>{
+ const css=readFileSync('app/preparation-calendar.css','utf8');
+ for(const targets of [undefined,{chrome:111<<16,safari:16<<16,ios_saf:16<<16}]){
+  const compiled=transform({filename:'preparation-calendar.css',code:Buffer.from(css),minify:true,...(targets?{targets}:{})}).code.toString();
+  const normal=compiled.match(/\.focus-country-filter \.preparation-country-glass\{([^}]+)\}/)?.[1];
+  assert.ok(normal);assert.match(normal,/(?:^|;)backdrop-filter:blur\(12px\)(?:;|$)/,'Chromium needs the unprefixed property after minification');
+  if(targets)assert.match(normal,/(?:^|;)-webkit-backdrop-filter:blur\(12px\)(?:;|$)/,'older Safari keeps its prefixed fallback');
+  assert.match(compiled,/@media\s*\(prefers-reduced-transparency:reduce\),\(prefers-contrast:more\)\{\.focus-country-filter \.preparation-country-glass\{[^}]*backdrop-filter:none[^}]*background:#fff/);
+  assert.match(compiled,/@media\s*\(forced-colors:active\)\{\.focus-country-filter \.preparation-country-glass\{[^}]*backdrop-filter:none[^}]*background:Canvas[^}]*border-color:CanvasText/i);
+ }
 });
