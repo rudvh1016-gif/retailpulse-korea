@@ -5,7 +5,10 @@ import {isValidKstDay,shiftKstDay} from './kst';
 import {nextFlightMonth,previousFlightMonth} from './airport-monthly-flights';
 export type ReferenceScope='all'|'T1'|'T2';
 export interface TransferReferenceRow {terminal:string;serviceDate:string;expectedTransferPassengers:number}
-export interface PassengerReferenceMonth {month:string;start:string;end:string;expectedDays:number;completeDays:number;missingDates:string[];mean:number|null;status:'COMPLETE'|'PARTIAL'|'UNAVAILABLE'}
+/** Complete service-date forecast pairs; "observed" means data availability,
+ * not measured passenger actuals. Neither component is a flight count. */
+export interface PassengerReferenceObservedDay {date:string;departures:number;transfers:number}
+export interface PassengerReferenceMonth {month:string;start:string;end:string;expectedDays:number;completeDays:number;missingDates:string[];mean:number|null;status:'COMPLETE'|'PARTIAL'|'UNAVAILABLE';observedDays?:PassengerReferenceObservedDay[]}
 /** Same arithmetic and same completeness definition as the selected day's display.
  * A previous-month mean is withheld until every calendar day has both components.
  * Missing transfer forecasts are not zero and departure actuals cannot replace forecasts. */
@@ -13,14 +16,22 @@ export function passengerReferenceMonth(month:string,forecast:AirportForecastAgg
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)||!isValidKstDay(month+'-01'))throw new RangeError('Exact month required');
  const start=month+'-01',end=shiftKstDay(nextFlightMonth(month)+'-01',-1),days=datesBetween(start,end),missingDates:string[]=[];
  let total=0,completeDays=0;
- for(const day of days){const summary=summarizePassengerForecast(forecast.filter(row=>row.targetDate===day),day);
+ const observedDays:PassengerReferenceObservedDay[]=[];
+ for(const day of days){
+  const rows=forecast.filter(row=>row.targetDate===day&&row.direction==='departure'&&row.isAggregate===1&&(scope==='all'?['T1','T2'].includes(row.terminal):row.terminal===scope));
+  // This reference never coerces an absent/invalid band to a zero passenger count.
+  if(rows.some(row=>typeof row.expectedPassengers!=='number'||!Number.isSafeInteger(row.expectedPassengers)||row.expectedPassengers<0)){missingDates.push(day);continue;}
+  const summary=summarizePassengerForecast(rows,day);
   const hall=scope==='all'?summary.total:summary.totalByTerminal[scope];
   const coverage=scope==='all'?summary.coverage.all:summary.coverage.byTerminal[scope];
   const sum=passengerReferenceSum(hall,coverage,day,scope,transfers);
   if(sum===null){missingDates.push(day);continue;}total+=sum.total;completeDays++;
+  observedDays.push({date:day,departures:sum.hall,transfers:sum.transfer});
  }
  const complete=completeDays===days.length&&Number.isSafeInteger(total);
- return {month,start,end,expectedDays:days.length,completeDays,missingDates,mean:complete?total/days.length:null,status:complete?'COMPLETE':completeDays?'PARTIAL':'UNAVAILABLE'};
+ // Keep the month-wide mean strict. The optional dated pairs separately prove
+ // the numerator/denominator of an explicitly labelled observed-days reference.
+ return {month,start,end,expectedDays:days.length,completeDays,missingDates,mean:complete?total/days.length:null,status:complete?'COMPLETE':completeDays?'PARTIAL':'UNAVAILABLE',observedDays};
 }
 /** Two bounded indexed reads, one per existing source. No providers, writes or new collection. */
 export async function readPassengerReferenceMonth(db:Pick<D1Database,'prepare'>,month:string){

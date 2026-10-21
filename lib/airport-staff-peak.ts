@@ -43,17 +43,20 @@ export function staffDeparturePeak(day:string,flights:readonly PeakFlight[]|null
 }
 export type StaffDeparturePeak=ReturnType<typeof staffDeparturePeak>;
 
-/** Gate counts, not nearby passenger/shop crowding; retain every joint leader. */
-export function staffDepartureGateLines(peak:NonNullable<StaffDeparturePeak>):string[]{
- const number=new Intl.NumberFormat('ko-KR');
- const labels={EAST:'동편',WEST:'서편',CENTER:'중앙'};
- const lines=peak.gateBuildings.map(row=>`${row.building==='CONCOURSE'?'탑승동':row.building} ${row.zones.filter(zone=>zone.side!=='CENTER'||zone.total>0).map(zone=>{
-  if(!zone.count)return `${labels[zone.side]} 배정 확인 0편`;
-  const tied=zone.gates.length>1;
-  return `${labels[zone.side]} ${zone.gates.join('·')}번 게이트 ${tied?'각 ':''}${number.format(zone.count)}편(${tied?'공동 최다':'최다'})`;
- }).join(' / ')}.`);
- if(!lines.length)lines.push('확인된 게이트가 없어 동·서편 최다 게이트를 정하지 않았습니다.');
- const excluded=[peak.unknown.unassigned?`게이트 미배정 ${number.format(peak.unknown.unassigned)}편`:null,peak.unknown.side?`게이트 위치 미확인 ${number.format(peak.unknown.side)}편`:null,peak.unknown.building?`건물 미정 ${number.format(peak.unknown.building)}편`:null].filter(Boolean);
- if(excluded.length)lines.push(`${excluded.join(' · ')}은 위 게이트 비교에서 제외했습니다.`);
+/** Compact zone totals for this peak hour; detailed gate lists remain elsewhere. */
+export function staffDepartureGateLines(peak:NonNullable<StaffDeparturePeak>,lang:'ko'|'en'|'zh'|'ja'='ko'):string[]{
+ const number=new Intl.NumberFormat(lang);
+ const copy={
+  ko:{WEST:'서편',EAST:'동편',CENTER:'중앙',concourse:'탑승동',unknown:'미확인',excluded:'은 구역별 편수에서 제외했습니다.'},
+  en:{WEST:'West',EAST:'East',CENTER:'Centre',concourse:'Concourse',unknown:'Unverified',excluded:'; excluded from zone counts.'},
+  zh:{WEST:'西侧',EAST:'东侧',CENTER:'中央',concourse:'卫星厅',unknown:'未确认',excluded:'，未计入各区域班次。'},
+  ja:{WEST:'西側',EAST:'東側',CENTER:'中央',concourse:'搭乗棟',unknown:'未確認',excluded:'は区域別の便数から除外しています。'},
+ }[lang];
+ const countText=(count:number)=>`${number.format(count)}${lang==='en'?(count===1?' flight':' flights'):lang==='zh'?'班':lang==='ja'?'便':'편'}`;
+ const order={WEST:0,EAST:1,CENTER:2};
+ const lines=peak.gateBuildings.map(row=>`${row.building==='CONCOURSE'?copy.concourse:row.building} ${[...row.zones].sort((a,b)=>order[a.side]-order[b.side]).map(zone=>`${copy[zone.side]} ${countText(zone.total)}`).join(' · ')}.`);
+ // Preserve every unassigned/unmapped/unknown-building flight outside known zones.
+ const unknown=peak.unknown.unassigned+peak.unknown.side+peak.unknown.building;
+ if(unknown>0)lines.push(`${copy.unknown} ${countText(unknown)}${copy.excluded}`);
  return lines;
 }

@@ -151,7 +151,7 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:passengerStats}));
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
- await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
+ await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});const dialog=page.getByRole('dialog',{name:'new update!'});
  await expect(dialog).toBeVisible();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);
  await expect(dialog).toHaveCSS('background-color','rgba(255, 255, 255, 0.72)');
  await expect(dialog).toHaveCSS('backdrop-filter','blur(28px) saturate(1.1)');
@@ -240,7 +240,7 @@ for(const attempt of [1,2,3])test(`notice destinations cold load 390 attempt ${a
   await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:passengerStats}));
   await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
   await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});
-  const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});
+  const dialog=page.getByRole('dialog',{name:'new update!'});
   await expect(dialog).toBeVisible();
   if(target==='#arrival-allowances')await expect(dialog.getByRole('link',{name})).toHaveAttribute('href',/section=arrival#arrival-allowances$/);
   await dialog.getByRole('link',{name}).click();

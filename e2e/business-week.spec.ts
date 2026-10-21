@@ -89,7 +89,7 @@ test('the weekly review remains available with the removed entry and blocked sto
     Object.defineProperty(window, 'localStorage', { configurable: true, get: () => ({ getItem: deny, setItem: deny, removeItem: deny, key: deny, clear: deny, length: 0 }) });
   });
   const prep = await open(page);
-  const notice=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(notice).toBeVisible();await notice.getByRole('button',{name:'닫기',exact:true}).click();await expect(notice).not.toBeVisible();
+  const notice=page.getByRole('dialog',{name:'new update!'});await expect(notice).toBeVisible();await notice.getByRole('button',{name:'닫기',exact:true}).click();await expect(notice).not.toBeVisible();
   await expect(prep.getByTestId('feeling-log')).toHaveCount(0);
   await prep.getByTestId('weekly-review').locator('summary').first().click();
   await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.categoriesNote.ko);

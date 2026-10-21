@@ -1,0 +1,794 @@
+{
+  "Chulalongkorn 국왕 추모일": {
+    "en": "Chulalongkorn Memorial Day",
+    "zh": "朱拉隆功大帝纪念日"
+  },
+  "띠딘쥣 연휴": {
+    "en": "Thadingyut holidays",
+    "zh": "点灯节假期"
+  },
+  "공화국의 날·대체휴일": {
+    "en": "Republic Day and substitute holiday",
+    "zh": "共和国日及补休"
+  },
+  "노동절": {
+    "en": "Labour Day",
+    "zh": "劳动节"
+  },
+  "국경일": {
+    "en": "National Day",
+    "zh": "国庆日"
+  },
+  "국왕 즉위일": {
+    "en": "Coronation Day",
+    "zh": "国王加冕纪念日"
+  },
+  "공화국 기념일": {
+    "en": "Republic Day",
+    "zh": "共和国纪念日"
+  },
+  "만성절·위령의 날": {
+    "en": "All Saints’ Day and All Souls’ Day",
+    "zh": "诸圣节与追思亡者节"
+  },
+  "문화의 날": {
+    "en": "Culture Day",
+    "zh": "文化日"
+  },
+  "티하르 연휴": {
+    "en": "Tihar holidays",
+    "zh": "提哈尔节假期"
+  },
+  "디파발리": {
+    "en": "Deepavali",
+    "zh": "屠妖节"
+  },
+  "승전일·국기일 연휴": {
+    "en": "Victory Day and Flag Day holidays",
+    "zh": "胜利日与国旗日假期"
+  },
+  "디파발리 대체휴일": {
+    "en": "Deepavali substitute holiday",
+    "zh": "屠妖节补休"
+  },
+  "독립기념일": {
+    "en": "Independence Day",
+    "zh": "独立日"
+  },
+  "재향군인의 날": {
+    "en": "Veterans Day",
+    "zh": "退伍军人节"
+  },
+  "따자웅다잉 연휴": {
+    "en": "Tazaungdaing holidays",
+    "zh": "德桑岱节假期"
+  },
+  "근로감사의 날": {
+    "en": "Labour Thanksgiving Day",
+    "zh": "勤劳感谢日"
+  },
+  "물 축제 연휴": {
+    "en": "Water Festival holidays",
+    "zh": "送水节假期"
+  },
+  "베트남 문화의 날": {
+    "en": "Vietnam Culture Day",
+    "zh": "越南文化日"
+  },
+  "추수감사절": {
+    "en": "Thanksgiving Day",
+    "zh": "感恩节"
+  },
+  "공화국 선포일": {
+    "en": "Republic Proclamation Day",
+    "zh": "共和国宣告日"
+  },
+  "성 앤드루의 날": {
+    "en": "St Andrew’s Day",
+    "zh": "圣安德鲁日"
+  },
+  "국왕 탄생일·국경일·아버지의 날 대체휴일": {
+    "en": "Substitute holiday for the King’s Birthday, National Day and Father’s Day",
+    "zh": "国王诞辰、国庆日及父亲节补休"
+  },
+  "헌법의 날": {
+    "en": "Constitution Day",
+    "zh": "宪法日"
+  },
+  "국제 중립의 날": {
+    "en": "International Day of Neutrality",
+    "zh": "国际中立日"
+  },
+  "마카오 특별행정구 수립 기념일": {
+    "en": "Macao SAR Establishment Day",
+    "zh": "澳门特别行政区成立纪念日"
+  },
+  "성탄 연휴": {
+    "en": "Christmas holidays",
+    "zh": "圣诞假期"
+  },
+  "성탄 전야": {
+    "en": "Christmas Eve",
+    "zh": "平安夜"
+  },
+  "성탄절": {
+    "en": "Christmas Day",
+    "zh": "圣诞节"
+  },
+  "성탄절·다음 날": {
+    "en": "Christmas Day and the following day",
+    "zh": "圣诞节及翌日"
+  },
+  "크리스마스": {
+    "en": "Christmas",
+    "zh": "圣诞节"
+  },
+  "크리스마스 대체휴일": {
+    "en": "Christmas substitute holiday",
+    "zh": "圣诞节补休"
+  },
+  "성탄절 다음 첫 평일": {
+    "en": "First weekday after Christmas Day",
+    "zh": "圣诞节后第一个平日"
+  },
+  "박싱 데이": {
+    "en": "Boxing Day",
+    "zh": "节礼日"
+  },
+  "민족 자유·독립 회복일": {
+    "en": "National Freedom and Independence Restoration Day",
+    "zh": "民族自由与独立恢复日"
+  },
+  "세계 아제르바이잔인 연대의 날": {
+    "en": "World Azerbaijanis Solidarity Day",
+    "zh": "世界阿塞拜疆人团结日"
+  },
+  "연말 휴일": {
+    "en": "Year-end holiday",
+    "zh": "年末假日"
+  },
+  "신정": {
+    "en": "New Year’s Day",
+    "zh": "元旦"
+  },
+  "새해 첫날": {
+    "en": "New Year’s Day",
+    "zh": "元旦"
+  },
+  "신정 연휴": {
+    "en": "New Year holidays",
+    "zh": "新年假期"
+  },
+  "새해·정교회 성탄 연휴": {
+    "en": "New Year and Orthodox Christmas holidays",
+    "zh": "新年及东正教圣诞假期"
+  },
+  "새해": {
+    "en": "New Year",
+    "zh": "新年"
+  },
+  "1월 2일 휴일": {
+    "en": "January 2 holiday",
+    "zh": "1月2日假日"
+  },
+  "정교회 성탄절": {
+    "en": "Orthodox Christmas",
+    "zh": "东正教圣诞节"
+  },
+  "성인의 날": {
+    "en": "Coming of Age Day",
+    "zh": "成人日"
+  },
+  "쇼와의 날": {
+    "en": "Showa Day",
+    "zh": "昭和日"
+  },
+  "헌법기념일": {
+    "en": "Constitution Memorial Day",
+    "zh": "宪法纪念日"
+  },
+  "녹색의 날": {
+    "en": "Greenery Day",
+    "zh": "绿之日"
+  },
+  "어린이날": {
+    "en": "Children’s Day",
+    "zh": "儿童节"
+  },
+  "대체휴일": {
+    "en": "Substitute holiday",
+    "zh": "补休"
+  },
+  "바다의 날": {
+    "en": "Marine Day",
+    "zh": "海之日"
+  },
+  "산의 날": {
+    "en": "Mountain Day",
+    "zh": "山之日"
+  },
+  "경로의 날": {
+    "en": "Respect for the Aged Day",
+    "zh": "敬老日"
+  },
+  "공휴일 사이 휴일": {
+    "en": "Holiday between public holidays",
+    "zh": "两个法定假日之间的休假日"
+  },
+  "추분의 날": {
+    "en": "Autumnal Equinox Day",
+    "zh": "秋分日"
+  },
+  "스포츠의 날": {
+    "en": "Sports Day",
+    "zh": "体育日"
+  },
+  "설날 연휴": {
+    "en": "Seollal holidays",
+    "zh": "韩国春节假期"
+  },
+  "설날": {
+    "en": "Seollal",
+    "zh": "韩国春节"
+  },
+  "3·1절": {
+    "en": "March 1 Independence Movement Day",
+    "zh": "三一节"
+  },
+  "3·1절 대체공휴일": {
+    "en": "March 1 Independence Movement Day substitute holiday",
+    "zh": "三一节补休"
+  },
+  "부처님오신날": {
+    "en": "Buddha’s Birthday",
+    "zh": "佛诞日"
+  },
+  "부처님오신날 대체공휴일": {
+    "en": "Buddha’s Birthday substitute holiday",
+    "zh": "佛诞日补休"
+  },
+  "제9회 전국동시지방선거일": {
+    "en": "Ninth nationwide local election day",
+    "zh": "第九届全国地方选举日"
+  },
+  "현충일": {
+    "en": "Memorial Day",
+    "zh": "显忠日"
+  },
+  "제헌절": {
+    "en": "Constitution Day",
+    "zh": "制宪节"
+  },
+  "광복절": {
+    "en": "National Liberation Day",
+    "zh": "光复节"
+  },
+  "광복절 대체공휴일": {
+    "en": "National Liberation Day substitute holiday",
+    "zh": "光复节补休"
+  },
+  "추석 연휴": {
+    "en": "Chuseok holidays",
+    "zh": "韩国中秋节假期"
+  },
+  "추석": {
+    "en": "Chuseok",
+    "zh": "韩国中秋节"
+  },
+  "개천절": {
+    "en": "National Foundation Day",
+    "zh": "开天节"
+  },
+  "개천절 대체공휴일": {
+    "en": "National Foundation Day substitute holiday",
+    "zh": "开天节补休"
+  },
+  "한글날": {
+    "en": "Hangeul Day",
+    "zh": "韩文日"
+  },
+  "설날 대체공휴일": {
+    "en": "Seollal substitute holiday",
+    "zh": "韩国春节补休"
+  },
+  "노동절 대체공휴일": {
+    "en": "Labour Day substitute holiday",
+    "zh": "劳动节补休"
+  },
+  "제헌절 대체공휴일": {
+    "en": "Constitution Day substitute holiday",
+    "zh": "制宪节补休"
+  },
+  "한글날 대체공휴일": {
+    "en": "Hangeul Day substitute holiday",
+    "zh": "韩文日补休"
+  },
+  "성탄절 대체공휴일": {
+    "en": "Christmas Day substitute holiday",
+    "zh": "圣诞节补休"
+  },
+  "흥왕 기념일": {
+    "en": "Hung Kings Commemoration Day",
+    "zh": "雄王祭日"
+  },
+  "통일기념일": {
+    "en": "Reunification Day",
+    "zh": "统一日"
+  },
+  "중추절": {
+    "en": "Mid-Autumn Festival",
+    "zh": "中秋节"
+  },
+  "국경절": {
+    "en": "National Day",
+    "zh": "国庆节"
+  },
+  "Chulalongkorn 국왕을 추모하는 금융기관 휴일입니다": {
+    "en": "A financial-institution holiday commemorating King Chulalongkorn.",
+    "zh": "纪念朱拉隆功国王的金融机构假日。"
+  },
+  "불교 우안거의 끝을 기념하는 미얀마 등불 축제입니다": {
+    "en": "Myanmar’s festival of lights marking the end of Buddhist Lent.",
+    "zh": "庆祝佛教雨安居结束的缅甸灯节。"
+  },
+  "공화국의 날과 공식 대체휴일을 함께 표시한 일정입니다": {
+    "en": "Republic Day and its official substitute holiday shown together.",
+    "zh": "一并显示共和国日及其官方补休日期。"
+  },
+  "노동을 기념하는 전국 공휴일입니다": {
+    "en": "A nationwide public holiday celebrating labour.",
+    "zh": "纪念劳动的全国公共假日。"
+  },
+  "국가의 중요한 기념일로 지정된 휴일입니다": {
+    "en": "A holiday designated for an important national anniversary.",
+    "zh": "为国家重要纪念日设立的假日。"
+  },
+  "국왕의 즉위를 기념하는 전국 공휴일입니다": {
+    "en": "A nationwide public holiday commemorating the King’s coronation.",
+    "zh": "纪念国王加冕的全国公共假日。"
+  },
+  "공화국 수립을 기념하는 휴일입니다": {
+    "en": "A holiday commemorating the founding of the republic.",
+    "zh": "纪念共和国成立的假日。"
+  },
+  "성인을 기리고 고인을 추모하는 휴일입니다": {
+    "en": "Holidays honouring saints and remembering the deceased.",
+    "zh": "敬仰圣人及追思亡者的假日。"
+  },
+  "자유와 평화를 사랑하고 문화를 진흥하는 날입니다": {
+    "en": "A day to cherish freedom and peace and promote culture.",
+    "zh": "热爱自由与和平、促进文化发展的日子。"
+  },
+  "락슈미 푸자부터 바이티카 다음 날까지 이어지는 티하르 휴가입니다": {
+    "en": "Tihar leave runs from Lakshmi Puja through the day after Bhai Tika.",
+    "zh": "提哈尔节假期从拉克希米祭延续至兄弟节翌日。"
+  },
+  "빛이 어둠을 이기는 것을 기념하는 힌두교 축제입니다": {
+    "en": "A Hindu festival celebrating the victory of light over darkness.",
+    "zh": "庆祝光明战胜黑暗的印度教节日。"
+  },
+  "승전일과 국기일에 공식 대체휴일을 연결한 일정입니다": {
+    "en": "Victory Day and Flag Day combined with their official substitute holidays.",
+    "zh": "胜利日、国旗日与官方补休连接的日程。"
+  },
+  "디파발리 당일인 11/8(일)이 본인의 휴무일인 경우 적용되는 다음 날 공휴일입니다": {
+    "en": "The next-day public holiday applies if Deepavali on Sunday, November 8 is the person’s rest day.",
+    "zh": "仅当11月8日星期日屠妖节当天为本人的休息日时，翌日公共假日才适用。"
+  },
+  "국가의 독립을 기념하는 전국 공휴일입니다": {
+    "en": "A nationwide public holiday commemorating national independence.",
+    "zh": "纪念国家独立的全国公共假日。"
+  },
+  "군 복무자를 기리는 연방 휴일입니다": {
+    "en": "A federal holiday honouring military veterans.",
+    "zh": "向退伍军人致敬的联邦假日。"
+  },
+  "따자웅다잉을 맞아 미얀마 외교부 달력에 연속 지정된 공휴일입니다": {
+    "en": "Consecutive Tazaungdaing public holidays listed by Myanmar’s Ministry of Foreign Affairs.",
+    "zh": "缅甸外交部日历为德桑岱节连续指定的公共假日。"
+  },
+  "일의 가치를 존중하고 생산에 감사하며 서로 고마움을 나누는 날입니다": {
+    "en": "A day to honour work, give thanks for production and thank one another.",
+    "zh": "尊重劳动、感谢生产成果并互相表达谢意的日子。"
+  },
+  "물 축제를 맞아 지정한 3일의 전국 공휴일입니다": {
+    "en": "Three nationwide public holidays designated for the Water Festival.",
+    "zh": "为送水节设立的三天全国公共假日。"
+  },
+  "베트남 문화 발전을 기념하는 법정 유급휴일입니다": {
+    "en": "A statutory paid holiday celebrating the development of Vietnamese culture.",
+    "zh": "纪念越南文化发展的法定带薪假日。"
+  },
+  "추수감사절 휴일입니다": {
+    "en": "The Thanksgiving holiday.",
+    "zh": "感恩节假日。"
+  },
+  "공화국 선포를 기념하는 법정 공휴일입니다": {
+    "en": "A statutory public holiday commemorating the proclamation of the republic.",
+    "zh": "纪念共和国宣告成立的法定公共假日。"
+  },
+  "성 앤드루의 날을 기념하는 스코틀랜드 은행휴일입니다": {
+    "en": "A Scottish bank holiday commemorating St Andrew’s Day.",
+    "zh": "纪念圣安德鲁日的苏格兰银行假日。"
+  },
+  "12월 5일 기념일을 대신해 지정된 금융기관 휴일입니다": {
+    "en": "A financial-institution holiday designated in place of the December 5 anniversary.",
+    "zh": "代替12月5日纪念日设立的金融机构假日。"
+  },
+  "헌법을 기념하는 전국 공휴일입니다": {
+    "en": "A nationwide public holiday commemorating the constitution.",
+    "zh": "纪念宪法的全国公共假日。"
+  },
+  "헌법의 날에 지정된 금융기관 휴일입니다": {
+    "en": "A financial-institution holiday for Constitution Day.",
+    "zh": "宪法日的金融机构假日。"
+  },
+  "국제 중립의 날을 기념하는 비근무 공휴일입니다": {
+    "en": "A non-working public holiday commemorating the International Day of Neutrality.",
+    "zh": "纪念国际中立日的非工作公共假日。"
+  },
+  "마카오 특별행정구 수립을 기념하는 의무 공휴일입니다": {
+    "en": "A mandatory public holiday commemorating the establishment of the Macao SAR.",
+    "zh": "纪念澳门特别行政区成立的强制性公共假日。"
+  },
+  "성탄 전야와 성탄절, 다음 날을 포함해 연속 지정된 법정 공휴일입니다": {
+    "en": "Consecutive statutory public holidays covering Christmas Eve, Christmas Day and the following day.",
+    "zh": "包括平安夜、圣诞节及翌日的连续法定公共假日。"
+  },
+  "성탄절 전날에 추가로 지정된 특별 비근무일입니다": {
+    "en": "An additional special non-working day before Christmas Day.",
+    "zh": "圣诞节前一天额外指定的特别非工作日。"
+  },
+  "예수의 탄생을 기념하는 성탄절 휴일입니다": {
+    "en": "The Christmas holiday commemorating the birth of Jesus.",
+    "zh": "纪念耶稣诞生的圣诞假日。"
+  },
+  "성탄절과 그 다음 날을 함께 지정한 휴일입니다": {
+    "en": "Christmas Day and the following day designated together as holidays.",
+    "zh": "一并指定圣诞节及翌日为假日。"
+  },
+  "브루나이 공공부문은 12/25(금) 성탄절 대신 12/26(토)을 휴일로 지정했습니다": {
+    "en": "Brunei designated Saturday, December 26 as the public-sector holiday in place of Christmas on Friday, December 25.",
+    "zh": "文莱公共部门将12月26日星期六指定为假日，代替12月25日星期五圣诞节。"
+  },
+  "홍콩 공중휴일 달력의 성탄절 다음 첫 평일입니다": {
+    "en": "The first weekday after Christmas Day in Hong Kong’s general holiday calendar.",
+    "zh": "香港公众假期日历中的圣诞节后第一个平日。"
+  },
+  "성탄절 다음 날의 은행휴일을 토요일 대신 월요일에 지키는 대체휴일입니다": {
+    "en": "The bank holiday after Christmas observed on Monday instead of Saturday.",
+    "zh": "圣诞节翌日的银行假日由星期六补至星期一。"
+  },
+  "민족의 자유와 독립 회복을 기념하는 법정 공휴일입니다": {
+    "en": "A statutory public holiday commemorating the restoration of national freedom and independence.",
+    "zh": "纪念民族自由与独立恢复的法定公共假日。"
+  },
+  "세계 아제르바이잔인의 연대를 기념하는 법정 휴일입니다": {
+    "en": "A statutory holiday celebrating solidarity among Azerbaijanis worldwide.",
+    "zh": "纪念世界阿塞拜疆人团结的法定假日。"
+  },
+  "한 해의 마지막 날에 지정된 금융기관 휴일입니다": {
+    "en": "A financial-institution holiday designated on the last day of the year.",
+    "zh": "在一年最后一天设立的金融机构假日。"
+  },
+  "새해의 시작을 기념하는 휴일입니다": {
+    "en": "A holiday celebrating the start of the new year.",
+    "zh": "庆祝新年开始的假日。"
+  },
+  "새해 첫날과 다음 날이 노동법상 공휴일인 일정입니다": {
+    "en": "New Year’s Day and the following day are public holidays under labour law.",
+    "zh": "元旦及翌日均为劳动法规定的公共假日。"
+  },
+  "현행 노동법에 따른 새해 휴일 1/1~6과 정교회 성탄절 1/7을 연결한 일정입니다": {
+    "en": "New Year holidays on January 1–6 and Orthodox Christmas on January 7 under the current labour law.",
+    "zh": "依现行劳动法连接1月1日至6日新年假期及1月7日东正教圣诞节。"
+  },
+  "스코틀랜드의 새해 두 번째 날 은행휴일을 토요일 대신 월요일에 지킵니다": {
+    "en": "Scotland’s January 2 bank holiday is observed on Monday instead of Saturday.",
+    "zh": "苏格兰1月2日银行假日由星期六补至星期一。"
+  },
+  "정교회 성탄절을 기념하는 법정 공휴일입니다": {
+    "en": "A statutory public holiday commemorating Orthodox Christmas.",
+    "zh": "纪念东正教圣诞节的法定公共假日。"
+  },
+  "어른이 된 청년을 축하하고 격려하는 날로, 1월 두 번째 월요일에 지킵니다": {
+    "en": "The second Monday of January celebrates and encourages young people reaching adulthood.",
+    "zh": "于1月第二个星期一庆祝并鼓励步入成年的年轻人。"
+  },
+  "금융기관 휴일. 민간 전체 휴무가 아닙니다.": {
+    "en": "Financial-institution holiday; not a holiday for the entire private sector.",
+    "zh": "金融机构假日，并非所有民间企业均休假。"
+  },
+  "외교부 공표 공휴일": {
+    "en": "Public holiday published by the Ministry of Foreign Affairs.",
+    "zh": "外交部公布的公共假日。"
+  },
+  "전국 공휴일 및 공식 대체휴일": {
+    "en": "Nationwide public holiday and official substitute holiday.",
+    "zh": "全国公共假日及官方补休。"
+  },
+  "전국 공휴일. 대체휴일은 근무일 조건에 따라 다릅니다.": {
+    "en": "Nationwide public holiday; substitute holidays depend on working-day conditions.",
+    "zh": "全国公共假日；补休取决于工作日条件。"
+  },
+  "오스트리아 공휴일": {
+    "en": "Austrian public holiday.",
+    "zh": "奥地利公共假日。"
+  },
+  "전국 공휴일": {
+    "en": "Nationwide public holiday.",
+    "zh": "全国公共假日。"
+  },
+  "공화국 기념일. 전날 10월 28일 오후 1시부터 휴일이나 이 카드에는 온종일인 29일만 표시합니다.": {
+    "en": "Republic Day. The holiday starts at 13:00 on October 28; this card shows only the full day of October 29.",
+    "zh": "共和国纪念日。假期从10月28日13时开始，此卡片仅显示10月29日全天。"
+  },
+  "전국 특별 비근무일": {
+    "en": "Nationwide special non-working days.",
+    "zh": "全国特别非工作日。"
+  },
+  "일본 국경일·휴일": {
+    "en": "Japanese national holiday.",
+    "zh": "日本国定假日。"
+  },
+  "내무부 관보의 전국 공휴일; 정부 사무소·공공기관 적용 확인, 민간 전체 휴무는 별도 미확인": {
+    "en": "Nationwide public holiday in the Ministry of Home Affairs gazette; confirmed for government offices and public institutions, not confirmed for the entire private sector.",
+    "zh": "内政部公报的全国公共假日；已确认适用于政府办公室及公共机构，尚未另行确认民间企业全面休假。"
+  },
+  "공공·은행 휴일; 민간 상업 부문 적용은 이 기록에서 확정하지 않음": {
+    "en": "Public-sector and bank holiday; private commercial-sector coverage is not established by this record.",
+    "zh": "公共部门及银行假日；此记录未确认对私人商业部门的适用范围。"
+  },
+  "싱가포르 공휴일": {
+    "en": "Singapore public holiday.",
+    "zh": "新加坡公共假日。"
+  },
+  "전국 법정 휴일; 11/10은 5일제·6일제 모두 대체휴일": {
+    "en": "Nationwide statutory holiday; November 10 is a substitute holiday for both five- and six-day working weeks.",
+    "zh": "全国法定假日；11月10日为每周五天制及六天制的补休。"
+  },
+  "11월8일이 본인의 휴무일인 경우에만 적용": {
+    "en": "Applies only if November 8 is the person’s rest day.",
+    "zh": "仅当11月8日为本人的休息日时适用。"
+  },
+  "미국 연방공무원 기준. 주·민간 사업장 휴무는 다를 수 있습니다.": {
+    "en": "For US federal employees; state and private-sector holidays may differ.",
+    "zh": "以美国联邦雇员为准；各州及民间企业休假可能不同。"
+  },
+  "결의 28/2026/QH16 제2조에 따른 근로자 유급휴일. 2026년은 11월 24일 하루이며 주변 날짜를 연결하지 않습니다.": {
+    "en": "Paid worker holiday under Article 2 of Resolution 28/2026/QH16. In 2026, November 24 only; adjoining dates are not combined.",
+    "zh": "依28/2026/QH16号决议第2条规定的劳动者带薪假日。2026年仅为11月24日一天，不连接相邻日期。"
+  },
+  "괌 세무국 공표 휴무일. 모든 민간 직장 휴무를 뜻하지 않습니다.": {
+    "en": "Closure published by Guam’s Department of Revenue and Taxation; not a holiday for all private workplaces.",
+    "zh": "关岛税务局公布的休息日，并不表示所有私人工作场所均休假。"
+  },
+  "노동법 97.1.8 전국 공휴일": {
+    "en": "Nationwide public holiday under Labour Law Article 97.1.8.",
+    "zh": "劳动法第97.1.8条规定的全国公共假日。"
+  },
+  "북마리아나제도 상무부 달력. 민간 전체에 적용하지 않습니다.": {
+    "en": "Northern Mariana Islands Department of Commerce calendar; not applied to the entire private sector.",
+    "zh": "北马里亚纳群岛商务部日历；不扩展至全部民间企业。"
+  },
+  "하와이 주정부 기관 직원용. 연방·은행 일정은 다를 수 있습니다.": {
+    "en": "For Hawaii state agency employees; federal and bank calendars may differ.",
+    "zh": "适用于夏威夷州政府机构雇员；联邦及银行日程可能不同。"
+  },
+  "스코틀랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.": {
+    "en": "Scottish bank holiday; not paid leave at every workplace.",
+    "zh": "苏格兰银行假日；并非所有工作场所均为带薪休假。"
+  },
+  "외교부 영사국 휴무 일정. 민간 전체 휴무로 해석하지 않습니다.": {
+    "en": "Ministry of Foreign Affairs consular bureau closure; not a holiday for the entire private sector.",
+    "zh": "外交部领事局休息日程；不代表所有民间企业休假。"
+  },
+  "공공·민간 법정 휴일. 별도 휴일 이동 공고는 확인이 필요합니다.": {
+    "en": "Statutory public- and private-sector holiday; separate holiday-shift announcements need confirmation.",
+    "zh": "公共及私人部门法定假日；另行调休公告需确认。"
+  },
+  "노동법 81조 전국 비근무 공휴일": {
+    "en": "Nationwide non-working public holiday under Labour Law Article 81.",
+    "zh": "劳动法第81条规定的全国非工作公共假日。"
+  },
+  "법정 국경일": {
+    "en": "Statutory national holiday.",
+    "zh": "法定国庆假日。"
+  },
+  "마카오 의무 공휴일": {
+    "en": "Macao mandatory public holiday.",
+    "zh": "澳门强制性公共假日。"
+  },
+  "법정 공휴일": {
+    "en": "Statutory public holiday.",
+    "zh": "法定公共假日。"
+  },
+  "전국 공휴일. 유급휴무 여부는 계약에 따릅니다.": {
+    "en": "Nationwide public holiday; paid leave depends on the contract.",
+    "zh": "全国公共假日；是否带薪休假依据合同。"
+  },
+  "은행 휴일. 전 국민의 직장 휴무를 뜻하지 않습니다.": {
+    "en": "Bank holiday; not a day off at every workplace nationwide.",
+    "zh": "银行假日，并非全国所有工作场所均休息。"
+  },
+  "문서의 독일 전역 공휴일 항목 기준. 주별 휴일은 제외합니다.": {
+    "en": "Nationwide German public holidays in the document; state-specific holidays excluded.",
+    "zh": "依据文件中德国全国公共假日项目；不包括各州特有假日。"
+  },
+  "산업부 공표 휴무 일정. 민간 전체로 확장하지 않습니다.": {
+    "en": "Closure schedule published by the Ministry of Industry; not extended to the entire private sector.",
+    "zh": "工业部公布的休息日程；不扩展至所有民间企业。"
+  },
+  "공식 달력의 모든 주·연방직할구 공통 공휴일": {
+    "en": "Public holiday shared by all states and federal territories in the official calendar.",
+    "zh": "官方日历中所有州及联邦直辖区共有的公共假日。"
+  },
+  "노동법상 의무 휴일": {
+    "en": "Mandatory holiday under labour law.",
+    "zh": "劳动法规定的强制性假日。"
+  },
+  "법정 공휴일. 대체일은 업종·직장에 따라 다릅니다.": {
+    "en": "Statutory public holiday; substitute days vary by sector and workplace.",
+    "zh": "法定公共假日；补休日因行业及工作场所而异。"
+  },
+  "전국 공휴일. 선택휴무는 제외합니다.": {
+    "en": "Nationwide public holiday; optional holidays excluded.",
+    "zh": "全国公共假日；不包括自选假日。"
+  },
+  "공공·은행·상업 휴일": {
+    "en": "Public-sector, bank and commercial holiday.",
+    "zh": "公共部门、银行及商业假日。"
+  },
+  "외교부 공표 공휴일 및 공휴일에 준하는 날 중 성탄절·다음 날": {
+    "en": "Christmas Day and the following day among the Ministry of Foreign Affairs’ published public holidays and equivalent days.",
+    "zh": "外交部公布的公共假日及同等日期中的圣诞节与翌日。"
+  },
+  "취리히주 법정 공휴일. 스위스 전국 휴일로 일반화하지 않습니다.": {
+    "en": "Statutory public holiday in Zurich canton; not generalized to all of Switzerland.",
+    "zh": "苏黎世州法定公共假日；不概括为瑞士全国假日。"
+  },
+  "전국 대체 불가 법정 공휴일": {
+    "en": "Nationwide statutory holiday that cannot be substituted.",
+    "zh": "全国不可替代的法定公共假日。"
+  },
+  "잉글랜드·웨일스 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.": {
+    "en": "England and Wales bank holiday; not paid leave at every workplace.",
+    "zh": "英格兰及威尔士银行假日；并非所有工作场所均为带薪休假。"
+  },
+  "북아일랜드 은행휴일. 모든 직장의 유급휴무를 뜻하지 않습니다.": {
+    "en": "Northern Ireland bank holiday; not paid leave at every workplace.",
+    "zh": "北爱尔兰银行假日；并非所有工作场所均为带薪休假。"
+  },
+  "인도 우정청 전국 휴무 목록. 민간·주별 휴무와 다릅니다.": {
+    "en": "India Post’s nationwide closure list; differs from private-sector and state holidays.",
+    "zh": "印度邮政全国休息日列表；与私人部门及各邦假日不同。"
+  },
+  "정부 합동결정 전국 공휴일": {
+    "en": "Nationwide public holiday under a joint government decree.",
+    "zh": "政府联合决定规定的全国公共假日。"
+  },
+  "캐나다 국세청 인정 공휴일. 주·직장별 휴무와 다를 수 있습니다.": {
+    "en": "Holiday recognized by the Canada Revenue Agency; provincial and workplace holidays may differ.",
+    "zh": "加拿大税务局认可的公共假日；各省及工作场所休假可能不同。"
+  },
+  "노동법상 의무 공휴일": {
+    "en": "Mandatory public holiday under labour law.",
+    "zh": "劳动法规定的强制性公共假日。"
+  },
+  "법정 비근무일": {
+    "en": "Statutory non-working day.",
+    "zh": "法定非工作日。"
+  },
+  "전국 법정 공휴일. 알자스·모젤 추가 휴일은 제외합니다.": {
+    "en": "Nationwide statutory public holiday; additional Alsace-Moselle holidays excluded.",
+    "zh": "全国法定公共假日；不包括阿尔萨斯及摩泽尔地区额外假日。"
+  },
+  "전국 정규 공휴일": {
+    "en": "Nationwide regular public holiday.",
+    "zh": "全国常规公共假日。"
+  },
+  "공휴일법상 공휴일. 사업장별 실제 근무 여부는 별도입니다.": {
+    "en": "Public holiday under the Public Holidays Act; actual workplace schedules are separate.",
+    "zh": "《公共假日法》规定的公共假日；各工作场所实际工作安排另行确定。"
+  },
+  "노동법상 고정 공휴일. 별도 근무일 이동 일정은 포함하지 않습니다.": {
+    "en": "Fixed public holiday under labour law; separate working-day shifts excluded.",
+    "zh": "劳动法规定的固定公共假日；不包括另行工作日调整。"
+  },
+  "8개 주·준주 공통 공휴일. 나머지 주별 휴일은 합치지 않습니다.": {
+    "en": "Public holiday shared by eight states and territories; other state holidays not combined.",
+    "zh": "八个州及领地共有的公共假日；不合并其他各州假日。"
+  },
+  "홍콩 공중휴일. 고용법상 법정휴일 목록과 다를 수 있습니다.": {
+    "en": "Hong Kong general holiday; may differ from the statutory holiday list under employment law.",
+    "zh": "香港公众假期；可能与雇佣法下的法定假日列表不同。"
+  },
+  "총리실 공문상 공공부문 휴일; 민간·은행 동일 적용은 미확인": {
+    "en": "Public-sector holiday in the Prime Minister’s Office circular; equivalent private-sector and bank coverage unconfirmed.",
+    "zh": "首相署公文规定的公共部门假日；是否同样适用于私人部门及银行尚未确认。"
+  },
+  "노동법 97.1.9 전국 공휴일": {
+    "en": "Nationwide public holiday under Labour Law Article 97.1.9.",
+    "zh": "劳动法第97.1.9条规定的全国公共假日。"
+  },
+  "전국 법정 휴일": {
+    "en": "Nationwide statutory holiday.",
+    "zh": "全国法定假日。"
+  },
+  "정부 행정기관 일정. 1월 2~3일은 주말이므로 이 공휴일 날짜에 합치지 않습니다.": {
+    "en": "Government administrative-office calendar. January 2–3 are a weekend and not added to this public holiday’s dates.",
+    "zh": "政府行政机关日程。1月2日至3日为周末，不并入此公共假日日期。"
+  },
+  "노동법 제112조 유급휴일. 주말을 연휴로 임의 확장하지 않습니다.": {
+    "en": "Paid holiday under Labour Law Article 112; weekends are not arbitrarily added to the holiday.",
+    "zh": "劳动法第112条规定的带薪假日；不擅自将周末扩展为连休。"
+  },
+  "노동법상 공휴일": {
+    "en": "Public holiday under labour law.",
+    "zh": "劳动法规定的公共假日。"
+  },
+  "전국 법정 공휴일 1일. 2027년 연결 연휴·대체근무 배치는 미확인입니다.": {
+    "en": "One nationwide statutory public holiday; connected holidays and substitute working-day arrangements for 2027 are unconfirmed.",
+    "zh": "全国法定公共假日一天；2027年连休及调休工作日安排尚未确认。"
+  },
+  "노동법상 비근무일: 새해 1/1~6, 정교회 성탄 1/7": {
+    "en": "Non-working days under labour law: New Year January 1–6; Orthodox Christmas January 7.",
+    "zh": "劳动法规定的非工作日：新年1月1日至6日，东正教圣诞节1月7日。"
+  },
+  "건국기념일": {
+    "en": "National Foundation Day",
+    "zh": "建国纪念日"
+  },
+  "천황탄생일": {
+    "en": "Emperor’s Birthday",
+    "zh": "天皇诞辰"
+  },
+  "춘분": {
+    "en": "Vernal Equinox Day",
+    "zh": "春分日"
+  },
+  "추분": {
+    "en": "Autumnal Equinox Day",
+    "zh": "秋分日"
+  },
+  "법정 휴일": {
+    "en": "Statutory holiday",
+    "zh": "法定假日"
+  },
+  "마틴 루터 킹의 날": {
+    "en": "Birthday of Martin Luther King, Jr.",
+    "zh": "马丁·路德·金纪念日"
+  },
+  "워싱턴 탄생일": {
+    "en": "Washington’s Birthday",
+    "zh": "华盛顿诞辰"
+  },
+  "메모리얼 데이": {
+    "en": "Memorial Day",
+    "zh": "阵亡将士纪念日"
+  },
+  "준틴스": {
+    "en": "Juneteenth National Independence Day",
+    "zh": "六月节"
+  },
+  "콜럼버스의 날": {
+    "en": "Columbus Day",
+    "zh": "哥伦布日"
+  },
+  "적용 대상 확인 필요": {
+    "en": "Applicability requires confirmation",
+    "zh": "适用对象需确认"
+  },
+  "미국 취임식 지정 지역·해당 연방공무원": {
+    "en": "Designated US inauguration area · eligible federal employees",
+    "zh": "美国总统就职典礼指定地区 · 适用的联邦雇员"
+  },
+  "미국 연방공무원(관측 휴일)": {
+    "en": "US federal employees (observed holiday)",
+    "zh": "美国联邦雇员（实际休假日）"
+  },
+  "Inauguration Day": {
+    "en": "Inauguration Day",
+    "zh": "总统就职日"
+  }
+}
