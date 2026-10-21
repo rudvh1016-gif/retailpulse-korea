@@ -119,10 +119,34 @@ export function validDutyFreeSnapshot(input:unknown):input is DutyFreeExchangeSn
     &&row.sources.every(source=>source&&Object.hasOwn(dutyFreeSources,source.vendor)
       &&(!source.observations||(Array.isArray(source.observations)&&source.observations.length<=3)));
 }
-/** Fast reads are confined to the first 15 KST minutes and twelve attempts per mounted day. */
-export function dutyFreeReadDelay(nowMs:number,hasToday:boolean,failures:number,midnightReads:number) {
+/** Stored API only: all fast paths share twelve reads per mounted KST day. Never fetches a provider. */
+export function dutyFreeReadDelay(nowMs:number,hasToday:boolean,failures:number,midnightReads:number,missingReads=0,recoveryAllowed=true) {
+  if(midnightReads>=12||!recoveryAllowed)return 15*60_000;
   const start=nextKstExchangeMidnight(nowMs)-86_400_000;
   if(!hasToday&&nowMs-start<15*60_000&&midnightReads<12)return 60_000;
   if(failures>0&&failures<=2)return failures===1?30_000:90_000;
+  if(!hasToday&&missingReads>0&&missingReads<=3)return 30_000*2**(missingReads-1);
   return 15*60_000;
+}
+
+/** A separate read-only witness: execution success / cooldown skip is not data freshness. */
+export function dutyFreeCoverage(snapshot: DutyFreeExchangeSnapshot, nowMs: number) {
+  const rows=dutyFreeDatedPresentation(snapshot,nowMs);
+  return activeDutyFreeVendors.map(vendor=>{
+    const source=snapshot.sources.find(row=>row.vendor===vendor);
+    const observation=rows.filter(row=>row.vendor===vendor&&row.serviceDateKst<=kstExchangeDate(nowMs)!).at(-1);
+    return {vendor,todayKst:kstExchangeDate(nowMs),state:observation?.current?'CURRENT':observation?'LAST_GOOD':'MISSING',
+      serviceDateKst:observation?.serviceDateKst??null,verifiedAt:observation?.verifiedAt??null,
+      lastAttemptStatus:source?.lastAttemptStatus??'NEVER',lastAttemptAt:source?.lastAttemptAt??null,
+      errorCode:source?.errorCode??null,nextAttemptAt:source?.nextAttemptAt??null};
+  });
+}
+
+/** A server cooldown can only postpone the durable guard; it never authorizes an extra call. */
+export function dutyFreeRetryAfter(value: string | null, nowMs: number): string | null {
+  if (!value || value.length > 128 || !Number.isFinite(nowMs)) return null;
+  const text = value.trim();
+  const at = /^\d+$/.test(text) ? nowMs + Number(text) * 1000
+    : /^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), /i.test(text) ? Date.parse(text) : NaN;
+  return Number.isFinite(at) && at > nowMs && at <= 253402300799999 ? new Date(at).toISOString() : null;
 }

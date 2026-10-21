@@ -5,6 +5,7 @@ import {
   DATA_GO_KR_PAGED_POLICY,
   KMA_GRID_RETRY_POLICY,
   fetchOfficialJson,
+  fetchAirportCongestionJson,
   normalizeAirportCongestion,
   normalizeAirportCongestionT2,
   normalizeAirportFlight,
@@ -1875,7 +1876,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
     await writeSourceHealth(env.DB, sourceId, "MISSING", "DATA_GO_KR_SERVICE_KEY is not configured");
-    return { status: "NEEDS_KEY", records: 0 };
+    return { status: "NEEDS_KEY", records: 0, providerRequests: 0 };
   }
   const statements: D1PreparedStatement[] = [];
   const failures: string[] = [];
@@ -1883,6 +1884,11 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   const rowSkips: string[] = [];
   let lastRow: CanonicalAirportCongestion | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
+  let providerRequests = 0;
+  const countedFetch: typeof fetch = async (input, init) => {
+    providerRequests += 1;
+    return fetch(input, init);
+  };
   for (const terminalId of ["P01"]) {
     const url = buildDataGoKrUrl(
       "https://apis.data.go.kr/B551177/statusOfDepartureCongestion/getDepartureCongestion",
@@ -1890,7 +1896,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       { pageNo: "1", numOfRows: "50", type: "json", terminalId },
     );
     try {
-      const payload = await fetchOfficialJson(url, boundedA4Policy(DATA_GO_KR_LOW_CALL_POLICY, env));
+      const payload = await fetchAirportCongestionJson(url, { ...boundedA4Policy(DATA_GO_KR_LOW_CALL_POLICY, env), fetchImpl: countedFetch });
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
@@ -1933,12 +1939,12 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   if (failures.length === 1) {
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
-    return { status: "ERROR", records: 0, detail };
+    return { status: "ERROR", records: 0, detail, providerRequests };
   }
   const partial = failures.length > 0 || rowSkips.length > 0;
   await writeCollectorStatus(env.DB, sourceId, partial ? "PARTIAL" : "SUCCESS", detail, terminalCounts.length, written.changedRows);
   await writeSourceHealth(env.DB, sourceId, "LIVE", detail, lastRow ? { eventAt: lastRow.observedAt, retrievedAt: lastRow.retrievedAt, schemaVersion: lastRow.schemaVersion } : undefined);
-  return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail };
+  return { status: partial ? "PARTIAL" : "SUCCESS", records: written.changedRows, detail, providerRequests };
 }
 
 const A4_T2_PAGE_SIZE = 20;

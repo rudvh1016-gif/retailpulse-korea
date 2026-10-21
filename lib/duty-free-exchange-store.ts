@@ -83,16 +83,17 @@ export async function saveDutyFreeSuccess(db: Store, observation: DutyFreeObserv
   return {changedRows:results.slice(0,rows.length).reduce((sum,result)=>sum+(result.meta?.changes??0),0),leaseOwned:results.at(-1)?.meta?.changes===1};
 }
 
-export async function saveDutyFreeFailure(db: Store, vendor: DutyFreeVendor, leaseId: string, at: Date, errorCode: string, blocked: boolean) {
+export async function saveDutyFreeFailure(db: Store, vendor: DutyFreeVendor, leaseId: string, at: Date, errorCode: string, blocked: boolean, retryAfterAt: string | null = null) {
   if (!/^[A-Z0-9_]{1,64}$/.test(errorCode)) throw new Error('INVALID_ERROR_CODE');
   const hourly = blocked ? new Date(at.getTime() + DUTY_FREE_BLOCK_INTERVAL_MS).toISOString() : dutyFreeNextAttempt(at, false);
   // Throttling keeps its original hourly cooldown even when today's date is missing.
   const next = blocked || errorCode === 'HTTP_429' ? hourly : dutyFreeNextAttempt(at, true);
+  const postponed=(value:string)=>retryAfterAt&&Number.isFinite(Date.parse(retryAfterAt))&&Date.parse(retryAfterAt)>Date.parse(value)?new Date(retryAfterAt).toISOString():value;
   const result = await db.prepare(`UPDATE duty_free_exchange_attempt SET status=?, error_code=?,
     next_due_at=CASE WHEN EXISTS
       (SELECT 1 FROM duty_free_exchange_daily WHERE vendor=? AND service_date_kst=?) THEN ? ELSE ? END,
     lease_id=NULL, lease_until='' WHERE vendor=? AND lease_id=?`)
-    .bind(blocked ? 'BLOCKED' : 'ERROR', errorCode, vendor, kstExchangeDate(at.getTime()), hourly, next, vendor, leaseId).run();
+    .bind(blocked ? 'BLOCKED' : 'ERROR', errorCode, vendor, kstExchangeDate(at.getTime()), postponed(hourly), postponed(next), vendor, leaseId).run();
   if (!result.success) throw new Error('D1_FAILURE_SAVE_FAILED');
   return result.meta?.changes === 1;
 }

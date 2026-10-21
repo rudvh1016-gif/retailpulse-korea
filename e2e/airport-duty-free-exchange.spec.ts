@@ -151,3 +151,33 @@ test('blocked browser storage still reads today and retains it in memory after f
  await page.route('**/api/live/duty-free-exchange',r=>r.abort());await page.clock.runFor(15*60_000+100);
  await strip.locator('summary').click();await expect(strip.locator('[role=status]')).toBeVisible();await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
 });
+
+test('daytime missing stored data gets three short rechecks then the ordinary cadence, with no provider fetch',async({page})=>{
+ await page.clock.install({time:new Date('2026-10-08T03:00:00Z')});await page.clock.pauseAt(new Date('2026-10-08T03:00:00Z'));await fixtures(page);
+ let reads=0;const missing={...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observation:null,lastAttemptStatus:'NEVER'}))};
+ await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:missing});});
+ const providerRequests:string[]=[];page.on('request',r=>{if(/shilladfs|ssgdfs|hddfs/.test(r.url()))providerRequests.push(r.url());});
+ await page.goto('/ko/airport');await expect.poll(()=>reads).toBe(1);await expect(page.getByTestId('airport-duty-free-exchange')).toHaveAttribute('data-collection-status','NEVER');
+ for(const [delay,count] of [[30_100,2],[60_100,3],[120_100,4]]){await page.clock.runFor(delay);await expect.poll(()=>reads).toBe(count);}
+ await page.clock.runFor(180_000);expect(reads).toBe(4);expect(providerRequests).toEqual([]);
+ await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:autoSnapshot});});
+ await page.clock.runFor(15*60_000);await expect(page.getByTestId('airport-duty-free-exchange')).toHaveAttribute('data-state','VERIFIED_TODAY');
+});
+
+test('known selector block is a visible failure with its next eligibility, not an endless checking claim',async({page})=>{
+ await page.clock.install({time:new Date('2026-10-08T03:00:00Z')});await page.clock.pauseAt(new Date('2026-10-08T03:00:00Z'));await fixtures(page);
+ let reads=0;const blocked={...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,lastAttemptStatus:'BLOCKED',errorCode:'SELECTOR_UNVERIFIED',nextAttemptAt:'2026-10-09T02:30:00Z',observation:{...source.observation,serviceDateKst:'2026-10-07',verifiedAt:'2026-10-07T02:00:00Z'}}))};
+ await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:blocked});});
+ await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');
+ await expect(strip.locator('summary')).toContainText('최근 수집 실패');await expect(strip.locator('summary')).not.toContainText('확인 중');
+ await strip.locator('summary').click();await expect(strip.locator('time[datetime="2026-10-09T02:30:00Z"]')).toBeVisible();
+ await page.clock.runFor(5*60_000);expect(reads).toBe(1);
+});
+
+test('stored API Retry-After is honored across short rechecks and repeated focus',async({page})=>{
+ await page.clock.install({time:new Date('2026-10-08T03:00:00Z')});await page.clock.pauseAt(new Date('2026-10-08T03:00:00Z'));await fixtures(page);
+ let reads=0;await page.route('**/api/live/duty-free-exchange',r=>{reads++;return reads===1?r.fulfill({status:429,headers:{'retry-after':'1800'},body:'temporarily limited'}):r.fulfill({json:autoSnapshot});});
+ await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip.locator('summary')).toContainText('환율 조회 실패');
+ await page.clock.runFor(15*60_000);await page.evaluate(()=>window.dispatchEvent(new Event('focus')));expect(reads).toBe(1);
+ await page.clock.runFor(15*60_000+100);await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');expect(reads).toBe(2);
+});

@@ -282,7 +282,7 @@ Endpoints and request parameters are exactly the ones PR #369 sent. The response
 Code: `lib/incheon-airport-stats.mjs` (catalog, truth labels, request builders, classification, parsers; pure), `lib/incheon-airport-stats-client.mjs` (transport), `scripts/probe-incheon-airport-stats.mjs` (probe), tests in `tests/incheon-airport-stats.test.ts` with synthetic fixtures only. The modules are `// @ts-check` plain ESM, because the probe runs in a workflow that does not install dependencies.
 
 - **Requests.** Statistics ask only for complete KST months (the running month is refused) and at most 12 months per request. Schedule pages are 1,000 rows, at most 3 pages; the pager refuses a larger total after page 1 instead of collecting part of it. The key is read only from `DATA_GO_KR_SERVICE_KEY` and exists only inside the URL handed to `fetch`; redirects are reported, never followed. No result, issue code or log line carries the URL, the key or a body.
-- **Classification.** Codes `30` NOT_REGISTERED, `31` EXPIRED, `22` LIMIT_EXCEEDED, `23` and HTTP 429 RATE_LIMITED, and `20`/`21`/`32`/`33` or a bare HTTP 401/403 AUTH_REJECTED decide the outcome whatever the HTTP status, and never retry. `03`, or `00` with no items and a zero or absent `totalCount`, is NO_DATA: a valid empty answer that is never a zero. `10`/`11`/`12`, other 4xx and redirects are REQUEST_REJECTED. `01`/`02`/`04`/`05`/`99` and unknown codes are PROVIDER_ERROR. HTML at any status is GATEWAY_HTML. Only a client timeout, a connection failure, HTTP 5xx and a 5xx HTML page retry: default 2 attempts, hard ceiling 3. HTTP 429 deliberately does not retry here, unlike the shared policy, so these services never spend quota on retries. A malformed or unknown envelope, an XML success body, an empty body or an invalid row is SCHEMA_ERROR, and the whole response fails closed with no partial rows.
+- **Classification.** Codes `30` NOT_REGISTERED, `31` EXPIRED, `22` LIMIT_EXCEEDED, `23` and HTTP 429 RATE_LIMITED, and `20`/`21`/`32`/`33` or a bare HTTP 401/403 AUTH_REJECTED decide the outcome whatever the HTTP status, and never retry. `03`, or `00` with no items and a zero or absent `totalCount`, is NO_DATA: a valid empty answer that is never a zero. `10`/`11`/`12`, other 4xx and redirects are REQUEST_REJECTED. `01`/`02`/`04`/`05`/`99` and unknown codes are PROVIDER_ERROR. HTML at any status is GATEWAY_HTML. Only a client timeout, a connection failure, HTTP 5xx and a 5xx HTML page retry: default 2 attempts, hard ceiling 3. HTTP 429 does not retry here or in the current shared policy, so these services never spend quota on retries. A malformed or unknown envelope, an XML success body, an empty body or an invalid row is SCHEMA_ERROR, and the whole response fails closed with no partial rows.
 - **Parsing.** A missing count is null and never 0; an explicit `"0"` is 0. Counts must be non-negative integers (`"1,234"` and `"706.0"` are accepted). The provider's total and subtotal rows (`합계`, `총계`, `소계`, `계`, `전체`, `Total`) are marked `isProviderAggregate`, so consumers use the total row or its parts, never both. The provider's `passenger` total is kept as published, and a difference from arrivals + departures is reported as DRIFT. Undocumented fields are kept out of the rows and listed by name. A terminal-like name is flagged `PROVIDER_TERMINAL_FIELD_UNREVIEWED`. Missing documented fields, duplicate keys, `totalCount` ≠ items, an unreadable time band and a capped page size all make the contract `DRIFT`. Statistics carry the requested month range as their basis, because no response field is known to echo it. Schedules keep `firstdate`/`lastdate` as KST calendar dates and `st` as HH:MM. Weekday flags accept only Y/N/1/0, so any other form fails the page and names the field.
 
 ### Read-only probe (no new workflow)
@@ -348,13 +348,19 @@ authentication or scheduler classification.
 | A4-T2 | ~96/day, normally one page; max 3 pages | 3/request | 5s, 30s (+≤0.5s jitter) | 288 normally; 864 absolute bounded maximum |
 | W1 | 3 grids × 8 cycles = 24/day (both recovery windows add 0 when healthy) | 3/grid | 5s, 30s (+≤0.5s jitter) | 72 normally; 216 absolute bounded maximum with both recovery windows firing every attempt |
 
-A4 datasets remain under the project's conservative 1,000/day-class separate
-dataset budget. W1 remains far below its documented 10,000/day quota. A1's
+A4-T1's nominal scheduled-path ceiling including its one-request fresh runner
+is 480/day against the published development allowance of 1,000; this is an
+INTERNAL_ESTIMATE, not account usage. A4-T2's separate official allowance is
+unverified here. W1's documented quota is 10,000/day. A1's
 bounded paged scan, A5, and S1 keep their existing request policies. HTTP 429
+stops without retry; a fresh runner cannot bypass it. Retryable HTTP 5xx
 `Retry-After` within the 60-second wait window is honored. A longer cooldown
-stops that request with `retryDeferred=true` instead of retrying early. HTTP 400/401/403/404/422, provider
-auth codes, successful malformed JSON, schema and deterministic validation
-errors do not retry.
+stops that request with `retryDeferred=true` instead of retrying early. HTTP
+400/401/403/404/422, provider auth/quota codes, successful malformed JSON and
+deterministic validation errors do not retry. Schema failures normally do not
+retry; the sole T1 all-counts-missing exception shares its existing four-attempt
+budget, never accepts the invalid payload, and never earns a schema-triggered
+fresh runner. See `AIRPORT_T1_BOUNDED_RECHECK_2026-10-21.md`.
 
 Normal healthy provider volume is unchanged. A failed refresh never deletes
 or zeroes last-good rows; only source health and collector-run metadata record
@@ -830,7 +836,8 @@ now separate classes in `lib/source-adapters.ts` (`sourceFailureClass`,
 | `QUOTA` | data.go.kr code 22 / "quota" body | never | `ERROR` |
 | `NO_DATA` | provider resultCode 03 (NODATA_ERROR) | never | `NO_DATA` (W1) / `PARTIAL` |
 | `TIMEOUT`, `NETWORK` | client abort; connect/DNS/TLS/reset | bounded, in-process and fresh-runner | `ERROR` |
-| `HTTP` + `httpStatus=5xx` / `429` | gateway/provider unavailable; 429 honours ≤60 s Retry-After (a body naming an auth/quota code is never retried) | bounded | `ERROR` |
+| `HTTP` + `httpStatus=5xx` | gateway/provider unavailable; honors ≤60 s Retry-After, defers longer waits; auth/quota body never retried | bounded | `ERROR` |
+| `HTTP` + `httpStatus=429` | rate-limited; no retry or fresh-runner bypass | never | `ERROR` |
 
 HTTP 401/403 keep `httpStatus=` beside `AUTH`, so existing readers of
 `httpStatus=403` are unchanged. A non-2xx (or non-JSON 200) body is reduced to
