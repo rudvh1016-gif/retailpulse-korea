@@ -2949,6 +2949,9 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 .clarity-purpose-scenes { display: inline-flex; vertical-align: middle; gap: 2px; margin-right: 8px; }
 .clarity-purpose-scenes img,.tourism-background-item dt img { object-fit: contain; }
 
+/* More heading: remove the inherited empty intro height, keeping top spacing. */
+.more-view > .view-intro { min-height: 0; padding-bottom: 16px; }
+
 /* Approved release: secondary destinations remain reachable through More. */
 .more-section-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;margin-bottom:18px}
 .more-section-links :is(a,button.update-notice-trigger){display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:10px 0;border:0;border-bottom:1px solid #e5e8eb;background:transparent;color:inherit;font:inherit;text-align:left;text-decoration:none;line-height:1.5}

@@ -25,9 +25,9 @@ test('Japan and Korean summer breaks are visible separately with exact dates and
  assert.deepEqual([japan.start,japan.end],['2026-07-21','2026-08-31']);
  assert.deepEqual([korea.start,korea.end],['2026-07-28','2026-08-19']);
  assert.match(trendCalendarText(japan),/2026-08\(직전 월\).*신주쿠 구립 유치원·초등학교·중학교·특별지원학교.*해당 지역·대상에만 적용/);
- assert.match(trendCalendarText(korea),/2026-08\(직전 월\).*경기 화성 내리숲초등학교.*해당 학교에만 적용.*한국 출발지 참고/);
+ assert.match(trendCalendarText(korea),/2026-08\(직전 월\).*초등학교 방학기간 참고.*개별 학교 예시.*한국 출발지 참고/);
  const visible=html().split('<details')[0];
- for(const text of ['일본 여름방학','한국 여름방학','일본 공휴일','한국 공휴일','한국인 여객 통계가 아닙니다','원인으로 확인된 것은 아닙니다'])assert.ok(visible.includes(text),text);
+ for(const text of ['일본 여름방학','한국 여름방학','일본 공휴일','한국 공휴일','한국 일정은 출발지 기준','증감 원인 단정 불가'])assert.ok(visible.includes(text),text);
 });
 
 test('Korean public holidays accompany each supported destination with selected and adjacent month labels',()=>{
@@ -44,8 +44,8 @@ test('other countries retain explicit country names and local scope, without inv
  const breaks=china.details.filter(item=>item.country==='CN'&&item.kind==='school_break');
  assert.equal(breaks.length,2);
  for(const item of breaks)assert.equal(item.title,'중국 여름방학');
- assert.match(breaks.map(trendCalendarText).join(' '),/상하이 초·중등학교/);
- assert.match(breaks.map(trendCalendarText).join(' '),/베이징 의무교육 학교/);
+ assert.match(breaks.map(item=>trendCalendarText(item)).join(' '),/상하이 초·중등학교/);
+ assert.match(breaks.map(item=>trendCalendarText(item)).join(' '),/베이징 의무교육 학교/);
  const usa=countryTrendCalendar(events,{...query,country:'US',selectedMonth:'2026-04',actualDataMonths:['2026-04']});
  const spring=usa.details.find(item=>item.kind==='school_break')!;
  assert.equal(spring.title,'미국 봄방학');
@@ -113,7 +113,7 @@ test('annual KR reviews are withheld from frozen previews and never extrapolate 
 test('source details retain official URLs and dates without repeating full visible event summaries',()=>{
  const rendered=html(),result=countryTrendCalendar(events,query);
  for(const item of result.summary){
-  assert.equal(rendered.split(trendCalendarText(item)).length-1,1);
+  assert.equal(rendered.split(trendCalendarText(item,{compact:true})).length-1,1);
   assert.ok(rendered.includes(item.sourceURL));
   assert.ok(rendered.includes(`확인일 ${item.verifiedAt}`));
  }
@@ -129,4 +129,30 @@ test('recent-event titles include country names for public and regional holidays
  assert.ok(source.includes('최근 {calendarCountryName(country)} 일정'));
  assert.ok(!source.includes('OriginCalendarContext'));
  assert.match(source,/최근 월 비교 자료가 일부 없어[^;]+<CalendarContext row=\{row\}\/>/);
+});
+
+
+test('Chuseok shows the complete reviewed range without inventing missing or substitute days',()=>{
+ const result=countryTrendCalendar(events,query);
+ const chuseok=result.summary.find(item=>item.country==='KR'&&item.name==='추석 연휴')!;
+ assert.deepEqual([chuseok.start,chuseok.end],['2026-09-24','2026-09-26']);
+ assert.match(html().split('<details')[0],/추석 연휴 2026-09-24–2026-09-26/);
+ assert.doesNotMatch(html(),/내리숲초등학교|경기 화성/);
+ assert.match(html(),/초등학교 방학기간 참고 · 개별 학교 예시/);
+ const incomplete=countryTrendCalendar(events.filter(item=>item.start!=='2026-09-25'),query);
+ assert.equal(incomplete.summary.find(item=>item.name==='추석 연휴')!.end,'2026-09-24');
+ const substitute={...events.find(item=>item.start==='2026-09-26')!,id:'substitute-fixture',name:'추석 대체공휴일',start:'2026-09-28',end:'2026-09-28'};
+ assert.ok(countryTrendCalendar([...events,substitute],query).details.some(item=>item.name==='추석 대체공휴일'&&item.start==='2026-09-28'));
+});
+
+
+test('Chuseok grouping preserves input evidence and rejects mismatched reviews',()=>{
+ const original=JSON.stringify(events);
+ countryTrendCalendar(events,query);
+ assert.equal(JSON.stringify(events),original);
+ for(const patch of [{sourceURL:'https://www.kasa.go.kr/'},{verifiedAt:'2026-10-20'},{status:'expired'}]){
+  const altered=events.map(item=>item.start==='2026-09-25'?{...item,...patch} as CalendarEvent:item);
+  const item=countryTrendCalendar(altered,query).summary.find(item=>item.name==='추석 연휴')!;
+  assert.equal(item.end,'2026-09-24');
+ }
 });

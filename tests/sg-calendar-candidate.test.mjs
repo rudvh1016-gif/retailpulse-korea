@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {parseSingaporeCalendar} from '../lib/sg-calendar-candidate.mjs';
+const bytes=readFileSync('tests/fixtures/official-calendar/sg-20261021.json'),now='2026-10-21T05:47:41Z';
+const mutate=fn=>{const x=JSON.parse(bytes);fn(x);return Buffer.from(JSON.stringify(x));};
+test('real official full response: 38 dates, three bounded years, no invented verification',()=>{const x=parseSingaporeCalendar(bytes,now);assert.equal(x.events.length,38);assert.deepEqual(x.years,[2025,2026,2027]);assert.equal(x.verifiedAt,null);assert.equal(x.publicationEnabled,false);assert.ok(x.events.every(e=>e.status==='candidate'));assert.ok(x.events.some(e=>e.start==='2026-11-09'&&e.name==='디파발리 대체휴일'));assert.ok(x.licenceURL);});
+for(const [name,fn] of Object.entries({pagination:x=>x.result.records.pop(),schema:x=>x.result.extra=1,fields:x=>x.result.fields[0].type='date',unknown:x=>x.result.records[0].holiday='Unreviewed Holiday',weekday:x=>x.result.records[0].day='Sunday',impossible:x=>x.result.records[0].date='2020-02-30',duplicate:x=>x.result.records[1]={...x.result.records[0],_id:2},resource:x=>x.result.resource_id='other',incompleteyear:x=>{x.result.records=x.result.records.filter(r=>r.date!=='2026-12-25');x.result.total--;}}))test(`${name} requires review`,()=>assert.throws(()=>parseSingaporeCalendar(mutate(fn),now),/REVIEW_REQUIRED/));
+test('malformed, oversized and current-year-missing fail closed',()=>{for(const source of [Buffer.from('<html>Denied</html>'),Buffer.alloc(1048577)])assert.throws(()=>parseSingaporeCalendar(source,now));assert.throws(()=>parseSingaporeCalendar(bytes,'2028-01-01T00:00:00Z'),/CURRENT_YEAR_MISSING/);});
+test('KST year boundary selects already published new year without generating dates',()=>{const x=parseSingaporeCalendar(bytes,'2026-12-31T21:07:00Z');assert.deepEqual(x.years,[2026,2027]);assert.equal(x.events.length,26);});

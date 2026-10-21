@@ -20,3 +20,17 @@
 .duty-free-day-actions{display:flex;gap:16px;margin:8px 0}.duty-free-day-actions button{border:0;border-bottom:1px solid var(--line);padding:8px 0;background:transparent;color:var(--ink);font:inherit;cursor:pointer}.duty-free-day-actions button[aria-expanded=true]{border-bottom-color:var(--ink)}.duty-free-day-actions button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
 .duty-free-day-actions button{min-height:44px;touch-action:manipulation}.duty-free-day-actions button:hover{border-bottom-color:var(--ink)}.duty-free-rate-detail{max-height:calc(100dvh - 100px);overflow-y:auto;overscroll-behavior:contain}
+
+.duty-free-monthly{border-top:1px solid var(--line);margin-top:8px;padding-top:4px}
+.duty-free-monthly-toggle{min-height:44px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;padding:8px 0;text-align:left;cursor:pointer;touch-action:manipulation}
+.duty-free-monthly-toggle[aria-expanded=true]{border-bottom-color:var(--ink)}
+.duty-free-monthly-toggle:focus-visible,.duty-free-month-target:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.duty-free-monthly-chart{margin:8px 0;font:inherit;font-variant-numeric:tabular-nums}
+.duty-free-monthly-plot{position:relative}
+.duty-free-monthly-plot svg{display:block;width:100%;height:auto;overflow:visible}
+.duty-free-monthly-plot text{font:inherit;font-size:11px;fill:var(--muted)}
+.duty-free-month-target{position:absolute;top:0;bottom:0;width:15.4%;min-height:44px;transform:translateX(-50%);border:0;background:transparent;cursor:pointer;touch-action:manipulation;padding:0}
+.duty-free-month-readout{min-height:3.2em;overflow-wrap:anywhere;color:var(--ink)}
+.duty-free-monthly-chart figcaption,.duty-free-month-list{color:var(--muted);font-size:11px}
+.duty-free-rate-detail .duty-free-month-list{list-style:none;padding:0;margin:8px 0}
+.duty-free-month-list li{padding:4px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}

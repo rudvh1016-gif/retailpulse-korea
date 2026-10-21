@@ -23,3 +23,7 @@
 
 .flight-summary-area{border-bottom:1px solid var(--ink)}
 .flight-summary-area>.flight-summary{border-bottom:0;padding-bottom:8px}
+
+/* Keep the comparison date, including both parentheses, on its own compact line. */
+.flight-summary-heading{display:block;font-size:calc(1em - 1px)}
+.flight-comparison-baseline{display:block;white-space:nowrap}

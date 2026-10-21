@@ -26,7 +26,7 @@ import { formatHumanFreshness } from "../lib/current-brief";
 import { PERIOD_VOUCH_WINDOW_MS } from "../lib/source-period";
 import { buildFacilityCopyText, type CopyableFacility } from "../lib/facility-share";
 import { buildTerminalBriefings, type TerminalBriefing } from "../lib/terminal-briefing";
-import { comparisonText } from "../lib/period-comparison";
+import { comparisonTextParts } from "../lib/period-comparison";
 import {
   AirportAtAGlance,
   FlightScopeNote,
@@ -1375,6 +1375,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
   const planned = selected?.basis === 'OFFICIAL_DEPARTURE_SCHEDULE';
   const ranking = planned ? null : terminal === "all" ? summary?.airport.airlineRanking?.all : summary?.airport.airlineRanking?.byTerminal?.[terminal];
   const changes = summary?.airport.periodComparisons?.[terminal]?.[7]?.flightRecords;
+  const flightComparison = changes ? comparisonTextParts(changes, lang, 7) : null;
   const composition = summary?.airport.periodComparisons?.[terminal]?.[7]?.composition;
   const unit = { ko: "편", en: " flights", zh: "班", ja: "便" }[lang];
   const airlineLine = ranking?.airlines.slice(0, 3).map(row => `${airlineDisplayName(row, lang)}${row.iata ? ` (${row.iata})` : ""} ${row.flights}${unit}`).join(" · ");
@@ -1393,7 +1394,7 @@ export function FlightBoard({ lang, terminal, date = null }: { lang: Lang; termi
     {summary && <HolidayContext months={summary.holidays} date={summary.serviceDateKst} lang={lang} /> }
     <div className="flight-summary-area">
     {ranking && ranking.totalFlights > 0 && <div className="current-brief flight-summary">
-      <strong>{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{changes ? <> · <RateText text={comparisonText(changes, lang, 7)} lang={lang}/></> : ""}</strong>
+      <strong><span className="flight-summary-heading">{({ ko: "선택 터미널 출발 운항", en: "Departures in the selected scope", zh: "所选范围的出发航班", ja: "選択範囲の出発運航" })[lang]} {ranking.totalFlights}{unit}{flightComparison ? <> · <RateText text={flightComparison.summary} lang={lang}/><span className="flight-comparison-baseline">{flightComparison.baseline}</span></> : ""}</span></strong>
       {terminal === "all" && summary && <FlightScopeNote airport={summary.airport} lang={lang} />}
       {airlineLine && <p>{airlineLine}</p>}
       {countryLine && <p>{({ ko: "항공사 등록 국가 순위", en: "Airline registration-country ranking", zh: "航空公司注册国家排名", ja: "航空会社登録国ランキング" })[lang]} · {countryLine}</p>}

@@ -1,13 +1,14 @@
+import {parseSingaporeCalendar,SG_CALENDAR_SOURCE} from './sg-calendar-candidate.mjs';
 import {parseCalendarBytes,CALENDAR_SOURCES} from './official-calendar-parsers.mjs';
 import type {CalendarEvent} from './calendar-context.mjs';
 import {sha256} from './hash';
 import {kstDayOf} from './kst';
 import {calendarRefreshDecision} from './official-calendar-cadence.mjs';
-export type AutomaticCalendarCountry='JP'|'US';
+export type AutomaticCalendarCountry='JP'|'US'|'SG';
 export interface CalendarReplacementScope {country:string;year:number;scope:'national'|'institutional'}
 export interface CalendarSourceStatus {country:string;status:string;checkedAt:string|null;lastVerifiedAt:string|null;reason?:string}
 export interface CalendarChange {id:string;changedAt:string}
-export interface StoredCalendar {lastChange?:CalendarChange;events:CalendarEvent[];coverage:CalendarReplacementScope[];sourceURL:string;verificationMethod:'OFFICIAL_STRUCTURED_SCHEMA'}
+export interface StoredCalendar {lastChange?:CalendarChange;events:CalendarEvent[];coverage:CalendarReplacementScope[];sourceURL:string;attribution?:string;licenceURL?:string;verificationMethod:'OFFICIAL_STRUCTURED_SCHEMA'}
 export interface CalendarStoredRow {country:AutomaticCalendarCountry;payload:string|null;semantic_hash:string|null;source_hash:string|null;last_verified_at:string|null;checked_at:string;status:'VERIFIED'|'ERROR'|'REVIEW_REQUIRED';reason:string|null}
 export const CALENDAR_REFRESH_CADENCE='MONTHLY' as const;
 // One maximum-length month plus the existing 14-day failure grace.
@@ -17,6 +18,11 @@ const names:Record<string,string>={'元日':'새해 첫날','成人の日':'성�
 /** Only vetted structured official calendars can cross this boundary. School
  * pages/new source types are never promoted by a successful HTTP response. */
 export function canonicalCalendar(country:AutomaticCalendarCountry,bytes:Uint8Array,now:Date):StoredCalendar & {sourceHash:string}{
+ if(country==='SG'){
+  const parsed=parseSingaporeCalendar(bytes,now.toISOString());
+  const verifiedAt=now.toISOString().slice(0,10),reviewValidUntil=new Date(now.getTime()+CALENDAR_STALE_MS).toISOString().slice(0,10);
+  return {events:parsed.events.map(({originalName,observedAt,...event}:{originalName:string;observedAt:string;[key:string]:unknown})=>{void originalName;void observedAt;return {...event,status:'verified',verifiedAt,reviewValidUntil} as CalendarEvent;}),coverage:parsed.years.flatMap((year:number)=>(['national','institutional'] as const).map(scope=>({country,year,scope}))),sourceURL:parsed.sourceURL,sourceHash:parsed.sourceHash,attribution:parsed.attribution,licenceURL:parsed.licenceURL,verificationMethod:'OFFICIAL_STRUCTURED_SCHEMA'};
+ }
  const parsed=parseCalendarBytes(country,bytes,now.toISOString());
  const year=Number(kstDayOf(now.toISOString()).slice(0,4)),allowed=[year-1,year,year+1];
  const selected=parsed.events.filter((e:{start:string})=>allowed.includes(Number(e.start.slice(0,4))));
@@ -29,7 +35,7 @@ export function canonicalCalendar(country:AutomaticCalendarCountry,bytes:Uint8Ar
  return {events,coverage:years.map(year=>({country,year,scope:country==='JP'?'national':'institutional'})),sourceURL:CALENDAR_SOURCES[country].url,verificationMethod:'OFFICIAL_STRUCTURED_SCHEMA',sourceHash:parsed.sourceSHA256};
 }
 export async function readOfficialCalendars(db:Pick<D1Database,'prepare'>):Promise<CalendarStoredRow[]>{
- const reply=await db.prepare('SELECT country,payload,semantic_hash,source_hash,last_verified_at,checked_at,status,reason FROM official_calendar_current ORDER BY country LIMIT 2').all<CalendarStoredRow>();
+ const reply=await db.prepare('SELECT country,payload,semantic_hash,source_hash,last_verified_at,checked_at,status,reason FROM official_calendar_current ORDER BY country LIMIT 3').all<CalendarStoredRow>();
  if(!reply.success)throw Error('CALENDAR_READ_FAILED');return reply.results??[];
 }
 function semanticPayload(value:StoredCalendar){return {coverage:[...value.coverage].sort((a,b)=>a.year-b.year),sourceURL:value.sourceURL,events:value.events.map(({verifiedAt,reviewValidUntil,...e})=>{void verifiedAt;void reviewValidUntil;return e;}).sort((a,b)=>a.id.localeCompare(b.id))};}
@@ -47,7 +53,7 @@ async function latestCalendarChange(country:AutomaticCalendarCountry,before:Stor
  return oldHash===newHash?(validChange(before.lastChange,now)?before.lastChange:undefined):{id:await sha256({country,before:oldHash,after:newHash,changedAt:now.toISOString()}),changedAt:now.toISOString()};
 }
 async function fetchCalendarBytes(country:AutomaticCalendarCountry,fetchImpl:typeof fetch){
- const response=await fetchImpl(CALENDAR_SOURCES[country].url,{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{'user-agent':'KORETAIL official calendar (+https://koretaildata.com)'}});
+ const response=await fetchImpl(country==='SG'?SG_CALENDAR_SOURCE.url:CALENDAR_SOURCES[country].url,{redirect:'manual',signal:AbortSignal.timeout(15000),headers:{'user-agent':'KORETAIL official calendar (+https://koretaildata.com)'}});
  if(!response.ok)throw Error(`HTTP_${response.status}`);
  if(Number(response.headers.get('content-length')??0)>MAX_BYTES)throw Error('CALENDAR_SOURCE_TOO_LARGE');
  const reader=response.body?.getReader();if(!reader)throw Error('CALENDAR_EMPTY_BODY');const chunks:Uint8Array[]=[];let length=0;
@@ -58,7 +64,7 @@ async function fetchCalendarBytes(country:AutomaticCalendarCountry,fetchImpl:typ
  * wait seven days between attempts; no in-run retry, source discovery or AI. */
 export async function refreshOfficialCalendars(db:Pick<D1Database,'prepare'>,now=new Date(),fetchImpl:typeof fetch=fetch){
  const previous=new Map((await readOfficialCalendars(db)).map(row=>[row.country,row]));const results=[];
- for(const country of ['JP','US'] as const){const before=previous.get(country),decision=calendarRefreshDecision(before,now);
+ for(const country of ['JP','US','SG'] as const){const before=previous.get(country),decision=calendarRefreshDecision(before,now);
   if(decision!=='DUE'){results.push({country,status:decision,providerRequests:0,changedRows:0});continue;}
   let requests=0;
   try{requests++;const value=canonicalCalendar(country,await fetchCalendarBytes(country,fetchImpl),now);const hash=await sha256(semanticPayload(value));const {sourceHash,...payload}=value;
@@ -73,24 +79,24 @@ export async function refreshOfficialCalendars(db:Pick<D1Database,'prepare'>,now
    const reply=await db.prepare(`INSERT INTO official_calendar_current(country,checked_at,status,reason) VALUES(?,?,?,?) ON CONFLICT(country) DO UPDATE SET checked_at=excluded.checked_at,status=excluded.status,reason=excluded.reason WHERE excluded.checked_at>official_calendar_current.checked_at`).bind(country,now.toISOString(),status,reason).run();
    if(!reply.success)throw Error('CALENDAR_STATUS_WRITE_FAILED');results.push({country,status,providerRequests:requests,changedRows:0,lastGoodPreserved:Boolean(before?.payload),reason});}
  }
- return {results,aiCalls:0,maximumProviderRequests:2};
+ return {results,aiCalls:0,maximumProviderRequests:3};
 }
 /** Each complete official year replaces only its own scope. Missing source
  * never means no holidays; regional schools/manual countries are preserved. */
 export function projectOfficialCalendars(rows:CalendarStoredRow[],seed:CalendarEvent[],now=new Date()){
  let events=seed;const scopes:CalendarReplacementScope[]=[];const sources:CalendarSourceStatus[]=[];const changes:Array<CalendarChange & {country:AutomaticCalendarCountry}>=[];
- for(const country of ['JP','US'] as const){const row=rows.find(row=>row.country===country);const at=row?.last_verified_at?Date.parse(row.last_verified_at):NaN;const age=now.getTime()-at;
+ for(const country of ['JP','US','SG'] as const){const row=rows.find(row=>row.country===country);const at=row?.last_verified_at?Date.parse(row.last_verified_at):NaN;const age=now.getTime()-at;
   const usable=Number.isFinite(at)&&age>=0&&age<=CALENDAR_STALE_MS;
   sources.push({country,status:!row?'NOT_COLLECTED':!usable&&row.payload?'STALE':row.status,checkedAt:row?.checked_at??null,lastVerifiedAt:row?.last_verified_at??null,...(row?.reason?{reason:row.reason}:{})});
   if(!row?.payload)continue;
   try{const value=JSON.parse(row.payload) as StoredCalendar;if(!Array.isArray(value.events)||!Array.isArray(value.coverage)||value.events.length>100||value.verificationMethod!=='OFFICIAL_STRUCTURED_SCHEMA')continue;
    if(usable&&row.status==='VERIFIED'&&validChange(value.lastChange,now)&&Date.parse(value.lastChange!.changedAt)<=at)changes.push({...value.lastChange!,country});
-   const coverage=value.coverage.filter(scope=>scope.country===country&&Number.isInteger(scope.year)&&scope.scope===(country==='JP'?'national':'institutional'));
+   const coverage=value.coverage.filter(scope=>scope.country===country&&Number.isInteger(scope.year)&&(country==='SG'?['national','institutional'].includes(scope.scope):scope.scope===(country==='US'?'institutional':'national')));
    // Even stale successful replacement suppresses superseded static dates.
    events=events.filter(event=>!coverage.some(scope=>event.country===scope.country&&event.kind==='public_holiday'&&event.scope===scope.scope&&Number(event.start.slice(0,4))===scope.year));scopes.push(...coverage);
    const checkedDate=row.last_verified_at!.slice(0,10),until=new Date(at+CALENDAR_STALE_MS).toISOString().slice(0,10);
    events=[...events,...value.events.map(event=>({...event,status:usable?'verified' as const:'expired' as const,verifiedAt:checkedDate,reviewValidUntil:until}))];
   }catch{/* Invalid persisted data cannot replace the reviewed fallback. */}
  }
- return {status:sources.every(source=>source.status==='VERIFIED')?'VERIFIED':'PARTIAL',events,changes,calendarReplacementScopes:scopes,sources,cadence:CALENDAR_REFRESH_CADENCE,cadenceHours:null,eligibilityCheck:'DAILY_STORED_METADATA',retryCooldownDays:7,timeZone:'Asia/Seoul',staleAfterDays:45,checkedAt:sources.flatMap(source=>source.checkedAt?[source.checkedAt]:[]).sort().at(-1)??null,limitations:['한국은 기존 KASI 수집 상태에 따릅니다.','중국·기타 국가와 지역별 방학은 검토된 일정이며 자동 신규 반영 대상이 아닙니다.']};
+ return {status:sources.every(source=>source.status==='VERIFIED')?'VERIFIED':'PARTIAL',events,changes,calendarReplacementScopes:scopes,sources,cadence:CALENDAR_REFRESH_CADENCE,cadenceHours:null,eligibilityCheck:'DAILY_STORED_METADATA',retryCooldownDays:7,timeZone:'Asia/Seoul',staleAfterDays:45,checkedAt:sources.flatMap(source=>source.checkedAt?[source.checkedAt]:[]).sort().at(-1)??null,limitations:['한국은 기존 KASI 수집 상태에 따릅니다.','중국·싱가포르 외 기타 국가와 지역별 방학은 검토된 일정이며 자동 신규 반영 대상이 아닙니다.']};
 }
