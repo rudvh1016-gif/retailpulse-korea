@@ -28,7 +28,7 @@ export function rangeChange(currentMin: unknown, currentMax: unknown, baselineMi
  * change". `(+0.04).toFixed(1)` is "+0.0", which tells a reader the count held
  * steady when one more person was actually counted. Below the resolution the
  * sign is still known, so the bound is printed instead of a rounded zero:
- * `<+0.1%` and `△<0.1%` say "moved, by less than a tenth of a percent".
+ * `+<0.1%` and `▲ <0.1%` say "moved, by less than a tenth of a percent".
  * Exactly zero keeps "0%", because that one genuinely is no change.
  */
 export function comparisonValue(change: RangeChange): string {

@@ -1181,7 +1181,7 @@ test("Tourism Desk retains six guide sections and evidence-backed subway compari
   const briefLines = desk.locator(".tourism-shift-brief .tourism-brief-line");
   await expect(briefLines).toHaveCount(5);
   await expect(briefLines.nth(0)).toContainText("현재 명동");
-  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 ▲ +12.4%");
+  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 +12.4%");
 
   const comparisons = desk.locator(".tourism-subway-comparisons li");
   await expect(comparisons).toHaveCount(4);

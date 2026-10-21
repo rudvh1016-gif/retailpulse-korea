@@ -41,7 +41,7 @@
 .update-notice[data-airport-focus=true] .update-notice-items section{border-color:#e7ecf1}
 @media(max-width:700px){.focus-report{margin-block:20px 16px;padding-left:0}.focus-report-lines{gap:14px}.focus-report-lines p{font-size:13px}.focus-report-lines small{font-size:11px!important}.focus-source{font-size:11px!important}}
 /* A static, low-contrast silver canvas; no moving effect and no blur behind data. */
-.airport-focus-shell{background:linear-gradient(145deg,#fafbfd 0%,#f0f3f6 52%,#f8fafb 100%)}
+.airport-focus-shell{background:#fff}
 .airport-focus-shell .glance-preview,.airport-focus-shell .focus-detail{background:#fff}
 .focus-header{background:rgba(255,255,255,.66);border-bottom-color:rgba(211,220,229,.65)}
 .airport-focus-shell .focus-line-chart{background:#fff}

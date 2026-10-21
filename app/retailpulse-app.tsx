@@ -1081,6 +1081,8 @@ function MoreView({
         </div>
       </div>
 
+      <p className="truth-note" data-testid="change-reading-guide">{localText(lang, { ko: "수치 읽는 법: 파란색 +는 증가, 빨간색 ▲는 감소입니다. 비교 기간과 단위를 함께 확인하세요.", en: "Reading changes: blue + means increase; red ▲ means decrease. Check the comparison period and unit together.", zh: "数值读法：蓝色 + 表示增加，红色 ▲ 表示减少。请同时确认比较时段和单位。", ja: "数値の読み方：青の + は増加、赤の ▲ は減少です。比較期間と単位も確認してください。" })}</p>
+
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
