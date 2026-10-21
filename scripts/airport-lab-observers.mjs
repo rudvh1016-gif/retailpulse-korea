@@ -103,5 +103,6 @@ export function collectAirportLabMeasurement() {
     } : null,
     overflow: document.documentElement.scrollWidth > innerWidth,
     hydrated: document.querySelector('.app')?.getAttribute('data-hydrated') === 'true',
+    noticeOpen: Boolean(document.querySelector('dialog.update-notice[open]')),
   };
 }

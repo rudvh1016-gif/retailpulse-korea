@@ -181,7 +181,7 @@ jobs:
           server_pid=$!
           trap 'kill -- -"$server_pid" 2>/dev/null || true' EXIT
           for i in $(seq 1 60); do curl -fsS http://127.0.0.1:4174/ko -o /dev/null && break || sleep 1; done
-          node scripts/measure-airport-focus-lab.mjs http://127.0.0.1:4174/ko "$PWD/airport-performance/before.json" BEFORE
+          node scripts/measure-airport-focus-lab.mjs http://127.0.0.1:4174/ko "$PWD/airport-performance/before.json" BEFORE "$PWD/.benchmark-main/scripts/update-notice-test-state.mjs"
       - name: Build and measure candidate without deployment
         run: |
           NEXT_PUBLIC_SITE_ORIGIN=http://127.0.0.1:4173 npm run build

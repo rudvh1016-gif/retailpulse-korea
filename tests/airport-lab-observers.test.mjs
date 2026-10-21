@@ -84,7 +84,7 @@ test('measurement strips query, fragment and URL credentials and caps timing det
         : [{ transferSize: 1000, responseStart: 12, responseEnd: 15, domContentLoadedEventEnd: 20, loadEventEnd: 25 }],
       getEntriesByName: () => [{ startTime: 17 }],
     },
-    document: { documentElement: { scrollWidth: 390 }, querySelector: () => ({ getAttribute: () => 'true' }) },
+    document: { documentElement: { scrollWidth: 390 }, querySelector: selector => selector === '.app' ? { getAttribute: () => 'true' } : null },
     innerWidth: 390,
   };
   const report = runInNewContext(`(${collectAirportLabMeasurement.toString()})()`, context);
@@ -99,5 +99,9 @@ test('measurement strips query, fragment and URL credentials and caps timing det
   assert.equal(report.fcp, 17);
   assert.equal(report.hydrated, true);
   assert.equal(report.overflow, false);
+  assert.equal(report.noticeOpen, false);
+  context.document.querySelector = () => ({ getAttribute: () => 'true' });
+  const openNotice = runInNewContext(`(${collectAirportLabMeasurement.toString()})()`, context);
+  assert.equal(openNotice.noticeOpen, true);
   assert.doesNotMatch(JSON.stringify(report), /password|secret|hidden|fragment|credential|private/);
 });
