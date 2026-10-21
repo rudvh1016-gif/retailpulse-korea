@@ -34,3 +34,7 @@
 .duty-free-monthly-chart figcaption,.duty-free-month-list{color:var(--muted);font-size:11px}
 .duty-free-rate-detail .duty-free-month-list{list-style:none;padding:0;margin:8px 0}
 .duty-free-month-list li{padding:4px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+
+.duty-free-archive>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;touch-action:manipulation}
+.duty-free-archive>summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.duty-free-archive a{display:inline-flex;align-items:center;min-height:44px;touch-action:manipulation;overflow-wrap:anywhere;max-width:100%}
