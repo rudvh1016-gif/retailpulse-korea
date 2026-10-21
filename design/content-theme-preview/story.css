@@ -1,0 +1,18 @@
+/* Original preview CSS: Story-inspired airy, light-weight spotlight sections.
+   Existing imagery/content stays intact; no demo assets or hidden-on-load animation. */
+html[data-content-theme="story"] .app .site-header{background:#fff;border-bottom:1px solid #dedede;box-shadow:none;backdrop-filter:none}
+html[data-content-theme="story"] .app .topbar{min-height:80px;max-width:1200px;margin-inline:auto}
+html[data-content-theme="story"] .app .brand{font-weight:400;letter-spacing:.03em}
+html[data-content-theme="story"] .app main{max-width:1200px;margin-inline:auto}
+html[data-content-theme="story"] .app .airport-focus-shell{max-width:1200px}
+html[data-content-theme="story"] .app .glance-heading{padding-block:46px 30px;text-align:left}
+html[data-content-theme="story"] .app :is(.glance-heading h1,.focus-detail>h1){font-size:48px;line-height:1.2;font-weight:300;letter-spacing:-.045em}
+html[data-content-theme="story"] .app .focus-detail>h1{padding-top:30px}
+html[data-content-theme="story"] .app .focus-report{background:#fff;border:0;border-top:1px solid #d2d2d2;border-bottom:1px solid #d2d2d2;border-radius:0;box-shadow:none;padding:28px 0;margin-block:20px 32px}
+html[data-content-theme="story"] .app :is(.focus-section-heading h2,.glance-workday-heading){font-size:28px!important;line-height:1.3;font-weight:300;letter-spacing:-.035em}
+html[data-content-theme="story"] .app .focus-forward{gap:48px}
+html[data-content-theme="story"] .app .focus-trend-grid{gap:32px}
+html[data-content-theme="story"] .app .focus-trend-top h3{font-size:20px;font-weight:400}
+html[data-content-theme="story"] .app :is(.focus-report-lines p,.focus-preparation-brief p){line-height:1.85}
+html[data-content-theme="story"] .app nav.bottom-nav{background:#fff;border-top:1px solid #dedede;border-radius:0;box-shadow:none}
+@media(min-width:1000px){html[data-content-theme="story"] .app .glance-heading h1{font-size:64px}html[data-content-theme="story"] .app .focus-report{padding:42px 0}html[data-content-theme="story"] .app .focus-report-lines{column-gap:56px}html[data-content-theme="story"] .app .focus-forward{gap:64px}}

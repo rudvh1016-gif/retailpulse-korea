@@ -1,0 +1,19 @@
+/* Original preview CSS: Casper-inspired publication masthead and responsive feed.
+   No excerpts, line clamps, omitted cards or transplanted demo photographs. */
+html[data-content-theme="casper"] .app .site-header{background:#fff;border-bottom:1px solid #e5e7eb;box-shadow:none;backdrop-filter:none}
+html[data-content-theme="casper"] .app .topbar{max-width:1200px;margin-inline:auto;min-height:88px}
+html[data-content-theme="casper"] .app .brand{font-weight:800;letter-spacing:-.045em}
+html[data-content-theme="casper"] .app main{max-width:1200px;margin-inline:auto}
+html[data-content-theme="casper"] .app .airport-focus-shell{max-width:1200px}
+html[data-content-theme="casper"] .app .glance-heading{padding-block:54px 38px;text-align:center}
+html[data-content-theme="casper"] .app :is(.glance-heading h1,.focus-detail>h1){font-size:44px;line-height:1.12;font-weight:800;letter-spacing:-.05em}
+html[data-content-theme="casper"] .app .focus-detail>h1{text-align:center;padding-block:48px 18px}
+html[data-content-theme="casper"] .app .focus-lead{text-align:center;margin-bottom:42px}
+html[data-content-theme="casper"] .app .focus-report{background:#fff;border:0;border-top:2px solid #15171a;border-radius:0;box-shadow:none;padding:24px 0}
+html[data-content-theme="casper"] .app .focus-trend-grid{gap:36px 28px}
+html[data-content-theme="casper"] .app .focus-trend-grid>article{padding-block:22px;border-top:1px solid #e5e7eb}
+html[data-content-theme="casper"] .app .focus-trend-top h3{font-size:22px;font-weight:800;letter-spacing:-.025em}
+html[data-content-theme="casper"] .app :is(.focus-section-heading h2,.glance-workday-heading){font-size:26px!important;font-weight:800;letter-spacing:-.035em}
+html[data-content-theme="casper"] .app .focus-forward{gap:44px}
+html[data-content-theme="casper"] .app nav.bottom-nav{background:#fff;border-top:1px solid #e5e7eb;border-radius:0;box-shadow:none}
+@media(min-width:1000px){html[data-content-theme="casper"] .app .glance-heading h1{font-size:60px}html[data-content-theme="casper"] .app .glance-heading{padding-block:84px 60px}}

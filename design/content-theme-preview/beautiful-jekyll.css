@@ -1,0 +1,17 @@
+/* Original preview CSS, informed by Beautiful Jekyll's centered editorial hierarchy.
+   Not a Jekyll port. No original content, controls or images are removed. */
+html[data-content-theme="beautiful-jekyll"] .app .site-header{background:#eaeaea;border-bottom:1px solid #ddd;box-shadow:none;backdrop-filter:none}
+html[data-content-theme="beautiful-jekyll"] .app .topbar{max-width:1120px;margin-inline:auto;min-height:76px}
+html[data-content-theme="beautiful-jekyll"] .app .brand{font-weight:800;letter-spacing:-.025em}
+html[data-content-theme="beautiful-jekyll"] .app .top-nav a{font-weight:800;letter-spacing:.04em}
+html[data-content-theme="beautiful-jekyll"] .app main{max-width:960px;margin-inline:auto}
+html[data-content-theme="beautiful-jekyll"] .app :is(.glance-heading,.focus-detail>h1,.more-view>h1){text-align:center;padding-block:38px 26px}
+html[data-content-theme="beautiful-jekyll"] .app :is(.glance-heading h1,.focus-detail>h1,.more-view>h1){font-size:42px;font-weight:800;line-height:1.2;letter-spacing:-.035em}
+html[data-content-theme="beautiful-jekyll"] .app .glance-heading{border-bottom:4px solid #404040;margin-bottom:24px}
+html[data-content-theme="beautiful-jekyll"] .app .focus-report{background:#fff;border:0;border-radius:0;box-shadow:none;padding:26px 0;border-bottom:1px solid #ddd}
+html[data-content-theme="beautiful-jekyll"] .app :is(.focus-report-lines p,.focus-preparation-brief p){line-height:1.85}
+html[data-content-theme="beautiful-jekyll"] .app .focus-forward{gap:36px}
+html[data-content-theme="beautiful-jekyll"] .app :is(.focus-section-heading h2,.glance-workday-heading){font-size:23px!important;font-weight:800}
+html[data-content-theme="beautiful-jekyll"] .app .focus-trend-grid{gap:28px}
+html[data-content-theme="beautiful-jekyll"] .app nav.bottom-nav{background:#eaeaea;border-top:1px solid #ddd;border-radius:0;box-shadow:none}
+@media(min-width:1000px){html[data-content-theme="beautiful-jekyll"] .app :is(.glance-heading h1,.focus-detail>h1){font-size:64px}}
