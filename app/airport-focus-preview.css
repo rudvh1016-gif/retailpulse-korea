@@ -138,3 +138,13 @@
 .airport-focus-shell .focus-country-jump + .airport-top-reference{border-top:0}
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.airport-focus-shell .focus-country-jump{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}}
 @media(forced-colors:active){.airport-focus-shell .focus-country-jump{background:Canvas;border-color:CanvasText;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}}
+
+/* Upcoming dates: country/event heading, civil dates, then optional evidence. */
+.focus-preparation-brief .focus-preparation-events{font-size:var(--type-body);line-height:1.6;margin:0 0 5px}
+.focus-preparation-brief .focus-preparation-event+.focus-preparation-event{margin-top:12px}
+.focus-preparation-brief .focus-preparation-event h4{font:inherit;font-weight:var(--weight-strong);margin:0}
+.focus-preparation-brief .focus-event-dates{overflow-wrap:anywhere}
+.focus-preparation-brief .focus-event-timing{display:block}
+.focus-preparation-brief .focus-event-details{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.focus-preparation-brief .focus-event-details summary{cursor:pointer;padding:10px 0;min-height:44px;box-sizing:border-box;width:fit-content}
+.focus-preparation-brief .focus-event-details summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
