@@ -101,6 +101,40 @@ jobs:
           if-no-files-found: ignore
 
 
+  country-tooltip-chromium-webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
+      PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+      RPK_DEPLOYMENT_STAGE: staging
+      NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: Install official Chromium and WebKit for the bounded route probe
+        run: npx playwright install --with-deps chromium webkit
+      - name: Country-route native hover and touch checks
+        run: npx playwright test --config playwright.country-tooltip.config.ts
+      - name: Save country-route engine evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: country-tooltip-engines
+          path: country-tooltip-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+
   airport-focus-preview:
     if: github.head_ref == 'preview/airport-focus-review' || github.ref_name == 'preview/airport-focus-review'
     runs-on: ubuntu-latest
