@@ -123,3 +123,7 @@
 /* Owner-requested published-month label, bound to the returned data month. */
 .focus-country-brief .focus-country-reference-month{margin:8px 0;font-size:17px;line-height:1.5;color:var(--ink,#24272c)}
 .focus-country-brief .focus-country-reference-month strong{font-weight:700}
+
+/* Keep each civil date and its smaller weekday together; ranges may wrap between dates. */
+.focus-event-date{white-space:nowrap}
+.focus-event-date .focus-event-weekday{font-size:11px}

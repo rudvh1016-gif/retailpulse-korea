@@ -15,3 +15,14 @@ test('unavailable automation keeps the reviewed snapshot with an honest pending 
  await page.getByLabel('도착 국가·지역',{exact:true}).selectOption('JP');await page.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await page.getByLabel('나이',{exact:true}).selectOption('adult');
  const section=page.locator('#arrival-allowances');await expect(section).toContainText('760mL 기준 3병');await expect(section).toContainText('자동 확인 기록 대기');await expect(section).not.toContainText('[공지]');
 });
+
+test('small manual review date remains distinct from newer collection attempts and missing evidence',async({page})=>{
+ await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[{id:'JP',state:'SOURCE_UNCHANGED',lastCheckedAt:'2026-10-22T00:00:00Z',nextCheckAt:'2026-10-23T00:00:00Z'}]}}));
+ await page.goto('/ko/airport-prepare',{waitUntil:'domcontentloaded'});
+ const dialog=page.getByRole('dialog');if(await dialog.isVisible())await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+ for(const [id,date] of [['CN','2026-10-21'],['VN','2026-10-21'],['TH','2026-10-21'],['JP','2026-10-20'],['PH','미확인 · 검토 필요'],['MY','미확인 · 검토 필요']]){
+  await page.getByLabel('도착 국가·지역',{exact:true}).selectOption(id);
+  const line=page.locator('.arrival-review-date');await expect(line).toBeVisible();await expect(line).toHaveCount(1);await expect(line).toContainText(`원문 확인 ${date} ·`);
+  expect(await line.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBeLessThanOrEqual(12);await expect(line).not.toContainText('2026-10-22');
+ }
+});

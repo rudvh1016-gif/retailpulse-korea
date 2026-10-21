@@ -1,15 +1,15 @@
 'use client';
 import {useLayoutEffect,useRef} from 'react';
 import {usePathname} from 'next/navigation';
-import {NOTICE_WEEK_MS,noticeDeadline,UPDATE_NOTICE_OPEN_EVENT,UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY} from '../lib/update-notice-preference';
+import {NOTICE_WEEK_MS,noticeDeadline,UPDATE_NOTICE_TITLE,UPDATE_NOTICE_OPEN_EVENT,UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY} from '../lib/update-notice-preference';
 import './update-notice.css';
 import ReferenceChangeNotices from './reference-change-notices';
 
 const copy={
- ko:{hourNote:"시간대별 여객 비교는 전체 공항에서만 볼 수 있어요.",countryNote:"* 최근 공개된 월의 공식 노선 국가별 출발 여객수입니다.",title:'새로운 정보가 추가되었어요',hour:'시간대별 여객 비교',hourBody:'오늘 예상과 최근 월평균을 비교해 붐비는 시간대를 쉽게 확인해요.',hourPath:'공항 → 시간대별 비교',hourLink:'시간대별 비교 보기',country:'노선 국가별 출발 여객',countryBody:'국가별 여객의 전월 대비 변화를 국기와 함께 확인해요.',countryPath:'공항 → 노선 국가별 출발 여객',countryLink:'국가별 여객 보기',close:'닫기',closeLabel:'공지 닫기',week:'일주일 동안 안 보기'},
- en:{hourNote:"Hourly passenger comparison is available for the whole airport only.",countryNote:"* Official departing passenger counts by route country for the latest published month.",title:'Airport information is easier to explore',hour:'Hourly passenger comparison',hourBody:'Compare today’s forecast with the recent monthly average to see the busier hours.',hourPath:'Airport → Hourly comparison',hourLink:'View hourly comparison',country:'Departing passengers by route country',countryBody:'See month-to-month passenger changes with country flags.',countryPath:'Airport → Passengers by route country',countryLink:'View passengers by country',close:'Close',closeLabel:'Close update notice',week:'Hide for one week'},
- zh:{hourNote:"分时段旅客比较仅支持全机场范围。",countryNote:"* 最近公布月份的官方航线国家出发旅客人数。",title:'机场信息更清晰了',hour:'分时段旅客比较',hourBody:'比较今日预测与最近月平均，轻松查看繁忙时段。',hourPath:'机场 → 分时段比较',hourLink:'查看分时段比较',country:'按航线国家统计的出发旅客',countryBody:'结合国旗查看各国旅客相较上月的变化。',countryPath:'机场 → 各航线国家出发旅客',countryLink:'查看各国旅客',close:'关闭',closeLabel:'关闭更新公告',week:'一周内不再显示'},
- ja:{hourNote:"時間帯別の旅客比較は空港全体のみでご覧いただけます。",countryNote:"* 直近の公表月における路線国別の公式出発旅客数です。",title:'空港情報が見やすくなりました',hour:'時間帯別の旅客比較',hourBody:'今日の予測と直近の月平均を比べ、混み合う時間帯を確認できます。',hourPath:'空港 → 時間帯別比較',hourLink:'時間帯別比較を見る',country:'路線の国別の出発旅客',countryBody:'国旗とともに旅客の前月からの変化を確認できます。',countryPath:'空港 → 路線の国別の出発旅客',countryLink:'国別の旅客を見る',close:'閉じる',closeLabel:'更新のお知らせを閉じる',week:'1週間表示しない'},
+ ko:{hourNote:"시간대별 여객 비교는 전체 공항에서만 볼 수 있어요.",countryNote:"* 최근 공개된 월의 공식 노선 국가별 출발 여객수입니다.",hour:'시간대별 여객 비교',hourBody:'오늘 예상과 최근 월평균을 비교해 붐비는 시간대를 쉽게 확인해요.',hourPath:'공항 → 시간대별 비교',hourLink:'시간대별 비교 보기',country:'노선 국가별 출발 여객',countryBody:'국가별 여객의 전월 대비 변화를 국기와 함께 확인해요.',countryPath:'공항 → 노선 국가별 출발 여객',countryLink:'국가별 여객 보기',close:'닫기',closeLabel:'공지 닫기',week:'일주일 동안 안 보기'},
+ en:{hourNote:"Hourly passenger comparison is available for the whole airport only.",countryNote:"* Official departing passenger counts by route country for the latest published month.",hour:'Hourly passenger comparison',hourBody:'Compare today’s forecast with the recent monthly average to see the busier hours.',hourPath:'Airport → Hourly comparison',hourLink:'View hourly comparison',country:'Departing passengers by route country',countryBody:'See month-to-month passenger changes with country flags.',countryPath:'Airport → Passengers by route country',countryLink:'View passengers by country',close:'Close',closeLabel:'Close update notice',week:'Hide for one week'},
+ zh:{hourNote:"分时段旅客比较仅支持全机场范围。",countryNote:"* 最近公布月份的官方航线国家出发旅客人数。",hour:'分时段旅客比较',hourBody:'比较今日预测与最近月平均，轻松查看繁忙时段。',hourPath:'机场 → 分时段比较',hourLink:'查看分时段比较',country:'按航线国家统计的出发旅客',countryBody:'结合国旗查看各国旅客相较上月的变化。',countryPath:'机场 → 各航线国家出发旅客',countryLink:'查看各国旅客',close:'关闭',closeLabel:'关闭更新公告',week:'一周内不再显示'},
+ ja:{hourNote:"時間帯別の旅客比較は空港全体のみでご覧いただけます。",countryNote:"* 直近の公表月における路線国別の公式出発旅客数です。",hour:'時間帯別の旅客比較',hourBody:'今日の予測と直近の月平均を比べ、混み合う時間帯を確認できます。',hourPath:'空港 → 時間帯別比較',hourLink:'時間帯別比較を見る',country:'路線の国別の出発旅客',countryBody:'国旗とともに旅客の前月からの変化を確認できます。',countryPath:'空港 → 路線の国別の出発旅客',countryLink:'国別の旅客を見る',close:'閉じる',closeLabel:'更新のお知らせを閉じる',week:'1週間表示しない'},
 } as const;
 
 export default function UpdateNotice({lang}:{lang:string}){
@@ -57,7 +57,7 @@ export default function UpdateNotice({lang}:{lang:string}){
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
  }}>
   <div className="update-notice-top"><span className="update-notice-new">NEW</span></div>
-  <h2 id="update-notice-title" tabIndex={-1}>{c.title}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-21T00:00:00+09:00">2026년 10월 21일 00:00 KST</time></small>}
+  <h2 id="update-notice-title" tabIndex={-1}>{UPDATE_NOTICE_TITLE}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-21T00:00:00+09:00">2026년 10월 21일 00:00 KST</time></small>}
   <div className="update-notice-items">
    {focusNotice&&<ReferenceChangeNotices dialog={dialog} calendarHref={focusHref('prepare')} allowanceHref={focusHref('prepare&section=arrival#arrival-allowances')} onNavigate={()=>dismiss.current(false)}/>}
    {focusNotice?previewItems.map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
