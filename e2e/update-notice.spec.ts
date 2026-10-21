@@ -114,6 +114,8 @@ for(const width of [390,1440])for(const start of ['/ko','/ko/airport?terminal=T1
  })).toBe(true);
  expect(await page.evaluate(()=>localStorage.getItem('koretail-airport-scope'))).toBe('T2');
  const note=page.locator('.airport-flow-reference-note');
+ await expect(note).not.toBeVisible();
+ await page.locator('.airport-flow-reference-details > summary').click();
  await expect(note).toHaveCSS('font-size','12px');await expect(note.locator('a')).toHaveCSS('font-size','12px');await expect(note).toBeVisible();await expect(note).toHaveCSS('line-height','19.2px');
  await page.screenshot({path:testInfo.outputPath('hourly-comparison-landing.png')});
  await page.goBack();await expect(page).toHaveURL(new RegExp(start.replace(/[?]/g,'\\?')+'$'));
