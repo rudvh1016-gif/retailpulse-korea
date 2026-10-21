@@ -9,7 +9,7 @@ export const dynamic='force-dynamic';
  * collector, so a visitor never triggers a provider request. */
 export async function airportPassengerStatsResponse(request:Request,readStats:(month:string)=>ReturnType<typeof readAirportMonthlyStats>){
  const month=new URL(request.url).searchParams.get('month')??kstDayOf(new Date().toISOString()).slice(0,7);
- if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return Response.json({status:'INVALID_SELECTION'},{status:400,headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return Response.json({status:'INVALID_SELECTION'},{status:400,headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG,'cache-control':'no-store'}});
  try{
   const read=await readStats(month);
   const status=read.month?'READY':'MISSING';

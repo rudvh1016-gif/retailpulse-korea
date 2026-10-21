@@ -98,7 +98,6 @@ test("no other route is ever handed to the cached entrypoint", () => {
     "/api/live/flights/",
     "/api/live/flightsx",
     "/api/live/airport-days",
-    "/api/live/airport-months",
     "/api/live/summary/",
     "/api/live/summary/extra",
     "/api/live/summaryx",

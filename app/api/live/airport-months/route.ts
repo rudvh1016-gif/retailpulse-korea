@@ -22,7 +22,7 @@ export async function readAirportMonths(db:Pick<D1Database,'prepare'>,month:stri
 }
 export async function GET(request:Request){
  const today=kstDayOf(new Date().toISOString()),month=new URL(request.url).searchParams.get('month')??today.slice(0,7);
- if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return Response.json({status:'INVALID_SELECTION'},{status:400});
+ if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return Response.json({status:'INVALID_SELECTION'},{status:400,headers:{'cache-control':'no-store'}});
  try{const reply=await readAirportMonths((await getDb()).$client,month,today);return Response.json(reply,{headers:{'cache-control':reply.status==='READY'?'public, max-age=60, s-maxage=300':'no-store','x-robots-tag':'noindex'}});}
  catch{return Response.json({status:'UNAVAILABLE',month,months:[],data:null},{headers:{'cache-control':'no-store','x-robots-tag':'noindex'}});}
 }
