@@ -14,12 +14,20 @@ test('brief renders people/day and shared signed percentage, with honest partial
  assert.match(partial,/30일 중 22일 합산자료 확인 · 8일 미확인 · 비교 보류/);assert.doesNotMatch(partial,/%|명\/일 감소|명\/일 증가/);
  assert.match(render(null),/선택일 단순합계 확인 중/);assert.match(render(100,{...ref,mean:0}),/증감률 계산 불가/);
 });
+test('proved observed days render the sample label, numerator, divisor and missing days, not a whole-month mean',()=>{
+ const baseline:PassengerReferenceMonth={...ref,status:'PARTIAL',mean:null,completeDays:22,
+  missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),
+  observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50_000,transfers:10_000}))};
+ const html=renderToStaticMarkup(h(PassengerBriefComparison,{total:52_919,day:'2026-10-21',baseline}));
+ assert.match(html,/전월 수집 22일 기준 일평균\(전체 30일 중\)/);assert.match(html,/60,000명\/일 대비/);assert.match(html,/7,081명\/일 감소/);assert.match(html,/▲ 11.8%/);
+ assert.match(html,/1,320,000명 ÷ 22일 · 8일 미확인 · 월전체 평균 아님/);assert.doesNotMatch(html,/비교 보류/);
+});
 test('each planning country owns its flag, preserved date/source and optional country metric',()=>{
  const event={id:'jp',country:'JP',countryLabel:'일본',name:'문화의 날',start:'2026-11-03',end:'2026-11-03',type:'public_holiday',scope:'전국 공휴일',sourceURL:'https://example.test/jp',meaning_ko:'문화의 날 설명'};
  const japan=renderToStaticMarkup(h(PreparationEvent,{event},h('small',null,'9월 일본 노선 출발 여객, 전월비 +2.7%')));
  const us=renderToStaticMarkup(h(PreparationEvent,{event:{...event,id:'us',country:'US',countryLabel:'미국'}}));
  assert.match(japan,/data-country="JP"/);assert.match(japan,/<img[^>]+width="24" height="24" alt=""/);assert.ok(japan.indexOf('<img')<japan.indexOf('일본:'));
- assert.match(japan,/11\/03–11\/03/);assert.match(japan,/문화의 날 설명/);assert.match(japan,/https:\/\/example.test\/jp/);assert.match(japan,/9월 일본 노선/);assert.doesNotMatch(us,/9월 일본 노선/);
+ assert.match(japan,/11\/03<small class="focus-event-weekday">\(화요일\)/);assert.equal((japan.match(/<time /g)||[]).length,1);assert.match(japan,/문화의 날 설명/);assert.match(japan,/https:\/\/example.test\/jp/);assert.match(japan,/9월 일본 노선/);assert.doesNotMatch(us,/9월 일본 노선/);
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
  assert.match(source,/monthly&&event.id===lead\?\.id&&<small className="focus-country-month-trend">\{monthlyTrend\}/);
  assert.match(source,/describe\(months,true\)/);assert.doesNotMatch(source,/<p>\{describe\(months[^}]*\)}<\/p><small>/);
@@ -33,5 +41,29 @@ test('transparent neutral glass is scoped to the whole report with white accessi
  assert.doesNotMatch(surface,/(?:padding|margin|height|font-size|animation|transition):/);
  assert.match(css,/\.airport-focus-shell\{[^}]*background:white/);
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
- assert.match(source,/= 단순합계/);assert.match(source,/중복을 제거한 공식 총출국객 수가 아닙니다/);assert.match(source,/미확인 날짜:/);
+ assert.match(source,/= \{t\('단순합계','arithmetic sum','简单合计'\)\}/);assert.match(source,/중복을 제거한 공식 총출국객 수가 아닙니다/);assert.match(source,/미확인 날짜:/);
+});
+
+test('planning date weekdays follow each civil date in every supported language and host timezone',()=>{
+ const event={id:'ph',country:'PH',countryLabel:'필리핀',name:'만성절·위령의 날',start:'2026-11-01',end:'2026-11-02',type:'public_holiday',scope:'전국 특별 비근무일',sourceURL:'https://example.test/ph'};
+ const original=process.env.TZ;
+ try{
+  for(const zone of ['UTC','Asia/Seoul','America/Los_Angeles','Pacific/Kiritimati']){
+   process.env.TZ=zone;
+   for(const [lang,first,last] of [['ko','일요일','월요일'],['en','Sunday','Monday'],['zh','星期日','星期一'],['ja','日曜日','月曜日']] as const){
+    const html=renderToStaticMarkup(h(PreparationEvent,{event,lang}));
+    assert.ok(html.includes(`11/01<small class="focus-event-weekday">(${first})</small></time>–<wbr/><time`),zone);
+    assert.ok(html.includes(`11/02<small class="focus-event-weekday">(${last})`),zone);
+    assert.equal((html.match(/<time /g)||[]).length,2);
+   }
+   for(const [start,end,first,last] of [['2026-12-31','2027-01-01','목요일','금요일'],['2028-02-29','2028-03-01','화요일','수요일']]){
+    const html=renderToStaticMarkup(h(PreparationEvent,{event:{...event,start,end}}));
+    assert.ok(html.includes(`(${first})`));assert.ok(html.includes(`(${last})`));
+   }
+  }
+ }finally{if(original===undefined)delete process.env.TZ;else process.env.TZ=original;}
+ const css=readFileSync('app/airport-focus-preview.css','utf8');
+ assert.match(css,/\.focus-event-date\{white-space:nowrap\}/);
+ assert.match(css,/\.focus-event-date \.focus-event-weekday\{font-size:11px\}/);
+ for(const file of ['app/airport-focus-production.tsx','app/airport-focus-preview.tsx'])assert.match(readFileSync(file,'utf8'),/<OverviewHeadline lang=\{lang\}/);
 });

@@ -53,7 +53,7 @@ test('More explicitly reopens a hidden notice without clearing the snooze or unr
 });
 for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
- const dialog=page.getByRole('dialog',{name:'새로운 정보가 추가되었어요'});await expect(dialog).toBeVisible();
+ const dialog=page.getByRole('dialog',{name:'new update!'});await expect(dialog).toBeVisible();
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
  await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('section')).toHaveCount(4);
  await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(4);
@@ -131,4 +131,14 @@ test('same fragment click realigns and user scrolling cancels subsequent alignme
  });
  await page.evaluate(()=>{const node=document.createElement('div');node.textContent='test mutation';document.body.append(node);node.remove();});
  await page.waitForTimeout(100);expect(await page.evaluate(()=>(window as unknown as Window & {comparisonScrollCalls:number}).comparisonScrollCalls)).toBe(0);
+});
+
+for(const locale of ['ko','en','zh','ja'])test(`shared lowercase notice heading and accessible dialog in ${locale}`,async({page})=>{
+ await page.goto(`/${locale}`);
+ const dialog=page.getByRole('dialog',{name:'new update!',exact:true});
+ await expect(dialog).toBeVisible();
+ await expect(dialog.getByRole('heading',{name:'new update!',exact:true})).toBeFocused();
+ await expect(dialog.locator('.update-notice-new')).toHaveText('NEW');
+ await page.keyboard.press('Escape');
+ await expect(dialog).not.toBeVisible();
 });

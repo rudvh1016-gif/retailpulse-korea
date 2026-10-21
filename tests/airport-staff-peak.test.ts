@@ -7,24 +7,24 @@ const day='2026-10-20';
 const flight=(hour:number,building:MapFlight['building']='T1',gate:string|null='9')=>({scheduledAt:`${day}T${String(hour).padStart(2,'0')}:15:00+09:00`,building,gate});
 const zone=(result:NonNullable<ReturnType<typeof staffDeparturePeak>>,building:string,side:string)=>result.gateBuildings.find(row=>row.building===building)?.zones.find(row=>row.side===side);
 
-test('same selected-day peak hour supplies independent east/west gate leaders for each physical building',()=>{
+test('same selected-day peak hour supplies independent zone totals for each physical building',()=>{
  const result=staffDeparturePeak(day,[flight(7),flight(7),flight(7,'T1','29'),flight(7,'T2','268'),flight(7,'T2','230'),flight(7,'CONCOURSE','112'),flight(7,'CONCOURSE','121'),flight(18,'T2','268')])!;
  assert.equal(result.hour,7);assert.equal(result.endHour,8);assert.equal(result.flights,7);assert.equal(result.tiedHours,1);
  assert.deepEqual(zone(result,'T1','EAST'),{side:'EAST',total:2,count:2,gates:['9']});
  assert.deepEqual(zone(result,'T2','EAST'),{side:'EAST',total:1,count:1,gates:['268']});
  assert.deepEqual(staffDepartureGateLines(result),[
-  'T1 동편 9번 게이트 2편(최다) / 서편 29번 게이트 1편(최다).',
-  'T2 동편 268번 게이트 1편(최다) / 서편 230번 게이트 1편(최다).',
-  '탑승동 동편 112번 게이트 1편(최다) / 서편 121번 게이트 1편(최다).',
+  'T1 서편 1편 · 동편 2편 · 중앙 0편.',
+  'T2 서편 1편 · 동편 1편 · 중앙 0편.',
+  '탑승동 서편 1편 · 동편 1편 · 중앙 0편.',
  ]);
 });
 
-test('ties keep the earliest peak hour and every tied gate with an explicit per-gate count',()=>{
+test('ties keep the earliest peak hour while displayed zones include every gate, not just leaders',()=>{
  const result=staffDeparturePeak(day,[flight(7,'T2','270'),flight(7,'T2','268'),flight(7,'T2','270'),flight(7,'T2','268'),flight(7,'T2','276'),...Array.from({length:5},()=>flight(18,'T2','291'))])!;
  assert.equal(result.hour,7);assert.equal(result.tiedHours,2);
  assert.deepEqual(zone(result,'T2','EAST'),{side:'EAST',total:5,count:2,gates:['268','270']});
- assert.deepEqual(staffDepartureGateLines(result),['T2 동편 268·270번 게이트 각 2편(공동 최다) / 서편 배정 확인 0편.']);
- assert.doesNotMatch(staffDepartureGateLines(result).join(' '),/276|291/,'neither lower-count nor other-hour gates are leaders');
+ assert.deepEqual(staffDepartureGateLines(result),['T2 서편 0편 · 동편 5편 · 중앙 0편.']);
+ assert.doesNotMatch(staffDepartureGateLines(result).join(' '),/276|291/,'gate numbers are not repeated in the compact summary');
 });
 
 test('unassigned, unknown-building and unknown-side counts stay separate and never invent a gate',()=>{
@@ -32,12 +32,12 @@ test('unassigned, unknown-building and unknown-side counts stay separate and nev
  assert.deepEqual(result.unknown,{unassigned:3,building:1,side:3});
  assert.equal(result.flights,8);
  const lines=staffDepartureGateLines(result);
- assert.equal(lines[0],'T2 동편 268번 게이트 1편(최다) / 서편 배정 확인 0편.');
- assert.equal(lines[1],'게이트 미배정 3편 · 게이트 위치 미확인 3편 · 건물 미정 1편은 위 게이트 비교에서 제외했습니다.');
+ assert.equal(lines[0],'T2 서편 0편 · 동편 1편 · 중앙 0편.');
+ assert.equal(lines[1],'미확인 7편은 구역별 편수에서 제외했습니다.');
  assert.doesNotMatch(lines.join(' '),/0번|13번|9번|268A번/);
  const onlyUnknown=staffDeparturePeak(day,[flight(7,'T1','13'),flight(7,'UNKNOWN','9'),flight(7,'T2',null)])!;
  assert.equal(onlyUnknown.gateBuildings.length,0);
- assert.equal(staffDepartureGateLines(onlyUnknown)[0],'확인된 게이트가 없어 동·서편 최다 게이트를 정하지 않았습니다.');
+ assert.equal(staffDepartureGateLines(onlyUnknown)[0],'미확인 3편은 구역별 편수에서 제외했습니다.');
 });
 
 test('canonical gate boundary, central and exception entries are exact, not numeric-range guesses',()=>{
@@ -53,7 +53,7 @@ test('canonical gate boundary, central and exception entries are exact, not nume
   else{assert.equal(result.gateBuildings.length,0,`${building}:${gate}`);assert.equal(result.unknown.side,1);}
  }
  const center=staffDeparturePeak(day,[flight(7,'T2','249'),flight(7,'T2','249'),flight(7,'T2','268'),flight(7,'T2','248')])!;
- assert.deepEqual(staffDepartureGateLines(center),['T2 동편 268번 게이트 1편(최다) / 서편 248번 게이트 1편(최다) / 중앙 249번 게이트 2편(최다).']);
+ assert.deepEqual(staffDepartureGateLines(center),['T2 서편 1편 · 동편 1편 · 중앙 2편.']);
 });
 
 test('same gate text in another building cannot inflate a valid gate count',()=>{
@@ -88,4 +88,46 @@ test('absent, invalid or wrong-date data never invents a zero peak',()=>{
  assert.equal(staffDeparturePeak(day,null),null);assert.equal(staffDeparturePeak(day,[]),null);
  assert.equal(staffDeparturePeak('2026-10-21',[flight(7)]),null);assert.equal(staffDeparturePeak('invalid',[flight(7)]),null);
  assert.equal(staffDeparturePeak(day,[{...flight(7),scheduledAt:'invalid'}]),null);
+});
+
+test('owner screenshot 25-flight fixture becomes three zone totals without a gate-number wall',()=>{
+ const gates=['253','254','256','261','263','266','277','278','281','284','288','289','208','210','211','213','216','217','221','222','224','247','249','250','252'];
+ const result=staffDeparturePeak(day,gates.map(gate=>flight(8,'T2',gate)))!;
+ assert.equal(result.hour,8);assert.equal(result.endHour,9);assert.equal(result.flights,25);
+ assert.deepEqual(staffDepartureGateLines(result),['T2 서편 10편 · 동편 12편 · 중앙 3편.']);
+ assert.equal(result.gateBuildings.flatMap(row=>row.zones).reduce((sum,row)=>sum+row.total,0),25);
+ assert.doesNotMatch(staffDepartureGateLines(result).join(' '),/번 게이트|공동 최다|253|208|249/);
+});
+
+test('new zone summary keeps the selected language and separates unknown flights in every locale',()=>{
+ const result=staffDeparturePeak(day,[flight(7,'T2','268'),flight(7,'T2','268'),flight(7,'T2','230'),flight(7,'T2',null)])!;
+ const expected={
+  ko:['T2 서편 1편 · 동편 2편 · 중앙 0편.','미확인 1편은 구역별 편수에서 제외했습니다.'],
+  en:['T2 West 1 flight · East 2 flights · Centre 0 flights.','Unverified 1 flight; excluded from zone counts.'],
+  zh:['T2 西侧 1班 · 东侧 2班 · 中央 0班.','未确认 1班，未计入各区域班次。'],
+  ja:['T2 西側 1便 · 東側 2便 · 中央 0便.','未確認 1便は区域別の便数から除外しています。'],
+ };
+ for(const lang of ['ko','en','zh','ja'] as const)assert.deepEqual(staffDepartureGateLines(result,lang),expected[lang]);
+ const unknownOnly=staffDeparturePeak(day,[flight(7,'UNKNOWN',null)])!;
+ for(const lang of ['ko','en','zh','ja'] as const){
+  const lines=staffDepartureGateLines(unknownOnly,lang);assert.equal(lines.length,1);assert.doesNotMatch(lines[0],/0/,'unverified assignments are not printed as zero flights');
+ }
+ const concourse=staffDeparturePeak(day,[flight(7,'CONCOURSE','112')])!;
+ assert.match(staffDepartureGateLines(concourse,'en')[0],/^Concourse /);
+ assert.match(staffDepartureGateLines(concourse,'zh')[0],/^卫星厅 /);
+ assert.match(staffDepartureGateLines(concourse,'ja')[0],/^搭乗棟 /);
+});
+
+test('existing T1, T2 and concourse filters keep their own peak and zone totals',()=>{
+ const raw=(id:string,terminal:string,gate:string,hour=7)=>({physicalFlightId:id,terminal,gate,scheduledAt:`${day}T${String(hour).padStart(2,'0')}:15:00+09:00`,status:'scheduled'});
+ const rows=[raw('a','T1','9'),raw('b','T2','268'),raw('c','T2','230'),raw('d','CONCOURSE','112',8),raw('e','CONCOURSE','113',8),raw('f','UNKNOWN','')];
+ for(const scope of ['all','T1','T2','CONCOURSE'] as const){
+  const data=glanceFlights(day,rows,scope),result=staffDeparturePeak(day,data.departures)!;
+  assert.equal(result.flights,data.hours[result.hour]);
+  const confirmed=result.gateBuildings.flatMap(row=>row.zones).reduce((sum,row)=>sum+row.total,0);
+  assert.equal(confirmed+Object.values(result.unknown).reduce((sum,count)=>sum+count,0),result.flights);
+  if(scope!=='all')assert.deepEqual(result.gateBuildings.map(row=>row.building),[scope]);
+ }
+ const concourse=staffDeparturePeak(day,glanceFlights(day,rows,'CONCOURSE').departures)!;
+ assert.equal(concourse.hour,8);assert.deepEqual(staffDepartureGateLines(concourse),['탑승동 서편 0편 · 동편 1편 · 중앙 1편.']);
 });
