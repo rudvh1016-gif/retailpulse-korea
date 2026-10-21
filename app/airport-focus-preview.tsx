@@ -59,7 +59,7 @@ export function StaffCalendarContext({onMore}:{onMore:()=>void}){
 }
 function TrendsPlaceholder(){return <section className="focus-trends" id="focus-country-trends" aria-busy="true"><div className="focus-section-heading"><div><h2>한 달의 변화일까, 이어지는 흐름일까</h2><p>월별 공식 여객 자료를 준비하고 있습니다.</p></div></div></section>;}
 const DetailedCountryTrends=dynamic(()=>import('./airport-focus-trends'),{ssr:false,loading:TrendsPlaceholder});
-export function CountryTrends(props:{full?:boolean;onMore?:()=>void}){
+export function CountryTrends(props:{full?:boolean;onMore?:()=>void;lang?:Lang}){
  const [ready,setReady]=useState(Boolean(props.full)),host=useRef<HTMLDivElement>(null);
  useEffect(()=>{
   if(props.full||ready||!host.current)return;
