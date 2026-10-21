@@ -147,6 +147,10 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           const guideAction = sel.split(',').every(part => /^(?:details\.[\w-]*guide[\w-]* > summary\.[\w-]*entry[\w-]*|\.[\w-]*tripEntry[\w-]*)(?::hover|:active)?$/.test(part.trim()));
           const airportDayAction = /^\.app \.airport-view \.date-nav \.date-nav-shortcuts button/.test(sel);
           if (neutralAction && (guideAction || airportDayAction)) continue;
+          // Sentinel_59b2d9a80d808191b0c22074b8d744be: the same five controls,
+          // exact bottom-nav material; computed equality checked in airport-five-glass.spec.ts.
+          const fiveGlass = sel.split(',').every(part => /^(?:details\.[\w-]*guide[\w-]* > summary\.[\w-]*entry[\w-]*:is\(\.[\w-]*entry[\w-]*\)|\.[\w-]*tripEntry[\w-]*:is\(\.[\w-]*tripEntry[\w-]*\)|\.app \.airport-view \.airport-date-reserved \.date-nav \.date-nav-shortcuts > button\[aria-pressed\])$/.test(part.trim()));
+          if (fiveGlass && ((bg === 'rgba(255, 255, 255, 0.6)' && ['blur(24px) saturate(1.1)', 'blur(24px) saturate(110%)'].includes(filter)) || (bg === 'rgb(244, 244, 246)' && filter === 'none'))) continue;
           // Semantic exceptions: modal scrim, chart bars, tab underlines, accent lines.
           const semantic = /modal-backdrop|-bars i|::after|::before|\bi\b|button\.active|\.compare-bars|\.history-bars|\.av-|\.airport-flow|\.airport-hero/.test(sel);
           if (semantic) continue;

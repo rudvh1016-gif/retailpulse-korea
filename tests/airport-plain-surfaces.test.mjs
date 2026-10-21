@@ -25,5 +25,6 @@ test('large calendar is removed from the airport screen without removing histori
 test('only the two requested guide action cards gain neutral translucent surfaces',()=>{
  const css=read('app/departure-guide-entry.module.css');
  assert.match(css,/details\.guide > summary\.entry,\.tripEntry \{[^}]*background:rgb\(255 255 255 \/ 72%\)/);
- assert.doesNotMatch(css,/(?:backdrop-filter|animation):/);
+ assert.doesNotMatch(css,/animation:/);
+ assert.match(css,/background:rgb\(255 255 255 \/ 60%\)/);
 });
