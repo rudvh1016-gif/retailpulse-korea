@@ -13,7 +13,7 @@ test('unavailable automation keeps the reviewed snapshot with an honest pending 
  await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'UNAVAILABLE',countries:[]}}));await page.goto('/ko/airport-prepare',{waitUntil:'domcontentloaded'});
  const dialog=page.getByRole('dialog');if(await dialog.isVisible())await dialog.getByRole('button',{name:'닫기',exact:true}).click();
  await page.getByLabel('도착 국가·지역',{exact:true}).selectOption('JP');await page.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await page.getByLabel('나이',{exact:true}).selectOption('adult');
- const section=page.locator('#arrival-allowances');await expect(section).toContainText('760mL 기준 3병');await expect(section).toContainText('자동 확인 기록 대기');await expect(section).not.toContainText('[공지]');
+ const section=page.locator('#arrival-allowances');await expect(section).toContainText('760mL 기준 3병');await expect(section).toContainText('아직 자동 확인 기록이 없어요.');await expect(section).not.toContainText('[공지]');
 });
 
 test('small manual review date remains distinct from newer collection attempts and missing evidence',async({page})=>{
@@ -22,7 +22,7 @@ test('small manual review date remains distinct from newer collection attempts a
  const dialog=page.getByRole('dialog');if(await dialog.isVisible())await dialog.getByRole('button',{name:'닫기',exact:true}).click();
  for(const [id,date] of [['CN','2026-10-21'],['VN','2026-10-21'],['TH','2026-10-21'],['JP','2026-10-20'],['PH','미확인 · 검토 필요'],['MY','미확인 · 검토 필요']]){
   await page.getByLabel('도착 국가·지역',{exact:true}).selectOption(id);
-  const line=page.locator('.arrival-review-date');await expect(line).toBeVisible();await expect(line).toHaveCount(1);await expect(line).toContainText(`원문 확인 ${date} ·`);
+  const line=page.locator('.arrival-review-date');await expect(line).toBeVisible();await expect(line).toHaveCount(1);await expect(line).toContainText(date==='미확인 · 검토 필요'?'공식 자료를 확인한 날짜가 없어 직접 확인이 필요해요.':`${date}에 공식 자료를 확인했어요. ·`);
   expect(await line.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBeLessThanOrEqual(12);await expect(line).not.toContainText('2026-10-22');
  }
 });

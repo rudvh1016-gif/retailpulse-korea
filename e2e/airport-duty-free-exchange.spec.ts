@@ -85,7 +85,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`failed collection preserv
  await page.setViewportSize({width:390,height:844});await page.clock.setFixedTime(new Date('2026-10-08T03:00:00Z'));await fixtures(page);
  const older={...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,lastAttemptStatus:'BLOCKED',lastAttemptAt:'2026-10-08T02:30:00Z',errorCode:'HTTP_406',observation:{...source.observation,serviceDateKst:'2026-10-07',verifiedAt:'2026-10-07T02:00:00Z'}}))};
  await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:older}));await page.goto(`/${lang}/airport`);
- const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');await expect(strip).toContainText({ko:'최근 수집 실패',en:'Latest collection failed',zh:'最近采集失败',ja:'直近の収集に失敗'}[lang]);await expect(strip.locator('summary')).not.toContainText('1,343');await strip.locator('summary').click();await strip.getByRole('button',{name:{ko:'어제 환율',en:'Yesterday’s rate',zh:'昨日汇率',ja:'昨日のレート'}[lang],exact:true}).click();
+ const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');await expect(strip).toContainText({ko:'새 환율을 가져오지 못했어요',en:'We couldn’t collect the latest rate',zh:'未能获取最新汇率',ja:'最新のレートを取得できませんでした'}[lang]);await expect(strip.locator('summary')).not.toContainText('1,343');await strip.locator('summary').click();await strip.getByRole('button',{name:{ko:'어제 환율',en:'Yesterday’s rate',zh:'昨日汇率',ja:'昨日のレート'}[lang],exact:true}).click();
  await expect(strip.locator('time[datetime="2026-10-07T02:00:00Z"]')).toHaveCount(1);expect(await tofuCharacters(strip)).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
@@ -95,7 +95,7 @@ for(const failure of ['network','storage'] as const)test(`API ${failure} failure
  await page.route('**/api/live/duty-free-exchange',r=>{reads++;return reads===1?r.fulfill({json:autoSnapshot}):failure==='network'?r.abort():r.fulfill({json:{...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observation:null,lastAttemptStatus:'NEVER',errorCode:'STORAGE_UNAVAILABLE'}))}});});
  await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
  await page.clock.runFor(15*60_000+100);await expect.poll(()=>reads).toBe(2);await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await strip.locator('summary').click();
- await expect(strip.locator('[role=status]')).toContainText('새 자료 조회 실패');await expect(strip.locator('time[datetime="2026-10-08T02:49:39.401Z"]')).toHaveCount(1);
+ await expect(strip.locator('[role=status]')).toContainText('새 환율을 불러오지 못해');await expect(strip.locator('time[datetime="2026-10-08T02:49:39.401Z"]')).toHaveCount(1);
 });
 
 test('legacy two-source cached payload keeps Shilla current and omits retired vendor evidence',async({page})=>{
@@ -169,7 +169,7 @@ test('known selector block is a visible failure with its next eligibility, not a
  let reads=0;const blocked={...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,lastAttemptStatus:'BLOCKED',errorCode:'SELECTOR_UNVERIFIED',nextAttemptAt:'2026-10-09T02:30:00Z',observation:{...source.observation,serviceDateKst:'2026-10-07',verifiedAt:'2026-10-07T02:00:00Z'}}))};
  await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:blocked});});
  await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');
- await expect(strip.locator('summary')).toContainText('최근 수집 실패');await expect(strip.locator('summary')).not.toContainText('확인 중');
+ await expect(strip.locator('summary')).toContainText('새 환율을 가져오지 못했어요');await expect(strip.locator('summary')).not.toContainText('확인 중');
  await strip.locator('summary').click();await expect(strip.locator('time[datetime="2026-10-09T02:30:00Z"]')).toBeVisible();
  await page.clock.runFor(5*60_000);expect(reads).toBe(1);
 });
