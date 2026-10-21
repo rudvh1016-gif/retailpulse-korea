@@ -68,10 +68,16 @@ test('nearest-month targets cover the full chart with no capped-width gaps or ou
 test('only the bounded readout is neutral liquid glass, with opaque accessibility fallbacks',()=>{
  const css=readFileSync(new URL('../app/airport-monthly-line-chart.css',import.meta.url),'utf8');
  const tooltip=css.match(/\.focus-month-tooltip\{([^}]+)\}/)[1];
- assert.match(tooltip,/background:rgba\(255,255,255,\.68\)/);assert.match(tooltip,/backdrop-filter:blur\(14px\)/);
- assert.match(tooltip,/border-radius:12px/);assert.match(tooltip,/width:152px;max-width:calc\(100% - 16px\)/);
- assert.match(css,/@supports not/);assert.match(css,/@media\(prefers-reduced-transparency:reduce\)/);
- assert.equal((css.match(/backdrop-filter:blur\(14px\)/g)??[]).length,2);
+ assert.match(tooltip,/background:rgb\(255 255 255 \/ 60%\)/);assert.match(tooltip,/backdrop-filter:blur\(24px\) saturate\(110%\)/);
+ assert.match(tooltip,/border:0;border-radius:33px/);assert.match(tooltip,/width:152px;max-width:calc\(100% - 16px\)/);
+ assert.match(tooltip,/font-size:13px;line-height:1.4/);
+ const nav=readFileSync(new URL('../app/glass-navigation.css',import.meta.url),'utf8');
+ const navShadow=nav.match(/\.glass-nav::before\{[^}]*box-shadow:([^;]+)/)[1];
+ assert.equal(tooltip.match(/box-shadow:([^;]+)/)[1],navShadow,'same glass surface highlights and shadow as the bottom navigation');
+ assert.match(css,/@supports not/);assert.match(css,/@media\(prefers-reduced-transparency:reduce\),\(prefers-contrast:more\)/);
+ assert.match(css,/background:rgb\(244 244 246\);-webkit-backdrop-filter:none;backdrop-filter:none/);
+ assert.match(css,/@media\(forced-colors:active\).*background:Canvas;color:CanvasText/);
+ assert.equal((css.match(/backdrop-filter:blur\(24px\) saturate\(110%\)/g)??[]).length,2);
 });
 
 // CI trace: the floating readout intercepted the next month target. Removing it

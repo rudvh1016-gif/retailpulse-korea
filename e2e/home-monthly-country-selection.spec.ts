@@ -29,7 +29,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [390,1440])test(`home
  await expect(chart.getByRole('tooltip')).toHaveText('8월 · 자료 없음');
  await page.keyboard.press('ArrowRight');await expect(chart.getByRole('tooltip')).toHaveText('9월 · 1,000,000명');
  await expect(chart.getByRole('tooltip')).toHaveCSS('pointer-events','none');
- await expect(chart.getByRole('tooltip')).toHaveCSS('background-color','rgba(255, 255, 255, 0.68)');
+ await expect(chart.getByRole('tooltip')).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
  await page.keyboard.press('Escape');await expect(chart.getByRole('tooltip')).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(requests.length).toBeLessThanOrEqual(3);expect(new Set(requests).size).toBe(requests.length);

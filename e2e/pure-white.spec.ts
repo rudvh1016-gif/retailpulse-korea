@@ -135,7 +135,7 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           // Sentinel_7ae84329dea48191ade277d460d7cd14: only the bounded
           // monthly passenger readout; tooltip/white-body bounds are tested in
           // airport-monthly-line-tooltip.spec.ts, never a chart/card exception.
-          if (sel === '.focus-month-tooltip' && bg === 'rgba(255, 255, 255, 0.68)' && filter === 'blur(14px)') continue;
+          if (sel === '.focus-month-tooltip' && bg === 'rgba(255, 255, 255, 0.6)' && filter === 'blur(24px) saturate(1.1)') continue;
           // Only the owner-requested compact country jump; actual bounds and
           // white surrounding canvas are verified below, not a card exemption.
           if (sel === '.airport-focus-shell .focus-country-jump' && bg === 'rgba(255, 255, 255, 0.4)' && filter === 'blur(14px)') continue;

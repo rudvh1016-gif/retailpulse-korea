@@ -39,10 +39,12 @@ async function glassReadout(page:Page,chart:Locator,text:string){
  const tip=chart.getByRole('tooltip');
  await expect(tip).toBeVisible();await expect(tip).toHaveText(text);
  await expect(tip).toHaveCSS('opacity','1');
- await expect(tip).toHaveCSS('background-color','rgba(255, 255, 255, 0.68)');
- await expect(tip).toHaveCSS('backdrop-filter','blur(14px)');
- await expect(tip).toHaveCSS('border-radius','12px');
+ await expect(tip).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
+ await expect(tip).toHaveCSS('backdrop-filter','blur(24px) saturate(1.1)');
+ await expect(tip).toHaveCSS('border-radius','33px');
  await expect(tip).toHaveCSS('pointer-events','none');
+ await expect(tip).toHaveCSS('font-size','13px');
+ expect(await tip.evaluate(node=>node.scrollWidth<=node.clientWidth)).toBe(true);
  const box=(await tip.boundingBox())!,viewport=page.viewportSize()!;
  expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(viewport.width);
  expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(viewport.height);
