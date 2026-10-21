@@ -61,12 +61,18 @@ function ReadingParagraphs({ text }: { text: string }) {
 
 export function SiteUsageGuide({ lang }: { lang: Lang }) {
   const t = copy[lang];
+  const examples = { ko: "활용 예시", en: "Usage examples", zh: "使用示例", ja: "活用例" }[lang];
+  const disclosureStyle = { minHeight: 44, boxSizing: "border-box" as const, padding: "12px 0", cursor: "pointer" };
   return <section className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 id="site-usage-title">{t.title}</h2>
     <p>{t.intro}</p>
-    <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
+    <details data-testid="usage-examples"><summary style={disclosureStyle}>{examples}</summary>
+      <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
+    </details>
     <h3>{t.methodTitle}</h3><ReadingParagraphs text={t.method}/><p>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</p><p>{passengerCopy.noSum[lang]}</p>
-    <h3>{t.updateTitle}</h3><ReadingParagraphs text={t.updates}/>
+    <details data-testid="usage-updates"><summary style={disclosureStyle}>{t.updateTitle}</summary>
+      <ReadingParagraphs text={t.updates}/>
+    </details>
     <p className="site-usage-limit">{t.limit}</p>
   </section>;
 }

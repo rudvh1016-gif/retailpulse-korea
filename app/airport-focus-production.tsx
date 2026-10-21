@@ -43,7 +43,7 @@ export function AirportFocusStatus(props:ComponentProps<typeof AirportViewCompon
 }
 function CountryContents({lang,date}:{lang:Lang;date:string|null}){
  const today=useLiveSummary(date)?.todayKst??'',month=(date||today).slice(0,7);
- return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1>국가별 흐름</h1><p className="focus-lead">어느 노선의 흐름이 달라졌는지, 월별 실적으로 확인합니다.</p>{month&&<><CountryBriefing month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full/></div></div>;
+ return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1>국가별 흐름</h1><p className="focus-lead">어느 노선의 흐름이 달라졌는지, 월별 실적으로 확인합니다.</p>{month&&<><CountryBriefing month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full lang={lang}/></div></div>;
 }
 export function AirportCountryFlow({lang,date}:{lang:Lang;date:string|null}){return <FocusLiveData date={date}><CountryContents lang={lang} date={date}/></FocusLiveData>;}
 export function AirportPreparation({lang}:{lang:Lang}){return <FocusLiveData><div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1>미리 준비</h1><p className="focus-lead">다가오는 휴일과 공식 안내를 미리 확인하세요.</p><PreparationArrivalLink/><HolidayList full/><ArrivalAllowances/><a className="focus-related" href={`/${lang}/airport-news`}>관세·면세 공식 소식 확인 ↗</a></div></div></FocusLiveData>;}
