@@ -128,6 +128,9 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
           // today/week/month report wrapper. Its bounds and white surroundings
           // are checked in airport-brief-glass.spec.ts.
           if (sel === '.airport-focus-shell .focus-report' && bg === 'rgba(255, 255, 255, 0.4)' && filter === 'blur(14px)') continue;
+          // Only the owner-requested compact country jump; actual bounds and
+          // white surrounding canvas are verified below, not a card exemption.
+          if (sel === '.airport-focus-shell .focus-country-jump' && bg === 'rgba(255, 255, 255, 0.4)' && filter === 'blur(14px)') continue;
           // Exact owner-requested liquid surfaces only.
           if (['.update-notice[data-airport-focus="true"]','.update-notice[data-airport-focus=true]','.focus-header','.focus-report'].includes(sel)) continue;
           // Owner approval Sentinel_105e48cea9648191a7e7c29e86006ec9: the two guide
@@ -150,3 +153,35 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
   });
   expect(offenders).toEqual([]);
 });
+
+for (const width of [390, 1440]) {
+  test(`country jump glass is a small control on white · ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.goto("/ko/airport?date=2026-10-19");
+    const jump = page.locator(".airport-focus-shell .focus-country-jump");
+    await expect(jump).toHaveCount(1);
+    await expect(jump).toBeVisible();
+    await expect(jump).toHaveCSS("background-color", "rgba(255, 255, 255, 0.4)");
+    await expect(jump).toHaveCSS("backdrop-filter", "blur(14px)");
+    await expect(jump).toHaveAttribute("href", "/ko/airport-countries?date=2026-10-19");
+    const box = await jump.boundingBox();
+    const parent = await jump.locator("..").boundingBox();
+    expect(box).not.toBeNull();
+    expect(parent).not.toBeNull();
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeLessThanOrEqual(90);
+    expect(box!.width).toBeGreaterThan(0);
+    expect(box!.width).toBeLessThanOrEqual(Math.min(480, parent!.width));
+    expect(box!.x).toBeGreaterThanOrEqual(parent!.x);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(parent!.x + parent!.width + 1);
+    for (const selector of ["body", ".airport-focus-shell", ".airport-view", ".airport-top-reference"]) {
+      const backgrounds = await paintedBackground(page, selector);
+      expect(backgrounds.length).toBeGreaterThan(0);
+      for (const { colour } of backgrounds) expect(colour, selector).toBe(WHITE);
+    }
+    await jump.focus();
+    await expect(jump).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  });
+}
