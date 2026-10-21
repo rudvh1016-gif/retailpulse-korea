@@ -5,3 +5,9 @@ export function arrivalReviewDateLabel(country:{verifiedAt?:string|null;checkedA
  const parsed=new Date(`${value}T00:00:00Z`);
  return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===value?value:'미확인 · 검토 필요';
 }
+
+/** Human-readable source-review wording, never an attempted-check date. */
+export function arrivalReviewSentence(country:{verifiedAt?:string|null;checkedAt?:string}):string {
+ const date=arrivalReviewDateLabel(country);
+ return date==='미확인 · 검토 필요'?'공식 자료를 확인한 날짜가 없어 직접 확인이 필요해요.':`${date}에 공식 자료를 확인했어요.`;
+}

@@ -92,7 +92,10 @@ test.describe('phone and tablet taps',()=>{
   await expect(chart.locator('.focus-month-line').first()).toHaveCSS('stroke-width','1.25px');
   await expect(chart.locator('.focus-month-line').first()).toHaveAttribute('vector-effect','non-scaling-stroke');
   await chart.screenshot({path:info.outputPath(`monthly-may-${width}.png`)});
+  // Screenshot scrolling can leave the month label behind the fixed bottom navigation.
+  await chart.locator('.focus-month-target[data-month="2026-09"]').evaluate(node=>node.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'}));
   const label=(await chart.locator('g[data-month="2026-09"] text').boundingBox())!;
+  expect(await page.evaluate(({x,y})=>document.elementFromPoint(x,y)?.closest('.focus-month-target')?.getAttribute('data-month'),{x:label.x+label.width/2,y:label.y+label.height/2})).toBe('2026-09');
   await page.touchscreen.tap(label.x+label.width/2,label.y+label.height/2);
   await expect(chart.getByRole('tooltip')).toHaveText('9월 · 911,297명');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
