@@ -3,7 +3,12 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const css = readFileSync('app/airport-focus-preview.css', 'utf8');
-const patch = css.split('/* Monthly-country jump:')[1];
+const startMarker = '/* Monthly-country jump:';
+const endMarker = '/* Upcoming dates:';
+assert.ok(css.includes(startMarker), 'monthly-country jump section must exist');
+assert.ok(css.includes(endMarker), 'next upcoming-dates section must exist');
+assert.ok(css.indexOf(endMarker) > css.indexOf(startMarker), 'section boundaries must stay ordered');
+const patch = css.split(startMarker)[1].split(endMarker)[0];
 
 test('country jump owns its padded height and wraps inside mobile content without clipping', () => {
   const rule = patch.match(/\.airport-focus-shell \.focus-country-jump\{([^}]+)\}/)[1];

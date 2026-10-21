@@ -29,7 +29,8 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   const dateButtons = page.locator('.airport-date-reserved .date-nav-shortcuts button');
   await expect(dateButtons).toHaveCount(3);
   await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('border-top-width', '1px');
+  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('border-top-width', '0px');
+  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap', '6px');
   for(const control of await dateButtons.all()){
     await expect(control).toHaveCSS('border-top-width','0px');
     await expect(control).toHaveAccessibleName(/.+/);

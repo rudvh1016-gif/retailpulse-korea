@@ -67,3 +67,31 @@ test('planning date weekdays follow each civil date in every supported language 
  assert.match(css,/\.focus-event-date \.focus-event-weekday\{font-size:11px\}/);
  for(const file of ['app/airport-focus-production.tsx','app/airport-focus-preview.tsx'])assert.match(readFileSync(file,'utf8'),/<OverviewHeadline lang=\{lang\}/);
 });
+
+test('upcoming summaries keep dates and trends visible while preserving evidence in closed native details',()=>{
+ const seed=JSON.parse(readFileSync('data/airport-focus-preview/holidays-summary.json','utf8')).events;
+ for(const lang of ['ko','en','zh','ja'] as const){
+  for(const country of ['JP','VN','TR']){
+   const event=seed.find((item:{country:string})=>item.country===country);
+   const html=renderToStaticMarkup(h(PreparationEvent,{event,lang},h('small',{className:'focus-country-month-trend'},'2026-09 route passengers +2.7%')));
+   const [visible,details]=html.split('<details');
+   assert.match(visible,/<h4>/);assert.match(visible,/<time /);assert.match(visible,/2026-09 route passengers \+2.7%/);
+   assert.doesNotMatch(visible,/focus-holiday-gloss|귀국 준비|Return planning|返程准备/);
+   assert.ok(details);assert.doesNotMatch(details,/^ open/);assert.match(details,/<summary>/);
+   assert.match(details,/focus-holiday-gloss/);assert.ok(details.includes(event.sourceURL.replaceAll('&','&amp;')));
+   if(country==='TR'){assert.match(visible,/10\/28/);assert.match(visible,/13/);assert.match(visible,/10\/29/);if(lang==='ja')assert.match(visible,/13時から祝日/);}
+   if(lang==='ja')assert.match(details,/日程の詳細/);
+   if(lang==='en'||lang==='zh')assert.doesNotMatch(html,/[가-힣]/);
+  }
+ }
+ const event={...seed[0],scope:'확인 중: 오후 일부 시간만 적용'};
+ assert.match(renderToStaticMarkup(h(PreparationEvent,{event})).split('<details')[0],/확인 중: 오후 일부 시간만 적용/);
+ for(const scope of ['13:00 이후 적용 범위 확인 중','13시 이전 적용 여부 미확인']){
+  const unknown={...seed[0],scope};
+  assert.ok(renderToStaticMarkup(h(PreparationEvent,{event:unknown})).split('<details')[0].includes(scope));
+ }
+ const source=readFileSync('app/airport-focus-preview.tsx','utf8');
+ assert.match(source,/휴일 종료 기준 · 귀국객 예측 아님/);
+ assert.match(source,/\$\{reply\?\.month\} \$\{lead.countryLabel\} 노선 출발 여객, 전월비/);
+ assert.doesNotMatch(source,/<p>\{describe\(/);
+});
