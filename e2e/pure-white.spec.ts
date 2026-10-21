@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 import { routeSummary, SUMMARY_FIXTURE } from "./summary-fixture";
+import focusSummary from "./fixtures/airport-focus/summary.json" with { type: "json" };
+import focusFlights from "./fixtures/airport-focus/flights.json" with { type: "json" };
+import focusMonths from "./fixtures/airport-focus/months.json" with { type: "json" };
+import focusPassengers from "./fixtures/airport-focus/passenger-stats.json" with { type: "json" };
 
 /**
  * PURE WHITE regression. The owner's hard requirement: every normal large
@@ -157,7 +161,11 @@ test("no large tinted or translucent surface is declared in the stylesheet", asy
 for (const width of [390, 1440]) {
   test(`country jump glass is a small control on white · ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
-    await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
+    await page.route("**/api/live/summary*", routeSummary(focusSummary));
+    for (const [path, json] of [["flights", focusFlights], ["airport-months", focusMonths], ["airport-passenger-stats", focusPassengers]] as const) {
+      await page.route(`**/api/live/${path}*`, route => route.fulfill({ json }));
+    }
+    await page.route("**/api/live/passenger-reference*", route => route.fulfill({ json: { status: "UNAVAILABLE", data: null } }));
     await page.goto("/ko/airport?date=2026-10-19");
     const jump = page.locator(".airport-focus-shell .focus-country-jump");
     await expect(jump).toHaveCount(1);
