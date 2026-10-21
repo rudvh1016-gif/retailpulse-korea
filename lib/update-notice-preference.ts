@@ -1,3 +1,5 @@
+// Owner-approved shared heading for every locale and future update notice.
+export const UPDATE_NOTICE_TITLE = 'new update!';
 // A new notice must not inherit the previous release's dismiss/snooze choice.
 export const UPDATE_NOTICE_VERSION = 'airport-flow-20261021-v1';
 export const UPDATE_NOTICE_SESSION_KEY = `koretail-notice:${UPDATE_NOTICE_VERSION}:closed`;
