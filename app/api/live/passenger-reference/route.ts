@@ -14,7 +14,10 @@ export async function GET(request:Request){
  const cache=typeof caches==='undefined'?undefined:(caches as CacheStorage & {default?:Cache}).default;
  const key=new Request(new URL(`/api/live/passenger-reference?month=${month}`,request.url));
  try{
-  const hit=await cache?.match(key).catch(()=>undefined);if(hit)return hit;
+  const hit=await cache?.match(key).catch(()=>undefined);
+  // Cache API responses have immutable headers. The framework adds Vary and
+  // security headers after this route returns, so give it a mutable copy.
+  if(hit)return new Response(hit.body,{status:hit.status,statusText:hit.statusText,headers:hit.headers});
   let read=pending.get(month);
   if(!read){read=(async()=>{const data=await readPassengerReferenceMonth((await getDb()).$client,month);return JSON.stringify({status:'READY',month,data,checkedAt:new Date().toISOString()});})();pending.set(month,read);}
   const body=await read;memory.set(month,{at:Date.now(),body});if(memory.size>12)memory.delete(memory.keys().next().value!);
