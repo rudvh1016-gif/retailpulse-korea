@@ -33,5 +33,5 @@ test('transparent neutral glass is scoped to the whole report with white accessi
  assert.doesNotMatch(surface,/(?:padding|margin|height|font-size|animation|transition):/);
  assert.match(css,/\.airport-focus-shell\{[^}]*background:white/);
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
- assert.match(source,/= 단순합계/);assert.match(source,/중복을 제거한 공식 총출국객 수가 아닙니다/);assert.match(source,/미확인 날짜:/);
+ assert.match(source,/= \{t\('단순합계','arithmetic sum','简单合计'\)\}/);assert.match(source,/중복을 제거한 공식 총출국객 수가 아닙니다/);assert.match(source,/미확인 날짜:/);
 });
