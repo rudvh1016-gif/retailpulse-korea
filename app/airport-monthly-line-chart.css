@@ -5,6 +5,6 @@
 .focus-month-halo{opacity:0;transition:opacity 160ms ease-out}
 .focus-month-halo[data-selected=true]{opacity:.55}
 .focus-chart-tick[data-selected=true]{fill:var(--navy,#24272c);font-weight:650}
-.focus-month-tooltip{position:absolute;z-index:1;box-sizing:border-box;width:152px;max-width:calc(100% - 16px);padding:7px 9px;border:1px solid #dce2e7;background:#fff;color:var(--navy,#24272c);font:inherit;font-size:12px;line-height:1.4;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;animation:focus-month-readout 160ms ease-out}
+.focus-month-tooltip{pointer-events:none;position:absolute;z-index:1;box-sizing:border-box;width:152px;max-width:calc(100% - 16px);padding:7px 9px;border:1px solid #dce2e7;background:#fff;color:var(--navy,#24272c);font:inherit;font-size:12px;line-height:1.4;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums;animation:focus-month-readout 160ms ease-out}
 @keyframes focus-month-readout{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.focus-month-halo{transition:none}.focus-month-tooltip,.focus-trend-grid .focus-interactive-line-chart svg{animation:none}}

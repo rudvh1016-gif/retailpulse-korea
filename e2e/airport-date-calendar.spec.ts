@@ -2,6 +2,35 @@ import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE} from './summary-fixture';
 import {tofuCharacters} from './font-glyphs';
 import {chooseDate,expectDateSelection} from './date-selection';
+
+for(const action of ['read','choose'] as const)test(`compact date helper waits for the navigator before ${action}`,async({page})=>{
+ let release!:()=>void,requested=false;
+ const pending=new Promise<void>(resolve=>{release=resolve;});
+ await page.route('**/api/live/summary*',async route=>{
+  requested=true;await pending;
+  const date=new URL(route.request().url()).searchParams.get('date')??SUMMARY_FIXTURE.todayKst;
+  await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date}}});
+ });
+ await page.goto('/ko/airport');
+ await expect.poll(()=>requested).toBe(true);
+ const nav=page.locator('.airport-view .date-nav');
+ await expect(nav).toHaveCount(0);
+ const date=action==='read'?SUMMARY_FIXTURE.todayKst:'2026-08-30';
+ const operation=action==='read'?expectDateSelection(page,date):chooseDate(page,date);
+ try{
+  await expect(nav).toHaveCount(0);
+ }finally{release();}
+ await operation;
+ await expectDateSelection(page,date);
+ const stored=nav.locator('.stored-date-picker');
+ if(action==='read')await expect(stored).not.toHaveAttribute('open');
+ else{
+  await expect(stored).toHaveAttribute('open');
+  await expect(stored.locator('input[type=date]')).toHaveValue(date);
+  await expect(page).toHaveURL(/date=2026-08-30/);
+ }
+});
+
 for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,430,1280])test(`compact airport dates ${lang} ${width}`,async({page})=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.clock.setFixedTime(new Date('2030-01-01T00:00:00Z'));

@@ -1,5 +1,8 @@
 import {expect,type Page} from '@playwright/test';
 export async function expectDateSelection(page:Page,date:string){
+ // The navigator mounts after its summary arrives. A count before that point
+ // incorrectly selects the legacy branch while the compact picker is closed.
+ await expect(page.locator('.date-nav')).toBeVisible();
  const compact=page.locator('.airport-view .date-nav');
  if(await compact.count()){await expect(compact).toHaveAttribute('data-selected-date',date);return;}
  await expect(page.locator('.date-nav-picker input[type=date], [data-testid=date-calendar-trigger]')).toBeVisible();
@@ -8,6 +11,7 @@ export async function expectDateSelection(page:Page,date:string){
  else await expect(page.locator('.date-nav-picker input[type=date]')).toHaveValue(date);
 }
 export async function chooseDate(page:Page,date:string){
+ await expect(page.locator('.date-nav')).toBeVisible();
  const stored=page.locator('.airport-view .stored-date-picker');
  if(await stored.count() && await stored.getAttribute('open')===null)await stored.locator(':scope > summary').click();
  await expect(page.locator('.date-nav-picker input[type=date], [data-testid=date-calendar-trigger]')).toBeVisible();

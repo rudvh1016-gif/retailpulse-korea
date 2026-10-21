@@ -5,13 +5,14 @@ async function setup(page:Page){
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',serviceDateKst:SUMMARY_FIXTURE.serviceDateKst,flights:[],truncated:false}}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:{status:'MISSING',data:null}}));
 }
+// More's approved aligned rows include the generated chevron in their accessible names.
 for(const width of [360,390,430,1440])test(`glass navigation preserves menus, dates, area and history ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await setup(page);await page.goto('/ko/hongdae?date=2026-08-31');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const nav=page.locator(width<821?'.bottom-nav':'.top-nav'),links=nav.locator('a');await expect(nav).toBeVisible();await expect(links).toHaveCount(5);
  await expect(nav.getByRole('link',{name:'미리 준비',exact:true})).toBeVisible();
  for(const link of await links.all()){const box=await link.boundingBox();expect(box!.width).toBeGreaterThanOrEqual(44);expect(box!.height).toBeGreaterThanOrEqual(44);}
  await nav.getByRole('link',{name:'공항현황',exact:true}).click();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await expect(nav.getByRole('link',{name:'공항현황',exact:true})).toHaveAttribute('aria-current','page');
- await nav.getByRole('link',{name:'더보기',exact:true}).click();await page.locator('.more-section-links').getByRole('link',{name:'서울',exact:true}).click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/more/);await page.goBack();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);
+ await nav.getByRole('link',{name:'더보기',exact:true}).click();await page.locator('.more-section-links').getByRole('link',{name:'서울 ›',exact:true}).click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/more/);await page.goBack();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test('horizontal drag snaps once; vertical movement leaves navigation unchanged',async({page})=>{
@@ -34,7 +35,7 @@ test('desktop preserves plain operating menu and cancels mobile feedback on resi
  await page.locator('.bottom-nav a').last().click();await page.setViewportSize({width:1440,height:950});
  const nav=page.locator('.top-nav');await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(5);await expect(nav.locator('svg,.navigation-icon')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeHidden();
  await expect.poll(()=>page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
- await page.locator('.more-section-links').getByRole('link',{name:'매장',exact:true}).click();await expect(page).toHaveURL(/\/ko\/business$/);await expect(nav.getByRole('link',{name:'더보기',exact:true})).toHaveAttribute('aria-current','location');
+ await page.locator('.more-section-links').getByRole('link',{name:'매장 ›',exact:true}).click();await expect(page).toHaveURL(/\/ko\/business$/);await expect(nav.getByRole('link',{name:'더보기',exact:true})).toHaveAttribute('aria-current','location');
  expect(await page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
  expect(await nav.locator('a').first().evaluate(e=>getComputedStyle(e).transform)).toBe('none');
  await page.goBack();await expect(page).toHaveURL(/\/ko\/more$/);

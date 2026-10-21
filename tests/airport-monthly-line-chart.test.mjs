@@ -50,3 +50,12 @@ test('thin strokes are non-scaling and touch targets and motion stay independent
  const source=readFileSync(new URL('../app/airport-monthly-line-chart.tsx',import.meta.url),'utf8');
  assert.doesNotMatch(source,/\bfetch\s*\(|gsap|lottie/i);
 });
+
+// CI trace: the floating readout intercepted the next month target. Removing it
+// on Escape then re-entered the exposed target and immediately reopened it.
+test('the noninteractive monthly readout never intercepts its month targets',()=>{
+ const css=readFileSync(new URL('../app/airport-monthly-line-chart.css',import.meta.url),'utf8');
+ const tooltip=css.match(/\.focus-month-tooltip\{([^}]+)\}/)?.[1];
+ assert.ok(tooltip);
+ assert.match(tooltip,/(?:^|;)pointer-events:none(?:;|$)/);
+});

@@ -27,6 +27,11 @@ test('hover and keyboard show the actual value for every month, including May',a
    const button=chart.locator(`button[data-month="${point.month}"]`);
    await button.hover({position:{x:22,y:100}});
    await expect(chart.getByRole('tooltip')).toHaveText(`${Number(point.month.slice(5))}월 · ${point.departures.toLocaleString('ko-KR')}명`);
+   // The readout can overlap this point, but must not steal its hit target.
+   // Otherwise Escape exposes the button and immediately re-enters/reopens it.
+   await expect(chart.getByRole('tooltip')).toHaveCSS('pointer-events','none');
+   const box=(await button.boundingBox())!;
+   expect(await button.evaluate((node,point)=>node.contains(document.elementFromPoint(point.x,point.y)),{x:box.x+22,y:box.y+100})).toBe(true);
   }
   await page.keyboard.press('Escape');await expect(chart.getByRole('tooltip')).toHaveCount(0);
  }
