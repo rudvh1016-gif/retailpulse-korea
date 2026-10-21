@@ -11,3 +11,5 @@
 .update-notice-items{min-height:0;overflow-y:auto;overscroll-behavior:contain;flex:1 1 auto}
 
 .update-notice .update-notice-date{font-size:11px;color:#62666c;margin:-12px 0 12px}
+
+.update-notice-items .reference-change-notices:not(:empty){border-bottom:1px solid #e1e5e9}

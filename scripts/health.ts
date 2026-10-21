@@ -37,7 +37,7 @@ import {
 } from "../lib/scheduler-truth";
 import { buildHealthReport, summarizeHealthReport, type HealthInputs } from "../lib/operational-health";
 import { OperationalMemory } from '../lib/operational-memory';
-import { measureSource, sourceObservation, canonicalOperationalJob, verifyPublicMeasurement, readPublicEvidence, type SourceMeasurement } from '../lib/operational-evidence';
+import { measureSource, sourceObservation, sourceFreshnessEvidence, canonicalOperationalJob, verifyPublicMeasurement, readPublicEvidence, type SourceMeasurement } from '../lib/operational-evidence';
 import { readForecastEvidence } from '../lib/operational-forecast-evidence';
 import { observedUsage, scoreRecoveryAttempts, regressionCandidates, evaluateShadowPolicy, currentActionFor, shadowCandidatesFor } from '../lib/recovery-scorecard';
 import { capabilityFor, SOURCE_RECOVERY_CAPABILITIES, PRODUCTION_SOURCE_IDS } from '../lib/recovery-capability';
@@ -392,7 +392,8 @@ const centralRecoveryReadiness = {
 // needs a person when the next year's arrangement is due. Reported, never failing.
 const holidayCalendar = calendarCoverage(new Date(Date.now() + 9 * 3_600_000).toISOString().slice(0, 10));
 const report = {...buildHealthReport(inputs),holidayCalendar,phase2:{
-  memory:live?.memoryState??'UNKNOWN_NO_DATABASE',sourceEvidence:live?.measurements.map(({sample,run,health,...facts})=>({...facts,sampleRows:sample.length,collectorStatus:run?.status??null,sourceStatus:health?.status??null}))??[],
+  memory:live?.memoryState??'UNKNOWN_NO_DATABASE',sourceEvidence:live?.measurements.map(({sample,run,health,...facts})=>({...facts,sampleRows:sample.length,collectorStatus:run?.status??null,sourceStatus:health?.status??null,
+    freshnessEvidence:sourceFreshnessEvidence({...facts,sample})}))??[],
   lastGood:live?.states??[],scorecard:scoreRecoveryAttempts(live?.attempts??[]),usage:observedUsage(live?.usage??[]),
   regressionCandidates:regressionCandidates(live?.incidents??[]),automaticPolicyChangeAllowed:false,automaticCodeChangeAllowed:false,
   centralRecovery:'DORMANT',shadow,

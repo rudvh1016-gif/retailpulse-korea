@@ -4,7 +4,7 @@
     "app/[locale]/[slug]/page.tsx": "74d14e76bde7c0efc1859d4ae2aaba3ae1d04cfe377a38293eeb9e8adde79417",
     "app/[locale]/not-found.tsx": "620e62c747a4a0d4b8af1558492c74e961f2a4f0d55caa2c960c508395a41ff0",
     "app/[locale]/page.tsx": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792",
-    "app/[locale]/tourism-desk/[area]/page.tsx": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
+    "app/[locale]/tourism-desk/[area]/page.tsx": "bc0d21662ab6bd24537521bb2874273ad47d4d16dadaf92afdf776f68e302bfe",
     "app/[locale]/tourism-desk/page.tsx": "2738ee0e7cfb960016184b8dd9a99112312719819cd3b8d05e96a89e83320b37",
     "app/api/airport/facilities/route.ts": "ebc9dea6df03d842ee8fbb1e640158276a506658cc364190a32fd99cf712639d",
     "app/api/airport/facility-operations/route.ts": "a7a7aa2a7955d2726136701a92f8bac81d0a26c40eac33049cfb3d1f5d6d909b",
@@ -31,9 +31,9 @@
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "2208d14daf3cf078a6626ebca6ad90ef8e8dc0770c93f4fd6a295bd812d0e1f8",
     "app/site-usage-guide.tsx": "4b49e1bd31a91e35f7d0b56b6d1670d94cf644bcc47bcb257508a2a0f6cc64f1",
-    "app/sitemap.ts": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
+    "app/sitemap.ts": "31ccb4d7cad836a09c3973f14c35ef638d8570413e6198a031c0ce2cd978063f",
     "app/source-status.tsx": "2432bc8bad500b8c45bba8d08781b8d6a189854d3c8a8a33b538bc9491580e46",
-    "app/tourism-desk.tsx": "90eb979789ea8c74b9ff04db767d845ff58bcf6c5ae2f9dc73a0a4a2975efa13",
+    "app/tourism-desk.tsx": "e938803682318aa1e44c7e9e72bc6f9056dcf850032e272c8f47efed261bdf4e",
     "app/tourism-visitor-show.tsx": "e30883e6efce51f33f839a38b78afe4a1127d87c9ba2cdb7bbac4de189179a10",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
@@ -3027,5 +3027,98 @@
         "approved": "0f3a9126af25993f671a13487d001c3a63a0d4c0f4c795fd541043266ac51684"
       }
     ]
+  },
+  "ownerRequestedSitemapTruth20261020": {
+    "recordedAt": "2026-10-20",
+    "reason": "Owner-requested completion of outstanding Naver/Google SEO fixes. PR #412 removes unsupported current-day sitemap lastModified values because scheduled collection does not prove significant page-content changes. Only the reviewed sitemap hash is refreshed; every protected path, prior approval record, Cron baseline and the original Owner UI Lock assertion remain enforced. No visible UI, canonical URLs, locale alternates, staging policy, data reads, scheduler, paid service, merge or deployment changes.",
+    "comparisonBase": "7c9aef7e7f7d79a143957c777e70f1ee9ac30d72",
+    "reviewedCommit": "ad5223720835d68e6c00186f230dae894529235b",
+    "changes": [
+      {
+        "file": "app/sitemap.ts",
+        "previous": "feb12ed8a001d1524b1fece19c3ac3ee945d4ccdc91d2fa115d5cccc1eedf2cd",
+        "approved": "31ccb4d7cad836a09c3973f14c35ef638d8570413e6198a031c0ce2cd978063f",
+        "exactUnifiedDiff": "diff --git a/app/sitemap.ts b/app/sitemap.ts\nindex 390ff14..9546d5e 100644\n--- a/app/sitemap.ts\n+++ b/app/sitemap.ts\n@@ -1,17 +1,6 @@\n import type { MetadataRoute } from \"next\";\n import { canonicalSlug, isStagingDeployment, seoLocales, seoPath, siteOrigin, standaloneSeoSlugs, tourismDeskAreas, type SeoSlug } from \"./seo-config\";\n \n-/**\n- * Start of today in KST, as an instant.\n- *\n- * Korea has no daylight saving, so UTC+9 is a constant offset and this needs\n- * no timezone database.\n- */\n-function kstDayStart(now: Date): Date {\n-  const kstOffsetMs = 9 * 60 * 60 * 1000;\n-  return new Date(Math.floor((now.getTime() + kstOffsetMs) / 86_400_000) * 86_400_000 - kstOffsetMs);\n-}\n-\n /**\n  * `hreflang` for one page across every locale, as absolute URLs.\n  *\n@@ -29,32 +18,16 @@ function localeAlternates(slug?: SeoSlug, area?: (typeof tourismDeskAreas)[numbe\n }\n \n /**\n- * Whether we can honestly date a page.\n- *\n- * Every entry used to carry `lastModified: new Date()` — evaluated per\n- * request, so the whole site claimed to have changed at the moment of every\n- * crawl, `/about` included. Google's sitemap documentation is explicit that\n- * demonstrably unreliable `lastmod` values are ignored, and it does not ignore\n- * them per URL: one page that always claims \"just now\" devalues the signal for\n- * every page beside it.\n- *\n- * So a date is declared only where the repository can justify it. The area,\n- * airport, forecast, outlook, business and guide-desk screens are rebuilt from\n- * collections that land every day, so the start of the current KST day is\n- * true and — unlike `new Date()` — stable for the whole day. `/about` and\n- * `/more` are explainer copy that changes only when someone edits it, and a\n- * checkout cannot tell when that was, so they carry no date at all. An absent\n- * `lastmod` reads as \"unknown\", which is what it is.\n+ * lastModified is intentionally omitted. A scheduled collection or the current\n+ * KST date does not prove that a page changed: sources can be stale, unchanged\n+ * or unavailable. Restore this optional field only with a persisted timestamp\n+ * for a significant change to that page's actual content, not request/build time.\n  */\n-const UNDATEABLE_SLUGS = new Set<SeoSlug>([\"about\", \"more\"]);\n-\n export default function sitemap(): MetadataRoute.Sitemap {\n   if (isStagingDeployment) return [];\n-  const dailyRefresh = kstDayStart(new Date());\n   return seoLocales.flatMap((locale) => [\n     {\n       url: `${siteOrigin}${seoPath(locale)}`,\n-      lastModified: dailyRefresh,\n       changeFrequency: \"daily\" as const,\n       priority: 1,\n       alternates: { languages: localeAlternates() },\n@@ -62,14 +35,12 @@ export default function sitemap(): MetadataRoute.Sitemap {\n     // Only canonical URLs: a slug that serves the home (canonicalSlug) is not listed again.\n     ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug).map((slug) => ({\n       url: `${siteOrigin}${seoPath(locale, slug)}`,\n-      ...(UNDATEABLE_SLUGS.has(slug) ? {} : { lastModified: dailyRefresh }),\n       changeFrequency: slug === \"more\" ? \"weekly\" as const : \"daily\" as const,\n       priority: slug === \"more\" ? 0.5 : slug === \"forecast\" || slug === \"business\" ? 0.8 : 0.9,\n       alternates: { languages: localeAlternates(slug) },\n     })),\n     ...tourismDeskAreas.map((area) => ({\n       url: `${siteOrigin}${seoPath(locale, \"tourism-desk\", area)}`,\n-      lastModified: dailyRefresh,\n       changeFrequency: \"daily\" as const,\n       priority: 0.9,\n       alternates: { languages: localeAlternates(\"tourism-desk\", area) },\n"
+      }
+    ]
+  },
+  "ownerRequestedTextHomePerformanceExperiment20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "ownerRequest": "코리테일 배포도 하고 속도 개선 점검도 하고 코드 버그 점검도 해 배포하고 나서",
+      "scope": "Evidence-gated same-font preload experiment on the Korean text-led home only. This is a candidate under the owner-requested speed investigation, not a claim that the owner specifically selected preloading or that a speed gain is established. Preserve all fonts, UI, data, other routes/locales, exact budgets and lock enforcement. Root owns any merge/deployment after matched CI."
+    },
+    "comparisonBase": "15ed3e92fe33c1ceca167c00f4899b200b455e36",
+    "evidence": "CI 39473347408: deployed26474d0 vs synthetic merge f87ce5ae, tree equal to15ed3e9; dominant mobile shift .093245 occurs124-129ms after shell-font responseEnd. The October13 image-led no-preload decision remains recorded; this text-led experiment must pass unchanged budgets before promotion.",
+    "changes": [
+      {
+        "file": "app/[locale]/page.tsx",
+        "previous": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792",
+        "approved": "7d4dfb4eddd1eb9c188de39e1fe57b3f92c79acea896bc1b0b167cb5e00f764f",
+        "exactUnifiedDiff": "diff --git a/app/[locale]/page.tsx b/app/[locale]/page.tsx\nindex a6e4009..fae3917 100644\n--- a/app/[locale]/page.tsx\n+++ b/app/[locale]/page.tsx\n@@ -3,6 +3,7 @@ import { preload } from \"react-dom\";\n import { notFound } from \"next/navigation\";\n import RetailPulseApp from \"../retailpulse-app\";\n import {AirportFocusGlance as AirportGlancePreview} from \"../airport-focus-production\";\n+import {preloadShellFont} from '../shell-font-preload';\n import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from \"../seo-config\";\n \n /**\n@@ -18,11 +19,12 @@ function preloadLiveSummary() {\n }\n \n /**\n- * No shell-font preload on the home, unlike travel-records and airport-news.\n- * On a throttled phone it competed with the scripts that hydrate the page;\n- * without it the page is interactive about 0.5 s sooner and the brand face,\n- * still requested by the stylesheet with `font-display: swap`, arrives about\n- * 0.3 s later (owner decision, 2026-10-13).\n+ * Experimental Korean text-led home only: matched October 20 attribution puts\n+ * .093245 of .094324 mobile layout shift just after the late shell-font swap.\n+ * Reuse the existing face/hint; unchanged CI budgets must establish whether\n+ * earlier stable text outweighs script contention. The former image-led home\n+ * intentionally omitted this hint (October 13); other routes/locales keep\n+ * their existing policy. This is not yet a speed-improvement claim.\n  */\n export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }\n \n@@ -36,6 +38,7 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:\n   const { locale } = await params;\n   if (!seoLocales.includes(locale as SeoLocale)) notFound();\n   preloadLiveSummary();\n+  if (locale === 'ko') preloadShellFont('ko');\n   return <>\n     <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport-glance\" initialScope=\"airport-home\" AirportGlance={AirportGlancePreview} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />\n"
+      }
+    ],
+    "experimental": true,
+    "keepProtectedListAndEnforcement": true
+  },
+  "ownerRequestedTourismDestinationResilience20261020": {
+    "recordedAt": "2026-10-20",
+    "authorizationEvidence": {
+      "scope": "Owner-requested site bug checks and destination matching. Preserve the explicit Tourism Desk URL area instead of restoring a saved personal home location. Move only the existing static methodology outside the live-summary gate so it remains available during loading or failure. No new copy, source, data, D1/API read, scheduler, dependency, paid service or redesign. Root approved this isolated local candidate; integration review and CI remain required.",
+      "agentMergeOrDeploymentApproved": false
+    },
+    "comparisonBase": "e50c72c93c3b32240abec1a6eba21bd73050472b",
+    "changes": [
+      {
+        "file": "app/[locale]/tourism-desk/[area]/page.tsx",
+        "previous": "b74c40a03d7ff4ec57a8314f4c11825467212d48634bebf057d078d3ae360b35",
+        "approved": "bc0d21662ab6bd24537521bb2874273ad47d4d16dadaf92afdf776f68e302bfe",
+        "exactUnifiedDiff": "diff --git a/app/[locale]/tourism-desk/[area]/page.tsx b/app/[locale]/tourism-desk/[area]/page.tsx\nindex dba61cd..5581611 100644\n--- a/app/[locale]/tourism-desk/[area]/page.tsx\n+++ b/app/[locale]/tourism-desk/[area]/page.tsx\n@@ -34,6 +34,7 @@ export default async function TourismDeskAreaPage({ params }: { params: Promise<\n       initialLang={locale as SeoLocale}\n       initialView=\"tourism-desk\"\n       initialArea={area as TourismDeskArea}\n+      initialScope=\"area\"\n       initialRoute\n     />\n     <script\n"
+      },
+      {
+        "file": "app/tourism-desk.tsx",
+        "previous": "90eb979789ea8c74b9ff04db767d845ff58bcf6c5ae2f9dc73a0a4a2975efa13",
+        "approved": "e938803682318aa1e44c7e9e72bc6f9056dcf850032e272c8f47efed261bdf4e",
+        "exactUnifiedDiff": "diff --git a/app/tourism-desk.tsx b/app/tourism-desk.tsx\nindex d72d10b..40589a1 100644\n--- a/app/tourism-desk.tsx\n+++ b/app/tourism-desk.tsx\n@@ -816,16 +816,16 @@ export function TourismDeskView({ lang, area, onAreaChange }: {\n         </div> : <p className=\"tourism-empty\">{copy.unavailable}</p>}\n       </section>\n \n-      <section className=\"tourism-guide-section\" aria-labelledby=\"tourism-limits-title\">\n-        <header className=\"tourism-section-head\">\n-          <h2 id=\"tourism-limits-title\">{copy.sectionLimits}</h2>\n-          <p>{copy.limitsIntro}</p>\n-        </header>\n-        <ul className=\"tourism-limits\">\n-          {limitLines(lang, areaName).map((line) => <li key={line}>{line}</li>)}\n-        </ul>\n-      </section>\n     </>}\n \n+    <section className=\"tourism-guide-section\" aria-labelledby=\"tourism-limits-title\">\n+      <header className=\"tourism-section-head\">\n+        <h2 id=\"tourism-limits-title\">{copy.sectionLimits}</h2>\n+        <p>{copy.limitsIntro}</p>\n+      </header>\n+      <ul className=\"tourism-limits\">\n+        {limitLines(lang, areaName).map((line) => <li key={line}>{line}</li>)}\n+      </ul>\n+    </section>\n   </section>;\n }\n"
+      }
+    ],
+    "protectedPathCount": 67,
+    "keepProtectedListAndEnforcement": true,
+    "searchIndexingClaim": "This fixes a routing/resilience bug; it does not establish search-engine indexing or resolve historical Soft 404 reports."
+  },
+  "rejectedTextHomePerformanceExperiment20261020": {
+    "recordedAt": "2026-10-20",
+    "decision": "Reject the evidence-gated preload experiment: matched mobile paint worsened despite improved stability. Restore the prior approved home source/hash; retain every historical record and all unrelated fixes. Root authorized removal; no merge/deployment.",
+    "comparison": {
+      "run": 39479787913,
+      "artifact": 12290282540,
+      "before": "26474d048885a642550d1196a55586b1b5f9fe60",
+      "candidate": "d970edf19d6c0e402552cdcd35c261f0e8f1b495",
+      "mobileLcpMs": [
+        7032,
+        8080
+      ],
+      "mobileFcpMs": [
+        6236,
+        6840
+      ],
+      "mobileShiftSum": [
+        0.09432448614623092,
+        0.0011570760470858178
+      ],
+      "sameLcpElement": true,
+      "existingBudgetPassed": true,
+      "lcpIsBudgetGated": false
+    },
+    "changes": [
+      {
+        "file": "app/[locale]/page.tsx",
+        "previousExperimental": "7d4dfb4eddd1eb9c188de39e1fe57b3f92c79acea896bc1b0b167cb5e00f764f",
+        "restoredApproved": "0fee43451d696341924bc6481b1c40f992162f4a0c16521ae2f2df997414f792",
+        "exactUnifiedDiff": "diff --git a/app/[locale]/page.tsx b/app/[locale]/page.tsx\nindex fae3917..a6e4009 100644\n--- a/app/[locale]/page.tsx\n+++ b/app/[locale]/page.tsx\n@@ -3,7 +3,6 @@ import { preload } from \"react-dom\";\n import { notFound } from \"next/navigation\";\n import RetailPulseApp from \"../retailpulse-app\";\n import {AirportFocusGlance as AirportGlancePreview} from \"../airport-focus-production\";\n-import {preloadShellFont} from '../shell-font-preload';\n import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from \"../seo-config\";\n \n /**\n@@ -19,12 +18,11 @@ function preloadLiveSummary() {\n }\n \n /**\n- * Experimental Korean text-led home only: matched October 20 attribution puts\n- * .093245 of .094324 mobile layout shift just after the late shell-font swap.\n- * Reuse the existing face/hint; unchanged CI budgets must establish whether\n- * earlier stable text outweighs script contention. The former image-led home\n- * intentionally omitted this hint (October 13); other routes/locales keep\n- * their existing policy. This is not yet a speed-improvement claim.\n+ * No shell-font preload on the home, unlike travel-records and airport-news.\n+ * On a throttled phone it competed with the scripts that hydrate the page;\n+ * without it the page is interactive about 0.5 s sooner and the brand face,\n+ * still requested by the stylesheet with `font-display: swap`, arrives about\n+ * 0.3 s later (owner decision, 2026-10-13).\n  */\n export function generateStaticParams() { return seoLocales.map((locale) => ({ locale })); }\n \n@@ -38,7 +36,6 @@ export default async function LocaleHome({ params }: { params: Promise<{ locale:\n   const { locale } = await params;\n   if (!seoLocales.includes(locale as SeoLocale)) notFound();\n   preloadLiveSummary();\n-  if (locale === 'ko') preloadShellFont('ko');\n   return <>\n     <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView=\"airport-glance\" initialScope=\"airport-home\" AirportGlance={AirportGlancePreview} />\n     <script type=\"application/ld+json\" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />\n"
+      }
+    ],
+    "experimentRetainedForAudit": "ownerRequestedTextHomePerformanceExperiment20261020",
+    "keepProtectedListAndEnforcement": true
   }
 }

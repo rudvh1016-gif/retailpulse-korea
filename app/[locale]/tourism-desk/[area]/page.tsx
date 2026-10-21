@@ -34,6 +34,7 @@ export default async function TourismDeskAreaPage({ params }: { params: Promise<
       initialLang={locale as SeoLocale}
       initialView="tourism-desk"
       initialArea={area as TourismDeskArea}
+      initialScope="area"
       initialRoute
     />
     <script
