@@ -75,6 +75,8 @@ export const STORAGE_TABLES: readonly TableInventory[] = [
     readers: "Reviewed Japan scalar template projection and single previous value for notice; maximum one row", insertedAt: "updated_at" },
   { table: "official_calendar_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "Latest verified JP/US official calendar payload and attempt status; maximum two rows", insertedAt: "checked_at" },
+  { table: "approved_notice_checks", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "Approved Korean annual-notice fingerprints and check status only; maximum two rows, JSON <=4096 characters each, no raw documents or date verification", insertedAt: "checked_at" },
   // Prepared official news: hard caps 200 current / 400 meaningful revisions;
   // never prune travel records, predictions or old rights evidence for space.
   { table: "official_news_current", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
