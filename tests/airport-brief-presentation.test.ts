@@ -14,6 +14,14 @@ test('brief renders people/day and shared signed percentage, with honest partial
  assert.match(partial,/30일 중 22일 합산자료 확인 · 8일 미확인 · 비교 보류/);assert.doesNotMatch(partial,/%|명\/일 감소|명\/일 증가/);
  assert.match(render(null),/선택일 단순합계 확인 중/);assert.match(render(100,{...ref,mean:0}),/증감률 계산 불가/);
 });
+test('proved observed days render the sample label, numerator, divisor and missing days, not a whole-month mean',()=>{
+ const baseline:PassengerReferenceMonth={...ref,status:'PARTIAL',mean:null,completeDays:22,
+  missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),
+  observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50_000,transfers:10_000}))};
+ const html=renderToStaticMarkup(h(PassengerBriefComparison,{total:52_919,day:'2026-10-21',baseline}));
+ assert.match(html,/전월 수집 22일 기준 일평균\(전체 30일 중\)/);assert.match(html,/60,000명\/일 대비/);assert.match(html,/7,081명\/일 감소/);assert.match(html,/▲ 11.8%/);
+ assert.match(html,/1,320,000명 ÷ 22일 · 8일 미확인 · 월전체 평균 아님/);assert.doesNotMatch(html,/비교 보류/);
+});
 test('each planning country owns its flag, preserved date/source and optional country metric',()=>{
  const event={id:'jp',country:'JP',countryLabel:'일본',name:'문화의 날',start:'2026-11-03',end:'2026-11-03',type:'public_holiday',scope:'전국 공휴일',sourceURL:'https://example.test/jp',meaning_ko:'문화의 날 설명'};
  const japan=renderToStaticMarkup(h(PreparationEvent,{event},h('small',null,'9월 일본 노선 출발 여객, 전월비 +2.7%')));
@@ -33,5 +41,5 @@ test('transparent neutral glass is scoped to the whole report with white accessi
  assert.doesNotMatch(surface,/(?:padding|margin|height|font-size|animation|transition):/);
  assert.match(css,/\.airport-focus-shell\{[^}]*background:white/);
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
- assert.match(source,/= 단순합계/);assert.match(source,/중복을 제거한 공식 총출국객 수가 아닙니다/);assert.match(source,/미확인 날짜:/);
+ assert.match(source,/= \{t\('단순합계','arithmetic sum','简单合计'\)\}/);assert.match(source,/중복을 제거한 공식 총출국객 수가 아닙니다/);assert.match(source,/미확인 날짜:/);
 });
