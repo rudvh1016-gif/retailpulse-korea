@@ -61,6 +61,11 @@ details.guide > summary.entry,.tripEntry { box-sizing:border-box; width:100%; he
 .choiceSource:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
 @media(max-width:600px){.choiceOptions[data-options="4"] { grid-template-columns:repeat(2,minmax(0,1fr)); }.choiceOptions button { padding:6px; }}
 
+/* Owner: separate the three airport day pills slightly; no enclosing rectangle. */
+:global(.app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts) {
+ gap:6px; border:0; background:transparent;
+}
+
 /* Owner 2026-10-21: exactly the two entry actions and three airport days.
    Match the final bottom-bar material, not its older gray rule.
    No geometry, type, event handlers or selected-day underline changes. */
