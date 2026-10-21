@@ -1,4 +1,7 @@
 /** Bounded read-only evidence. No provider calls, and no hot public-route imports. */
+import { readAirportTodayCoverage } from './airport-today-coverage';
+import { flightScopeCounts } from './flight-scope';
+import { summarizeTodayTopGate, summarizeTodayTopGateByTerminal, type AirportTodayFlightRow } from './airport-today-summary';
 import { publicAreaIds } from './areas';
 import { buildCoverageContext } from './data-coverage';
 import { readRequiredForecastCoverage } from './collector';
@@ -72,7 +75,8 @@ export function sourceFreshnessEvidence(measurement:Pick<SourceMeasurement,'sour
   };
 }
 
-export async function measureSource(db:D1Database,sourceId:string,nowIso:string):Promise<SourceMeasurement> {
+// Full A1 projection is opt-in for the one admitted recovery child, never routine health polling.
+export async function measureSource(db:D1Database,sourceId:string,nowIso:string,options:{airportRecovery?:boolean}={}):Promise<SourceMeasurement> {
   const [run,health]=await Promise.all([
     db.prepare('SELECT run_id,status,started_at,finished_at,records_read,records_written,detail FROM collector_runs WHERE source_id=? ORDER BY started_at DESC LIMIT 1').bind(sourceId).first<EvidenceRow>(),
     db.prepare('SELECT * FROM source_health WHERE source_id=?').bind(sourceId).first<EvidenceRow>(),
@@ -82,7 +86,25 @@ export async function measureSource(db:D1Database,sourceId:string,nowIso:string)
     failureClass:null,detail:'coverage/publication not measured for this source',sample:[]};
   const context=buildCoverageContext(nowIso), now=Date.parse(nowIso);
   try {
-    if(sourceId==='SEOUL_CITYDATA_PPLTN'||sourceId==='SEOUL_CITYDATA_CMRCL') {
+    if(sourceId==='INCHEON_FLIGHT_DETAIL'&&options.airportRecovery===true) {
+      const coverage=await readAirportTodayCoverage(db,nowIso);
+      const tomorrow=new Date(Date.parse(context.kstToday+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+      output.sample=await rows(db,`SELECT physical_flight_id AS physicalFlightId, terminal, gate,
+        retrieved_at AS retrievedAt, scheduled_at AS scheduledAt, schema_version, quality_status
+        FROM airport_flights WHERE direction='departure' AND scheduled_at>=? AND scheduled_at<? LIMIT 2000`,[context.kstToday,tomorrow]);
+      // Same bounded projection as public summary. A capped slice cannot prove full publication.
+      output.storedRows=output.sample.length;
+      output.storageValid=coverage.state==='CURRENT'&&output.sample.length>0&&output.sample.length<2000;
+      output.coverage=output.storageValid?'COMPLETE':'PARTIAL';
+      // PARTIAL terminal/gate metadata is legitimate; never invent a terminal.
+      const valid=output.sample.every(row=>typeof row.physicalFlightId==='string'&&!!row.physicalFlightId&&
+        validTime(row.scheduledAt)&&String(row.scheduledAt).slice(0,10)===context.kstToday&&
+        validTime(row.retrievedAt)&&Date.parse(String(row.retrievedAt))<=now&&
+        typeof row.schema_version==='string'&&!!row.schema_version&&row.schema_version!=='unavailable'&&
+        ['VALID','PARTIAL'].includes(String(row.quality_status)));
+      output.dataValid=output.storageValid&&valid&&health?.status==='LIVE';
+      output.failureClass=!valid?'INVALID_PAYLOAD':!output.storageValid?'PARTIAL_DATA':null;
+    } else if(sourceId==='SEOUL_CITYDATA_PPLTN'||sourceId==='SEOUL_CITYDATA_CMRCL') {
       const population=sourceId==='SEOUL_CITYDATA_PPLTN';
       const table=population?'seoul_realtime_area':'seoul_realtime_commercial';
       output.sample=(await Promise.all(publicAreaIds.map(area=>rows(db,`SELECT * FROM ${table}
@@ -176,6 +198,20 @@ export function matchPublicEvidence(measurement:SourceMeasurement,body:unknown):
     if(!actual||typeof actual!=='object')return false;
     return Object.entries(fields).every(([published,stored])=>(actual as EvidenceRow)[published]===expected[stored]);
   };
+  if(measurement.sourceId==='INCHEON_FLIGHT_DETAIL') {
+    if(measurement.dataValid!==true||measurement.sample.length>=2000)return null;
+    const flights=measurement.sample as unknown as AirportTodayFlightRow[];
+    const scope=flightScopeCounts(flights), expected=summarizeTodayTopGate(flights);
+    const terminals=summarizeTodayTopGateByTerminal(flights);
+    const actual=summary.airport;
+    const counts=actual?.departuresTrackedTodayByTerminal as EvidenceRow|undefined;
+    const publishedScope=actual?.flightScope as EvidenceRow|undefined;
+    return actual?.departuresTrackedToday===expected.departuresTrackedToday&&
+      actual?.departuresTrackedTodayRetrievedAt===expected.retrievedAt&&
+      !!counts&&Object.keys(counts).length===Object.keys(terminals).length&&
+      Object.entries(terminals).every(([terminal,value])=>counts[terminal]===value.departuresTrackedToday)&&
+      publishedScope?.capped===false&&Object.entries(scope).every(([key,value])=>publishedScope[key]===value);
+  }
   if(measurement.sourceId==='SEOUL_CITYDATA_PPLTN'||measurement.sourceId==='SEOUL_CITYDATA_CMRCL') {
     const population=measurement.sourceId==='SEOUL_CITYDATA_PPLTN';
     return measurement.sample.every(row=>matches(summary.areas?.[String(row.area)]?.[population?'realtime':'commercial'],row,

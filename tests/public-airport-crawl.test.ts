@@ -98,12 +98,12 @@ test('monthly passengers unavailable remains no-store and noindex',async()=>{
  assert.equal(response.headers.get('cache-control'),'no-store');
  assert.equal((await response.json()).status,'UNAVAILABLE');
 });
-test('invalid months are noindex 400 without a storage read or changed caching',async()=>{
+test('invalid months are noindex 400 without a storage read and explicitly no-store',async()=>{
  for(const month of ['bad','2026-00','2026-13','2026-1','2026-10/extra']){
   const response=await airportPassengerStatsResponse(new Request(`${origin}${endpoints[1]}?month=${encodeURIComponent(month)}`),async()=>{assert.fail('invalid month must not read storage');});
   assert.equal(response.status,400);
   assert.equal(response.headers.get('x-robots-tag'),'noindex');
-  assert.equal(response.headers.get('cache-control'),null);
+  assert.equal(response.headers.get('cache-control'),'no-store');
   assert.equal((await response.json()).status,'INVALID_SELECTION');
  }
 });

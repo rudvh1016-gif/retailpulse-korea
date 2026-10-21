@@ -67,7 +67,7 @@ const worker = {
       }, allowedWidths);
     }
 
-    // Only the public summary read is handed to the cached entrypoint. Every
+    // Only allowlisted public reads are handed to the cached entrypoint. Every
     // other route — writes, health, pages, assets — stays on this uncached
     // gateway and reaches the application unchanged.
     if (shouldRouteToSummaryCache(request.method, url.pathname)) {

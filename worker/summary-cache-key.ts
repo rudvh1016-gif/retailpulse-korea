@@ -27,7 +27,8 @@
  * `tests/summary-cache-key.test.mjs` runs the real route on the original and the
  * reduced URL and requires the same answer.
  */
-import { isValidKstDay } from "../lib/kst";
+import { AIRPORT_MONTH_CACHE_PATHS } from "./summary-cache-routing";
+import { kstDayOf, isValidKstDay } from "../lib/kst";
 import { RECORD_AREAS } from '../lib/monthly-records';
 
 /** A month the route would use as given (`availabilityPeriod` accepts exactly these). */
@@ -41,7 +42,18 @@ function validMonth(value: string | null): string | null {
  * `searchParams.get` returns the FIRST occurrence, exactly as the route reads it,
  * so `?date=bad&date=2026-09-01` is "today" here just as it is in the route.
  */
-export function canonicalSummaryUrl(url: URL): string {
+export function canonicalSummaryUrl(url: URL, now = new Date()): string {
+  if (AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) {
+    // Both routes read only the first month. Preserve even invalid/empty input:
+    // unlike summary, these routes return 400 rather than defaulting it.
+    const query = new URLSearchParams();
+    const month = url.searchParams.get("month");
+    if (month !== null) query.set("month", month);
+    // Availability and omitted-month defaults depend on the KST service day.
+    // Generate this key component ourselves; caller-supplied values are ignored.
+    query.set("_kstDay", kstDayOf(now.toISOString()));
+    return `${url.origin}${url.pathname}?${query}`;
+  }
   // FX is a single current stored snapshot; the client applies its selected date.
   if ((url.pathname === '/api/live/duty-free-exchange' || url.pathname === '/api/live/duty-free-exchange/monthly')) return `${url.origin}${url.pathname}`;
   // The flight record reads `date` only (a real KST day; anything else means
@@ -87,7 +99,9 @@ export function canonicalSummaryRequest(request: Request, url: URL): Request {
   // reuses its own copy past the two-minute poll. That adds a request
   // `Cache-Control`/`Pragma`, which must not turn the shared copy into a full
   // D1 read either: the route's own response header is the freshness contract.
-  const dropped = url.pathname === '/api/live/flights' ? ["authorization", "cache-control", "pragma"] : ["authorization"];
+  // Prepared month reads similarly use browser no-store, with an existing
+  // shared TTL on READY and no-store on missing/error responses.
+  const dropped = (url.pathname === '/api/live/flights' || AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) ? ["authorization", "cache-control", "pragma"] : ["authorization"];
   if (canonical === url.href && !dropped.some((name) => request.headers.has(name))) return request;
   const headers = new Headers(request.headers);
   for (const name of dropped) headers.delete(name);
