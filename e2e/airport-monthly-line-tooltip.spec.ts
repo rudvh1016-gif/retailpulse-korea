@@ -82,9 +82,17 @@ test.describe('phone and tablet taps',()=>{
   await expect(chart.getByRole('tooltip')).toHaveCSS('animation-name','none');
   await expect(chart.locator('g[data-month="2026-05"] .focus-month-halo')).toHaveCSS('transition-duration','0s');
   const tip=(await chart.getByRole('tooltip').boundingBox())!;expect(tip.x).toBeGreaterThanOrEqual(0);expect(tip.x+tip.width).toBeLessThanOrEqual(width);
-  await expect(chart.getByRole('tooltip')).toHaveCSS('background-color','rgba(255, 255, 255, 0.68)');
-  await expect(chart.getByRole('tooltip')).toHaveCSS('backdrop-filter','blur(14px)');
-  await expect(chart.getByRole('tooltip')).toHaveCSS('border-radius','12px');
+  await expect(chart.getByRole('tooltip')).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
+  await expect(chart.getByRole('tooltip')).toHaveCSS('backdrop-filter','blur(24px) saturate(1.1)');
+  await expect(chart.getByRole('tooltip')).toHaveCSS('border-radius','33px');
+  await expect(chart.getByRole('tooltip')).toHaveCSS('font-size','13px');
+  expect(await chart.getByRole('tooltip').evaluate(node=>node.scrollWidth<=node.clientWidth)).toBe(true);
+  if(width<768){
+   const nav=await page.locator('.bottom-nav.glass-nav').evaluate(node=>{const css=getComputedStyle(node,'::before');return {background:css.backgroundColor,filter:css.backdropFilter,shadow:css.boxShadow};});
+   await expect(chart.getByRole('tooltip')).toHaveCSS('background-color',nav.background);
+   await expect(chart.getByRole('tooltip')).toHaveCSS('backdrop-filter',nav.filter);
+   await expect(chart.getByRole('tooltip')).toHaveCSS('box-shadow',nav.shadow);
+  }
   await expect(chart.getByRole('tooltip')).toHaveCSS('pointer-events','none');
   expect(tip.width).toBeLessThanOrEqual(152);expect(tip.height).toBeLessThanOrEqual(60);
   await expect(chart).toHaveCSS('background-color','rgb(255, 255, 255)');
@@ -114,8 +122,8 @@ test.describe('phone and tablet taps',()=>{
   await expect(chart.getByRole('tooltip')).toHaveText('8월 · 761,678명');
   await page.touchscreen.tap(a.x+a.width/2+(b.x-a.x)*.55,a.y+a.height/2+(b.y-a.y)*.55);
   await expect(chart.getByRole('tooltip')).toHaveText('9월 · 601,273명');
-  await expect(chart.getByRole('tooltip')).toHaveCSS('background-color','rgba(255, 255, 255, 0.68)');
-  await expect(chart.getByRole('tooltip')).toHaveCSS('backdrop-filter','blur(14px)');
+  await expect(chart.getByRole('tooltip')).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
+  await expect(chart.getByRole('tooltip')).toHaveCSS('backdrop-filter','blur(24px) saturate(1.1)');
   const tip=(await chart.getByRole('tooltip').boundingBox())!;
   expect(tip.x).toBeGreaterThanOrEqual(0);expect(tip.x+tip.width).toBeLessThanOrEqual(390);
   await chart.screenshot({path:info.outputPath('production-china-monthly-liquid-touch.png')});

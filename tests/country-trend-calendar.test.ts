@@ -15,7 +15,7 @@ const query={country:'JP',selectedMonth:'2026-09',actualDataMonths:['2026-08','2
 const row={code:'JP',label:'일본',points:[{month:'2026-08',departures:100},{month:'2026-09',departures:110}]};
 const html=(changes:Partial<Parameters<typeof CountryTrendCalendarContext>[0]>={})=>renderToStaticMarkup(createElement(CountryTrendCalendarContext,{row,events,asOf:query.asOf,...changes}));
 
-test('Japan and Korean summer breaks are visible separately with exact dates and applicability',()=>{
+test('Japan and Korean summer breaks retain exact dates and applicability in optional details',()=>{
  const {summary}=countryTrendCalendar(events,query);
  assert.equal(summary.length,4);
  const japan=summary.find(item=>item.country==='JP'&&item.kind==='school_break')!;
@@ -27,7 +27,10 @@ test('Japan and Korean summer breaks are visible separately with exact dates and
  assert.match(trendCalendarText(japan),/2026-08\(직전 월\).*신주쿠 구립 유치원·초등학교·중학교·특별지원학교.*해당 지역·대상에만 적용/);
  assert.match(trendCalendarText(korea),/2026-08\(직전 월\).*초등학교 방학기간 참고.*개별 학교 예시.*한국 출발지 참고/);
  const visible=html().split('<details')[0];
- for(const text of ['일본 여름방학','한국 여름방학','일본 공휴일','한국 공휴일','한국 일정은 출발지 기준','증감 원인 단정 불가'])assert.ok(visible.includes(text),text);
+ for(const text of ['한국 일정은 출발지 기준','증감 원인 단정 불가'])assert.ok(visible.includes(text),text);
+ for(const text of ['일본 여름방학','한국 여름방학','일본 공휴일','한국 공휴일']){assert.ok(!visible.includes(text),text);assert.ok(html().split('<details')[1].includes(text),text);}
+ assert.match(html(),/<details class="focus-source" data-testid="monthly-calendar-reference"><summary style="min-height:44px/);
+ assert.ok(html().includes('비교 시기 참고 일정 · 공식 근거'));
 });
 
 test('Korean public holidays accompany each supported destination with selected and adjacent month labels',()=>{
@@ -117,7 +120,7 @@ test('source details retain official URLs and dates without repeating full visib
   assert.ok(rendered.includes(item.sourceURL));
   assert.ok(rendered.includes(`확인일 ${item.verifiedAt}`));
  }
- assert.match(rendered,/관련 일정 \d+건 더 · 공식 근거/);
+ assert.match(rendered,/비교 시기 참고 일정 · 공식 근거/);
  assert.ok(rendered.includes('신주쿠 구립학교 여름방학'));
 });
 
@@ -125,10 +128,10 @@ test('recent-event titles include country names for public and regional holidays
  assert.equal(calendarEventTitle({country:'JP',kind:'public_holiday',name:'경로의 날'}),'일본 공휴일 · 경로의 날');
  assert.equal(calendarEventTitle({country:'US',kind:'school_break',name:'뉴욕시 공립학교 봄방학'}),'미국 봄방학');
  const source=readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8');
- assert.ok(source.includes('<CountryTrendCalendarContext row={row} events={events} asOf={asOf}/>'));
+ assert.ok(source.includes('<CountryTrendCalendarContext row={row} events={events} asOf={asOf} lang={lang}/>'));
  assert.ok(source.includes('최근 {calendarCountryName(country)} 일정'));
  assert.ok(!source.includes('OriginCalendarContext'));
- assert.match(source,/최근 월 비교 자료가 일부 없어[^;]+<CalendarContext row=\{row\}\/>/);
+ assert.match(source,/최근 월 비교 자료가 일부 없어[^;]+<CalendarContext row=\{row\} lang=\{lang\}\/>/);
 });
 
 
@@ -136,7 +139,7 @@ test('Chuseok shows the complete reviewed range without inventing missing or sub
  const result=countryTrendCalendar(events,query);
  const chuseok=result.summary.find(item=>item.country==='KR'&&item.name==='추석 연휴')!;
  assert.deepEqual([chuseok.start,chuseok.end],['2026-09-24','2026-09-26']);
- assert.match(html().split('<details')[0],/추석 연휴 2026-09-24–2026-09-26/);
+ assert.match(html().split('<details')[1],/추석 연휴 2026-09-24–2026-09-26/);
  assert.doesNotMatch(html(),/내리숲초등학교|경기 화성/);
  assert.match(html(),/초등학교 방학기간 참고 · 개별 학교 예시/);
  const incomplete=countryTrendCalendar(events.filter(item=>item.start!=='2026-09-25'),query);
@@ -155,4 +158,10 @@ test('Chuseok grouping preserves input evidence and rejects mismatched reviews',
   const item=countryTrendCalendar(altered,query).summary.find(item=>item.name==='추석 연휴')!;
   assert.equal(item.end,'2026-09-24');
  }
+});
+
+for(const [lang,label] of Object.entries({ko:"비교 시기 참고 일정 · 공식 근거",en:"Comparison-period calendar · official sources",zh:"比较期间日程 · 官方依据",ja:"比較期間の日程・公式根拠"}))test(`${lang}: optional calendar control is localized`,()=>{assert.ok(html({lang:lang as "ko"|"en"|"zh"|"ja"}).includes(`>${label}</summary>`));});
+
+test("production and preview pass the selected language to the calendar control",()=>{
+ for(const file of ["app/airport-focus-production.tsx","app/airport-focus-preview.tsx"]){const source=readFileSync(file,"utf8");for(const call of source.match(/<CountryTrends\b[^>]*>/g)??[])assert.match(call,/lang=\{lang\}/,file);}
 });

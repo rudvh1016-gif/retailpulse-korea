@@ -4,7 +4,7 @@ import type { Lang } from "./retailpulse-data";
 const copy = {
   ko: {
     title: "누가, 어떻게 쓰면 좋을까요?",
-    intro: "KORETAIL은 명동·홍대·성수·이태원와 인천공항의 공식 자료를 모아, 방문과 근무 준비에 필요한 흐름을 보여주는 사이트입니다.",
+    intro: "KORETAIL은 인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 보여주는 사이트입니다. 서울 지역 자료도 별도 화면에서 확인할 수 있습니다.",
     uses: [
       ["공항·면세점 근무자", "공항에서 터미널을 고른 뒤 출국장 예상 승객, 피크 시간, 출발편과 출국장 대기를 함께 확인해 근무와 휴게 시간을 준비하세요."],
       ["서울 매장 운영자", "지역의 현재 인구·내국인 카드 소비·날씨·행사를 함께 보고, 매장 화면의 업종별 점검 목록으로 오픈을 준비하세요."],
@@ -18,7 +18,7 @@ const copy = {
   },
   en: {
     title: "Who is this for, and how do I use it?",
-    intro: "KORETAIL brings official data for Myeongdong, Hongdae, Seongsu, Itaewon and Incheon Airport together to help you prepare for visits and work.",
+    intro: "KORETAIL focuses on Incheon Airport flights, passenger trends and travel preparation. Seoul-area reference data remains available on separate screens.",
     uses: [
       ["Airport and duty-free staff", "Select a terminal and read expected departures, peak hours, departing flights and departure-hall waits together when preparing shifts and breaks."],
       ["Seoul store operators", "Read local population, domestic-card activity, weather and events together, then prepare opening with the store checklist for your business type."],
@@ -32,7 +32,7 @@ const copy = {
   },
   zh: {
     title: "适合谁用，怎么用？",
-    intro: "KORETAIL汇集明洞、弘大、圣水、梨泰院与仁川机场的官方资料，帮助您安排到访与工作。",
+    intro: "KORETAIL以仁川机场航班、旅客趋势与出行准备为中心。首尔地区参考资料可在独立页面查看。",
     uses: [["机场及免税店员工", "选择航站楼，同时查看预计出境人数、高峰时段、出发航班与出境区等候，准备工作与休息安排。"], ["首尔门店经营者", "结合地区当前人口、境内消费者刷卡、天气及活动，并使用门店页面的业态检查清单准备开店。"], ["游客及旅游咨询人员", "查看目的地当前拥挤、官方预测与天气；旅游咨询页面汇集各地区的咨询资料。"]],
     methodTitle: "如何理解数字", method: "按地区、日期和航站楼整理机构公布的资料。当前观测、官方预测与历史实绩并不相同。预计旅客不是排队人数，境内消费者刷卡不是外国人消费或全部销售额。仅在范围与时段可比时计算变化。",
     updateTitle: "何时更新？", updates: "首尔人口、刷卡与机场排队约每15分钟尝试采集，机场预计旅客每小时采集，航班和活动按各自定期计划采集。月度、季度资料在机构发布后更新。机构更新与本站采集不是同一时间，请同时查看观测与采集时刻。",
@@ -40,7 +40,7 @@ const copy = {
   },
   ja: {
     title: "誰が、どう使うと便利ですか？",
-    intro: "KORETAILは明洞・弘大・聖水・梨泰院と仁川空港の公式資料をまとめ、訪問や勤務の準備に役立つ動きを示します。",
+    intro: "KORETAILは仁川空港のフライト・旅客動向・旅行準備を中心に案内します。ソウル地域の参考資料は別画面で確認できます。",
     uses: [["空港・免税店のスタッフ", "ターミナルを選び、予想出国者・ピーク時間・出発便・出国場の待ちを併せて確認し、勤務や休憩を準備します。"], ["ソウルの店舗運営者", "現在人口・国内カード決済・天気・イベントを併せて読み、店舗画面の業種別チェックリストで開店を準備します。"], ["訪問者・観光案内スタッフ", "訪問先の現在の混雑・公式予測・天気を確認します。観光案内画面では地域別の案内資料をまとめて見られます。"]],
     methodTitle: "数字の読み方", method: "機関の公表資料を地域・日付・ターミナル別に整理します。現在観測、公式予測、過去実績は別の指標です。予想旅客数は待機人数ではなく、国内カード決済は外国人消費や全売上ではありません。対象・期間が比較可能な場合のみ増減を計算します。",
     updateTitle: "いつ更新されますか？", updates: "ソウル人口・カード決済と空港の待ちは約15分ごと、空港の予想旅客は毎時、フライト・イベント等は資料別の定期収集を試みます。月次・四半期資料は機関の公表後に更新します。提供元の更新とKORETAILの収集は別なので、観測と取得の時刻を確認してください。",
@@ -61,12 +61,18 @@ function ReadingParagraphs({ text }: { text: string }) {
 
 export function SiteUsageGuide({ lang }: { lang: Lang }) {
   const t = copy[lang];
+  const examples = { ko: "활용 예시", en: "Usage examples", zh: "使用示例", ja: "活用例" }[lang];
+  const disclosureStyle = { minHeight: 44, boxSizing: "border-box" as const, padding: "12px 0", cursor: "pointer" };
   return <section className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 id="site-usage-title">{t.title}</h2>
     <p>{t.intro}</p>
-    <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
+    <details data-testid="usage-examples"><summary style={disclosureStyle}>{examples}</summary>
+      <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
+    </details>
     <h3>{t.methodTitle}</h3><ReadingParagraphs text={t.method}/><p>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</p><p>{passengerCopy.noSum[lang]}</p>
-    <h3>{t.updateTitle}</h3><ReadingParagraphs text={t.updates}/>
+    <details data-testid="usage-updates"><summary style={disclosureStyle}>{t.updateTitle}</summary>
+      <ReadingParagraphs text={t.updates}/>
+    </details>
     <p className="site-usage-limit">{t.limit}</p>
   </section>;
 }

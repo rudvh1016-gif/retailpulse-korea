@@ -25,7 +25,7 @@ test("all locale cards show the brand and owner-approved service description whi
       assert.equal(metadata.title, pageTitle(locale, slug));
       assert.equal(metadata.description, pageDescription(locale, slug));
       assert.equal(metadata.openGraph.title, "KORETAIL");
-      assert.equal(metadata.openGraph.description, "인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에");
+      assert.equal(metadata.openGraph.description, "인천공항 출발·도착 항공편, 시간대별 예상 여객과 국가별 여객 추이, 환율·입국 면세 정보를 확인하세요. 자료별 기준일과 출처를 함께 제공합니다.");
       assert.equal(metadata.openGraph.images[0].url, socialImage.url);
       assert.equal(metadata.twitter.title, "KORETAIL");
       assert.equal(metadata.twitter.description, metadata.openGraph.description);
