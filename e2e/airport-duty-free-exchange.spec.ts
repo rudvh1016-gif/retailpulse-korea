@@ -177,7 +177,7 @@ test('known selector block is a visible failure with its next eligibility, not a
 test('stored API Retry-After is honored across short rechecks and repeated focus',async({page})=>{
  await page.clock.install({time:new Date('2026-10-08T03:00:00Z')});await page.clock.pauseAt(new Date('2026-10-08T03:00:00Z'));await fixtures(page);
  let reads=0;await page.route('**/api/live/duty-free-exchange',r=>{reads++;return reads===1?r.fulfill({status:429,headers:{'retry-after':'1800'},body:'temporarily limited'}):r.fulfill({json:autoSnapshot});});
- await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip.locator('summary')).toContainText('환율 조회 실패');
+ await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip.locator('summary')).toContainText('환율을 불러오지 못했어요');
  await page.clock.runFor(15*60_000);await page.evaluate(()=>window.dispatchEvent(new Event('focus')));expect(reads).toBe(1);
  await page.clock.runFor(15*60_000+100);await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');expect(reads).toBe(2);
 });
