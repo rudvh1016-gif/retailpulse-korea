@@ -1,10 +1,10 @@
 import {defineConfig,devices} from '@playwright/test';
 import base from './playwright.config';
 
-// Bounded production-route diagnostic. The normal full-suite config is unchanged.
+// Bounded route and search-identity regression checks. The normal full suite is unchanged.
 export default defineConfig({
  ...base,
- testMatch:'**/airport-country-route-tooltip.spec.ts',
+ testMatch:['**/airport-country-route-tooltip.spec.ts','**/search-identity.spec.ts'],
  workers:2,
  outputDir:'country-tooltip-results',
  projects:[
