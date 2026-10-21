@@ -13,10 +13,32 @@ function entities(text: string) {
   }).replace(/&nbsp;/gi,' ').replace(/&dollar;/gi,'$').replace(/&amp;/gi,'&').replace(/\s+/g,' ').trim();
 }
 type Widget = {context:string;targets:string[]};
-/** Extract only the documented selector; scripts, products and other widgets cannot supply a fallback number. */
+type WidgetFrame = {tag:string;widget?:Widget;target?:{widget:Widget;text:string};anchor?:{text:string};ignored?:boolean};
+/** The 2026-10-21 reviewed public response exposes this exact current-day label in an anchor.
+ * CURRENT_WIDGET means the request's KST day, not an explicit provider publication date. */
+function currentShillaAnchor(text:string):Widget|null {
+  const context=entities(text);
+  if(!context.includes('오늘의 환율')||!/[\d$]|\bUSD\b/i.test(context))return null;
+  if(/(?:내일|익일|어제|전일|tomorrow|yesterday|翌日|明日)/i.test(context))throw new RateFailure('SOURCE_DATE_MISMATCH',true);
+  // Only one literal current-day label plus one complete USD1 equation, in either order.
+  // Unobserved mixed text, explicit dates, other currencies and extra numbers fail closed.
+  const label='오늘의 환율',number='(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d{1,2})?';
+  const equation=`(?:USD\\s*1|1\\s*USD|\\$\\s*1|1\\s*\\$)\\s*[=:]\\s*${number}\\s*(?:원|KRW|₩)`;
+  const match=new RegExp(`^(?:${label}\\s*[:：]?\\s*(${equation})|(${equation})\\s*${label})$`,'i').exec(context);
+  if(!match||context.length>256)throw new RateFailure('SELECTOR_UNVERIFIED',true);
+  return {context,targets:[match[1]??match[2]]};
+}
+/** Extract only reviewed selector/label contracts; products and arbitrary USD numbers are not fallbacks. */
 function widgetsFromHtml(vendor: DutyFreeVendor, html: string) {
   const clean=html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,'').replace(/<!--[\s\S]*?-->/g,'');
-  const stack:Array<{tag:string;widget?:Widget;target?:{widget:Widget;text:string}}> = [];
+  if(vendor==='shilla') {
+    const title=entities(/<title\b[^>]*>([^<]*)<\/title\s*>/i.exec(clean)?.[1]??'');
+    if(/(?:access denied|forbidden|security check|just a moment|captcha|sign in|log in|login|로그인|접근.*차단|보안.*확인)/i.test(title)
+      || /<input\b[^>]*\btype\s*=\s*["']?password\b/i.test(clean)
+      || /<[a-z][^>]*\b(?:id|class)\s*=\s*["'][^"']*(?:captcha|cf-challenge|challenge-form)[^"']*["']/i.test(clean))throw new RateFailure('SOURCE_ACCESS_CHALLENGE',true);
+  }
+  const stack:WidgetFrame[] = [];
+  const ignored=new Set(['template','noscript','form','button','select','textarea','svg','iframe','object']);
   const widgets:Widget[]=[];
   const voids=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
   let tokens=0;
@@ -24,20 +46,28 @@ function widgetsFromHtml(vendor: DutyFreeVendor, html: string) {
     if(++tokens>250_000) throw new RateFailure('HTML_COMPLEXITY',true);
     const part=token[0];
     if(part[0]!=='<') {
-      for(const frame of stack){if(frame.widget)frame.widget.context+=part;if(frame.target)frame.target.text+=part;}
+      if(vendor==='shilla'&&(/(?:verify (?:that )?you are human|unusual traffic|access denied|enable javascript and cookies to continue|captcha|security check|login required|sign in required|자동입력 방지|접근이 차단|보안문자|로그인이 필요)/i.test(entities(part))
+        || (stack.some(frame=>['h1','h2'].includes(frame.tag))&&/^(?:login|log in|sign in|로그인)$/i.test(entities(part)))))throw new RateFailure('SOURCE_ACCESS_CHALLENGE',true);
+      for(const frame of stack){if(frame.widget)frame.widget.context+=part;if(frame.target)frame.target.text+=part;
+        if(frame.anchor&&!stack.some(parent=>parent.ignored)&&frame.anchor.text.length<=256)frame.anchor.text+=part;}
       continue;
     }
     const tag=/^<\/?([a-z][\w:-]*)/i.exec(part)?.[1].toLowerCase();if(!tag)continue;
     if(part.startsWith('</')) {
       const index=stack.map(frame=>frame.tag).lastIndexOf(tag);
-      if(index>=0)for(const frame of stack.splice(index))if(frame.target)frame.target.widget.targets.push(entities(frame.target.text));
+      if(index>=0)for(const frame of stack.splice(index)) {
+        if(frame.target)frame.target.widget.targets.push(entities(frame.target.text));
+        if(frame.anchor&&frame.tag===tag){const widget=currentShillaAnchor(frame.anchor.text);if(widget)widgets.push(widget);}
+      }
       continue;
     }
     const attribute=/\bclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(part);
     const classes=(attribute?.[1]??attribute?.[2]??attribute?.[3]??'').split(/\s+/);
-    const frame:{tag:string;widget?:Widget;target?:{widget:Widget;text:string}}={tag};
+    const frame:WidgetFrame={tag,ignored:ignored.has(tag)||stack.some(parent=>parent.ignored)};
     if(classes.includes(vendor==='shilla'?'exchange':'todayRate')) {frame.widget={context:'',targets:[]};widgets.push(frame.widget);}
     const owner=frame.widget??[...stack].reverse().find(parent=>parent.widget)?.widget;
+    // Existing selector widgets retain their full explicit-date contract unchanged.
+    if(vendor==='shilla'&&tag==='a'&&!frame.ignored&&!owner)frame.anchor={text:''};
     if(owner&&(vendor==='shilla'?classes.includes('sum'):tag==='em'))frame.target={widget:owner,text:''};
     if(!voids.has(tag)&&!part.endsWith('/>'))stack.push(frame);
     if(stack.length>128)throw new RateFailure('HTML_COMPLEXITY',true);

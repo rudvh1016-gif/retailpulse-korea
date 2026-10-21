@@ -349,3 +349,84 @@ test('Retry-After parsing accepts delay seconds and HTTP dates but not malformed
  assert.equal(dutyFreeRetryAfter('Thu, 08 Oct 2026 06:00:00 GMT',now),'2026-10-08T06:00:00.000Z');
  for(const value of [null,'-1','1.5','bad','0','Wed, 07 Oct 2026 06:00:00 GMT','9'.repeat(129)])assert.equal(dutyFreeRetryAfter(value,now),null);
 });
+
+// Synthetic contract fixtures reconstructed from the sanitized 2026-10-21 runner
+// evidence (<a>, literal current-day label, USD1 equation, no explicit date).
+// Not a saved raw page and not an injected production observation.
+const currentShillaAnchor=(amount='1,332.10')=>`<a>오늘의 환율 <span>$1=${amount}원</span></a>`;
+test('observed current-label anchor and legacy selector both parse, without guessing a source date',()=>{
+ const expected=[{serviceDateKst:'2026-10-21',krwPerUnit:1332.1,dateEvidence:'CURRENT_WIDGET'}];
+ for(const body of [currentShillaAnchor(),'<a>오늘의&nbsp;환율 &#36;1=1332.10원</a>',
+   '<a><b>오늘의 환율</b> USD 1 = 1,332.10 KRW</a>','<a>$1=1332.10원 오늘의 환율</a>',
+   currentShillaAnchor()+shilla('1,332.10'),shilla('1,332.10')]) {
+   assert.deepEqual(parseDutyFreeDatedHtml('shilla',body,'2026-10-21'),expected);
+ }
+ assert.deepEqual(parseDutyFreeDatedHtml('shilla','<a class="exchange">2026-10-22 적용 환율 <span class="sum">$1=1333.20원</span></a>','2026-10-21'),
+   [{serviceDateKst:'2026-10-22',krwPerUnit:1333.2,dateEvidence:'EXPLICIT_SOURCE_DATE'}]);
+ assert.deepEqual(parseDutyFreeDatedHtml('shilla',currentShillaAnchor(),'2026-10-22'),
+   [{...expected[0],serviceDateKst:'2026-10-22'}]); // Caller-supplied request day, not a hardcoded fixture date.
+});
+
+test('new anchor contract rejects missing/current-day ambiguity, arbitrary prices and two conflicting rates',()=>{
+ for(const body of ['', '<p>오늘의 환율 $1=1,332.10원</p>', '<a>$1=1,332.10원</a>',
+   '<a>상품 가격 $1=1,332.10원</a>', currentShillaAnchor().replace('오늘의 환율','환율'),
+   currentShillaAnchor().replace('오늘의 환율','내일 환율'),
+   currentShillaAnchor().replace('오늘의 환율','오늘의 환율 내일'),
+   currentShillaAnchor().replace('오늘의 환율','2026-10-22 오늘의 환율'),
+   currentShillaAnchor().replace('오늘의 환율','오늘의 환율 어제'),
+   currentShillaAnchor().replace('$1','$10'), currentShillaAnchor('0'), currentShillaAnchor('1,33.10'),
+   currentShillaAnchor().replace('</a>',' $1=1,333.20원</a>'),
+   currentShillaAnchor()+currentShillaAnchor('1,333.20'), currentShillaAnchor()+shilla('1,333.20'),
+   currentShillaAnchor().replace('</a>',''), currentShillaAnchor().replace('원','원 참고 42'),
+   `<script>${currentShillaAnchor()}</script>`, `<template>${currentShillaAnchor()}</template>`,
+   `<form>${currentShillaAnchor()}</form>`, '<a>오늘의 환율<input value="$1=1,332.10원"></a>']) {
+   assert.throws(()=>parseDutyFreeDatedHtml('shilla',body,'2026-10-21'));
+ }
+});
+
+test('challenge/login pages never become valid merely because a public-looking exchange anchor exists',()=>{
+ for(const prefix of ['<title>Security check</title>', '<title>로그인</title>', '<h1>Access denied</h1>',
+   '<div class="g-recaptcha">check</div>', '<input type="password">', '<p>Verify you are human</p>', '<h1>Login</h1>']) {
+   assert.throws(()=>parseDutyFreeDatedHtml('shilla',prefix+currentShillaAnchor(),'2026-10-21'),/SOURCE_ACCESS_CHALLENGE/);
+ }
+ assert.equal(parseDutyFreeHtml('shilla','<a>로그인</a>'+currentShillaAnchor(),'2026-10-21'),1332.1);
+});
+
+test('new current-label contract keeps one-call durable collection, dated storage and unchanged-write semantics',async t=>{
+ const {db,sql}=localDb(t);let clock=Date.parse('2026-10-21T02:21:09Z'),calls=0;
+ const options={now:()=>new Date(clock),fetchImpl:async()=>{calls++;return html(currentShillaAnchor());}};
+ const [first]=await collectDutyFreeExchange(db,options);
+ assert.equal(first.status,'SUCCESS');assert.equal(first.providerRequests,1);assert.equal(first.changedRows,1);
+ const snapshot=await readDutyFreeSnapshot(db,new Date(clock));
+ const observed=dutyFreeDatedPresentation(snapshot,clock).find(row=>row.current);
+ assert.equal(observed.krwPerUnit,1332.1);assert.equal(observed.serviceDateKst,'2026-10-21');
+ assert.equal(sql.prepare("SELECT date_evidence FROM duty_free_exchange_daily WHERE vendor='shilla' AND service_date_kst='2026-10-21'").get().date_evidence,'CURRENT_WIDGET');
+ assert.equal(observed.verifiedAt,new Date(clock).toISOString());
+ assert.equal((await collectDutyFreeExchange(db,options))[0].status,'SKIPPED_NOT_DUE');assert.equal(calls,1);
+ clock+=3_600_001;
+ assert.equal((await collectDutyFreeExchange(db,options))[0].changedRows,0);assert.equal(calls,2);
+});
+
+test('new undated anchor requested before KST midnight cannot populate the next day',async t=>{
+ const {db}=localDb(t);let clock=Date.parse('2026-10-21T14:59:59Z'),calls=0;
+ const [outcome]=await collectDutyFreeExchange(db,{now:()=>new Date(clock),fetchImpl:async()=>{
+   calls++;clock+=2000;return html(currentShillaAnchor());
+ }});
+ assert.equal(calls,1);assert.equal(outcome.errorCode,'SOURCE_DATE_ROLLOVER');assert.equal(outcome.changedRows,0);
+ assert.equal(dutyFreeDatedPresentation(await readDutyFreeSnapshot(db,new Date(clock)),clock).length,0);
+});
+
+test('new parser does not release an existing selector/security guard or overwrite last-good evidence',async t=>{
+ for(const errorCode of ['SELECTOR_UNVERIFIED','HTTP_403','SOURCE_ACCESS_CHALLENGE']) {
+   const {db}=localDb(t);let clock=Date.parse('2026-10-20T02:00:00Z');
+   await collectDutyFreeExchange(db,{now:()=>new Date(clock),fetchImpl:async()=>html(shilla('1,340.00'))});
+   const lastGood=(await readDutyFreeSnapshot(db,new Date(clock))).sources[0].observation;
+   clock+=3_600_001;await claimDutyFreeAttempt(db,'shilla',new Date(clock),'blocked');
+   await saveDutyFreeFailure(db,'shilla','blocked',new Date(clock),errorCode,true);
+   clock+=3_600_001;let calls=0;
+   const [result]=await collectDutyFreeExchange(db,{now:()=>new Date(clock),fetchImpl:async()=>{calls++;return html(currentShillaAnchor());}});
+   assert.equal(calls,0);assert.equal(result.status,'SKIPPED_NOT_DUE');
+   const retained=(await readDutyFreeSnapshot(db,new Date(clock))).sources[0].observation;
+   for(const key of ['serviceDateKst','krwPerUnit','verifiedAt'])assert.equal(retained[key],lastGood[key]);
+ }
+});
