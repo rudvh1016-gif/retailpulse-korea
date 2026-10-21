@@ -33,12 +33,19 @@ for(const theme of themes)for(const width of [390,1440])test(`content-preserving
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,route=>route.abort());
  const css=readFileSync(`design/content-theme-preview/${theme}.css`,'utf8');
  for(const [route,label] of views){
-  await page.goto(`/ko/${route}?date=2026-10-19`,{waitUntil:'networkidle'});
+  await page.goto(`/ko/${route}?date=2026-10-19`,{waitUntil:'domcontentloaded'});
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await page.evaluate(()=>document.fonts.ready);
   const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');
   await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(5);
   await expect(nav.getByRole('link',{name:label,exact:true})).toHaveAttribute('aria-current','page');
+  // Country flow keeps network activity alive; assert actual content readiness instead.
+  if(route==='airport-glance')await expect(page.locator('.focus-report-lines')).toContainText('112,403');
+  if(route==='airport-countries')await expect(page.locator('#focus-country-trends .focus-trend-grid > article .focus-month-values')).toHaveCount(12);
+  if(route==='airport-prepare')await expect(page.locator('#arrival-allowances')).toBeVisible();
+  if(route==='more')await expect(page.locator('.more-section-links a')).toHaveCount(7);
+  let previous='',stable=0;
+  await expect.poll(async()=>{const current=JSON.stringify(await inventory(page));stable=current===previous?stable+1:0;previous=current;return stable;},{timeout:15000,intervals:[200,300,500]}).toBeGreaterThanOrEqual(3);
   const before=await inventory(page);
   const disclosure=page.locator('main details').filter({visible:true}).first();
   const hasDisclosure=await disclosure.count()>0;
