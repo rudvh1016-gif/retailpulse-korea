@@ -120,3 +120,49 @@ test('a longer month keeps every bar and uses the selected readout instead of cr
   await expect(chart.locator('.airport-month-value-labels')).toHaveCount(0);
   await expect(chart.locator('.airport-month-readout')).toContainText('3,600');
 });
+
+for (const count of [22, 31]) {
+  for (const width of [320, 390, 1280]) {
+    test(`${count} daily bars keep compact horizontal gaps at ${width}px`, async ({ page }) => {
+      const summary = structuredClone(SUMMARY_FIXTURE);
+      for (const scope of ['all', 'T1', 'T2'] as const) {
+        const month = summary.airport.monthToDate[scope] as unknown as MonthToDate;
+        const days = Array.from({ length: count }, (_, index) => ({ date: `2026-10-${String(index + 1).padStart(2, '0')}`, total: 40_000 + index * 100 }));
+        month.current = { ...month.current, days, start: days[0].date, end: days.at(-1)!.date, expectedDays: count, completeDays: count, missingDates: [], status: 'COMPLETE', total: days.reduce((sum, day) => sum + day.total, 0) };
+      }
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.route('**/api/live/summary**', routeSummary(summary));
+      await page.goto('/ko/airport');
+      const chart = page.getByTestId('airport-mtd').locator('.airport-month-chart');
+      const bars = chart.locator('.airport-month-bar');
+      const buttons = chart.locator('.airport-month-picks button');
+      await expect(bars).toHaveCount(count);
+      await expect(buttons).toHaveCount(count);
+      const plot = (await chart.locator('.airport-month-plot').boundingBox())!;
+      const ticks = (await chart.locator('.airport-month-ticks').boundingBox())!;
+      const figure = (await chart.boundingBox())!;
+      expect(plot.width).toBeCloseTo(Math.min(figure.width, count * 12), 0);
+      expect(plot.x).toBeCloseTo(figure.x, 0);
+      expect(ticks.width).toBeCloseTo(plot.width, 0);
+      const first = (await bars.first().boundingBox())!;
+      const second = (await bars.nth(1).boundingBox())!;
+      expect(second.x - first.x).toBeLessThanOrEqual(12.1);
+      expect(first.width).toBeLessThanOrEqual(2.7);
+      expect(first.width).toBeGreaterThan(1);
+      const targets = await buttons.evaluateAll(elements => elements.map(element => { const box = element.getBoundingClientRect(); return { left: box.left, right: box.right }; }));
+      for (let index = 1; index < targets.length; index++) expect(targets[index].left).toBeGreaterThanOrEqual(targets[index - 1].right - .1);
+      await buttons.first().click();
+      await expect(buttons.first()).toHaveAttribute('aria-pressed', 'true');
+      await expect(chart.locator('.airport-month-readout')).toContainText('40,000');
+      await buttons.last().focus();
+      await page.keyboard.press('Enter');
+      await expect(buttons.last()).toHaveAttribute('aria-pressed', 'true');
+      await expect(chart.locator('.airport-month-readout')).toContainText((40_000 + (count - 1) * 100).toLocaleString('ko-KR'));
+      const labels = await chart.locator('.airport-month-ticks span').evaluateAll(elements => elements.map(element => { const box = element.getBoundingClientRect(); return { left: box.left, right: box.right }; }));
+      for (let index = 1; index < labels.length; index++) expect(labels[index].left).toBeGreaterThan(labels[index - 1].right);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await chart.screenshot({ path: `test-results/daily-bar-spacing-${count}-${width}.png` });
+    });
+  }
+}

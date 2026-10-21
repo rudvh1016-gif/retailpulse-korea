@@ -1247,6 +1247,9 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const barWidth = Math.min(3, slot * 0.22);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
   const showEachValue = days.length <= 5;
+  // Keep long daily strips compact instead of stretching thin marks apart.
+  // Short series retain room for their individual date/value labels.
+  const plotStyle = { width: days.length > 9 ? `${slots * 12}px` : undefined, maxWidth: "100%" };
 
   // The running total is still COMPUTED — the readout below prints the selected
   // day's cumulative figure — it is simply no longer DRAWN. The owner removed
@@ -1276,7 +1279,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
     <figcaption>
       <span>{mtdCopy.daily[lang]} ({unit.trim()})</span>
     </figcaption>
-    <div className="airport-month-plot">
+    <div className="airport-month-plot" style={plotStyle}>
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
         <line className="airport-month-baseline" x1="0" x2={width} y1={height - 0.5} y2={height - 0.5}/>
         {days.map((day, index) => day.total === null
@@ -1298,7 +1301,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
           aria-label={`${shortDay(day.date)} · ${day.total === null ? airportTodayText.unavailable[lang] : `${Math.round(day.total).toLocaleString(numberLocale)}${unit}`}`} />)}
       </div>
     </div>
-    <div className="airport-month-ticks" aria-hidden="true">
+    <div className="airport-month-ticks" style={plotStyle} aria-hidden="true">
       {ticks.map((index) => <span key={index} style={{ left: `${Math.min(97.5, Math.max(2.5, (x(index) / width) * 100))}%`, transform: 'translateX(-50%)' }}>{showEachValue ? shortDay(days[index].date) : Number(days[index].date.slice(8, 10))}</span>)}
     </div>
     <p className="airport-month-readout" aria-live="polite">

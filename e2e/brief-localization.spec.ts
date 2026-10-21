@@ -22,6 +22,13 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
  const comparison=brief.locator('.focus-passenger-comparison');
  for(const value of ['120,000','7,597','▲ 6.3%','2,640,000','22','30','8'])await expect(comparison).toContainText(value);
  await expect(comparison).toContainText(lang==='ko'?'월전체 평균 아님':lang==='en'?'Not a full-month average':'非全月平均值');
+ const calculation=comparison.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
+ await expect(calculation).not.toHaveAttribute('open','');
+ await expect(calculation.locator('.focus-observed-days-basis')).not.toBeVisible();
+ expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');
+ await expect(calculation.locator('.focus-observed-days-basis')).toBeVisible();
+ await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
  const dates=brief.locator('.focus-preparation-brief time.focus-event-date');
  await expect(dates.first()).toBeVisible();
  for(const date of await dates.all()){

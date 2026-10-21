@@ -9,7 +9,7 @@ import type {PassengerReferenceMonth} from '../lib/passenger-reference-month';
 const ref:PassengerReferenceMonth={month:'2026-09',start:'2026-09-01',end:'2026-09-30',expectedDays:30,completeDays:30,missingDates:[],mean:60_000,status:'COMPLETE'};
 test('brief renders people/day and shared signed percentage, with honest partial and loading states',()=>{
  const render=(total:number|null,baseline=ref)=>renderToStaticMarkup(h(PassengerBriefComparison,{total,day:"2026-10-21",baseline}));
- assert.match(render(52_919),/60,000명\/일 대비/);assert.match(render(52_919),/7,081명\/일 감소/);assert.match(render(52_919),/▲ 11.8%/);assert.match(render(52_919),/data-direction="down"/);
+ assert.match(render(52_919),/60,000명\/일/);assert.match(render(52_919),/▲ 7,081명\/일/);assert.match(render(52_919),/▲ 11.8%/);assert.match(render(52_919),/data-direction="down"/);
  const partial=render(52_919,{...ref,status:'PARTIAL',mean:null,completeDays:22,missingDates:Array.from({length:8},(_,i)=>`2026-09-0${i+1}`)});
  assert.match(partial,/30일 중 22일 합산자료 확인 · 8일 미확인 · 비교 보류/);assert.doesNotMatch(partial,/%|명\/일 감소|명\/일 증가/);
  assert.match(render(null),/선택일 단순합계 확인 중/);assert.match(render(100,{...ref,mean:0}),/증감률 계산 불가/);
@@ -19,7 +19,7 @@ test('proved observed days render the sample label, numerator, divisor and missi
   missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),
   observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50_000,transfers:10_000}))};
  const html=renderToStaticMarkup(h(PassengerBriefComparison,{total:52_919,day:'2026-10-21',baseline}));
- assert.match(html,/전월 수집 22일 기준 일평균\(전체 30일 중\)/);assert.match(html,/60,000명\/일 대비/);assert.match(html,/7,081명\/일 감소/);assert.match(html,/▲ 11.8%/);
+ assert.match(html,/전월 수집 22일 기준 일평균\(전체 30일 중\)/);assert.match(html,/60,000명\/일/);assert.match(html,/▲ 7,081명\/일/);assert.match(html,/▲ 11.8%/);
  assert.match(html,/1,320,000명 ÷ 22일 · 8일 미확인 · 월전체 평균 아님/);assert.doesNotMatch(html,/비교 보류/);
 });
 test('each planning country owns its flag, preserved date/source and optional country metric',()=>{
@@ -94,4 +94,35 @@ test('upcoming summaries keep dates and trends visible while preserving evidence
  assert.match(source,/휴일 종료 기준 · 귀국객 예측 아님/);
  assert.match(source,/\$\{reply\?\.month\} \$\{lead.countryLabel\} 노선 출발 여객, 전월비/);
  assert.doesNotMatch(source,/<p>\{describe\(/);
+});
+
+test('daily-average core stays concise with closed basis and directional count in all locales',()=>{
+ const observed:PassengerReferenceMonth={...ref,status:'PARTIAL',mean:null,completeDays:22,
+  missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),
+  observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50_000,transfers:10_000}))};
+ for(const lang of ['ko','en','zh','ja'] as const)for(const total of [60000,61000,59000]){
+  const html=renderToStaticMarkup(h(PassengerBriefComparison,{total,day:'2026-10-21',baseline:observed,lang}));
+  const core=html.split('<details')[0],basis=html.split('<details')[1];
+  assert.doesNotMatch(core,/1,320,000|60,000|22|30/);
+  assert.match(core,/data-direction="(?:up|down|neutral)"/);
+  assert.match(core,total===61000?/\+1,000/:total===59000?/▲ 1,000/:/0/);
+  assert.match(basis,/^ class="focus-passenger-calculation">/);assert.match(basis,/1,320,000/);
+  if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
+  if(lang==='ko')assert.match(core,/전월 수집분 일평균 대비/);
+ }
+ const css=readFileSync('app/airport-focus-preview.css','utf8');
+ assert.match(css,/focus-passenger-calculation>summary[^}]*min-height:44px/);
+ assert.match(css,/focus-passenger-calculation>summary:focus-visible/);
+ assert.match(css,/\.focus-passenger-rate\{display:inline-block;white-space:nowrap\}/);
+ assert.match(css,/\.focus-passenger-zero-basis\{display:block;overflow-wrap:anywhere\}/);
+});
+test('event title and institutional scope remain distinct without removing evidence',()=>{
+ const event={id:'th',country:'TH',countryLabel:'태국',name:'Chulalongkorn 국왕 추모일',start:'2026-10-23',end:'2026-10-23',type:'bank_holiday',scope:'금융기관 휴일. 민간 전체 휴무가 아닙니다.',sourceURL:'https://example.test/th'};
+ const html=renderToStaticMarkup(h(PreparationEvent,{event}));
+ assert.match(html,/<h4>.*Chulalongkorn 국왕 추모일<\/h4><small class="focus-event-scope">\(금융기관\)<\/small>/);
+ assert.match(html,/민간 전체 휴무가 아닙니다/);assert.match(html,/https:\/\/example.test\/th/);
+ const staff=readFileSync('app/airport-staff-briefing.tsx','utf8');
+ assert.match(staff,/<h4>\{event.countryLabel\} \{event.name\}<\/h4>/);
+ assert.match(staff,/className="staff-holiday-scope">\(금융기관\)/);
+ assert.match(staff,/<p>\{event.scope\}<\/p>/);
 });

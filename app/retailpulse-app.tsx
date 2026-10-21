@@ -2,6 +2,7 @@
 import './airport-history-polish.css';
 import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
+import {ConciseExplainer} from './concise-explainer';
 import {ChangeRate} from './change-rate';
 import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
@@ -207,19 +208,20 @@ const copy = {
  * is worth looking at. Every metric on the insights screen carries one, which
  * is what stops a bare "86" from being the whole story.
  */
-function MetricExplainer({ lang, what, high, source, why }: { lang: Lang; what: string; high: string; source: string; why: string }) {
+function MetricExplainer({ lang, summary, what, high, source, why }: { lang: Lang; summary?: string; what: string; high: string; source: string; why: string }) {
   const labels = {
     what: localText(lang, { ko: "무엇인가요", en: "What it is", zh: "这是什么", ja: "これは何か" }),
     high: localText(lang, { ko: "높으면", en: "When it is high", zh: "数值高时", ja: "高いとき" }),
     source: localText(lang, { ko: "출처", en: "Source", zh: "来源", ja: "出典" }),
     why: localText(lang, { ko: "왜 보나요", en: "Why look at it", zh: "为何要看", ja: "なぜ見るのか" }),
   };
-  return <dl className="metric-explainer">
+  const explanation = <dl className="metric-explainer">
     <div><dt>{labels.what}</dt><dd>{what}</dd></div>
     <div><dt>{labels.high}</dt><dd>{high}</dd></div>
     <div><dt>{labels.source}</dt><dd>{source}</dd></div>
     <div><dt>{labels.why}</dt><dd>{why}</dd></div>
   </dl>;
+  return summary ? <ConciseExplainer summary={summary}>{explanation}</ConciseExplainer> : explanation;
 }
 
 type SignupSegment = "visitor" | "airport" | "store" | "research";
@@ -786,6 +788,7 @@ function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; sele
       <span className="official-label">OFFICIAL HISTORICAL</span>
     </div>
     <MetricExplainer
+      summary={localText(lang, { ko: "월별 단기체류 외국인 · 시간당 평균 · 방문·매출 아님", en: "Monthly short-stay foreign presence · hourly mean, not visits or sales", zh: "月度短期停留外国人 · 每小时平均，非访问量或销售额", ja: "月別の短期滞在外国人・時間平均（訪問数・売上ではありません）" })}
       lang={lang}
       what={localText(lang, { ko: "서울시가 집계한 월별·시간당 평균 단기체류 외국인 수입니다.", en: "Seoul's monthly average hourly count of short-stay foreign residents.", zh: "首尔市统计的月度每小时平均短期停留外国人数。", ja: "ソウル市が集計した月別・時間当たり平均の短期滞在外国人数です。" })}
       high={localText(lang, { ko: "그 지역에 머무는 외국인이 평소보다 많았다는 뜻입니다.", en: "More foreign visitors were present in that area than usual.", zh: "表示该地区停留的外国人多于平常。", ja: "その地域に滞在した外国人が普段より多かったことを意味します。" })}

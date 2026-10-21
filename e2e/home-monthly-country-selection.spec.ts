@@ -21,6 +21,13 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [390,1440])test(`home
  const cards=section.locator('.focus-trend-grid > article');
  await expect(cards.locator('.focus-trend-top h3')).toHaveText(['인도','인도네시아','뉴질랜드']);
  const basis=section.locator('.focus-monthly-selection-basis');await expect(basis).toHaveAttribute('data-month','2026-09');
+ const detail=basis.locator('details'),toggle=detail.locator('summary');
+ await expect(detail).not.toHaveAttribute('open','');
+ expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ await expect(detail.locator('p')).not.toBeVisible();
+ await toggle.focus();await page.keyboard.press('Enter');await expect(detail.locator('p')).toBeVisible();
+ await expect(detail).toContainText('2026-10');
+ await page.keyboard.press('Space');await expect(detail).not.toHaveAttribute('open','');
  if(lang!=='ko')expect(await basis.innerText()).not.toMatch(/[가-힣]/);
  await expect(cards.first().locator('.focus-trend-value')).toContainText('1,000,000');
  const chart=cards.first().locator('.focus-interactive-line-chart');

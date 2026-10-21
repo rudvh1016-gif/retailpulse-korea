@@ -10,3 +10,7 @@
 @media(max-width:700px){.staff-brief-grid{grid-template-columns:1fr;gap:18px}.staff-brief-grid section+section{border-top:1px solid var(--silver,#dce1e7);padding-top:16px}.staff-brief-heading{gap:6px}.airport-staff-briefing{padding-top:16px}}
 
 .airport-staff-briefing details{margin:8px 0}.airport-staff-briefing summary{cursor:pointer;font-size:12px;line-height:1.7;font-weight:600}.airport-staff-briefing details p{margin:5px 0;font-size:12px}
+
+/* Country/event is the title; dates and institution limits remain body text. */
+.airport-staff-briefing .staff-holiday-event h4{font-size:13px;line-height:1.7;font-weight:700;color:var(--ink);margin:0 0 4px;overflow-wrap:anywhere}
+.airport-staff-briefing .staff-holiday-event p,.airport-staff-briefing .staff-holiday-scope{font-weight:400}

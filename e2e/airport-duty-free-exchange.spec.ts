@@ -41,6 +41,18 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,
  await expect(strip.locator('time')).toHaveCount(1);expect(await tofuCharacters(strip)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);expect(vendorRequests).toEqual([]);
   if(lang==='ko')await strip.locator('.duty-free-rate-detail').screenshot({path:info.outputPath(`duty-free-sources-${width}.png`)});
   await page.keyboard.press('Escape');await expect(strip.locator('details')).not.toHaveAttribute('open');await expect(strip.locator('summary')).toBeFocused();
+  // Native summary supports repeated keyboard and pointer opening; close returns focus.
+  const collapse={ko:'환율 접기',en:'Collapse rates',zh:'收起汇率',ja:'レートを閉じる'}[lang];
+  await page.keyboard.press('Space');await expect(strip.locator('details')).toHaveAttribute('open');
+  await expect(strip.locator('summary .duty-free-trigger-open')).toHaveText(collapse);
+  const close=strip.getByRole('button',{name:collapse,exact:true});await expect(close).toBeVisible();
+  expect(await strip.locator('.duty-free-rate-detail').evaluate(node=>getComputedStyle(node).backgroundColor)).toBe('rgb(255, 255, 255)');
+  await strip.locator('.duty-free-rate-detail').evaluate(node=>{node.scrollTop=node.scrollHeight;});
+  const closeBox=await close.boundingBox(),panelBox=await strip.locator('.duty-free-rate-detail').boundingBox();
+  expect(closeBox!.y).toBeGreaterThanOrEqual(panelBox!.y);expect(closeBox!.y+closeBox!.height).toBeLessThanOrEqual(panelBox!.y+panelBox!.height);
+  await close.click();await expect(strip.locator('details')).not.toHaveAttribute('open');await expect(strip.locator('summary')).toBeFocused();
+  await strip.locator('summary').click();await close.focus();await page.keyboard.press('Enter');
+  await expect(strip.locator('details')).not.toHaveAttribute('open');await expect(strip.locator('summary')).toBeFocused();
   await install.click();await expect(page.locator('.install-modal')).toBeVisible();await page.keyboard.press('Escape');await expect(install).toBeFocused();
   await language.selectOption(lang==='en'?'ko':'en');await expect(language).toHaveValue(lang==='en'?'ko':'en');
   await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

@@ -88,3 +88,34 @@ test('the noninteractive monthly readout never intercepts its month targets',()=
  assert.ok(tooltip);
  assert.match(tooltip,/(?:^|;)pointer-events:none(?:;|$)/);
 });
+
+test('scrubbing maps CSS pixels to plotted month positions, clamps margins and preserves missing slots',async()=>{
+ const {nearestMonthlyPoint}=await import('../lib/monthly-chart-pointer.ts');
+ for(const scale of [.7,1,2.4])for(const count of [1,2,6]){
+  const left=71.25,w=332*scale;
+  for(let i=0;i<count;i++)assert.equal(nearestMonthlyPoint(left+(48+i*256/Math.max(1,count-1))*scale,left,w,count),i);
+  assert.equal(nearestMonthlyPoint(left-300,left,w,count),0);
+  assert.equal(nearestMonthlyPoint(left+w+300,left,w,count),count-1);
+ }
+ for(const args of [[0,0,0,6],[NaN,0,332,6],[0,0,332,0],[0,0,Infinity,6]])assert.equal(nearestMonthlyPoint(...args),null);
+ const left=20,w=332;
+ assert.equal(nearestMonthlyPoint(left+48+256/5*2,left,w,6),2,'missing observations retain their selectable month');
+});
+
+test('country source essentials stay visible while the full original caveats remain expandable',()=>{
+ const source=readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8');
+ assert.match(source,/인천공항 공식 월 실적 · \{checkedAt\?`수집 \$\{kstDayOf\(checkedAt\)\}`/);
+ assert.match(source,/노선 국가 기준 · 국가별 축 다름<\/small><details[^>]*><summary>자료 안내<\/summary>/);
+ assert.match(source,/노선 국가 기준이며 승객 국적이 아닙니다\. 과거 실적은 향후 증가를 보장하지 않습니다\./);
+});
+
+test('every full-country monthly table is a default-closed native disclosure with its table preserved',()=>{
+ const source=readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8');
+ assert.match(source,/full&&!loading&&<details className="focus-month-table-details"><summary>월별 수치 보기<\/summary><table className="focus-month-values">/);
+ assert.match(source,/<caption className="sr-only">\{row.label\} 월별 출발 여객과 전월비<\/caption>/);
+ assert.match(source,/<thead><tr><th>월<\/th><th>출발 여객<\/th><th>전월비<\/th><\/tr><\/thead><tbody>\{row.points.map/);
+ assert.match(source,/<\/tbody><\/table><\/details>/);
+ const css=readFileSync(new URL('../app/airport-monthly-line-chart.css',import.meta.url),'utf8');
+ assert.match(css,/\.focus-month-table-details>summary\{[^}]*min-height:44px/);
+ assert.match(css,/\.focus-month-table-details>summary:focus-visible/);
+});
