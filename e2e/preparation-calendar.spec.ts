@@ -17,7 +17,21 @@ for(const width of [320,390,1440])test(`preparation month grid and preserved det
  await expect(glass).toHaveCSS('backdrop-filter','blur(12px)');
  await expect(glass).toHaveCSS('border-radius','999px');
  const glassBounds=await glass.boundingBox();expect(glassBounds!.width).toBeLessThanOrEqual(280);expect(glassBounds!.height).toBeGreaterThanOrEqual(44);expect(glassBounds!.height).toBeLessThanOrEqual(48);
- for(const surface of ['body','main.page-shell','.focus-detail','.preparation-month','.preparation-arrival-link'])await expect(page.locator(surface).first()).toHaveCSS('background-color','rgb(255, 255, 255)');
+ // Match pure-white.spec.ts: transparent layout wrappers inherit the first
+ // painted ancestor, which must be opaque white, never an image or tint.
+ for(const surface of ['body','main.page-shell','.focus-detail','.preparation-month','.preparation-arrival-link']){
+  const painted=await page.locator(surface).first().evaluate(start=>{
+   let node:Element|null=start;
+   while(node){
+    const style=getComputedStyle(node);
+    if(style.backgroundImage!=='none')return `image:${style.backgroundImage}`;
+    if(!['rgba(0, 0, 0, 0)','transparent'].includes(style.backgroundColor))return style.backgroundColor;
+    node=node.parentElement;
+   }
+   return 'unpainted';
+  });
+  expect(painted,`${surface} first painted background`).toBe('rgb(255, 255, 255)');
+ }
  await expect(month.locator('.preparation-event-chip[data-country="KR"]').first()).toHaveCSS('background-color','rgb(255, 240, 223)');
  await expect(month.locator('.preparation-event-chip:not([data-country="KR"])').first()).toHaveCSS('background-color','rgb(241, 244, 247)');
  await expect(month.locator('.preparation-event-chip[data-country="KR"]')).toHaveCount(3);
