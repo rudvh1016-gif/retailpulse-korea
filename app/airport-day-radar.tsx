@@ -162,7 +162,7 @@ export default function DayRadarBlock({ lang, date, dayRelation, terminal, nowIs
           <strong>{shortDayLabel(item.day.day,current.day,lang)}</strong></div>
           <ul className="similar-highlights">{similarHighlights(item,current,lang).map((fact,index)=><li key={index}>{'text' in fact?fact.text:<>{fact.label}: {dayRelation==='TODAY'?copy.today[lang]:copy.selectedDay[lang]} <strong>{fact.current}</strong> · {copy.thatDay[lang]} <strong>{fact.previous}</strong> · <RateText text={fact.difference} lang={lang}/></>}</li>)}</ul>
           <p className="prep-note similar-destination-note" data-testid="similar-destination-note">{similarDestinationNote(current,item.day,lang,dayRelation==='TODAY'?copy.today[lang]:copy.selectedDay[lang])}</p>
-          <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : item.day.day)} data-testid="similar-open"
+          <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : item.day.day)} data-disclosure-trigger data-testid="similar-open"
             style={{ border: 0, padding: '8px 0',minHeight:44, background: 'transparent', color: 'var(--blue)', cursor: 'pointer', font: 'inherit' }}>{copy.conciseCompare[lang]}</button>
           {isOpen && <div data-testid="similar-table">
             {lines.busiest && <p className="prep-note">{copy.busiest[lang]}: {lines.busiest}</p>}

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import ts from 'typescript';
+import postcss from 'postcss';
 const read=p=>readFileSync(p,'utf8');
 const files=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?files(`${dir}/${entry.name}`):entry.name.endsWith('.tsx')?[`${dir}/${entry.name}`]:[]);
 const headings=[];
@@ -49,28 +50,40 @@ test('screenshot middle headings and equivalent sitewide subsections use the exi
  // Airport, preparation and Seoul content share the role without text/locale matching.
  for(const file of ['airport-live-signals','airport-departure-preparation','airport-tax-refund-guide','business-compare','tourism-desk','seoul-flow-models'])assert.ok(headings.some(h=>h.file===`app/${file}.tsx`&&h.role==='subsection'),file);
 });
-test('only internal major headings keep dots; page markers and their reserved inset are removed',()=>{
+test('every semantic heading has no decorative prefix, generated marker or reserved inset',()=>{
  const css=read('app/heading-hierarchy.css');
- const page=css.match(/:root body :is\(h1,h2,h3\)\[data-heading="page"\]\s*\{([^}]+)\}/)?.[1];
- assert.ok(page);assert.match(page,/padding-inline-start:0(?:;|$)/);
- const marker=css.match(/:root body \[data-heading="page"\] > \.heading-marker\s*\{([^}]+)\}/)?.[1];
- assert.equal(marker?.trim(),'display:none');
+ const marker=css.match(/:root body \[data-heading\] > \.heading-marker\s*\{([^}]+)\}/)?.[1];
+ assert.equal(marker?.trim(),'display:none!important');
  const base=css.match(/:root body :is\(h1,h2,h3\)\[data-heading\]\s*\{([^}]+)\}/)?.[1];
- assert.ok(base);assert.match(base,/padding-inline-start:\.72em/);
+ assert.ok(base);assert.match(base,/padding-inline-start:0;/);
+ assert.match(base,/opacity:1!important/); // Supersede older airport .9 opacity without recoloring body text.
  assert.match(base,/overflow-wrap:anywhere/);assert.match(base,/white-space:normal/);
- assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g,''),/(?:^|})\s*(?:h[123]|[^{}]*data-heading="(?:section|subsection)"[^{}]*)\s*[^{}]*\{[^}]*display:none/);
-});
-test('only semantic subsection marker geometry changes to a hyphen; internal major dots remain round',()=>{
- const css=read('app/heading-hierarchy.css');
- const base=css.match(/:root body \[data-heading\] > \.heading-marker\s*\{([^}]+)\}/)?.[1];
- assert.ok(base);assert.match(base,/width:\.26em/);assert.match(base,/height:\.26em/);assert.match(base,/border-radius:50%/);
- const override=css.match(/:root body \[data-heading="subsection"\] > \.heading-marker\s*\{([^}]+)\}/)?.[1];
- assert.ok(override);
- const declarations=Object.fromEntries(override.trim().split(';').filter(s=>s.trim()).map(s=>s.trim().split(':')));
- assert.deepEqual(declarations,{top:'.64em',width:'.36em',height:'.08em','border-radius':'0'});
- assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g,''),/(?:h[123]|data-heading="section")\s*[^{}]*>\s*\.heading-marker/);
- assert.doesNotMatch(css,/content\s*:/); // No generated text or duplicate prefix.
+ assert.match(css,/\[data-heading\]::before,\s*:root body :is\(h1,h2,h3\)\[data-heading\]::after \{content:none!important;display:none!important\}/);
+ assert.doesNotMatch(css,/border-radius:50%|padding-inline-start:\.72em|background:currentColor/);
+ for(const h of headings){
+  const first=h.node.children.find(child=>!(ts.isJsxText(child)&&!child.text.trim())&&!(ts.isJsxSelfClosingElement(child)&&child.getText(h.tree).includes('heading-marker')));
+  if(first&&ts.isJsxText(first))assert.doesNotMatch(first.text.trim(),/^[·•‧∙-]/,h.file);
+ }
  assert.match(read('app/airport-staff-briefing.tsx'),/<span aria-hidden="true">· <\/span>/); // Terminal-line dot is not a heading marker.
+});
+test('the three heading-only colors and supported weights distinguish roles without recoloring the site',()=>{
+ const css=postcss.parse(read('app/heading-hierarchy.css'));
+ const palette={page:['#542632','750'],section:['#29272a','650'],subsection:['#514d50','500']};
+ const colors=[];
+ css.walkDecls('color',decl=>{
+  if(decl.value==='CanvasText'){assert.equal(decl.parent.parent.params,'(forced-colors:active)');return;}
+  const role=decl.parent.selector.match(/^:root body :is\(h1,h2,h3\)\[data-heading="(page|section|subsection)"\]$/)?.[1];
+  assert.ok(role,decl.parent.selector);assert.equal(decl.value,palette[role][0]);assert.ok(decl.important);
+  const weight=decl.parent.nodes.find(node=>node.prop==='font-weight');assert.equal(weight.value,palette[role][1]);assert.ok(weight.important);colors.push(decl.value);
+  const channels=decl.value.slice(1).match(/../g).map(hex=>parseInt(hex,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
+  const luminance=channels.reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+  assert.ok(1.05/(luminance+.05)>=7,`${role} contrast on unchanged white ground`);
+ });
+ assert.deepEqual(colors,Object.values(palette).map(value=>value[0]));
+ assert.match(read('app/globals.css'),/font-family: "KORETAIL Sans Variable";[\s\S]*?font-weight: 45 920;/);
+ assert.match(read('app/heading-hierarchy.css'),/:is\(\.lang-ja,\.lang-zh,\[lang="ja"\],\[lang="zh"\]\) :is\(h1,h2,h3\)\[data-heading\] \{font-weight:600!important\}/);
+ for(const locale of ['jp','sc'])assert.match(read('app/globals.css'),new RegExp(`noto-sans-${locale}-600\\.woff2[^}]+font-weight: 600;`));
+ css.walkDecls(decl=>assert.doesNotMatch(decl.prop,/^(?:background|fill|stroke|font-family|--)/));
 });
 test('screenshot-requested three briefing titles use major section scale without changing copy',()=>{
  const source=read('app/airport-staff-briefing.tsx');
@@ -83,7 +96,7 @@ test('hierarchy is opt-in, wrapping-safe, and leaves navigation/theme/body token
  for(const role of ['page','section','subsection'])assert.ok(css.includes(`[data-heading="${role}"]`));
  assert.match(css,/overflow-wrap:anywhere/);assert.match(css,/white-space:normal/);
  assert.match(css,/font-size:clamp\(28px,3vw,36px\)/);assert.match(css,/font-size:clamp\(22px,2.2vw,26px\)/);assert.match(css,/font-size:clamp\(18px,1.7vw,20px\)/);
- assert.match(css,/background:currentColor/);assert.match(css,/forced-colors:active/);
+ assert.match(css,/forced-colors:active/);
  assert.doesNotMatch(css,/--type-body:|\.glass-nav\s*\{|\.bottom-nav\s*\{|body\s*\{/);
 });
 
@@ -95,6 +108,5 @@ test('the full home question and destination link have separate rows with only n
  assert.match(css,/@media\(max-width:380px\)\{:root body \.focus-trend-question\[data-heading\]\{font-size:1\.125rem!important\}\}/);
  assert.match(css,/@media\(max-width:340px\)\{:root body \.focus-trend-question\[data-heading\]\{font-size:1\.0625rem!important\}\}/);
  assert.doesNotMatch(css,/white-space:nowrap|text-overflow|overflow:hidden/);
- assert.match(css,/\.airport-view :is\(h1,h2\)\[data-heading\] \{color:#24272c;font-weight:650!important\}/);
- assert.match(css,/\.airport-view \.airport-hero h3\[data-heading="subsection"\] \{color:#465361;font-weight:600!important;opacity:1\}/);
+ assert.doesNotMatch(css,/\.airport-view[^{}]*\{[^}]*color:/,'airport headings use the same semantic palette');
 });

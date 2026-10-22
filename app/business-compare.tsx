@@ -62,7 +62,7 @@ export function UsualComparisonBlock({ lang, place, today }: { lang: Lang; place
     const status = !today ? compareCopy.noData[lang] : result === null ? compareCopy.loadFailed[lang]
       : result === undefined ? prepCopy.loading[lang] : compareCopy.noData[lang];
     return <details className={`prep-evidence prep-compare ${styles.disclosure}`} data-testid="usual-comparison">
-      <summary>{compareCopy.usualTitle[lang]} · {status}<span className={styles.toggle} aria-hidden="true" /></summary>
+      <summary>{compareCopy.usualTitle[lang]}<span data-disclosure-meta> · {status}</span><span className={styles.toggle} aria-hidden="true" /></summary>
       {body}
     </details>;
   }

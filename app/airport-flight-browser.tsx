@@ -20,9 +20,9 @@ function HourFlights({flights, lang, testId}: {flights: readonly MapFlight[]; la
     <ul className="airport-flight-rows" data-testid={testId}>
       {flights.slice(0, visible).map(flight => {const domestic=domesticFlightKind(flight);return <li key={`${flight.day}:${flight.id}`} data-group={flight.group}>
         <details className="airport-flight-row">
-          <summary>
+          <summary data-disclosure-mixed>
             <span className="airport-flight-time">{flight.scheduledAt.slice(11,16)} KST</span>
-            <span>{flight.flightNumber}</span>
+            <span data-disclosure-title>{flight.flightNumber}</span>
             <span>{lang === 'ko' ? (domestic?flight.destination?.name:flight.destinationCode) ?? flight.destinationCode ?? c.unknown : flight.destination?.en ?? flight.destinationCode ?? c.unknown}{domestic&&<small> · {domestic==='transit'?domesticTransitLabel(lang):domesticDestinationLabel(lang)}</small>}</span>
             <span>{flight.gate ?? c.unknown} · {mapCopy.side[flight.side][lang]}</span>
           </summary>
@@ -42,7 +42,7 @@ function HourFlights({flights, lang, testId}: {flights: readonly MapFlight[]; la
 function FlightHour({hour, flights, lang, testId}: {hour: string; flights: readonly MapFlight[]; lang: Lang; testId: string}) {
   const [open, setOpen] = useState(false);
   return <details className="airport-flight-hour" open={open} onToggle={event => setOpen(event.currentTarget.open)}>
-    <summary>{hour.slice(5,10)} · {hour.slice(11)}:00–{String((Number(hour.slice(11))+1)%24).padStart(2,'0')}:00 KST <span>{flights.length}</span></summary>
+    <summary data-disclosure-mixed>{hour.slice(5,10)} · {hour.slice(11)}:00–{String((Number(hour.slice(11))+1)%24).padStart(2,'0')}:00 KST <span>{flights.length}</span></summary>
     {open && <HourFlights flights={flights} lang={lang} testId={`${testId}-rows`} />}
   </details>;
 }
@@ -63,7 +63,7 @@ export function AirportFlightBrowser({flights, lang, testId}: {flights: readonly
   }, [flights, query, lang]);
   const found = groups.reduce((sum, [, rows]) => sum + rows.length, 0);
   return <details className="airport-flight-browser" data-testid={testId} open={open} onToggle={event => setOpen(event.currentTarget.open)}>
-    <summary>{c.open} ({flights.length})</summary>
+    <summary>{c.open} <span data-disclosure-meta>({flights.length})</span></summary>
     {open && <>
       <label className="airport-flight-search">{c.search}<input type="search" value={query} onChange={event => setQuery(event.target.value)} /></label>
       <p className="prep-note" role="status">{found} / {flights.length}</p>

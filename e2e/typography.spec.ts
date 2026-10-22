@@ -216,12 +216,13 @@ for (const locale of ["ko", "en", "zh", "ja"] as const) {
  * computed styles, so a stray `font-size: 11px` added later fails here even
  * when the copy and the layout are fine.
  */
-test("the install guide uses one type scale and two weights", async ({ page }) => {
+test("the install guide keeps body weights separate from its semantic section title", async ({ page }) => {
   await openGuide(page, "ko");
 
   const used = await page.evaluate(() => {
     const sizes = new Set<string>();
     const weights = new Set<string>();
+    const headingWeights = new Set<string>();
     const heights = new Set<string>();
     for (const node of Array.from(document.querySelectorAll(".install-modal *"))) {
       // Only elements that draw text of their own.
@@ -229,20 +230,21 @@ test("the install guide uses one type scale and two weights", async ({ page }) =
       if (!ownText) continue;
       const style = getComputedStyle(node);
       sizes.add(style.fontSize);
-      weights.add(style.fontWeight);
+      (node.closest('[data-heading]') ? headingWeights : weights).add(style.fontWeight);
       // The ratio, not the pixel value: a 13px and a 20px line share a
       // rhythm when they share a ratio, and differ in px by definition.
       if (node.tagName !== "BUTTON") heights.add((parseFloat(style.lineHeight) / parseFloat(style.fontSize)).toFixed(2));
     }
-    return { sizes: [...sizes].sort(), weights: [...weights].sort(), heights: [...heights].sort() };
+    return { sizes: [...sizes].sort(), weights: [...weights].sort(), headingWeights: [...headingWeights].sort(), heights: [...heights].sort() };
   });
 
   // 26px section title · 13px anything the reader must read · 12px the note beneath
   // it, plus the 10px eyebrow every panel in the product already uses.
   expect(used.sizes).toEqual(["10px", "12px", "13px", "26px"]);
-  // A non-standard weight is synthesised when the variable font has not
-  // loaded, and that alone makes a block look like a different typeface.
+  // Body weights stay unchanged; the Korean section title uses a supported
+  // variable-font semibold, independently of body emphasis.
   expect(used.weights).toEqual(["400", "600"]);
+  expect(used.headingWeights).toEqual(["650"]);
   // Prose shares one rhythm; the title is the only exception.
   expect(used.heights, `line-height ratios in use: ${used.heights.join(", ")}`).toEqual(["1.35", "1.70"]);
 });

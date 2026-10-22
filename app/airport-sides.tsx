@@ -48,7 +48,7 @@ export function DepartureMapSection({ lang, summary, terminal, nowIso, holidays,
   const [open, setOpen] = useState(defaultOpen);
   if (modelPlacement) return <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}><DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} defaultBuildingScope={defaultBuildingScope} modelPlacement={modelPlacement} referenceSummary={summary}/></Suspense>;
   return <details open={open} className="prep-block prep-evidence" data-testid="departure-map-section" onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
-    <summary><h3 style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3><span aria-hidden="true" style={{marginLeft:'auto'}}>{open?'−':'+'}</span></summary>
+    <summary><h3 data-disclosure-title style={{ margin: 0 }}>{copy.mapTitle[lang]}</h3><span aria-hidden="true" style={{marginLeft:'auto'}}>{open?'−':'+'}</span></summary>
     {(open || Boolean(modelPlacement)) && <Suspense fallback={<p className="prep-note">{copy.mapLoading[lang]}</p>}>
       <DepartureMap lang={lang} date={summary.serviceDateKst} todayKst={summary.todayKst} dayRelation={summary.dayRelation} terminal={terminal} nowIso={nowIso} holidays={holidays} defaultBuildingScope={defaultBuildingScope} modelPlacement={modelPlacement} referenceSummary={modelPlacement ? summary : undefined}/>
     </Suspense>}
