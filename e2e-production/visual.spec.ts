@@ -109,12 +109,12 @@ for (const locale of locales) {
           const band = document.querySelector(".airport-hero")?.getBoundingClientRect();
           return band && band.top <= 450 && band.bottom >= 450 ? Math.max(90, Math.floor(band.top) - 6) : 450;
         });
-        const mobileAirport = route === "/airport" && (width === 390 || width === 430);
-        if (mobileAirport) {
-          // CI 39694086259: (2,450) intersects the approved day-pill shadow,
-          // not a page fill. Use the intro's vertical midpoint, above the
-          // action/day controls, at both outer gutters. It follows heading
-          // reflow in every language; no fixed text height, blank-space
+        const airportGutter = route === "/airport";
+        if (airportGutter) {
+          // A fixed (2,450) can intersect a day-pill shadow as controls reflow,
+          // including at 768px (CI 39736417657). Use the intro's midpoint,
+          // above the action/day controls, at both gutters at every width.
+          // It follows heading reflow in every language; no fixed text height, blank-space
           // requirement, material change or colour-based pixel search.
           const geometry = await page.evaluate(() => {
             const intro = document.querySelector(".airport-view > .view-intro")?.getBoundingClientRect();
@@ -141,7 +141,7 @@ for (const locale of locales) {
           expect(geometry.y).toBeLessThan(geometry.viewportHeight);
           gutterY = geometry.y;
         }
-        for (const x of mobileAirport ? [2, width - 3] : [2]) {
+        for (const x of airportGutter ? [2, width - 3] : [2]) {
           expect(await samplePixel(page, x, gutterY), `${locale}${route} gutter pixel (${x},${gutterY})`).toEqual([255, 255, 255]);
         }
         const corner = await samplePixel(page, width - 3, 3);
