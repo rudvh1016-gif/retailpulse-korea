@@ -93,7 +93,7 @@
  .focus-report-title{grid-column:1/-1;grid-row:1}
  .focus-today-title{grid-column:1;grid-row:2}
  .focus-report-lines{grid-column:1;grid-row:3;display:block}
- .focus-selected-country-changes{grid-column:1;grid-row:4}
+ .focus-selected-country-stack{grid-column:1;grid-row:4}
  .focus-report-basis{grid-column:1;grid-row:5}
  .focus-preparation-brief{grid-column:2;grid-row:2/6;margin-top:0}
  .focus-preparation-brief>div:first-child{margin-top:0;padding-top:0;border-top:0}
@@ -166,3 +166,11 @@
 .focus-trend-heading{display:block}
 .focus-trend-heading>div{min-width:0;width:100%}
 .focus-trend-heading .focus-trend-more{display:flex;align-items:center;min-height:44px;margin-top:2px;text-align:start}
+
+/* The same event-first compact comparison also serves Today’s return cards. */
+.focus-selected-country-changes .focus-preparation-event h4{font-size:13px;line-height:1.6;font-weight:700;margin:0}
+.focus-selected-country-changes .focus-preparation-event+.focus-preparation-event{margin-top:12px}
+.focus-selected-country-changes .focus-event-details>summary{min-height:44px;box-sizing:border-box;padding:10px 0;cursor:pointer;width:fit-content}
+.focus-selected-country-changes .focus-event-details>summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.event-country-flights p{margin:3px 0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.event-country-flights .staff-route-rate{display:inline-block;white-space:nowrap}
