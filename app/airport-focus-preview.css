@@ -161,3 +161,8 @@
 
 .focus-passenger-rate{display:inline-block;white-space:nowrap}
 .focus-passenger-zero-basis{display:block;overflow-wrap:anywhere}
+
+/* The full trend question and destination link no longer compete for one row. */
+.focus-trend-heading{display:block}
+.focus-trend-heading>div{min-width:0;width:100%}
+.focus-trend-heading .focus-trend-more{display:flex;align-items:center;min-height:44px;margin-top:2px;text-align:start}

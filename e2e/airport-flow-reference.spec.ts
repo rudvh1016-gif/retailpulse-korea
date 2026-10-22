@@ -4,8 +4,8 @@ import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 const bands=Array.from({length:24},(_,hour)=>({label:`${String(hour).padStart(2,'0')}~${String(hour+1).padStart(2,'0')}`,region:null,arrivals:1,departures:31000,total:null,aggregate:false,startHour:hour,endHour:hour+1}));
 const stats={status:'READY',requestedMonth:'2026-08',month:'2026-07',previousMonth:null,
  current:{TIME_BAND_PASSENGERS:{operationId:'TIME_BAND_PASSENGERS',month:'2026-07',rows:bands,retrievedAt:'2026-08-30T21:07:00Z'}},previous:{}};
-test('the hourly forecast figure carries the published month as a grey whole-airport reference, only for the whole airport',async({page})=>{
- await page.setViewportSize({width:390,height:900});
+for(const width of [320,390,430,1280])test(`the grey reference disclosure aligns with airport body at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:900});
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:stats}));
  await page.goto('/ko/airport');
@@ -25,6 +25,9 @@ test('the hourly forecast figure carries the published month as a grey whole-air
  await expect(summary).toHaveText('회색선 기준 보기');
  await expect(summary).toHaveCSS('font-size','12px');
  expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ const body=page.locator('#airport-forecast-title');
+ expect((await summary.boundingBox())!.x).toBeCloseTo((await body.boundingBox())!.x,0);
+ expect((await summary.boundingBox())!.x).toBeGreaterThanOrEqual(14);
  await summary.focus();await expect(summary).toBeFocused();
  await summary.press('Enter');await expect(note).toBeVisible();
  await expect(note).toHaveCSS('font-size','12px');

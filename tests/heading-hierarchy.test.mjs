@@ -71,3 +71,15 @@ test('hierarchy is opt-in, wrapping-safe, and leaves navigation/theme/body token
  assert.match(css,/background:currentColor/);assert.match(css,/forced-colors:active/);
  assert.doesNotMatch(css,/--type-body:|\.glass-nav\s*\{|\.bottom-nav\s*\{|body\s*\{/);
 });
+
+
+test('the full home question and destination link have separate rows with only narrow-title scaling',()=>{
+ const css=read('app/heading-hierarchy.css'),focus=read('app/airport-focus-preview.css'),source=read('app/airport-focus-trends.tsx');
+ assert.match(source,/이어지는 흐름일까'\}<\/h2>\{onMore&&<button className="focus-trend-more"/);
+ assert.match(focus,/\.focus-trend-heading\{display:block\}/);assert.match(focus,/\.focus-trend-heading \.focus-trend-more\{[^}]*min-height:44px/);
+ assert.match(css,/@media\(max-width:380px\)\{:root body \.focus-trend-question\[data-heading\]\{font-size:1\.125rem!important\}\}/);
+ assert.match(css,/@media\(max-width:340px\)\{:root body \.focus-trend-question\[data-heading\]\{font-size:1\.0625rem!important\}\}/);
+ assert.doesNotMatch(css,/white-space:nowrap|text-overflow|overflow:hidden/);
+ assert.match(css,/\.airport-view :is\(h1,h2\)\[data-heading\] \{color:#24272c;font-weight:650!important\}/);
+ assert.match(css,/\.airport-view \.airport-hero h3\[data-heading="subsection"\] \{color:#465361;font-weight:600!important;opacity:1\}/);
+});

@@ -66,6 +66,18 @@ details.guide > summary.entry,.tripEntry { box-sizing:border-box; width:100%; he
  gap:6px; border:0; background:transparent;
 }
 
+/* Owner 2026-10-22: compact only these five controls, not the bottom dock.
+   Auto height allows enlarged labels to grow; all targets stay at least 44px. */
+details.guide > summary.entry,.tripEntry {height:auto;min-height:64px;grid-template-columns:minmax(0,1fr) 56px;gap:8px;padding:6px 10px}
+.tripEntry img,.newsMark {width:56px;height:42px}
+@media(max-width:600px){
+ details.guide > summary.entry,.tripEntry {grid-template-columns:minmax(0,1fr) 40px;gap:6px;padding:6px 8px}
+ .tripEntry img,.newsMark {width:40px;height:40px}
+ /* Reserve three English label lines equally without fixing height or clipping enlarged text. */
+ .launcher:lang(en) details.guide > summary.entry,.launcher:lang(en) .tripEntry {min-height:72px}
+}
+:global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]) {min-height:46px;padding:4px 10px;gap:1px}
+
 /* Owner 2026-10-21: exactly the two entry actions and three airport days.
    Match the final bottom-bar material, not its older gray rule.
    No geometry, type, event handlers or selected-day underline changes. */

@@ -22,7 +22,7 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  await expect(holiday.locator('p').first()).toHaveCSS('font-weight','400');
  await expect(holiday.locator('h4')).not.toContainText('금융기관');
 
- await expect(briefing).toContainText('고객 수나 매장 혼잡 예측은 아닙니다');
+ await expect(briefing).toContainText('선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님');
  await expect(briefing.locator('a[href*="airport-prepare"]')).toHaveAttribute('href',/date=2026-10-19#arrival-allowances$/);
  await expect(briefing.locator('.staff-brief-heading')).toContainText('2026-10-19');
  await expect(briefing.locator('.staff-brief-heading')).toContainText('KST 수집');
@@ -40,7 +40,7 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  for(const date of dates)expect(date.text).toMatch(/\d{2}\/\d{2}/);
  if(dates.length===2)expect(dates[0].date).not.toBe(dates[1].date);
  await basis.locator('summary').focus();await page.keyboard.press('Enter');
- await expect(basis).toHaveAttribute('open','');await expect(basis).toContainText('노선 국가를 고객 국적으로');
+ await expect(basis).toHaveAttribute('open','');await expect(basis).toContainText('노선 국가 기준');await expect(briefing).not.toContainText('노선 국가를 고객 국적으로');await expect(briefing).not.toContainText('귀국객 집중을 확정한 예측');
  await expect(basis.locator('.staff-route-sample')).toHaveCSS('white-space','nowrap');
  await page.keyboard.press('Enter');await expect(basis).not.toHaveAttribute('open','');
  await expect(briefing.locator('details').filter({has:page.getByText('패션·명품',{exact:true})})).toHaveAttribute('open','');

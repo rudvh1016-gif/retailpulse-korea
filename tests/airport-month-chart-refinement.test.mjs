@@ -7,8 +7,8 @@ const signals=read('app/live-signals.tsx');
 const chart=signals.match(/function AirportMonthChart\([\s\S]*?\n\}\n/)?.[0]??'';
 const css=read('app/airport-models.css');
 
-test('daily forecast marks are slimmer without narrowing the full-day controls',()=>{
- assert.match(chart,/const barWidth = Math\.min\(3, slot \* 0\.22\)/);
+test('daily forecast marks are moderately thicker without narrowing the full-day controls',()=>{
+ assert.match(chart,/const barWidth = Math\.min\(3, slot \* 0\.48\)/);
  assert.match(chart,/const slot = width \/ slots/);
  assert.match(chart,/style=\{\{ flex: `0 0 \$\{100 \/ slots\}%` \}\}/);
  assert.match(chart,/<button[^>]*type="button" aria-pressed=\{day\.date === shownDay\.date\}/);
@@ -43,4 +43,15 @@ test('long daily strips cap horizontal pitch with aligned ticks and no date trun
  assert.match(chart,/<div className="airport-month-ticks" style=\{plotStyle\}/);
  assert.match(chart,/const slots = days.length/);
  assert.match(chart,/days.map\(\(day\) => <button/);
+});
+
+
+test('daily readouts are reachable by hover, focus, tap and keyboard without changed values',()=>{
+ assert.match(chart,/onPointerEnter=\{\(\) => setActive\(day\.date\)\}/);
+ assert.match(chart,/onFocus=\{\(\) => setActive\(day\.date\)\}/);
+ assert.match(chart,/data-value=\{day\.total\}/);
+ for(const count of [22,31])for(const available of [292,354,394,1280]){
+  const pitch=Math.min(available,count*12)/count,width=Math.min(3,100/count*.48)*Math.min(available,count*12)/100;
+  assert.ok(width>4&&width<=5.76+.001);assert.ok(pitch-width>0);assert.ok(pitch<=12);
+ }
 });

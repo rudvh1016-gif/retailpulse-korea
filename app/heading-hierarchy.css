@@ -53,3 +53,14 @@
 }
 :root body [data-heading] > small {white-space:normal;overflow-wrap:anywhere}
 @media(forced-colors:active){:root body [data-heading] > .heading-marker{background:CanvasText}}
+
+/* Airport-only hierarchy: charcoal titles, quieter informational subheadings.
+ * Keep the established size ladder and the page/section dots + subsection hyphens. */
+:root body .airport-view :is(h1,h2)[data-heading] {color:#24272c;font-weight:650!important}
+:root body .airport-view h3[data-heading="subsection"],
+:root body .airport-view .airport-hero h3[data-heading="subsection"] {color:#465361;font-weight:600!important;opacity:1}
+/* Give the complete home trend question the row before reducing only narrow phones.
+ * Normal wrapping remains available at enlarged text sizes; never clip or force nowrap. */
+:root body .focus-trend-question[data-heading] {word-break:keep-all}
+@media(max-width:380px){:root body .focus-trend-question[data-heading]{font-size:1.125rem!important}}
+@media(max-width:340px){:root body .focus-trend-question[data-heading]{font-size:1.0625rem!important}}

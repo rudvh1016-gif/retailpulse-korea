@@ -560,7 +560,7 @@ export const airportTodayText = {
   waiting: { ko: "명 대기", en: " waiting", zh: "人等候", ja: "人待機" },
   waitLabel: { ko: "대기시간", en: "Wait", zh: "等候时间", ja: "待ち時間" },
   peopleLabel: { ko: "대기인원", en: "People", zh: "等候人数", ja: "待機人数" },
-  forecastOnly: { ko: "인천공항이 발표한 시간대별 예상 승객이며, 실제 대기 인원이 아닙니다.", en: "Incheon Airport's own hourly passenger forecast, not an observed queue.", zh: "仁川机场发布的分时段预计旅客，并非实际等候人数。", ja: "仁川空港が発表した時間帯別の予想旅客で、実際の待機人数ではありません。" },
+  forecastOnly: { ko: "인천공항 시간대별 예상 · 실제 대기 인원 아님", en: "Incheon Airport hourly forecast · not an observed queue", zh: "仁川机场分时预测 · 非实际等候人数", ja: "仁川空港の時間帯別予想 · 実際の待機人数ではありません" },
   nowMarker: { ko: "현재 시각", en: "Now", zh: "当前时间", ja: "現在時刻" },
   scope: {
     ko: { all: "전체 공항", T1: "제1터미널", T2: "제2터미널" },
@@ -1243,8 +1243,8 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   // Each calendar date receives equal space; missing values remain gaps.
   const slots = days.length;
   const slot = width / slots;
-  // Slim marks keep their full calendar-day hit targets below.
-  const barWidth = Math.min(3, slot * 0.22);
+  // Moderately thicker marks retain the compact pitch and full-day hit targets.
+  const barWidth = Math.min(3, slot * 0.48);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
   const showEachValue = days.length <= 5;
   // Keep long daily strips compact instead of stretching thin marks apart.
@@ -1297,7 +1297,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
       </div>}
       <div className="airport-month-picks" role="group" aria-label={mtdCopy.daily[lang]}>
         {days.map((day) => <button key={day.date} type="button" aria-pressed={day.date === shownDay.date} style={{ flex: `0 0 ${100 / slots}%` }}
-          onClick={() => setActive(day.date)}
+          onClick={() => setActive(day.date)} onPointerEnter={() => setActive(day.date)} onFocus={() => setActive(day.date)}
           aria-label={`${shortDay(day.date)} · ${day.total === null ? airportTodayText.unavailable[lang] : `${Math.round(day.total).toLocaleString(numberLocale)}${unit}`}`} />)}
       </div>
     </div>

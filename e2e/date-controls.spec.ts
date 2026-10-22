@@ -48,7 +48,8 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   // Root is glance; retain the detailed airport date and touch-target checks after navigation.
   const personal=page.locator('.date-nav-shortcuts button');
   await expect(personal).toHaveCount(3);
-  expect((await personal.first().boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  expect((await personal.first().boundingBox())!.height).toBeGreaterThanOrEqual(46);
+  expect((await personal.first().boundingBox())!.height).toBeLessThan(52);
   await personal.last().focus();await personal.last().press('Space');
   await expect(personal.last()).toHaveAttribute('aria-pressed','true');
   await expectDateSelection(page, '2026-09-01');

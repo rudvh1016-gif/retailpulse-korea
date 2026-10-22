@@ -19,7 +19,7 @@
     "app/globals.css": "33f02cca25d3766ecd57fdcf9b55c22ce6a7077653105068e58ae1a0c7b5148d",
     "app/install-app.tsx": "2df14ccda67c85b39cadd04f116d9976cefe687e12d7603afdc6b4638d9a4b26",
     "app/layout.tsx": "926785a5e54bf612dfa95e060cdffc25b94cfd429597a3e1b02693f7b83f5efc",
-    "app/live-signals.tsx": "d2ec6b10dec20a4c23900b55350e5d7df46aabdfddd6bfefcdb62fe26f346028",
+    "app/live-signals.tsx": "107a85c5dbfa9d1ad14229ecd457d6a26da0f0d4aea8456249f92bb6053d8c8e",
     "app/not-found.tsx": "a7cdc18b61846806a2f6388e751e0e89b9ae6f00cb0bc4f1e9bd84a9df7913ae",
     "app/operational-context.tsx": "a9ba61da5ef5c66017ae5660b9efd79d74272c2b31eb641ceca749d26548c75c",
     "app/page.tsx": "6fcb1d398ec05a79739fc884793da851aef5e36edb20c001e189d2440ea993ad",
@@ -115,6 +115,17 @@
         "previous": "b97d8818e779f9ca64871a66fce500dce34f6f1994e39889c9bff0cbdd1739dd",
         "exactUnifiedDiff": "diff --git a/app/retailpulse-app.tsx b/app/retailpulse-app.tsx\nindex aebd978..cac1ad9 100644\n--- a/app/retailpulse-app.tsx\n+++ b/app/retailpulse-app.tsx\n@@ -2,6 +2,7 @@\n import './airport-history-polish.css';\n import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';\n import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';\n+import {ConciseExplainer} from './concise-explainer';\n import {ChangeRate} from './change-rate';\n import './facility-guide.css';\n import { passengerCopy } from \"../lib/passenger-copy\";\n@@ -207,19 +208,20 @@ const copy = {\n  * is worth looking at. Every metric on the insights screen carries one, which\n  * is what stops a bare \"86\" from being the whole story.\n  */\n-function MetricExplainer({ lang, what, high, source, why }: { lang: Lang; what: string; high: string; source: string; why: string }) {\n+function MetricExplainer({ lang, summary, what, high, source, why }: { lang: Lang; summary?: string; what: string; high: string; source: string; why: string }) {\n   const labels = {\n     what: localText(lang, { ko: \"무엇인가요\", en: \"What it is\", zh: \"这是什么\", ja: \"これは何か\" }),\n     high: localText(lang, { ko: \"높으면\", en: \"When it is high\", zh: \"数值高时\", ja: \"高いとき\" }),\n     source: localText(lang, { ko: \"출처\", en: \"Source\", zh: \"来源\", ja: \"出典\" }),\n     why: localText(lang, { ko: \"왜 보나요\", en: \"Why look at it\", zh: \"为何要看\", ja: \"なぜ見るのか\" }),\n   };\n-  return <dl className=\"metric-explainer\">\n+  const explanation = <dl className=\"metric-explainer\">\n     <div><dt>{labels.what}</dt><dd>{what}</dd></div>\n     <div><dt>{labels.high}</dt><dd>{high}</dd></div>\n     <div><dt>{labels.source}</dt><dd>{source}</dd></div>\n     <div><dt>{labels.why}</dt><dd>{why}</dd></div>\n   </dl>;\n+  return summary ? <ConciseExplainer summary={summary}>{explanation}</ConciseExplainer> : explanation;\n }\n \n type SignupSegment = \"visitor\" | \"airport\" | \"store\" | \"research\";\n@@ -786,6 +788,7 @@ function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; sele\n       <span className=\"official-label\">OFFICIAL HISTORICAL</span>\n     </div>\n     <MetricExplainer\n+      summary={localText(lang, { ko: \"월별 단기체류 외국인 · 시간당 평균 · 방문·매출 아님\", en: \"Monthly short-stay foreign presence · hourly mean, not visits or sales\", zh: \"月度短期停留外国人 · 每小时平均，非访问量或销售额\", ja: \"月別の短期滞在外国人・時間平均（訪問数・売上ではありません）\" })}\n       lang={lang}\n       what={localText(lang, { ko: \"서울시가 집계한 월별·시간당 평균 단기체류 외국인 수입니다.\", en: \"Seoul's monthly average hourly count of short-stay foreign residents.\", zh: \"首尔市统计的月度每小时平均短期停留外国人数。\", ja: \"ソウル市が集計した月別・時間当たり平均の短期滞在外国人数です。\" })}\n       high={localText(lang, { ko: \"그 지역에 머무는 외국인이 평소보다 많았다는 뜻입니다.\", en: \"More foreign visitors were present in that area than usual.\", zh: \"表示该地区停留的外国人多于平常。\", ja: \"その地域に滞在した外国人が普段より多かったことを意味します。\" })}\n",
         "current": "da7f38a88b79119fa86193dc306683c4163e7a1e39ae201f7ce6a28cb805e321"
+      }
+    ]
+  },
+  "technicalChanges20261022": {
+    "comparisonBase": "c88a10d47df997ab1af1edc6b86692446233dd09",
+    "description": "Airport presentation only: shorter forecast note, moderately thicker daily bars at unchanged spacing, and local readout selection on hover/focus. No date navigation, network, persistence, source data or arithmetic changes.",
+    "changes": [
+      {
+        "file": "app/live-signals.tsx",
+        "previous": "d2ec6b10dec20a4c23900b55350e5d7df46aabdfddd6bfefcdb62fe26f346028",
+        "current": "107a85c5dbfa9d1ad14229ecd457d6a26da0f0d4aea8456249f92bb6053d8c8e"
       }
     ]
   }

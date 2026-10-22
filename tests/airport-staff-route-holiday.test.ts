@@ -19,7 +19,7 @@ test('staff route and holiday keep concise independent summaries and one closed 
  assert.equal(plain(visible),'대만행 16편 · 9월 일평균 대비 ▲ 13.4%태국 Chulalongkorn 국왕 추모일10/23 · 금융기관');
  assert.equal((html.match(/<details/g)??[]).length,1);assert.match(details,/^ class="staff-route-details">/);
  assert.doesNotMatch(visible,/18\.5|2026-09|귀국 준비|공식 일정 확인|국적|특수금융기관/);
- for(const fact of ['2026-10-22','2026-09 일평균 18.5편 대비','30일','금융기관·특수금융기관','Chulalongkorn 국왕 추모일 (금융기관)','귀국 준비','2026-10-21','https://example.test/th','노선 국가를 고객 국적으로','귀국객 집중을 확정한 예측이 아닙니다.','Preserved school-calendar context'])assert.ok(details.includes(fact),fact);
+ for(const fact of ['2026-10-22','2026-09 일평균 18.5편 대비','30일','금융기관·특수금융기관','Chulalongkorn 국왕 추모일 (금융기관)','귀국 준비','2026-10-21','https://example.test/th','노선 국가 기준','Preserved school-calendar context'])assert.ok(details.includes(fact),fact);
  assert.match(visible,/staff-route-metric" data-country="TW"/);assert.match(visible,/staff-holiday-event" data-country="TH"/);
  assert.doesNotMatch(details,/기간과 맞물려|증감 원인이/,'independent Thai calendar item does not explain Taiwan flights');
  assert.equal(JSON.stringify({route,event}),before);
@@ -113,5 +113,12 @@ test('all four locales preserve numbers, country keys, source evidence and close
 test('missing route and event still retain honest empty states and boundary evidence',()=>{
  const html=render({route:undefined,event:null});
  assert.match(html,/비교 가능한 노선 자료를 확인 중/);assert.match(html,/검증된 대표 휴일 연결이 없습니다/);
- assert.doesNotMatch(html,/data-country|%|<time /);assert.match(html,/노선 국가를 고객 국적으로/);
+ assert.doesNotMatch(html,/data-country|%|<time |노선 국가를 고객 국적으로|귀국객 집중/);
+});
+
+
+test('owner-removed nationality and return forecast disclaimer is absent even when details are open',()=>{
+ const removed=['노선 국가를 고객 국적으로','귀국객 집중을 확정한 예측','Route countries do not identify customer nationality','confirmed forecast of returning travelers','航线国家不代表顾客国籍','路線の国は顧客の国籍を示しません'];
+ for(const lang of ['ko','en','zh','ja'] as const){const html=render({lang});for(const phrase of removed)assert.ok(!html.includes(phrase));}
+ assert.match(render(),/노선 국가 기준/);
 });
