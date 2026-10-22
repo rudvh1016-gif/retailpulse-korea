@@ -1,3 +1,4 @@
+import {retainOperatingFlight} from './airport-flight-dedupe';
 import {reserveAirportRequestBudget,settleAirportRequestBudget} from './airport-request-budget';
 import { prepareDepartureSchedules } from './departure-schedule';
 import { isValidKstDay } from './kst';
@@ -221,15 +222,14 @@ export async function fetchA1DeparturesForDate(
       seenSourceRows.add(sourceKey);
       if (serviceDate > targetYmd) {
         const record = await normalizeAirportFlight(item, "departure", retrievedAt);
-        const prior = future.get(record.physicalFlightId);
-        if (!prior || prior.codeshare === 'Y' || record.codeshare !== 'Y') future.set(record.physicalFlightId, record);
+        retainOperatingFlight(future, record);
         continue;
       }
       if (serviceDate < windowStartYmd || serviceDate > targetYmd) continue;
       sourceRowsInRange += 1;
       if (serviceDate === targetYmd) sourceRowsForDate += 1;
       const record = await normalizeAirportFlight(item, "departure", retrievedAt);
-      unique.set(record.physicalFlightId, record);
+      retainOperatingFlight(unique, record);
     }
 
     if (pageNo >= totalPages) break;
@@ -258,8 +258,8 @@ async function persistTodayFlights(db: D1Database | undefined, records: Canonica
       airport_code, terminal, gate, checkin_counter, status, scheduled_at,
       changed_at, event_at, published_at, retrieved_at, freshness,
       schema_version, quality_status, source_hash, physical_flight_id,
-      upstream_fid, master_flight_number, codeshare
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      upstream_fid, master_flight_number, codeshare, aircraft_subtype, aircraft_reg_no
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(physical_flight_id) DO UPDATE SET
       airline_code = excluded.airline_code,
       airport_code = excluded.airport_code,
@@ -277,7 +277,9 @@ async function persistTodayFlights(db: D1Database | undefined, records: Canonica
       source_hash = excluded.source_hash,
       upstream_fid = excluded.upstream_fid,
       master_flight_number = excluded.master_flight_number,
-      codeshare = excluded.codeshare
+      codeshare = excluded.codeshare,
+      aircraft_subtype = excluded.aircraft_subtype,
+      aircraft_reg_no = excluded.aircraft_reg_no
     WHERE airport_flights.source_hash <> excluded.source_hash`)
     .bind(
       record.physicalFlightId,
@@ -304,6 +306,8 @@ async function persistTodayFlights(db: D1Database | undefined, records: Canonica
       record.upstreamFid,
       record.masterFlightNumber,
       record.codeshare,
+      record.aircraftSubtype ?? null,
+      record.aircraftRegNo ?? null,
     ));
 
   return runD1Batches(db, statements);

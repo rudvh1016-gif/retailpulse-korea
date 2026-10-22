@@ -1,0 +1,187 @@
+{
+  "schemaVersion": "business-seat-pilot-v1",
+  "asOf": "2026-10-22T06:12:00Z",
+  "rows": [
+    {
+      "direction": "departure",
+      "serviceDate": "2026-10-20",
+      "scheduledTime": "11:05",
+      "operatingFlight": "KE917",
+      "marketingFlight": "KE917",
+      "operator": "KE",
+      "destination": "ZRH",
+      "aircraftSubtype": "B787-10",
+      "aircraftRegNo": null,
+      "status": "scheduled",
+      "evidenceKind": "PUBLISHED_SCHEDULE",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "terminal": null,
+      "gate": null,
+      "destinationCity": "Zurich",
+      "physicalKey": "departure|2026-10-20|KE917|11:05",
+      "eligibleForActualPilot": false,
+      "marketingFlights": [
+        "KE917"
+      ],
+      "sourceRows": 1,
+      "layoutId": "KE-B781-325",
+      "businessSeatsVerified": null,
+      "businessSeatsPublishedSchedule": 36,
+      "catalogueCandidateRange": {
+        "min": 36,
+        "max": 36
+      },
+      "candidateLayoutIds": [
+        "KE-B781-325"
+      ],
+      "confidence": "PUBLISHED_SCHEDULE_ONLY",
+      "missingFields": [
+        "terminal",
+        "gate",
+        "aircraftRegNo",
+        "datedFlightConfiguration"
+      ],
+      "layoutSource": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "assignmentSource": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      }
+    },
+    {
+      "direction": "departure",
+      "serviceDate": "2026-10-22",
+      "scheduledTime": "11:05",
+      "operatingFlight": "KE917",
+      "marketingFlight": "KE917",
+      "operator": "KE",
+      "destination": "ZRH",
+      "aircraftSubtype": "B787-10",
+      "aircraftRegNo": null,
+      "status": "scheduled",
+      "evidenceKind": "PUBLISHED_SCHEDULE",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "terminal": null,
+      "gate": null,
+      "destinationCity": "Zurich",
+      "physicalKey": "departure|2026-10-22|KE917|11:05",
+      "eligibleForActualPilot": false,
+      "marketingFlights": [
+        "KE917"
+      ],
+      "sourceRows": 1,
+      "layoutId": "KE-B781-325",
+      "businessSeatsVerified": null,
+      "businessSeatsPublishedSchedule": 36,
+      "catalogueCandidateRange": {
+        "min": 36,
+        "max": 36
+      },
+      "candidateLayoutIds": [
+        "KE-B781-325"
+      ],
+      "confidence": "PUBLISHED_SCHEDULE_ONLY",
+      "missingFields": [
+        "terminal",
+        "gate",
+        "aircraftRegNo",
+        "datedFlightConfiguration"
+      ],
+      "layoutSource": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "assignmentSource": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      }
+    },
+    {
+      "direction": "departure",
+      "serviceDate": "2026-10-24",
+      "scheduledTime": "11:05",
+      "operatingFlight": "KE917",
+      "marketingFlight": "KE917",
+      "operator": "KE",
+      "destination": "ZRH",
+      "aircraftSubtype": "B787-10",
+      "aircraftRegNo": null,
+      "status": "scheduled",
+      "evidenceKind": "PUBLISHED_SCHEDULE",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "terminal": null,
+      "gate": null,
+      "destinationCity": "Zurich",
+      "physicalKey": "departure|2026-10-24|KE917|11:05",
+      "eligibleForActualPilot": false,
+      "marketingFlights": [
+        "KE917"
+      ],
+      "sourceRows": 1,
+      "layoutId": "KE-B781-325",
+      "businessSeatsVerified": null,
+      "businessSeatsPublishedSchedule": 36,
+      "catalogueCandidateRange": {
+        "min": 36,
+        "max": 36
+      },
+      "candidateLayoutIds": [
+        "KE-B781-325"
+      ],
+      "confidence": "PUBLISHED_SCHEDULE_ONLY",
+      "missingFields": [
+        "terminal",
+        "gate",
+        "aircraftRegNo",
+        "datedFlightConfiguration"
+      ],
+      "layoutSource": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "assignmentSource": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      }
+    }
+  ],
+  "summary": {
+    "sourceRows": 3,
+    "physicalFlights": 3,
+    "duplicateMarketingRows": 0,
+    "datedFlightRecords": 0,
+    "excludedDatedFlightRecords": 0,
+    "serviceDates": [],
+    "cities": [],
+    "verifiedPhysicalFlights": 0,
+    "unknownConfigurationFlights": 0,
+    "verifiedBusinessSeatSubtotal": null,
+    "completeCapacityCoverage": false,
+    "target": {
+      "physicalFlights": 30,
+      "cities": 3,
+      "serviceDates": 3
+    },
+    "actualPilotTargetMet": false
+  }
+}

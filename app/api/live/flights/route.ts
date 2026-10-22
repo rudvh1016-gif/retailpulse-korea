@@ -13,6 +13,7 @@ async function readHeldSchedule(client: Pick<D1Database, 'prepare'>, serviceDate
   const rows = readDepartureSchedule(snapshots[0], serviceDate).map(row => ({
     physicalFlightId: row.physicalFlightId, flightNumber: row.operatingFlight, airlineCode: row.airlineCode ?? null, airportCode: row.airportCode ?? null,
     direction: 'departure', terminal: row.terminal, gate: row.gate ?? null, checkinCounter: row.checkinCounter ?? null,
+    aircraftSubtype: row.aircraftSubtype ?? null, aircraftRegNo: row.aircraftRegNo ?? null,
     status: row.status ?? 'unknown', scheduledAt: `${serviceDate}T${row.scheduledTime}:00+09:00`,
   })).sort((a,b) => a.scheduledAt.localeCompare(b.scheduledAt) || a.flightNumber.localeCompare(b.flightNumber));
   return { basis: 'OFFICIAL_DEPARTURE_SCHEDULE', dayRelation, flights: rows.slice(0,1200), truncated: rows.length > 1200, retrievedAt: snapshots[0]?.retrievedAt ?? null };
@@ -25,6 +26,7 @@ export async function readFlightsForDate(client: Pick<D1Database, 'prepare'>, se
   const rows = (await client.prepare(
     `SELECT physical_flight_id AS physicalFlightId, flight_number AS flightNumber, airline_code AS airlineCode,
       airport_code AS airportCode, direction, terminal, gate,
+      aircraft_subtype AS aircraftSubtype, aircraft_reg_no AS aircraftRegNo,
       checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt, retrieved_at AS retrievedAt
     FROM airport_flights
     WHERE direction IN ('departure', 'arrival') AND scheduled_at >= ? AND scheduled_at < ?

@@ -54,7 +54,7 @@ class LocalD1Database {
 }
 
 function applyMigrations(database) {
-  for (const file of ["drizzle/0000_daffy_tempest.sql", "drizzle/0001_crazy_nekra.sql", "drizzle/0002_reflective_martin_li.sql", "drizzle/0003_minor_network.sql", "drizzle/0004_s2_foreign_presence.sql", "drizzle/0005_airport_official_contracts.sql"]) {
+  for (const file of ["drizzle/0000_daffy_tempest.sql", "drizzle/0001_crazy_nekra.sql", "drizzle/0002_reflective_martin_li.sql", "drizzle/0003_minor_network.sql", "drizzle/0004_s2_foreign_presence.sql", "drizzle/0005_airport_official_contracts.sql", "drizzle/0033_airport_aircraft_metadata.sql"]) {
     database.exec(readFileSync(file, "utf8").replaceAll("--> statement-breakpoint", ""));
   }
 }
