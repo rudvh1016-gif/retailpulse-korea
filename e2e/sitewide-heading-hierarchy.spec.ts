@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page){
   if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
-  const palette={page:['rgb(104, 45, 58)','650'],section:['rgb(41, 39, 42)','600'],subsection:['rgb(81, 77, 80)','500']} as const;
+  const palette={page:['rgb(84, 38, 50)','750'],section:['rgb(41, 39, 42)','650'],subsection:['rgb(81, 77, 80)','500']} as const;
   const [color,weight]=palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
@@ -62,7 +62,7 @@ async function verifyHeadings(page:Page){
  // the whole current list, not an old name against its newly shifted neighbour.
  await expect(async()=>{
   for(const title of await headings.all()){
-   const text=(await title.innerText()).replace(/\s+/g,' ').trim();
+   const text=(await title.innerText({timeout:100})).replace(/\s+/g,' ').trim();
    await expect(title).toHaveAccessibleName(text,{timeout:100});
   }
  }).toPass({timeout:8000,intervals:[100,250,500]});
@@ -102,7 +102,7 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
  await verifyHeadings(page);
  if(route==='airport'){
   const pageTitle=page.locator('.airport-view .view-intro h1'),middle=page.locator('#airport-forecast-title');
-  await expect(pageTitle).toHaveCSS('color','rgb(104, 45, 58)');await expect(pageTitle).toHaveCSS('font-weight','650');
+  await expect(pageTitle).toHaveCSS('color','rgb(84, 38, 50)');await expect(pageTitle).toHaveCSS('font-weight','750');
   await expect(middle).toHaveCSS('color','rgb(81, 77, 80)');await expect(middle).toHaveCSS('font-weight','500');
   expect(await pageTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(await middle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
  }
@@ -151,17 +151,19 @@ for(const width of [320,390,430,768,1440])test(`complete Korean trend title and 
   const text=Array.from(node.childNodes).find(child=>child.nodeType===Node.TEXT_NODE)!;
   const range=document.createRange();range.selectNodeContents(text);
   const rects=Array.from(range.getClientRects());const box=node.getBoundingClientRect(),style=getComputedStyle(node);
-  return {lines:new Set(rects.map(rect=>Math.round(rect.y))).size,bottom:box.bottom,left:box.left,size:parseFloat(style.fontSize),overflow:node.scrollWidth-node.clientWidth,clipped:node.scrollHeight>node.clientHeight+1,whiteSpace:style.whiteSpace};
+  // Read both rows in one browser task so intervening layout shifts cannot mix coordinates.
+  const linkBox=node.closest('.focus-trend-heading')!.querySelector('.focus-trend-more')!.getBoundingClientRect();
+  return {lines:new Set(rects.map(rect=>Math.round(rect.y))).size,bottom:box.bottom,linkTop:linkBox.top,linkHeight:linkBox.height,left:box.left,size:parseFloat(style.fontSize),overflow:node.scrollWidth-node.clientWidth,clipped:node.scrollHeight>node.clientHeight+1,whiteSpace:style.whiteSpace};
  });
  const normal=await metrics();expect(normal.lines).toBe(1);expect(normal.overflow).toBeLessThanOrEqual(1);expect(normal.clipped).toBe(false);expect(normal.whiteSpace).toBe('normal');
- const linkBox=(await link.boundingBox())!;expect(linkBox.y).toBeGreaterThanOrEqual(normal.bottom);expect(linkBox.height).toBeGreaterThanOrEqual(44);
+ expect(normal.linkTop).toBeGreaterThanOrEqual(normal.bottom);expect(normal.linkHeight).toBeGreaterThanOrEqual(44);
  await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}.png`)});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  {
   // Emulate 200% text-only enlargement; safe wrapping takes priority over one line.
   await title.evaluate((node,size)=>(node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important'),normal.size);
   const enlarged=await metrics();expect(enlarged.size).toBe(normal.size*2);expect(enlarged.overflow).toBeLessThanOrEqual(1);expect(enlarged.clipped).toBe(false);
-  expect((await link.boundingBox())!.y).toBeGreaterThanOrEqual(enlarged.bottom);
+  expect(enlarged.linkTop).toBeGreaterThanOrEqual(enlarged.bottom);
   await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}-200-percent.png`)});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  }

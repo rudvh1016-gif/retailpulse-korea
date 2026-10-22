@@ -1,5 +1,6 @@
 'use client';
 
+import {DisclosureLabel} from './disclosure-label';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
 import type { PrepPlace } from '../lib/business-prep';
@@ -13,7 +14,7 @@ export function WeekAheadBlock({ lang, summary, place }: { lang: Lang; summary: 
   const week = buildWeekAhead(summary, place, summary.todayKst);
   const years = [...new Set(week.days.map((day) => Number(day.date.slice(0, 4))))];
   return <details className="prep-block prep-week" data-testid="week-ahead">
-    <summary>{weekHeadline(week, lang)}</summary>
+    <summary data-disclosure-mixed><DisclosureLabel text={weekHeadline(week, lang)} title={weekCopy.title[lang]}/></summary>
     <ol className="prep-week-days">{week.days.map((day) => <li key={day.date} data-weekend={day.weekend} data-today={day.today}>
       <span className="prep-week-date">{weekDayLabel(day.date, day.today, lang)}</span>
       <ul>{day.items.map((item, index) => <li key={index} data-label={item.label}>

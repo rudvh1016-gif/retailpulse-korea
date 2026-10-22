@@ -36,7 +36,7 @@ export function DutyFreeMonthlyTrend({lang}:{lang:Lang}) {
  const x=(index:number)=>48+index*256/5,y=(value:number)=>130-(value-low)/(high-low)*104;
  const label=(row:DutyFreeMonth)=>`${row.month} · ${row.averageKrwPerUsd===null?words.missing:`${number.format(row.averageKrwPerUsd)} KRW / USD`} · ${words.days} ${row.observedDays}/${row.calendarDays}${row.inProgress?` · ${words.progress}`:''}`;
  return <section className="duty-free-monthly">
-  <button type="button" className="duty-free-monthly-toggle" aria-expanded={open} aria-controls={id} onClick={()=>setOpen(!open)}>{words.title}</button>
+  <button type="button" data-disclosure-trigger className="duty-free-monthly-toggle" aria-expanded={open} aria-controls={id} onClick={()=>setOpen(!open)}>{words.title}</button>
   {open&&<div id={id}>
    {!data&&<p className="prep-note" role="status">{failed?words.failed:words.loading}</p>}
    {data&&<figure className="duty-free-monthly-chart">
@@ -64,7 +64,7 @@ export function DutyFreeMonthlyTrend({lang}:{lang:Lang}) {
     <ul className="duty-free-month-list">{data.months.map(row=><li key={row.month}>{label(row)}</li>)}</ul>
    </figure>}
    <p className="prep-note">{words.note}</p>
-   {!!data?.archive?.used.length&&<details className="prep-note duty-free-archive"><summary>{words.archive} · {data.archive.used.length}</summary>
+   {!!data?.archive?.used.length&&<details className="prep-note duty-free-archive"><summary><span>{words.archive}<span data-disclosure-meta> · {data.archive.used.length}</span></span></summary>
     <p>{words.archiveNote}</p>
     <ul>{data.archive.used.map(row=><li key={row.observedDateKst}>{row.observedDateKst} · {number.format(row.krwPerUsd)} KRW / USD · {row.provenance.map((source,index)=><span key={source.archiveUrl}>{index>0?' · ':''}<a href={source.archiveUrl} target="_blank" rel="noreferrer">{source.capturedAt} UTC</a></span>)}</li>)}</ul>
    </details>}

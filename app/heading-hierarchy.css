@@ -15,8 +15,8 @@
  letter-spacing:-.025em;
 }
 /* Restrained heading-only palette; not an official brand color specification. */
-:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important;color:#682d3a!important;font-weight:650!important}
-:root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,26px)!important;color:#29272a!important;font-weight:600!important}
+:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important;color:#542632!important;font-weight:750!important}
+:root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,26px)!important;color:#29272a!important;font-weight:650!important}
 :root body :is(h1,h2,h3)[data-heading="subsection"] {font-size:clamp(18px,1.7vw,20px)!important;color:#514d50!important;font-weight:500!important}
 /* JP/SC ship static 400/600 faces: keep their supported semibold, not a 500
  * request that selects regular. Size and color still separate the three roles. */

@@ -1,4 +1,5 @@
 'use client';
+import {DisclosureLabel} from './disclosure-label';
 import {useId,useState,type CSSProperties} from 'react';
 import type {Lang} from './retailpulse-data';
 import type {SeoulContext} from '../lib/seoul-context';
@@ -70,7 +71,7 @@ export function CommercialComposition({context,lang}:{context:SeoulContext;lang:
   {!model.segments.length&&<p className="commercial-category-empty">{t('업종 자료 미제공 · 결제 0건을 뜻하지 않습니다.','Category data not supplied · this does not mean zero payments.','未提供行业数据 · 不代表零支付。','業種データ未提供・決済0件を意味しません。')}</p>}
   <p className="commercial-denominator">{model.complete?t(`같은 관측 시각·분류의 ${model.segments.length}개 업종 결제 ${number.format(model.total)}건 기준`,`Based on ${number.format(model.total)} payments across all ${model.segments.length} categories at the same observation`,`基于同一观测时间全部${model.segments.length}个行业的${number.format(model.total)}笔支付`,`同じ観測時刻の全${model.segments.length}業種・${number.format(model.total)}件の決済が分母`):t('미제공·중복 분류가 있어 전체 비중은 계산하지 않습니다.','Full shares are unavailable when counts or classifications are incomplete.','数量或分类不完整，无法计算全部占比。','件数・分類が不完全なため全体割合は算出しません。')} · {t('결제 건수는 사람 수·매출 증가율이 아닙니다.','Payments are not people or sales growth.','支付笔数不等于人数或销售增长率。','決済件数は人数・売上成長率ではありません。')}</p>
   <div id={`${id}-selected`} className="commercial-selected" aria-live="polite">{active&&<ul className="context-category-list"><CommercialCategoryRow row={active.row} lang={lang} metric={metric} axes={axes}/></ul>}</div>
-  <details className="commercial-full-details"><summary>{t(`업종 ${model.segments.length}개 · 금액과 활동 수준 전체 보기`,`All ${model.segments.length} categories · amounts and activity levels`,`${model.segments.length}个行业 · 查看全部金额和活跃度`,`${model.segments.length}業種・金額と活動水準をすべて見る`)}</summary>
+  <details className="commercial-full-details"><summary data-disclosure-mixed><DisclosureLabel text={t(`업종 ${model.segments.length}개 · 금액과 활동 수준 전체 보기`,`All ${model.segments.length} categories · amounts and activity levels`,`${model.segments.length}个行业 · 查看全部金额和活跃度`,`${model.segments.length}業種・金額と活動水準をすべて見る`)}/></summary>
    <div className="commercial-chart-controls" role="group" aria-label={t('상세 차트 기준','Detail chart metric','详细图表指标','詳細チャートの指標')}>
     <button type="button" aria-pressed={metric==='payments'} onClick={()=>setMetric('payments')}>{t('결제 건수','Payment count','支付笔数','決済件数')}</button><button type="button" aria-pressed={metric==='amount'} onClick={()=>setMetric('amount')}>{t('금액 범위','Amount range','金额范围','金額範囲')}</button>
    </div>

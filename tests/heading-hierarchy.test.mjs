@@ -68,7 +68,7 @@ test('every semantic heading has no decorative prefix, generated marker or reser
 });
 test('the three heading-only colors and supported weights distinguish roles without recoloring the site',()=>{
  const css=postcss.parse(read('app/heading-hierarchy.css'));
- const palette={page:['#682d3a','650'],section:['#29272a','600'],subsection:['#514d50','500']};
+ const palette={page:['#542632','750'],section:['#29272a','650'],subsection:['#514d50','500']};
  const colors=[];
  css.walkDecls('color',decl=>{
   if(decl.value==='CanvasText'){assert.equal(decl.parent.parent.params,'(forced-colors:active)');return;}

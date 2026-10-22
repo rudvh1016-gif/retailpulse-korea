@@ -29,7 +29,8 @@ for(const [lang,width] of [['ko',320],['ko',390],['ko',430],['en',390],['zh',390
   await expect(history.locator('h2')).not.toBeVisible();
   await expect(page.locator('.prediction-score')).not.toBeVisible();
   await expect(page.locator('.prediction-readiness')).not.toBeVisible();
-  await expect(summary).toHaveCSS('color','rgb(17, 17, 17)');
+  await expect(summary).toHaveCSS('color','rgb(81, 77, 80)');
+  await expect(summary).toHaveCSS('font-weight','600');
   expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   if(lang==='ko'){
@@ -40,6 +41,10 @@ for(const [lang,width] of [['ko',320],['ko',390],['ko',430],['en',390],['zh',390
   await summary.focus();await page.keyboard.press('Enter');
   await expect(history.locator('h2')).toBeVisible();
   await expect(summary).toBeFocused();
+  await expect(summary).toHaveCSS('color','rgb(84, 38, 50)');
+  await expect(page.locator('.prediction-readiness > summary')).toHaveCSS('font-weight','400');
+  await expect(page.locator('.prediction-readiness > summary [data-disclosure-title]')).toHaveCSS('font-weight','600');
+  await expect(page.locator('.prediction-readiness > summary [data-disclosure-meta]')).toHaveCSS('font-weight','400');
   expect(await summary.evaluate(el=>getComputedStyle(el).outlineStyle)).toBe('solid');
   await expect(page.locator('.prediction-score')).toBeVisible();
   await expect(page.locator('.prediction-readiness > summary')).toContainText('24/24');

@@ -1,4 +1,5 @@
 'use client';
+import {DisclosureLabel} from './disclosure-label';
 import {createContext,useContext,useMemo,type ReactNode} from 'react';
 /** Optional approval-preview relocation; default preserves the production table. */
 export const RoutePassengerPlacement=createContext<ReactNode>(null);
@@ -47,7 +48,7 @@ export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;m
    {reply.month!==month&&<p className="airport-month-basis">{t(lang,`인천공항이 공개한 가장 최근 월인 ${reply.month} 실적입니다.`,`The latest month Incheon Airport has published: ${reply.month}.`,`仁川机场已公开的最近月份：${reply.month}。`,`仁川空港が公表した最新の月：${reply.month}。`)}</p>}
    <p className="route-passenger-legend"><span><i/>{reply.previousMonth??'—'}</span><span><b/>{reply.month}</span></p>
    {table(rows.slice(0,VISIBLE).map(line))}
-   {rows.length>VISIBLE&&<details><summary>{t(lang,`나머지 ${rows.length-VISIBLE}개 노선 국가`,`${rows.length-VISIBLE} more route countries`,`其余${rows.length-VISIBLE}个航线国家`,`残り${rows.length-VISIBLE}の路線の国`)}</summary>{table(rows.slice(VISIBLE).map(line))}</details>}
+   {rows.length>VISIBLE&&<details><summary data-disclosure-mixed><DisclosureLabel text={t(lang,`나머지 ${rows.length-VISIBLE}개 노선 국가`,`${rows.length-VISIBLE} more route countries`,`其余${rows.length-VISIBLE}个航线国家`,`残り${rows.length-VISIBLE}の路線の国`)}/></summary>{table(rows.slice(VISIBLE).map(line))}</details>}
   </>}
   <ConciseExplainer summary={t(lang,'인천공항 전체 · 노선 국가별 월 출발 여객','Incheon airport-wide · monthly departures by route country','仁川全机场 · 按航线国家统计月度出发旅客','仁川空港全体・路線の国別の月間出発旅客')}>
   <p className="prep-note">{t(lang,'인천국제공항공사 국가별 항공 통계의 월 출발 여객입니다. 비행기가 향한 나라(노선) 기준이라 탑승객이 어느 나라 사람인지는 알 수 없습니다. 공항 전체 값이며 터미널별로 나누지 않습니다. 항공편 일평균과 단위·범위가 달라 서로 나누지 않습니다.','Monthly departing passengers from Incheon Airport statistics by country. Grouped by the country each flight flies to, so they do not tell where travellers are from. Airport-wide, not per terminal. The unit and scope differ from the daily-mean flight table, so the two are never divided.','仁川国际机场公社各国航空统计的月度出发旅客。按航班飞往的国家（航线）统计，无法得知旅客来自哪个国家。为机场整体数值，不按航站楼区分。与航班日均表的单位和范围不同，两者不相除。','仁川国際空港公社の国別航空統計の月間出発旅客です。便の向かう国（路線）基準のため、旅客がどの国の人かは分かりません。空港全体の値でターミナル別ではありません。便数の1日平均とは単位・範囲が異なるため、互いに割りません。')}{terminal!=='all'&&<> {t(lang,'선택한 터미널과 관계없이 공항 전체 값입니다.','Shown airport-wide whatever terminal is selected.','无论所选航站楼，均为机场整体数值。','選択したターミナルに関係なく空港全体の値です。')}</>}</p>

@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import {buildRevision} from '../lib/build-revision';
 import "./globals.css";
 import "./heading-hierarchy.css";
+import "./disclosure-hierarchy.css";
 import "./change-rate.css";
 import "./airport-date-calendar.css";
 import './airport-models.css';

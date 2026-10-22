@@ -32,7 +32,7 @@ for(const lang of ['ko','en','zh','ja'] as Lang[]) for(const width of [320,360,3
     await expect(section).toContainText('2026-10-05 KST');
     expect(await section.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-    expect(await section.locator('h2').evaluate(el=>getComputedStyle(el).color)).toBe('rgb(17, 17, 17)');
+    expect(await section.locator('h2').evaluate(el=>getComputedStyle(el).color)).toBe('rgb(41, 39, 42)');
     const details=section.locator('details').first(), summary=details.locator('summary');
     await summary.focus(); await page.keyboard.press('Enter'); await expect(details).toHaveAttribute('open','');
     const link=details.getByRole('link'); await expect(link).toHaveAttribute('href','https://data.seoul.go.kr/dataList/OA-21285/A/1/datasetView.do');

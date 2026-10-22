@@ -1,0 +1,53 @@
+/* Disclosure labels form a separate hierarchy from page/section headings.
+ * Do not style all aria-expanded buttons: date pickers, calendar cells, settings
+ * and pagination are controls, not section titles. Keep native markers, custom
+ * chevrons, hit areas, layout and event handlers exactly as they are. */
+:root body details > summary,
+:root body button[data-disclosure-trigger][aria-expanded] {
+ color:#514d50!important;
+ font-weight:600!important;
+}
+:root body details[open] > summary,
+:root body button[data-disclosure-trigger][aria-expanded="true"] {
+ color:#542632!important;
+}
+/* Counts, dates, rates and descriptive strings are not automatically headings.
+ * Explicit title spans allow mixed summaries to emphasize only their label. */
+:root body details > summary[data-disclosure-mixed],
+:root body details > summary [data-disclosure-meta],
+:root body details > summary small {
+ color:var(--ink,#111)!important;
+ font-weight:400!important;
+}
+:root body details > summary [data-disclosure-title] {
+ color:#514d50!important;
+ font-weight:600!important;
+}
+:root body details[open] > summary [data-disclosure-title] {
+ color:#542632!important;
+}
+/* A date/hour can itself be the entire label; its existing functional marker
+ * still provides a restrained accent without bolding the data. Native open
+ * marker rotation remains the non-color state cue. */
+:root body details > summary::marker {color:#514d50}
+:root body details[open] > summary::marker {color:#542632}
+/* Preserve existing focus rules, adding a consistent fallback for summaries
+ * which previously depended only on the browser's default outline. */
+:root body details > summary:focus-visible,
+:root body button[data-disclosure-trigger]:focus-visible {
+ outline:2px solid currentColor;
+ outline-offset:3px;
+}
+@media (forced-colors:active) {
+ :root body details > summary,
+ :root body details[open] > summary,
+ :root body details > summary[data-disclosure-mixed],
+ :root body details > summary [data-disclosure-title],
+ :root body details[open] > summary [data-disclosure-title],
+ :root body button[data-disclosure-trigger][aria-expanded],
+ :root body button[data-disclosure-trigger][aria-expanded="true"] {color:ButtonText!important}
+ :root body details > summary [data-disclosure-meta],
+ :root body details > summary small {color:CanvasText!important}
+ :root body details > summary::marker,
+ :root body details[open] > summary::marker {color:ButtonText}
+}
