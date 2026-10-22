@@ -40,3 +40,14 @@ test('site JSON-LD reuses the same introduction and visible copy remains truthfu
   assert.match(guide,/서울 지역 자료도 별도 화면/);
   assert.doesNotMatch(app,/인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에/);
 });
+
+test('the Korean visible footer agrees with the existing Korean and English site names',async()=>{
+  const layout=await readFile(new URL('../app/layout.tsx',import.meta.url),'utf8');
+  const app=await readFile(new URL('../app/retailpulse-app.tsx',import.meta.url),'utf8');
+  const footer=app.match(/<footer className="site-footer">([\s\S]*?)<\/footer>/)?.[1];
+  assert.ok(footer,'the shared footer remains visible page content');
+  assert.match(footer,/lang === "ko" \? "코리테일 KORETAIL" : "KORETAIL"/);
+  assert.match(layout,/name: "KORETAIL",/);
+  assert.match(layout,/alternateName: \["코리테일",/);
+  assert.match(pageTitle('ko'),/^코리테일 KORETAIL \|/);
+});

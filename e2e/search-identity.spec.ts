@@ -10,9 +10,20 @@ test('legacy introduction redirects to its localized canonical without changing 
     expect(response.status()).toBe(308);
     expect(new URL(response.headers().location, response.url()).pathname).toBe(target);
   }
-  const html = await (await request.get('/ko')).text();
+  const homeResponse = await request.get('/ko');
+  const html = await homeResponse.text();
   expect(html).toContain('코리테일 KORETAIL | 인천공항 항공편·여객 흐름·여행 준비 정보');
   expect(html).toContain(shareDescription);
+  const footer = html.match(/<footer\b[^>]*class="site-footer"[^>]*>([\s\S]*?)<\/footer>/)?.[1];
+  expect(footer).toContain('코리테일 KORETAIL');
+  const structuredData = [...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
+    .flatMap(([, json]) => JSON.parse(json));
+  const websites = structuredData.filter(item => item['@type'] === 'WebSite');
+  expect(websites).toHaveLength(1);
+  expect(websites[0].name).toBe('KORETAIL');
+  expect(websites[0].alternateName).toContain('코리테일');
+  expect(new URL(websites[0].url).origin).toBe(new URL(homeResponse.url()).origin);
+  expect(new URL(websites[0].url).pathname).toBe('/');
   const sitemap = await (await request.get('/sitemap.xml')).text();
   if (process.env.RPK_DEPLOYMENT_STAGE === 'staging') {
     // Staging must stay out of search indexes; production coverage is tested separately.
@@ -32,6 +43,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator('.about-view')).toBeVisible();
     await expect(page).toHaveTitle('코리테일 소개 | 인천공항 중심 데이터 서비스 KORETAIL');
     await expect(page.locator('.about-view .view-intro')).toContainText(aboutIntro);
+    await expect(page.locator('.site-footer')).toContainText('코리테일 KORETAIL');
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', aboutDescription);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/ko\/about$/);
     await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', shareDescription);
