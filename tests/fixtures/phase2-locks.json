@@ -26,7 +26,7 @@
     "app/personal-home.tsx": "93758531d7233ff1afdccb9c9f2badcff933a505957f752804cf1fa6375b3c47",
     "app/personal-preferences.ts": "526e91e52ae33cd9c58a38f2cca5727580b0ab27668c5a8df3bf95ddecd155e9",
     "app/prediction-view.tsx": "0762ea4ed5b6060e2a43b44c6e26fa09a044a683678b757c36d700cc1b09914e",
-    "app/retailpulse-app.tsx": "da7f38a88b79119fa86193dc306683c4163e7a1e39ae201f7ce6a28cb805e321",
+    "app/retailpulse-app.tsx": "168ac8b40b49507929f33f03c5498c9d222af859a5abb59bc9ea139758eecba4",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
     "app/seo-config.ts": "799019d18d958ab37bd4b69297b24d24e6474a5962ba99559d9c66eefe3d8b99",
@@ -126,6 +126,17 @@
         "file": "app/live-signals.tsx",
         "previous": "d2ec6b10dec20a4c23900b55350e5d7df46aabdfddd6bfefcdb62fe26f346028",
         "current": "107a85c5dbfa9d1ad14229ecd457d6a26da0f0d4aea8456249f92bb6053d8c8e"
+      }
+    ]
+  },
+  "technicalChanges20261022BrandIdentity": {
+    "comparisonBase": "7776b9a0a6077a7611684a1ac66659854039ac14",
+    "description": "Korean footer text only: pair the existing Korean alternate brand with KORETAIL. No header, style, metadata, structured data, data or navigation changes.",
+    "changes": [
+      {
+        "file": "app/retailpulse-app.tsx",
+        "previous": "da7f38a88b79119fa86193dc306683c4163e7a1e39ae201f7ce6a28cb805e321",
+        "current": "168ac8b40b49507929f33f03c5498c9d222af859a5abb59bc9ea139758eecba4"
       }
     ]
   }

@@ -637,7 +637,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <a href={routeFor(lang, "tourism-desk", selected)}>{localText(lang, { ko: "관광안내 데스크", en: "Tourism desk", zh: "旅游咨询台", ja: "観光案内デスク" })}</a>
             <a href={routeFor(lang, "about", selected)}>{t.about}</a>
           </nav>
-          <span>KORETAIL · RETAIL DEMAND SIGNALS FOR KOREA</span>
+          <span>{lang === "ko" ? "코리테일 KORETAIL" : "KORETAIL"} · RETAIL DEMAND SIGNALS FOR KOREA</span>
         </footer>
       </main>
 
