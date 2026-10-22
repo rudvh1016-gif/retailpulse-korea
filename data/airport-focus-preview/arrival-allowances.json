@@ -508,7 +508,13 @@
       "effectiveDate": null,
       "changeAnnouncement": null,
       "verifiedAt": "2026-10-22",
-      "reviewScope": "2026-10-22 아래 공식 핵심 근거의 일반 여행자 기준과 표시된 예외를 수동 재확인했습니다. 모든 최신 개정·특수조건의 검증이나 자동 갱신을 뜻하지 않습니다."
+      "reviewScope": "2026-10-22 아래 공식 핵심 근거의 일반 여행자 기준과 표시된 예외를 수동 재확인했습니다. 모든 최신 개정·특수조건의 검증이나 자동 갱신을 뜻하지 않습니다.",
+      "reviewReferences": [
+        {
+          "label": "일본 세관 입국 물품 신고·통로 안내",
+          "url": "https://www.customs.go.jp/english/summary/passenger.htm"
+        }
+      ]
     },
     {
       "id": "VN",
