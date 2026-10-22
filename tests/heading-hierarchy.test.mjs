@@ -24,6 +24,10 @@ test('explicit heading roles cover all non-interactive page/section headings',()
  assert.ok(headings.filter(h=>h.role==='section').length>=69);
  for(const file of ['airport-staff-briefing','airport-focus-production','airport-view','retailpulse-app','tourism-desk','travel-records-view','seoul-comparison'])assert.ok(headings.some(h=>h.file===`app/${file}.tsx`&&h.role));
 });
+test('every topmost title has the page role, including standalone, preview, loading and fallback views',()=>{
+ for(const h of headings.filter(h=>h.tag==='h1'))assert.equal(h.role,'page',`${h.file}: ${h.node.getText(h.tree)}`);
+ for(const file of ['airport-glance-preview','airport-focus-preview','airport-focus-production','airport-view','airport-customs-news','seoul-comparison','retailpulse-app','tourism-desk','travel-records-view','personal-home','prediction-view','not-found'])assert.ok(headings.some(h=>h.file===`app/${file}.tsx`&&h.role==='page'),file);
+});
 test('markers are single empty decorative elements and never added to interactive titles',()=>{
  for(const h of headings){
   if(h.interactive.length)assert.equal(h.role,undefined,`${h.file} interactive heading`);
@@ -45,7 +49,18 @@ test('screenshot middle headings and equivalent sitewide subsections use the exi
  // Airport, preparation and Seoul content share the role without text/locale matching.
  for(const file of ['airport-live-signals','airport-departure-preparation','airport-tax-refund-guide','business-compare','tourism-desk','seoul-flow-models'])assert.ok(headings.some(h=>h.file===`app/${file}.tsx`&&h.role==='subsection'),file);
 });
-test('only semantic subsection marker geometry changes to a hyphen; major dots remain round',()=>{
+test('only internal major headings keep dots; page markers and their reserved inset are removed',()=>{
+ const css=read('app/heading-hierarchy.css');
+ const page=css.match(/:root body :is\(h1,h2,h3\)\[data-heading="page"\]\s*\{([^}]+)\}/)?.[1];
+ assert.ok(page);assert.match(page,/padding-inline-start:0(?:;|$)/);
+ const marker=css.match(/:root body \[data-heading="page"\] > \.heading-marker\s*\{([^}]+)\}/)?.[1];
+ assert.equal(marker?.trim(),'display:none');
+ const base=css.match(/:root body :is\(h1,h2,h3\)\[data-heading\]\s*\{([^}]+)\}/)?.[1];
+ assert.ok(base);assert.match(base,/padding-inline-start:\.72em/);
+ assert.match(base,/overflow-wrap:anywhere/);assert.match(base,/white-space:normal/);
+ assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g,''),/(?:^|})\s*(?:h[123]|[^{}]*data-heading="(?:section|subsection)"[^{}]*)\s*[^{}]*\{[^}]*display:none/);
+});
+test('only semantic subsection marker geometry changes to a hyphen; internal major dots remain round',()=>{
  const css=read('app/heading-hierarchy.css');
  const base=css.match(/:root body \[data-heading\] > \.heading-marker\s*\{([^}]+)\}/)?.[1];
  assert.ok(base);assert.match(base,/width:\.26em/);assert.match(base,/height:\.26em/);assert.match(base,/border-radius:50%/);
@@ -53,7 +68,7 @@ test('only semantic subsection marker geometry changes to a hyphen; major dots r
  assert.ok(override);
  const declarations=Object.fromEntries(override.trim().split(';').filter(s=>s.trim()).map(s=>s.trim().split(':')));
  assert.deepEqual(declarations,{top:'.64em',width:'.36em',height:'.08em','border-radius':'0'});
- assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g,''),/(?:h[123]|data-heading="(?:page|section)")\s*[^{}]*>\s*\.heading-marker/);
+ assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g,''),/(?:h[123]|data-heading="section")\s*[^{}]*>\s*\.heading-marker/);
  assert.doesNotMatch(css,/content\s*:/); // No generated text or duplicate prefix.
  assert.match(read('app/airport-staff-briefing.tsx'),/<span aria-hidden="true">· <\/span>/); // Terminal-line dot is not a heading marker.
 });

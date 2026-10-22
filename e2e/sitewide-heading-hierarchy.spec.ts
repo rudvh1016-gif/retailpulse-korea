@@ -20,12 +20,17 @@ async function verifyHeadings(page:Page){
   const style=getComputedStyle(node),bounds=node.getBoundingClientRect();
   const marker=node.querySelector(':scope > .heading-marker');
   const markerStyle=marker?getComputedStyle(marker):null;
+  const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT,{acceptNode:child=>child.textContent?.trim()&&!child.parentElement?.closest('[aria-hidden="true"]')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
+  const textNode=walker.nextNode();
+  const range=document.createRange();if(textNode)range.selectNodeContents(textNode);
   return {question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
-   left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,
+   left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
+   textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
+   leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
    hidden:marker?.getAttribute('aria-hidden'),markerText:marker?.textContent,
    markerCount:node.querySelectorAll(':scope > .heading-marker').length,
    markerWidth:marker?.getBoundingClientRect().width,markerHeight:marker?.getBoundingClientRect().height,
-   markerRadius:markerStyle?.borderRadius,markerColor:markerStyle?.backgroundColor,color:style.color};
+   markerDisplay:markerStyle?.display,markerRadius:markerStyle?.borderRadius,markerColor:markerStyle?.backgroundColor,color:style.color};
  }));
  for(const row of rows){
   expect(row.text).toBeTruthy();
@@ -33,22 +38,50 @@ async function verifyHeadings(page:Page){
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
-  expect(row.markerWidth).toBeGreaterThan(0);
-  expect(row.markerHeight).toBeGreaterThan(0);
-  if(row.role==='subsection'){
-   expect(row.markerWidth!,`middle heading hyphen: ${row.text}`).toBeGreaterThan(row.markerHeight!*3);
-   expect(row.markerRadius).toBe('0px');
+  if(row.role==='page'){
+   expect(row.markerDisplay,`no topmost-title marker: ${row.text}`).toBe('none');
+   expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);
+   expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
+   // Removing a prefix must not require centered/right-aligned titles to move.
+   if(row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
+   expect(row.whiteSpace).toBe('normal');
+   expect(row.clipped,`unclipped title: ${row.text}`).toBe(false);
   }else{
-   expect(row.markerWidth!,`major heading dot: ${row.text}`).toBeCloseTo(row.markerHeight!,1);
-   expect(row.markerRadius).toBe('50%');
+   expect(row.markerDisplay).toBe('block');
+   expect(row.markerWidth).toBeGreaterThan(0);expect(row.markerHeight).toBeGreaterThan(0);
+   expect(row.paddingStart).toBeCloseTo(row.size*.72,1);
+   if(row.role==='subsection'){
+    expect(row.markerWidth!,`middle heading hyphen: ${row.text}`).toBeGreaterThan(row.markerHeight!*3);
+    expect(row.markerRadius).toBe('0px');
+   }else{
+    expect(row.markerWidth!,`internal major heading dot: ${row.text}`).toBeCloseTo(row.markerHeight!,1);
+    expect(row.markerRadius).toBe('50%');
+   }
   }
   expect(row.markerColor).toBe(row.color);
   expect(row.left,`left edge: ${row.text}`).toBeGreaterThanOrEqual(-1);
   expect(row.right,`right edge: ${row.text}`).toBeLessThanOrEqual(page.viewportSize()!.width+1);
   expect(row.overflow,`wrapped heading: ${row.text}`).toBeLessThanOrEqual(1);
  }
+ for(const title of await page.locator('[data-heading="page"]:visible').all()){
+  const text=(await title.innerText()).replace(/\s+/g,' ').trim();
+  await expect(title).toHaveAccessibleName(text);
+ }
  await expect(page.locator('button > .heading-marker,summary > .heading-marker,nav .heading-marker')).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+}
+
+async function verifyEnlargedPageTitle(page:Page){
+ const title=page.locator('[data-heading="page"]:visible').first();
+ const text=await title.innerText();
+ await title.evaluate(node=>{
+  const size=parseFloat(getComputedStyle(node).fontSize);
+  (node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important');
+ });
+ await expect(title).toHaveText(text);
+ // Short localized titles may still fit at 200%; normal wrapping must be allowed,
+ // not forced. The full title, accessibility, zero prefix and overflow checks apply.
+ await verifyHeadings(page);
 }
 
 const routes=['','airport','airport-countries','airport-prepare','more','where-to','consumption','tourism-desk','travel-records','about'];
@@ -85,12 +118,14 @@ for(const width of [320,390,1440])for(const route of routes)test(`sitewide headi
   await page.locator('.airport-staff-briefing').screenshot({path:info.outputPath(`staff-headings-${width}.png`)});
  }
  await page.screenshot({path:info.outputPath(`heading-${route||'home'}-${width}.png`),fullPage:true});
+ if(!route&&width===320)await verifyEnlargedPageTitle(page);
 });
 
-for(const lang of ['en','zh','ja'])test(`localized heading wrapping /${lang} at 320px`,async({page},info)=>{
- test.setTimeout(120000);await page.setViewportSize({width:320,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await fixtures(page);
- await page.goto(`/${lang}?date=2026-10-19`,{waitUntil:'domcontentloaded'});await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- await verifyHeadings(page);await page.screenshot({path:info.outputPath(`heading-home-${lang}-320.png`),fullPage:true});
+for(const lang of ['en','zh','ja'])for(const width of [320,390,1440])for(const route of ['','airport','airport-countries','airport-prepare','more'])test(`localized heading wrapping /${lang}/${route} at ${width}px`,async({page},info)=>{
+ test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await fixtures(page);
+ await page.goto(`/${lang}${route?`/${route}`:''}?date=2026-10-19`,{waitUntil:'domcontentloaded'});await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await verifyHeadings(page);await page.screenshot({path:info.outputPath(`heading-${route||'home'}-${lang}-${width}.png`),fullPage:true});
+ if(!route&&width===320)await verifyEnlargedPageTitle(page);
 });
 
 
