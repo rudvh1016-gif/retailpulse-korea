@@ -287,7 +287,8 @@ for (const count of [1, 2]) {
         const boxes = [];
         for (let index = 0; index < count; index++) boxes.push((await bars.nth(index).boundingBox())!);
         for (const box of boxes) {
-          expect(box.width, "a day's bar is at most ~5% of the plot").toBeLessThanOrEqual(plot.width * 0.08);
+          // SVG bounding boxes can round a few millionths of a CSS pixel above 8%.
+          expect(box.width, "a day's bar is at most 8% of the plot").toBeLessThanOrEqual(plot.width * 0.08 + 0.0001);
           expect(box.width, "and still visible").toBeGreaterThan(1);
         }
         // October 3 owner revision: use the full width for the available dates.

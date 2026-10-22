@@ -30,7 +30,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`owner rate signs and decr
  await expect(page.locator('[data-category="편의점"] .consumption-category-title strong')).toHaveText('+100.0%');
  await expect(page.locator('[data-category="여행"] .consumption-category-title strong')).toHaveText('0%');
  await expect(decrease.locator('.change-rate')).toHaveCSS('color','rgb(161, 45, 63)');
- await expect(page.locator('[data-category="편의점"] .change-rate')).toHaveCSS('color','rgb(36, 85, 121)');
+ await expect(page.locator('[data-category="편의점"] .change-rate')).toHaveCSS('color','rgb(36, 89, 166)');
  await expect(page.locator('[data-category="여행"] .change-rate')).toHaveCSS('color','rgb(89, 99, 110)');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

@@ -770,7 +770,7 @@ test("no Korean line ever breaks in the middle of a word", async ({ page }) => {
     ".airport-arrival-current",
     ".airport-current-brief > p",
     ".airport-current-brief .prep-note",
-    ".passenger-scope-note",
+    ".passenger-scope-note > p",
     "[data-testid=model-whole-day] > strong",
     "[data-testid=model-selected-window] > strong",
     ".context-environment small",
@@ -784,6 +784,14 @@ test("no Korean line ever breaks in the middle of a word", async ({ page }) => {
       await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
       // Hydration can finish before the deferred district panel renders.
       await expect(page.locator(path.endsWith('/myeongdong') ? '.demand-number strong' : '.passenger-scope-note')).toBeVisible();
+      if (path === '/ko/airport') {
+        // The long methodology is intentionally closed; measure its text after opening it.
+        const methodology = page.locator('details.passenger-scope-note');
+        await expect(methodology).not.toHaveAttribute('open', '');
+        await methodology.locator(':scope > summary').click();
+        await expect(methodology).toHaveAttribute('open', '');
+        await expect(methodology.locator(':scope > p')).toBeVisible();
+      }
       await page.evaluate(() => document.fonts.ready.then(() => true));
 
       const measured = await renderedLines(page, SELECTOR);
