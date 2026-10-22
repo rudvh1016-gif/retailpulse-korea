@@ -1,3 +1,4 @@
+import {dedupePhysicalFlights} from './airport-flight-dedupe';
 import {reserveAirportRequestBudget} from './airport-request-budget';
 import { normalizeSeoulContext, seoulContextObservedAt } from "./seoul-context";
 import {
@@ -196,8 +197,8 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
     const id = record.physicalFlightId;
     if (retainChangeHistory) statements.push(db.prepare(`INSERT INTO airport_flight_changes (
         id, source_id, direction, flight_number, scheduled_at, changed_at,
-        terminal, gate, checkin_counter, status, semantic_hash, observed_at
-      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        terminal, gate, checkin_counter, status, semantic_hash, observed_at, aircraft_subtype, aircraft_reg_no
+      ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
       WHERE NOT EXISTS (
         SELECT 1 FROM airport_flights
         WHERE source_id = ? AND flight_number = ? AND direction = ? AND scheduled_at = ?
@@ -217,6 +218,8 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         record.status,
         record.sourceHash,
         record.retrievedAt,
+        record.aircraftSubtype ?? null,
+        record.aircraftRegNo ?? null,
         record.sourceId,
         record.flightNumber,
         record.direction,
@@ -228,8 +231,8 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         airport_code, terminal, gate, checkin_counter, status, scheduled_at,
         changed_at, event_at, published_at, retrieved_at, freshness,
         schema_version, quality_status, source_hash, physical_flight_id,
-        upstream_fid, master_flight_number, codeshare
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        upstream_fid, master_flight_number, codeshare, aircraft_subtype, aircraft_reg_no
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(physical_flight_id) DO UPDATE SET
         airline_code = excluded.airline_code,
         airport_code = excluded.airport_code,
@@ -247,7 +250,9 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         source_hash = excluded.source_hash,
         upstream_fid = excluded.upstream_fid,
         master_flight_number = excluded.master_flight_number,
-        codeshare = excluded.codeshare
+        codeshare = excluded.codeshare,
+        aircraft_subtype = excluded.aircraft_subtype,
+        aircraft_reg_no = excluded.aircraft_reg_no
       WHERE airport_flights.source_hash <> excluded.source_hash`)
       .bind(
         id,
@@ -274,6 +279,8 @@ async function persistAirportFlights(db: D1Database | undefined, records: Canoni
         record.upstreamFid,
         record.masterFlightNumber,
         record.codeshare,
+        record.aircraftSubtype ?? null,
+        record.aircraftRegNo ?? null,
       ));
   }
 
@@ -309,7 +316,7 @@ export async function collectAirportFlights(env: CollectorEnv): Promise<{ status
     const items = dataGoKrItems(root?.response?.body);
     if (!items.length) throw new Error("airport_no_data");
     const retrievedAt = nowIso();
-    const normalized = await Promise.all(items.map((item) => normalizeAirportFlight(item, "departure", retrievedAt)));
+    const normalized = dedupePhysicalFlights(await Promise.all(items.map((item) => normalizeAirportFlight(item, "departure", retrievedAt))));
     const written = await persistAirportFlights(env.DB, normalized, env.retainChangeHistory === true);
     await writeSourceHealth(env.DB, "INCHEON_FLIGHT_DETAIL", "LIVE", `normalized ${normalized.length}; ${describeWrites(written)}`, normalized.at(-1));
     await writeCollectorStatus(env.DB, "INCHEON_FLIGHT_DETAIL", "SUCCESS", `normalized ${normalized.length}; ${describeWrites(written)}`, items.length, written.changedRows);

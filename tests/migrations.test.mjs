@@ -30,6 +30,7 @@ const migrations = [
   "drizzle/0016_operational_context_forecast.sql",
   "drizzle/0017_forecast_archive_trigger_conflict.sql",
   "drizzle/0018_airport_departure_schedule.sql",
+  "drizzle/0033_airport_aircraft_metadata.sql",
 ];
 
 function applyMigrations(database) {

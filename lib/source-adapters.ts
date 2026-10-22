@@ -1,3 +1,4 @@
+import { readAircraftFields, presentAircraftFields, type AircraftFields } from './aircraft-fields';
 import type { CanonicalRecord, QualityStatus, SourceStatus } from "./contracts";
 import { sha256 } from "./hash";
 import {
@@ -468,7 +469,7 @@ function normalizeKstTimestamp(value: string): string {
   throw new SourceFetchError("SCHEMA");
 }
 
-export interface CanonicalAirportFlight extends CanonicalRecord {
+export interface CanonicalAirportFlight extends CanonicalRecord, AircraftFields {
   physicalFlightId: string;
   upstreamFid: string | null;
   direction: "departure" | "arrival";
@@ -508,6 +509,7 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
     operatingFlight: masterFlightNumber ?? flightNumber,
     scheduledTime: scheduledAt.slice(11, 16),
   });
+  const aircraft = sourceId === "INCHEON_FLIGHT_DETAIL" ? readAircraftFields(record) : {aircraftSubtype: null, aircraftRegNo: null};
   const semanticRecord = {
     sourceId,
     physicalFlightId,
@@ -524,6 +526,7 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
     status,
     scheduledAt,
     changedAt,
+    ...presentAircraftFields(aircraft),
   } as const;
   return {
     sourceId,
@@ -546,6 +549,7 @@ export async function normalizeAirportFlight(raw: unknown, direction: "departure
     publishedAt: null,
     retrievedAt,
     freshness,
+    ...aircraft,
     schemaVersion: "airport-flight-v1",
     qualityStatus,
     // Collection timestamps and unknown upstream fields must not turn an

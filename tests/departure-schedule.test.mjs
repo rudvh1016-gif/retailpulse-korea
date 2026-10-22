@@ -93,7 +93,7 @@ test('today before its first collection shows the held schedule, labelled; recor
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec(readFileSync('drizzle/0018_airport_departure_schedule.sql', 'utf8'));
   sqlite.exec(`CREATE TABLE airport_flights (physical_flight_id TEXT, flight_number TEXT, airline_code TEXT, airport_code TEXT, direction TEXT, terminal TEXT,
-    gate TEXT, checkin_counter TEXT, status TEXT, scheduled_at TEXT, retrieved_at TEXT)`);
+    gate TEXT, checkin_counter TEXT, status TEXT, scheduled_at TEXT, retrieved_at TEXT, aircraft_subtype TEXT, aircraft_reg_no TEXT)`);
   const db = { prepare: (sql) => ({ bind: (...params) => ({ all: async () => ({ results: sqlite.prepare(sql).all(...params) }) }) }) };
   const today = '2026-10-02';
   const snapshot = JSON.stringify([
@@ -115,7 +115,7 @@ test('today before its first collection shows the held schedule, labelled; recor
     assert.deepEqual(none.flights, []);
     // Once the day has recorded flights they are used, never the schedule.
     sqlite.prepare('INSERT INTO airport_departure_schedule (service_date, payload, retrieved_at) VALUES (?,?,?)').run(today, snapshot, '2026-10-01T13:00:00Z');
-    sqlite.prepare('INSERT INTO airport_flights VALUES (?,?,?,?,?,?,?,?,?,?,?)').run('R1', 'KE9', '대한항공', '후쿠오카', 'departure', 'T2', '231', null, 'scheduled', '2026-10-02T07:00:00+09:00', '2026-10-01T19:10:00Z');
+    sqlite.prepare('INSERT INTO airport_flights(physical_flight_id,flight_number,airline_code,airport_code,direction,terminal,gate,checkin_counter,status,scheduled_at,retrieved_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run('R1', 'KE9', '대한항공', '후쿠오카', 'departure', 'T2', '231', null, 'scheduled', '2026-10-02T07:00:00+09:00', '2026-10-01T19:10:00Z');
     const after = await readFlightsForDate(db, today, today);
     assert.equal(after.basis, 'COLLECTED_FLIGHT_RECORDS');
     assert.deepEqual(after.flights.map((flight) => flight.flightNumber), ['KE9']);

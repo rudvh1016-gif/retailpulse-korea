@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "business-seat-pilot-input-v1",
+  "asOf": "2026-10-22T06:12:00Z",
+  "evidenceNote": "Official published schedule expanded to matching weekdays. NOT dated aircraft assignment, operated-flight evidence, or verified cabin supply. No observed 30-flight pilot data yet.",
+  "layouts": [
+    {
+      "id": "KE-B77W-328",
+      "operator": "KE",
+      "aircraftSubtype": "B777-300ER",
+      "totalSeats": 328,
+      "businessSeats": null,
+      "firstSeats": null,
+      "premiumEconomySeats": null,
+      "source": {
+        "url": "https://www.koreanair.com/contents/plan-your-travel/in-flight-experience/fleet/b777/300er-328/seat-map",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": null
+      },
+      "confidence": "CABIN_COUNT_UNCONFIRMED"
+    },
+    {
+      "id": "KE-B77W-277",
+      "operator": "KE",
+      "aircraftSubtype": "B777-300ER",
+      "totalSeats": 277,
+      "businessSeats": null,
+      "firstSeats": null,
+      "premiumEconomySeats": null,
+      "source": {
+        "url": "https://www.koreanair.com/contents/plan-your-travel/in-flight-experience/fleet/b777/300er-277/seat-map",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": null
+      },
+      "confidence": "CABIN_COUNT_UNCONFIRMED"
+    },
+    {
+      "id": "KE-B77W-291",
+      "operator": "KE",
+      "aircraftSubtype": "B777-300ER",
+      "totalSeats": 291,
+      "businessSeats": null,
+      "firstSeats": null,
+      "premiumEconomySeats": null,
+      "source": {
+        "url": "https://www.koreanair.com/contents/plan-your-travel/in-flight-experience/fleet/b777/300er-291/seat-map",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": null
+      },
+      "confidence": "CABIN_COUNT_UNCONFIRMED"
+    },
+    {
+      "id": "KE-B781-325",
+      "operator": "KE",
+      "aircraftSubtype": "B787-10",
+      "totalSeats": 325,
+      "businessSeats": 36,
+      "firstSeats": 0,
+      "premiumEconomySeats": 0,
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "confidence": "OFFICIAL_CONFIGURATION"
+    },
+    {
+      "id": "OZ-A359-311",
+      "operator": "OZ",
+      "aircraftSubtype": "A350-900",
+      "totalSeats": 311,
+      "businessSeats": 28,
+      "firstSeats": 0,
+      "premiumEconomySeats": null,
+      "source": {
+        "url": "https://asiana350.flyasiana.com/pc/html/index.html?keyGroup=09&pageId=PC_0072",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": null
+      },
+      "confidence": "OFFICIAL_CONFIGURATION"
+    }
+  ],
+  "flights": [
+    {
+      "direction": "departure",
+      "serviceDate": "2026-10-20",
+      "scheduledTime": "11:05",
+      "operatingFlight": "KE917",
+      "marketingFlight": "KE917",
+      "operator": "KE",
+      "destination": "ZRH",
+      "aircraftSubtype": "B787-10",
+      "aircraftRegNo": null,
+      "status": "scheduled",
+      "evidenceKind": "PUBLISHED_SCHEDULE",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "terminal": null,
+      "gate": null,
+      "destinationCity": "Zurich"
+    },
+    {
+      "direction": "departure",
+      "serviceDate": "2026-10-22",
+      "scheduledTime": "11:05",
+      "operatingFlight": "KE917",
+      "marketingFlight": "KE917",
+      "operator": "KE",
+      "destination": "ZRH",
+      "aircraftSubtype": "B787-10",
+      "aircraftRegNo": null,
+      "status": "scheduled",
+      "evidenceKind": "PUBLISHED_SCHEDULE",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "terminal": null,
+      "gate": null,
+      "destinationCity": "Zurich"
+    },
+    {
+      "direction": "departure",
+      "serviceDate": "2026-10-24",
+      "scheduledTime": "11:05",
+      "operatingFlight": "KE917",
+      "marketingFlight": "KE917",
+      "operator": "KE",
+      "destination": "ZRH",
+      "aircraftSubtype": "B787-10",
+      "aircraftRegNo": null,
+      "status": "scheduled",
+      "evidenceKind": "PUBLISHED_SCHEDULE",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      },
+      "terminal": null,
+      "gate": null,
+      "destinationCity": "Zurich"
+    }
+  ],
+  "assignments": [
+    {
+      "scope": "PUBLISHED_SCHEDULE",
+      "physicalKey": "departure|2026-10-20|KE917|11:05",
+      "aircraftRegNo": null,
+      "layoutId": "KE-B781-325",
+      "validFrom": "2026-06-02",
+      "validThrough": "2026-10-24",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      }
+    },
+    {
+      "scope": "PUBLISHED_SCHEDULE",
+      "physicalKey": "departure|2026-10-22|KE917|11:05",
+      "aircraftRegNo": null,
+      "layoutId": "KE-B781-325",
+      "validFrom": "2026-06-02",
+      "validThrough": "2026-10-24",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      }
+    },
+    {
+      "scope": "PUBLISHED_SCHEDULE",
+      "physicalKey": "departure|2026-10-24|KE917|11:05",
+      "aircraftRegNo": null,
+      "layoutId": "KE-B781-325",
+      "validFrom": "2026-06-02",
+      "validThrough": "2026-10-24",
+      "source": {
+        "url": "https://news.koreanair.com/대한항공-스위스-취리히-여객-노선-취항-50주년-한·스/",
+        "checkedAt": "2026-10-22T06:12:00Z",
+        "publishedAt": "2026-05-28"
+      }
+    }
+  ]
+}

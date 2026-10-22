@@ -1,9 +1,10 @@
+import { presentAircraftFields, type AircraftFields } from './aircraft-fields';
 import type { CanonicalAirportFlight } from './source-adapters';
 import { runD1Batches, NO_D1_WRITES } from './d1-write-counts';
 import type { ScheduledBriefingRow } from './scheduled-briefing';
 import { isValidKstDay } from './kst';
 
-type ScheduleFlight = { physicalFlightId: string; terminal: string | null; operatingFlight: string; scheduledTime: string;
+type ScheduleFlight = AircraftFields & { physicalFlightId: string; terminal: string | null; operatingFlight: string; scheduledTime: string;
   airlineCode?: string | null; airportCode?: string | null; gate?: string | null; checkinCounter?: string | null; status?: string };
 export type ScheduledDepartureRow = ScheduledBriefingRow & ScheduleFlight;
 
@@ -13,7 +14,7 @@ function schedulePayload(date: string, records: CanonicalAirportFlight[]): strin
   const unique = new Map(records.map(r => [r.physicalFlightId, r]));
   const rows: ScheduleFlight[] = [...unique.values()].filter(r => r.status !== 'cancelled').map(r => ({ physicalFlightId: r.physicalFlightId, terminal: r.terminal,
     operatingFlight: r.masterFlightNumber || r.flightNumber, scheduledTime: r.scheduledAt.slice(11,16),
-    airlineCode: r.airlineCode ?? null, airportCode: r.airportCode ?? null, gate: r.gate ?? null, checkinCounter: r.checkinCounter ?? null, status: r.status ?? 'unknown' }))
+    airlineCode: r.airlineCode ?? null, airportCode: r.airportCode ?? null, gate: r.gate ?? null, checkinCounter: r.checkinCounter ?? null, status: r.status ?? 'unknown', ...presentAircraftFields(r) }))
     .sort((a,b) => a.physicalFlightId.localeCompare(b.physicalFlightId));
   const payload = JSON.stringify(rows);
   if (new TextEncoder().encode(payload).byteLength > 500_000) throw new Error('departure_schedule_payload_bound');

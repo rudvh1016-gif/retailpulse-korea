@@ -28,8 +28,8 @@
  *    scopes and are counted apart.
  *
  * The estimate is a reference value, never an actual count. The flight rows
- * carry no aircraft type or seat field (airport_flights columns), so flights
- * are weighted equally; no seat count, load factor or per-flight passenger
+ * are weighted equally even when optional aircraft metadata is present; this
+ * split never consumes aircraft metadata or a cabin-capacity estimate; no seat count, load factor or per-flight passenger
  * figure is invented. Rounded parts are not forced to add up to the total, and
  * the unconfirmed share is never added to east or west to make them.
  */
