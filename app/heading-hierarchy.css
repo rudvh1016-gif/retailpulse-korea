@@ -7,61 +7,32 @@
  box-sizing:border-box;
  min-width:0;
  max-width:100%;
- padding-inline-start:.72em;
+ padding-inline-start:0;
  overflow-wrap:anywhere;
  white-space:normal;
  line-height:1.35!important;
- font-weight:var(--weight-strong,600)!important;
+ opacity:1!important;
  letter-spacing:-.025em;
 }
-:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important;padding-inline-start:0}
-:root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,26px)!important}
-:root body :is(h1,h2,h3)[data-heading="subsection"] {font-size:clamp(18px,1.7vw,20px)!important}
+/* Restrained heading-only palette; not an official brand color specification. */
+:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important;color:#682d3a!important;font-weight:650!important}
+:root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,26px)!important;color:#29272a!important;font-weight:600!important}
+:root body :is(h1,h2,h3)[data-heading="subsection"] {font-size:clamp(18px,1.7vw,20px)!important;color:#514d50!important;font-weight:500!important}
+/* JP/SC ship static 400/600 faces: keep their supported semibold, not a 500
+ * request that selects regular. Size and color still separate the three roles. */
+:root body :is(.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]) :is(h1,h2,h3)[data-heading] {font-weight:600!important}
 /* The airport-flow parent stays above its three requested major briefing titles. */
 :root body .glance-workday-heading[data-heading="section"] {font-size:clamp(26px,2.6vw,30px)!important}
 /* Preserve deliberately larger editorial introductions rather than shrinking them. */
 :root body :is(.hero,.view-intro,.tourism-desk-head,.not-found) [data-heading="page"] {font-size:clamp(32px,4vw,48px)!important}
 :root body .airport-view .view-intro [data-heading="page"] {font-size:clamp(28px,3vw,36px)!important}
-/* Empty, hidden-from-AT markers never enter the accessible name.
- * Internal major sections keep their dots; semantic subsections use hyphens.
- * Absolute positioning keeps wrapped title lines aligned with the same text inset. */
-:root body [data-heading] > .heading-marker {
- position:absolute;
- inset-inline-start:0;
- top:.55em;
- display:block;
- width:.26em;
- height:.26em;
- min-width:0;
- margin:0;
- padding:0;
- border:0;
- border-radius:50%;
- background:currentColor;
- color:inherit;
- font-size:inherit;
- line-height:inherit;
- pointer-events:none;
-}
-/* Topmost page titles have no prefix or reserved marker inset, in every locale.
- * Target the semantic role: internal major sections can also be h1/h2/h3. */
-:root body [data-heading="page"] > .heading-marker {display:none}
-/* Owner-requested middle headings (e.g. Today / Today's notable changes).
- * Use the explicit role, not h3: the three major staff briefing titles are h3s. */
-:root body [data-heading="subsection"] > .heading-marker {
- top:.64em;
- width:.36em;
- height:.08em;
- border-radius:0;
-}
+/* No heading-prefix dots, hyphens or reserved inset in any role or locale.
+ * Keep existing empty aria-hidden spans inert; body separators are untouched. */
+:root body [data-heading] > .heading-marker {display:none!important}
+:root body :is(h1,h2,h3)[data-heading]::before,
+:root body :is(h1,h2,h3)[data-heading]::after {content:none!important;display:none!important}
 :root body [data-heading] > small {white-space:normal;overflow-wrap:anywhere}
-@media(forced-colors:active){:root body [data-heading] > .heading-marker{background:CanvasText}}
-
-/* Airport-only hierarchy: charcoal titles, quieter informational subheadings.
- * Keep the established size ladder and internal section dots + subsection hyphens. */
-:root body .airport-view :is(h1,h2)[data-heading] {color:#24272c;font-weight:650!important}
-:root body .airport-view h3[data-heading="subsection"],
-:root body .airport-view .airport-hero h3[data-heading="subsection"] {color:#465361;font-weight:600!important;opacity:1}
+@media(forced-colors:active){:root body :is(h1,h2,h3)[data-heading]{color:CanvasText!important}}
 /* Give the complete home trend question the row before reducing only narrow phones.
  * Normal wrapping remains available at enlarged text sizes; never clip or force nowrap. */
 :root body .focus-trend-question[data-heading] {word-break:keep-all}

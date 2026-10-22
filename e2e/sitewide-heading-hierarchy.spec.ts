@@ -16,6 +16,7 @@ async function fixtures(page:Page){
 async function verifyHeadings(page:Page){
  const headings=page.locator('[data-heading]:visible');
  await expect(headings.first()).toBeVisible();
+ await page.evaluate(()=>document.fonts.ready);
  const rows=await headings.evaluateAll(nodes=>nodes.map(node=>{
   const style=getComputedStyle(node),bounds=node.getBoundingClientRect();
   const marker=node.querySelector(':scope > .heading-marker');
@@ -30,7 +31,9 @@ async function verifyHeadings(page:Page){
    hidden:marker?.getAttribute('aria-hidden'),markerText:marker?.textContent,
    markerCount:node.querySelectorAll(':scope > .heading-marker').length,
    markerWidth:marker?.getBoundingClientRect().width,markerHeight:marker?.getBoundingClientRect().height,
-   markerDisplay:markerStyle?.display,markerRadius:markerStyle?.borderRadius,markerColor:markerStyle?.backgroundColor,color:style.color};
+   markerDisplay:markerStyle?.display,color:style.color,weight:style.fontWeight,opacity:style.opacity,
+   staticCjk:!!node.closest('.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]'),fontReady:document.fonts.check(`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`,node.textContent||''),
+   pseudo:['::before','::after'].map(pseudo=>({content:getComputedStyle(node,pseudo).content,display:getComputedStyle(node,pseudo).display}))};
  }));
  for(const row of rows){
   expect(row.text).toBeTruthy();
@@ -38,32 +41,24 @@ async function verifyHeadings(page:Page){
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
-  if(row.role==='page'){
-   expect(row.markerDisplay,`no topmost-title marker: ${row.text}`).toBe('none');
-   expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);
-   expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
-   // Removing a prefix must not require centered/right-aligned titles to move.
-   if(row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
-   expect(row.whiteSpace).toBe('normal');
-   expect(row.clipped,`unclipped title: ${row.text}`).toBe(false);
-  }else{
-   expect(row.markerDisplay).toBe('block');
-   expect(row.markerWidth).toBeGreaterThan(0);expect(row.markerHeight).toBeGreaterThan(0);
-   expect(row.paddingStart).toBeCloseTo(row.size*.72,1);
-   if(row.role==='subsection'){
-    expect(row.markerWidth!,`middle heading hyphen: ${row.text}`).toBeGreaterThan(row.markerHeight!*3);
-    expect(row.markerRadius).toBe('0px');
-   }else{
-    expect(row.markerWidth!,`internal major heading dot: ${row.text}`).toBeCloseTo(row.markerHeight!,1);
-    expect(row.markerRadius).toBe('50%');
-   }
-  }
-  expect(row.markerColor).toBe(row.color);
+  expect(row.markerDisplay,`no heading-prefix marker: ${row.text}`).toBe('none');
+  expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);
+  expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
+  for(const pseudo of row.pseudo){expect(pseudo.content).toBe('none');expect(pseudo.display).toBe('none');}
+  // Removing a prefix must not require centered/right-aligned titles to move.
+  if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
+  expect(row.whiteSpace).toBe('normal');
+  expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
+  const palette={page:['rgb(104, 45, 58)','650'],section:['rgb(41, 39, 42)','600'],subsection:['rgb(81, 77, 80)','500']} as const;
+  const [color,weight]=palette[row.role as keyof typeof palette];
+  expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
+  expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
+  expect(row.opacity).toBe('1');
   expect(row.left,`left edge: ${row.text}`).toBeGreaterThanOrEqual(-1);
   expect(row.right,`right edge: ${row.text}`).toBeLessThanOrEqual(page.viewportSize()!.width+1);
   expect(row.overflow,`wrapped heading: ${row.text}`).toBeLessThanOrEqual(1);
  }
- for(const title of await page.locator('[data-heading="page"]:visible').all()){
+ for(const title of await headings.all()){
   const text=(await title.innerText()).replace(/\s+/g,' ').trim();
   await expect(title).toHaveAccessibleName(text);
  }
@@ -71,21 +66,30 @@ async function verifyHeadings(page:Page){
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 
-async function verifyEnlargedPageTitle(page:Page){
- const title=page.locator('[data-heading="page"]:visible').first();
- const text=await title.innerText();
- await title.evaluate(node=>{
-  const size=parseFloat(getComputedStyle(node).fontSize);
-  (node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important');
+async function verifyEnlargedHeadings(page:Page){
+ const title=page.locator('[data-heading="page"]:visible').first(),text=await title.innerText();
+ const observer=await page.evaluateHandle(()=>{
+  const enlarged=new WeakSet<Element>();
+  const scale=()=>document.querySelectorAll<HTMLElement>('[data-heading]').forEach(node=>{
+   if(enlarged.has(node))return;
+   const size=parseFloat(getComputedStyle(node).fontSize);
+   node.style.setProperty('font-size',`${size*2}px`,'important');enlarged.add(node);
+  });
+  scale();
+  // Lazy calendar/map headings can replace placeholders. Enlarge each new node
+  // once, rather than freezing a heading count or doubling an existing title again.
+  const observer=new MutationObserver(scale);observer.observe(document.body,{childList:true,subtree:true});return observer;
  });
- await expect(title).toHaveText(text);
- // Short localized titles may still fit at 200%; normal wrapping must be allowed,
- // not forced. The full title, accessibility, zero prefix and overflow checks apply.
- await verifyHeadings(page);
+ try{
+  await expect(title).toHaveText(text);
+  // Short localized titles may still fit at 200%; normal wrapping must be allowed,
+  // not forced. The full title, accessibility, zero prefix and overflow checks apply.
+  await verifyHeadings(page);
+ }finally{await observer.evaluate(observer=>observer.disconnect());await observer.dispose();}
 }
 
 const routes=['','airport','airport-countries','airport-prepare','more','where-to','consumption','tourism-desk','travel-records','about'];
-for(const width of [320,390,1440])for(const route of routes)test(`sitewide heading hierarchy /ko/${route} at ${width}px`,async({page},info)=>{
+for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide heading hierarchy /ko/${route} at ${width}px`,async({page},info)=>{
  test.setTimeout(120000);
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await fixtures(page);
  await page.goto(`/ko${route?`/${route}`:''}?date=2026-10-19`,{waitUntil:'domcontentloaded'});
@@ -94,8 +98,8 @@ for(const width of [320,390,1440])for(const route of routes)test(`sitewide headi
  await verifyHeadings(page);
  if(route==='airport'){
   const pageTitle=page.locator('.airport-view .view-intro h1'),middle=page.locator('#airport-forecast-title');
-  await expect(pageTitle).toHaveCSS('color','rgb(36, 39, 44)');await expect(pageTitle).toHaveCSS('font-weight','650');
-  await expect(middle).toHaveCSS('color','rgb(70, 83, 97)');await expect(middle).toHaveCSS('font-weight','600');
+  await expect(pageTitle).toHaveCSS('color','rgb(104, 45, 58)');await expect(pageTitle).toHaveCSS('font-weight','650');
+  await expect(middle).toHaveCSS('color','rgb(81, 77, 80)');await expect(middle).toHaveCSS('font-weight','500');
   expect(await pageTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(await middle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
  }
  if(!route){
@@ -118,18 +122,18 @@ for(const width of [320,390,1440])for(const route of routes)test(`sitewide headi
   await page.locator('.airport-staff-briefing').screenshot({path:info.outputPath(`staff-headings-${width}.png`)});
  }
  await page.screenshot({path:info.outputPath(`heading-${route||'home'}-${width}.png`),fullPage:true});
- if(!route&&width===320)await verifyEnlargedPageTitle(page);
+ await verifyEnlargedHeadings(page);
 });
 
-for(const lang of ['en','zh','ja'])for(const width of [320,390,1440])for(const route of ['','airport','airport-countries','airport-prepare','more'])test(`localized heading wrapping /${lang}/${route} at ${width}px`,async({page},info)=>{
+for(const lang of ['en','zh','ja'])for(const width of [320,390,768,1440])for(const route of ['','airport','airport-countries','airport-prepare','more'])test(`localized heading wrapping /${lang}/${route} at ${width}px`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await fixtures(page);
  await page.goto(`/${lang}${route?`/${route}`:''}?date=2026-10-19`,{waitUntil:'domcontentloaded'});await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await verifyHeadings(page);await page.screenshot({path:info.outputPath(`heading-${route||'home'}-${lang}-${width}.png`),fullPage:true});
- if(!route&&width===320)await verifyEnlargedPageTitle(page);
+ await verifyEnlargedHeadings(page);
 });
 
 
-for(const width of [320,390,430,1440])test(`complete Korean trend title and its own link row at ${width}px`,async({page},info)=>{
+for(const width of [320,390,430,768,1440])test(`complete Korean trend title and its own link row at ${width}px`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:1000});await fixtures(page);
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
@@ -149,10 +153,10 @@ for(const width of [320,390,430,1440])test(`complete Korean trend title and its 
  const linkBox=(await link.boundingBox())!;expect(linkBox.y).toBeGreaterThanOrEqual(normal.bottom);expect(linkBox.height).toBeGreaterThanOrEqual(44);
  await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}.png`)});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- if(width<=430){
+ {
   // Emulate 200% text-only enlargement; safe wrapping takes priority over one line.
   await title.evaluate((node,size)=>(node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important'),normal.size);
-  const enlarged=await metrics();expect(enlarged.size).toBe(normal.size*2);expect(enlarged.lines).toBeGreaterThan(1);expect(enlarged.overflow).toBeLessThanOrEqual(1);expect(enlarged.clipped).toBe(false);
+  const enlarged=await metrics();expect(enlarged.size).toBe(normal.size*2);expect(enlarged.overflow).toBeLessThanOrEqual(1);expect(enlarged.clipped).toBe(false);
   expect((await link.boundingBox())!.y).toBeGreaterThanOrEqual(enlarged.bottom);
   await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}-200-percent.png`)});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
