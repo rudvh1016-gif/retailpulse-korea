@@ -58,10 +58,14 @@ async function verifyHeadings(page:Page){
   expect(row.right,`right edge: ${row.text}`).toBeLessThanOrEqual(page.viewportSize()!.width+1);
   expect(row.overflow,`wrapped heading: ${row.text}`).toBeLessThanOrEqual(1);
  }
- for(const title of await headings.all()){
-  const text=(await title.innerText()).replace(/\s+/g,' ').trim();
-  await expect(title).toHaveAccessibleName(text);
- }
+ // Lazy map/calendar headings can enter before an existing nth locator. Retry
+ // the whole current list, not an old name against its newly shifted neighbour.
+ await expect(async()=>{
+  for(const title of await headings.all()){
+   const text=(await title.innerText()).replace(/\s+/g,' ').trim();
+   await expect(title).toHaveAccessibleName(text,{timeout:100});
+  }
+ }).toPass({timeout:8000,intervals:[100,250,500]});
  await expect(page.locator('button > .heading-marker,summary > .heading-marker,nav .heading-marker')).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
