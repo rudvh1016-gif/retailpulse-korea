@@ -1,4 +1,5 @@
 import {storeJapanNumericUpdate,type JapanValues} from '../lib/customs-allowance-numeric';
+import {arrivalVerifiedDate} from '../lib/arrival-review-date';
 import {readFile} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import {validateManifest,validatePreviewDataset,allowanceSemanticHash,checkSource} from '../lib/customs-allowance-check.mjs';
@@ -22,7 +23,7 @@ export async function collectAllowanceObservations(db:Store,{activation=false,no
   const country=countries.find(country=>country.id===source.jurisdiction)!;
   const semanticHash=allowanceSemanticHash(country),at=now();
   if(old&&old.source_url===source.url&&old.last_good_hash===semanticHash&&Date.parse(old.next_check_at)>at.getTime()){skipped++;continue;}
-  const observation=await checkSource(source,manifest,{fetchImpl,now:()=>at,budget,lastGood:{semanticHash,verifiedAt:country.verifiedAt??country.checkedAt??null}}) as AllowanceObservation & {numericCandidate?:{templateSha256:string;values:JapanValues}|null};
+  const observation=await checkSource(source,manifest,{fetchImpl,now:()=>at,budget,lastGood:{semanticHash,verifiedAt:arrivalVerifiedDate(country)}}) as AllowanceObservation & {numericCandidate?:{templateSha256:string;values:JapanValues}|null};
   if(source.id==='JP-01'&&observation.numericCandidate&&observation.sourceSha256&&source.baseline?.datasetSemanticHash===semanticHash){
    numericCanonicalRowsWritten+=await storeJapanNumericUpdate(db,observation.numericCandidate,source,observation.sourceSha256,observation.checkedAt,semanticHash);
    observation.state='NUMERIC_TEMPLATE_VERIFIED';

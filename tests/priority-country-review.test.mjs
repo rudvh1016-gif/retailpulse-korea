@@ -33,7 +33,7 @@ test('Chinese 2027 annual arrangement remains unverified instead of extending Ja
 test('manual customs review preserves confirmed numbers, unresolved perfume and Thai age/effective date',()=>{
  for(const id of ['CN','VN','TH']){
   const c=allowances.countries.find(row=>row.id===id);
-  assert.equal(c.checkedAt,'2026-10-21');assert.match(c.notes.join(' '),/수동 재확인/);
+  assert.equal(c.checkedAt,'2026-10-22');assert.match(c.reviewScope,/수동 재확인/);
   assert.equal(c.effectiveDate,null);
   assert.ok(c.results.every(r=>r.facts.every(f=>f.label!=='향수')),'no independent perfume quota was verified');
  }

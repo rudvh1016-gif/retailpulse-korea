@@ -1,9 +1,16 @@
 /** Only substantive review evidence is a review date; collection attempts never are. */
-export function arrivalReviewDateLabel(country:{verifiedAt?:string|null;checkedAt?:string}):string {
+export function arrivalVerifiedDate(country:{verifiedAt?:string|null;checkedAt?:string}):string|null {
  const value=country.verifiedAt;
- if(!value||!/^\d{4}-\d{2}-\d{2}$/.test(value))return '미확인 · 검토 필요';
+ if(!value||!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;
  const parsed=new Date(`${value}T00:00:00Z`);
- return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===value?value:'미확인 · 검토 필요';
+ return Number.isFinite(parsed.getTime())&&parsed.toISOString().slice(0,10)===value?value:null;
+}
+export function arrivalReviewDateLabel(country:{verifiedAt?:string|null;checkedAt?:string}):string {return arrivalVerifiedDate(country)??'미확인 · 검토 필요';}
+
+/** Compact, scoped manual-review identity, kept visible before traveler selectors. */
+export function arrivalManualReviewLabel(country:{verifiedAt?:string|null;checkedAt?:string}):string {
+ const date=arrivalVerifiedDate(country);
+ return date?`표시 기준 수동 확인 ${date}`:'표시 기준 수동 확인일 미확인';
 }
 
 /** Human-readable source-review wording, never an attempted-check date. */

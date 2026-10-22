@@ -227,12 +227,12 @@ for(const width of [390,1440])test(`arrival allowances preserve traveller condit
  await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('adult');
  await section.getByLabel('통상 거주지 (국적과 다름)',{exact:true}).selectOption('visitor');
  await section.getByLabel('중국 본토 직전 출발지',{exact:true}).selectOption('korea');
- await section.getByLabel('이번 입국 전 15일 내 중국 입국',{exact:true}).selectOption('normal');
+ await section.getByLabel('이번 입국을 포함한 15일 이내 중국 본토 입국',{exact:true}).selectOption('normal');
  await expect(section.locator('.arrival-result')).toContainText('CNY 2,000');
  await section.screenshot({path:testInfo.outputPath(`arrival-china-${width}.png`)});
  await section.locator('.arrival-result').evaluate(node=>window.scrollTo({top:window.scrollY+node.getBoundingClientRect().top-24,behavior:'instant'}));
  await page.screenshot({path:testInfo.outputPath(`arrival-china-viewport-${width}.png`)});
- await section.getByLabel('이번 입국 전 15일 내 중국 입국',{exact:true}).selectOption('frequent');await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await section.getByLabel('이번 입국을 포함한 15일 이내 중국 본토 입국',{exact:true}).selectOption('frequent');await expect(section.locator('.arrival-condition-guidance')).toContainText('15일 내 반복 입국');await expect(section.locator('.arrival-result dl')).toHaveCount(0);
  await destination.selectOption('US');await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');
  await section.getByLabel('거주 상태 (국적과 다름)',{exact:true}).selectOption('visitor');await section.getByLabel('나이',{exact:true}).selectOption('adult');
  await expect(section.locator('.arrival-result')).toHaveCount(0);await section.getByLabel('방문객 선물 면세 조건',{exact:true}).selectOption('met');
