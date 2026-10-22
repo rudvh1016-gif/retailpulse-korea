@@ -20,7 +20,7 @@ async function verifyHeadings(page:Page){
   const style=getComputedStyle(node),bounds=node.getBoundingClientRect();
   const marker=node.querySelector(':scope > .heading-marker');
   const markerStyle=marker?getComputedStyle(marker):null;
-  return {text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  return {question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,
    hidden:marker?.getAttribute('aria-hidden'),markerText:marker?.textContent,
    markerCount:node.querySelectorAll(':scope > .heading-marker').length,
@@ -29,7 +29,7 @@ async function verifyHeadings(page:Page){
  }));
  for(const row of rows){
   expect(row.text).toBeTruthy();
-  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.role==='page'?26:row.role==='section'?21:18);
+  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -59,6 +59,12 @@ for(const width of [320,390,1440])for(const route of routes)test(`sitewide headi
  if(route==='travel-records')await expect(page.getByTestId('travel-empty')).toBeVisible();
  else await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await verifyHeadings(page);
+ if(route==='airport'){
+  const pageTitle=page.locator('.airport-view .view-intro h1'),middle=page.locator('#airport-forecast-title');
+  await expect(pageTitle).toHaveCSS('color','rgb(36, 39, 44)');await expect(pageTitle).toHaveCSS('font-weight','650');
+  await expect(middle).toHaveCSS('color','rgb(70, 83, 97)');await expect(middle).toHaveCSS('font-weight','600');
+  expect(await pageTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(await middle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
+ }
  if(!route){
   await expect(page.locator('.focus-report-title h2')).toHaveAttribute('data-heading','section');
   await expect(page.locator('.focus-today-title')).toHaveAttribute('data-heading','subsection');
@@ -85,4 +91,30 @@ for(const lang of ['en','zh','ja'])test(`localized heading wrapping /${lang} at 
  test.setTimeout(120000);await page.setViewportSize({width:320,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await fixtures(page);
  await page.goto(`/${lang}?date=2026-10-19`,{waitUntil:'domcontentloaded'});await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await verifyHeadings(page);await page.screenshot({path:info.outputPath(`heading-home-${lang}-320.png`),fullPage:true});
+});
+
+
+for(const width of [320,390,430,1440])test(`complete Korean trend title and its own link row at ${width}px`,async({page})=>{
+ test.setTimeout(120000);await page.setViewportSize({width,height:1000});await fixtures(page);
+ await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
+ const section=page.locator('.focus-trends:not([aria-busy])'),title=section.locator('.focus-trend-question'),link=section.locator('.focus-trend-more');
+ await expect(link).toBeVisible();await page.evaluate(()=>document.fonts.ready);
+ await expect(title).toHaveText('한 달의 변화일까, 이어지는 흐름일까');
+ await expect(link).toHaveText('국가별 흐름 보기 ↗');
+ const metrics=()=>title.evaluate(node=>{
+  const text=Array.from(node.childNodes).find(child=>child.nodeType===Node.TEXT_NODE)!;
+  const range=document.createRange();range.selectNodeContents(text);
+  const rects=Array.from(range.getClientRects());const box=node.getBoundingClientRect(),style=getComputedStyle(node);
+  return {lines:new Set(rects.map(rect=>Math.round(rect.y))).size,bottom:box.bottom,left:box.left,size:parseFloat(style.fontSize),overflow:node.scrollWidth-node.clientWidth,clipped:node.scrollHeight>node.clientHeight+1,whiteSpace:style.whiteSpace};
+ });
+ const normal=await metrics();expect(normal.lines).toBe(1);expect(normal.overflow).toBeLessThanOrEqual(1);expect(normal.clipped).toBe(false);expect(normal.whiteSpace).toBe('normal');
+ const linkBox=(await link.boundingBox())!;expect(linkBox.y).toBeGreaterThanOrEqual(normal.bottom);expect(linkBox.height).toBeGreaterThanOrEqual(44);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ if(width<=430){
+  // Emulate 200% text-only enlargement; safe wrapping takes priority over one line.
+  await title.evaluate((node,size)=>(node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important'),normal.size);
+  const enlarged=await metrics();expect(enlarged.size).toBe(normal.size*2);expect(enlarged.lines).toBeGreaterThan(1);expect(enlarged.overflow).toBeLessThanOrEqual(1);expect(enlarged.clipped).toBe(false);
+  expect((await link.boundingBox())!.y).toBeGreaterThanOrEqual(enlarged.bottom);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ }
 });

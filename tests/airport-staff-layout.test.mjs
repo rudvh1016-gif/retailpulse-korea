@@ -28,7 +28,7 @@ test('merged detail body retains its source dates, three subsections, boundaries
  assert.match(routeHoliday,/\{event\.verifiedAt\}/);
  assert.match(routeHoliday,/href=\{event\.sourceURL\}/);
  assert.deepEqual([...briefing.matchAll(/<h3 data-heading="section"><span className="heading-marker" aria-hidden="true"\/>(.*?)<\/h3>/g)].map(match=>match[1]),['01 시간·터미널','02 노선·휴일 준비','03 품목별 확인']);
- for(const text of ['고객 수나 매장 혼잡 예측은 아닙니다.','노선 국가를 고객 국적으로 해석하지 않으며','확인이 보류된 규정은 단정하지 않습니다.'])assert.ok((briefing+routeHoliday).includes(text));
+ for(const text of ['선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님','노선 국가 기준','확인이 보류된 규정은 단정하지 않습니다.'])assert.ok((briefing+routeHoliday).includes(text));
  for(const path of ['/airport${suffix}','/airport-countries${suffix}','/airport-prepare${suffix}#arrival-allowances','/airport-news'])assert.ok(briefing.includes(path));
  assert.equal((briefing.match(/<details(?: open)?>/g)??[]).length,3);
  assert.match(briefing,/<details open><summary>패션·명품<\/summary>/);

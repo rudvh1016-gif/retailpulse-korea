@@ -57,7 +57,7 @@ export function StaffCalendarContext({onMore}:{onMore:()=>void}){
  if(!currentEvents.length)return null;
  return <section className="focus-staff-calendar"><h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>이번 주 공식 일정</h3><small>{start}–{end} · 국가별 공식 일정</small>{currentEvents.map(event=><p key={event.id}><b>{event.countryLabel}: {event.name}</b> {event.start}–{event.end}<br/><small>{event.scope} · {describeHolidayPeriod(event,asOf).text} · 확인 {event.verifiedAt}</small></p>)}<button onClick={onMore}>국가별 일정과 적용 대상 보기 ↗</button><small>일정만으로 고객 국적·매출·출국 집중 시점을 판단하지 않습니다.</small></section>;
 }
-function TrendsPlaceholder(){return <section className="focus-trends" id="focus-country-trends" aria-busy="true"><div className="focus-section-heading"><div><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>한 달의 변화일까, 이어지는 흐름일까</h2><p>월별 공식 여객 자료를 준비하고 있습니다.</p></div></div></section>;}
+function TrendsPlaceholder(){return <section className="focus-trends" id="focus-country-trends" aria-busy="true"><div className="focus-section-heading focus-trend-heading"><div><h2 data-heading="section" className="focus-trend-question"><span className="heading-marker" aria-hidden="true"/>한 달의 변화일까, 이어지는 흐름일까</h2><p>월별 공식 여객 자료를 준비하고 있습니다.</p></div></div></section>;}
 const DetailedCountryTrends=dynamic(()=>import('./airport-focus-trends'),{ssr:false,loading:TrendsPlaceholder});
 export function CountryTrends(props:{full?:boolean;onMore?:()=>void;lang?:Lang}){
  const [ready,setReady]=useState(Boolean(props.full)),host=useRef<HTMLDivElement>(null);

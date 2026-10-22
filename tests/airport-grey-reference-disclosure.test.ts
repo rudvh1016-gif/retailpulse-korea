@@ -28,3 +28,10 @@ test('only grey-line disclosure uses compact type; keyboard focus and 44px targe
  assert.match(css,/\.airport-flow-reference-details > summary:focus-visible\{outline:2px solid currentColor/);
  assert.match(css,/\.airport-flow-reference-details \.airport-flow-reference-note\{font-size:12px;line-height:1.6\}/);
 });
+
+
+test('the full-bleed departure chart restores the existing responsive body inset for disclosure text',()=>{
+ const css=readFileSync('app/airport-visual.css','utf8');
+ assert.match(css,/\.airport-today \.airport-hero \.airport-flow-reference-details\{margin-inline:var\(--gutter\)\}/);
+ for(const [breakpoint,gutter] of [[820,18],[365,14]])assert.ok(css.includes(`@media(max-width:${breakpoint}px){.airport-today .airport-hero .airport-flow-reference-details{margin-inline:${gutter}px}}`));
+});

@@ -29,3 +29,12 @@ test('only airport shortcut wrapper loses its rectangle and gains a small gap',(
  assert.deepEqual(matches[0].nodes.map(node=>[node.prop,node.value]),[['gap','6px'],['border','0'],['background','transparent']]);
  assert.match(read('app/live-signals.tsx'),/<div className="date-nav-shortcuts" role="group">/);
 });
+
+
+test('compact geometry applies only to the five controls and allows enlarged labels to grow',()=>{
+ const compact=css.split('/* Owner 2026-10-22: compact')[1].split('/* Owner 2026-10-21: exactly')[0];
+ assert.match(compact,/height:auto;min-height:64px/);
+ assert.match(compact,/min-height:46px;padding:4px 10px;gap:1px/);
+ assert.match(compact,/minmax\(0,1fr\) 40px/);
+ assert.doesNotMatch(compact,/font-size|overflow|white-space|\.bottom-nav|\.glass-nav/);
+});

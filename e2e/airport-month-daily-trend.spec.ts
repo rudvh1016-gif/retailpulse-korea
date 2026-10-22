@@ -122,7 +122,7 @@ test('a longer month keeps every bar and uses the selected readout instead of cr
 });
 
 for (const count of [22, 31]) {
-  for (const width of [320, 390, 1280]) {
+  for (const width of [320, 390, 430, 1280]) {
     test(`${count} daily bars keep compact horizontal gaps at ${width}px`, async ({ page }) => {
       const summary = structuredClone(SUMMARY_FIXTURE);
       for (const scope of ['all', 'T1', 'T2'] as const) {
@@ -148,8 +148,12 @@ for (const count of [22, 31]) {
       const first = (await bars.first().boundingBox())!;
       const second = (await bars.nth(1).boundingBox())!;
       expect(second.x - first.x).toBeLessThanOrEqual(12.1);
-      expect(first.width).toBeLessThanOrEqual(2.7);
-      expect(first.width).toBeGreaterThan(1);
+      expect(first.width).toBeCloseTo((second.x - first.x) * .48, 1);
+      expect(first.width).toBeGreaterThan(4);
+      expect(first.width).toBeLessThanOrEqual(5.8);
+      await expect(bars.first()).toHaveAttribute('data-value','40000');
+      await buttons.nth(1).hover();
+      await expect(chart.locator('.airport-month-readout')).toContainText('40,100');
       const targets = await buttons.evaluateAll(elements => elements.map(element => { const box = element.getBoundingClientRect(); return { left: box.left, right: box.right }; }));
       for (let index = 1; index < targets.length; index++) expect(targets[index].left).toBeGreaterThanOrEqual(targets[index - 1].right - .1);
       await buttons.first().click();
