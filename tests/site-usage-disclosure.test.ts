@@ -6,13 +6,15 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {SiteUsageGuide} from '../app/site-usage-guide';
 import {passengerCopy} from '../lib/passenger-copy';
 
-for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: only optional examples and update explanations collapse, not truth boundaries`,()=>{
+for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: optional examples and long methodology explanations collapse, not truth boundaries`,()=>{
  const html=renderToStaticMarkup(h(SiteUsageGuide,{lang}));
  const details=html.match(/<details\b[^>]*>[\s\S]*?<\/details>/g)??[];
- assert.equal(details.length,2);
+ assert.equal(details.length,3);
  for(const detail of details){assert.doesNotMatch(detail.split('>')[0],/\bopen\b/);assert.match(detail,/<summary style="min-height:44px;box-sizing:border-box;padding:12px 0;cursor:pointer">/);}
  assert.equal((details[0].match(/<dt>/g)??[]).length,3);
  assert.match(details[1],/<p>/);
+ assert.ok(details[1].includes('data-testid="usage-method"'));
+ assert.match(details[2],/<p>/);
  const visible=html.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g,'');
  assert.ok(visible.includes(passengerCopy.scope[lang]));
  assert.ok(visible.includes(passengerCopy.limitation[lang]));

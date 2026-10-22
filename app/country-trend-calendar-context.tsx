@@ -6,9 +6,10 @@ import type {FocusTrend} from './airport-focus-data';
 export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:FocusTrend;events:readonly CalendarEvent[];asOf:string;lang?:Lang}){
  const last=row.points.at(-1);
  if(!asOf||!last||last.departures===null)return null;
- const {summary,details}=countryTrendCalendar(events,{country:row.code,selectedMonth:last.month,actualDataMonths:row.points.filter(point=>point.departures!==null).map(point=>point.month),asOf});
+ const {details}=countryTrendCalendar(events,{country:row.code,selectedMonth:last.month,actualDataMonths:row.points.filter(point=>point.departures!==null).map(point=>point.month),asOf});
  if(!details.length)return null;
- const visible=summary.slice(0,3);
+ // Dates are primary comparison context, not optional evidence. Never rank-cut them.
+ const visible=details;
  const eventName=(item:typeof details[number])=>item.title.slice(calendarCountryName(item.country).length+1).replace(/^공휴일 · /,'');
  return <div className="focus-calendar-context">
   <p className="focus-source">일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준</p>
@@ -25,7 +26,7 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
   <details className="focus-source" data-testid="monthly-calendar-reference"><summary style={{minHeight:44,boxSizing:'border-box',padding:'12px 0',cursor:'pointer'}}>{{ko:'일정 근거',en:'Comparison-period calendar · official sources',zh:'比较期间日程 · 官方依据',ja:'比較期間の日程・公式根拠'}[lang]}</summary>
    <p>한국 일정은 한국인 여객 통계가 아닙니다. 방학은 지역·학교별로 다릅니다.</p>
    <ul>{details.map((item,index)=><li key={index}>
-    {calendarCountryName(item.country)} · <b>{eventName(item)}</b> {item.start}{item.start!==item.end?`–${item.end}`:''}{!visible.includes(item)&&item.relation==='previous'?' · 직전 월':''}<br/>
+    {calendarCountryName(item.country)} · <b>{eventName(item)}</b> {item.start}{item.start!==item.end?`–${item.end}`:''}{item.relation==='previous'?' · 직전 월':''}<br/>
     {item.months.map(period=>period.month).join(' · ')} · {item.country==='KR'&&item.kind==='school_break'?'초등학교 방학기간 참고 · 개별 학교 예시':item.scopeLabel}
     {item.kind==='school_break'&&item.country!=='KR'?` · ${item.name}`:''}
     {item.role==='origin'?' · 한국 출발지 참고':''}

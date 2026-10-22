@@ -22,7 +22,7 @@ for(const file of files('app')){
 test('explicit heading roles cover all non-interactive page/section headings',()=>{
  for(const h of headings.filter(h=>h.tag!=='h3'&&!h.interactive.length&&!/airport-model-scope|glance-building-label/.test(h.node.getText(h.tree))))assert.ok(h.role,`${h.file}: ${h.node.getText(h.tree)}`);
  assert.ok(headings.filter(h=>h.role==='page').length>=20);
- assert.ok(headings.filter(h=>h.role==='section').length>=69);
+ assert.ok(headings.filter(h=>h.role==='section').length>=66); // Three airport-flow peers are now correctly nested subsections.
  for(const file of ['airport-staff-briefing','airport-focus-production','airport-view','retailpulse-app','tourism-desk','travel-records-view','seoul-comparison'])assert.ok(headings.some(h=>h.file===`app/${file}.tsx`&&h.role));
 });
 test('every topmost title has the page role, including standalone, preview, loading and fallback views',()=>{
@@ -72,6 +72,10 @@ test('the three heading-only colors and supported weights distinguish roles with
  const colors=[];
  css.walkDecls('color',decl=>{
   if(decl.value==='CanvasText'){assert.equal(decl.parent.parent.params,'(forced-colors:active)');return;}
+  if(decl.parent.selector===':root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"]'){
+   assert.equal(decl.value,'var(--ink,#111111)');assert.ok(decl.important);
+   const weight=decl.parent.nodes.find(node=>node.prop==='font-weight');assert.equal(weight.value,'700');assert.ok(weight.important);return;
+  }
   const role=decl.parent.selector.match(/^:root body :is\(h1,h2,h3\)\[data-heading="(page|section|subsection)"\]$/)?.[1];
   assert.ok(role,decl.parent.selector);assert.equal(decl.value,palette[role][0]);assert.ok(decl.important);
   const weight=decl.parent.nodes.find(node=>node.prop==='font-weight');assert.equal(weight.value,palette[role][1]);assert.ok(weight.important);colors.push(decl.value);
@@ -85,10 +89,10 @@ test('the three heading-only colors and supported weights distinguish roles with
  for(const locale of ['jp','sc'])assert.match(read('app/globals.css'),new RegExp(`noto-sans-${locale}-600\\.woff2[^}]+font-weight: 600;`));
  css.walkDecls(decl=>assert.doesNotMatch(decl.prop,/^(?:background|fill|stroke|font-family|--)/));
 });
-test('screenshot-requested three briefing titles use major section scale without changing copy',()=>{
+test('the three detail titles share the airport-flow subsection role without step decoration',()=>{
  const source=read('app/airport-staff-briefing.tsx');
- for(const title of ['01 시간·터미널','02 노선·휴일 준비','03 품목별 확인'])assert.ok(source.includes(`<h3 data-heading="section"><span className="heading-marker" aria-hidden="true"/>${title}</h3>`));
- assert.equal(headings.filter(h=>h.file==='app/airport-staff-briefing.tsx'&&h.role==='section').length,3);
+ for(const title of ['시간·터미널','노선·휴일 준비','품목별 확인'])assert.ok(source.includes(`<h3 data-heading="subsection" className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"/>${title}</h3>`));
+ assert.equal(headings.filter(h=>h.file==='app/airport-staff-briefing.tsx'&&h.role==='subsection').length,3);
 });
 test('hierarchy is opt-in, wrapping-safe, and leaves navigation/theme/body tokens alone',()=>{
  const css=read('app/heading-hierarchy.css');

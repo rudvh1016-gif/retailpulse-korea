@@ -12,7 +12,7 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: More optional explanation
  const guide=page.locator('.site-usage-guide');
  await expect(guide.locator('.site-usage-limit')).toBeVisible();
  await expect(guide.locator('h3')).toHaveCount(1);
- for(const id of ['usage-examples','usage-updates']){
+ for(const id of ['usage-examples','usage-method','usage-updates']){
   const details=guide.getByTestId(id),toggle=details.locator('summary');
   await expect(details).not.toHaveAttribute('open','');
   await expect(details.locator(id==='usage-examples'?'dl':'p').first()).toBeHidden();

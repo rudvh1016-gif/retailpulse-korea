@@ -1,6 +1,7 @@
 import type {Lang} from './retailpulse-data';
 import {briefCountryName} from '../lib/brief-localization';
 import {eventCountryFlights,type EventFlightContext} from '../lib/event-country-flights';
+import {airportMonthPeriodLabel} from '../lib/airport-month-labels';
 import {ChangeRate,CountChange} from './change-rate';
 const copy={
  ko:{origin:'한국 출발지 일정 · 도착지 노선 비교 대상 아님',selected:'선택일',all:'공항 전체',concourse:'탑승동',main:'T1 본관',loading:'출발편 확인 중',baselineLoading:'일평균 비교자료 확인 중',missing:'출발편 자료 없음',partial:'출발편 일부 자료 · 합계 미표시',comparison:'일평균 비교자료 없음',held:'비교 보류',zero:'기준 0편 · 증감률 계산 불가',basis:'노선 국가 기준',scheduled:'출발 예정편',sample:'포함일',days:'일',full:'전체',notMonth:'월전체 평균 아님',association:'행사 일정과 항공편 비교는 별도 정보이며, 증감 원인이 확인된 것은 아닙니다.'},
@@ -22,11 +23,11 @@ function values(country:string,label:string,context:EventFlightContext|undefined
 type Props={country:string;label:string;context?:EventFlightContext;lang:Lang};
 /** Always resolve by this event's country; no ranked-route fallback. Dates are flight dates, not event dates. */
 export function EventCountryFlights({country,label,context,lang}:Props){
- const {text,number,metric,scope,unit,route,sample,average}=values(country,label,context,lang);
+ const {text,number,metric,scope,unit,route}=values(country,label,context,lang);
  if(metric.originContext)return <div className="event-country-flights event-origin-context" data-country="KR"><p>{text.origin}</p></div>;
  return <div className="event-country-flights" data-country={metric.country} data-flight-day={context?.day} data-flight-scope={context?.scope}>
   <p className="staff-route-metric">{text.selected} {context?.day||'—'} · {scope} · {route} {metric.count===null?(context?.status==='PARTIAL'?text.partial:context?.status==='LOADING'?text.loading:text.missing):<b>{number.format(metric.count)}{unit}</b>}</p>
-  <p className="event-flight-change">{metric.mean===null?<>{metric.month&&`${metric.month} · `}{context?.baselinePending?text.baselineLoading:text.comparison}</>:<>{metric.month} {metric.partial?`${sample} `:''}{average} · {metric.delta===null?text.held:<><CountChange delta={metric.delta} format={number.format} unit={unit} lang={lang}/>{' '}<span className="staff-route-rate">(<ChangeRate value={metric.percent} lang={lang}/>)</span>{metric.mean===0&&<> · {text.zero}</>}</>}</>}</p>
+  <p className="event-flight-change">{metric.mean===null?<>{metric.month&&`${metric.month} · `}{context?.baselinePending?text.baselineLoading:text.comparison}</>:<>{airportMonthPeriodLabel(context?.baseline,metric.month!,lang)} {lang==='ko'?'대비':lang==='en'?'comparison':lang==='zh'?'相比':'比'} · {metric.delta===null?text.held:<><CountChange delta={metric.delta} format={number.format} unit={unit} lang={lang}/>{' '}<span className="staff-route-rate">(<ChangeRate value={metric.percent} lang={lang}/>)</span>{metric.mean===0&&<> · {text.zero}</>}</>}</>}</p>
  </div>;
 }
 export function EventCountryFlightBasis(props:Props){

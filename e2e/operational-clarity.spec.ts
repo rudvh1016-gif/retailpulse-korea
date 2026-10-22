@@ -10,6 +10,15 @@ test('airport starts compact, explains unmatched flights and expands truthful ne
  await expect(page.locator('.airport-current-brief')).toContainText('탑승동 10편');
  await expect(page.locator('.passenger-scope-note')).toContainText('T1에서 출국 수속 후 탑승동');
  await expect(page.locator('.airport-current-brief')).toContainText('탑승 위치 확인 중 1편');
+ for(const selector of ['.flight-scope-note .methodology-details','.passenger-scope-note']){
+  const detail=page.locator(selector),toggle=detail.locator(':scope > summary');
+  await expect(detail).not.toHaveAttribute('open','');await expect(detail.locator(':scope > p')).toBeHidden();
+  await toggle.focus();await page.keyboard.press('Enter');
+  await expect(detail.locator(':scope > p')).toBeVisible();
+  await page.keyboard.press('Space');await expect(detail).not.toHaveAttribute('open','');
+  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ }
+
  await expect(page.locator('.airport-today-grid')).not.toBeVisible();
  await page.locator('.airport-summary-details > summary').click();
  await expect(page.locator('.airport-today-grid')).toBeVisible();

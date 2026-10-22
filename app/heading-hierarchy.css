@@ -38,3 +38,31 @@
 :root body .focus-trend-question[data-heading] {word-break:keep-all}
 @media(max-width:380px){:root body .focus-trend-question[data-heading]{font-size:1.125rem!important}}
 @media(max-width:340px){:root body .focus-trend-question[data-heading]{font-size:1.0625rem!important}}
+/* Owner-requested card subtitles (2026-10-22): weight only.
+ * These are content titles, including linked insight cards, not their values,
+ * explanatory copy, map labels, calendar controls or disclosure toggles.
+ * Keep each component's existing size/color; 600 is supported in every locale.
+ * Trend and arrival-result titles already use 700 and retain that weight. */
+:root body :is(
+ .glance-insights > a > span,
+ .facility-card-head > h3,
+ .my-store-brief > header > h3,
+ .seoul-weather-panel > h3,
+ .personal-facts > article > h3,
+ .personal-preparation > h3,
+ .reference-change-notices > section > div > h3,
+ .district-glance-section > h3,
+ .collection-status > details > article > h3,
+ .tourism-event-header > h3,
+ .tourism-subway-head > h3,
+ .tourism-visitor-show-event > h3,
+ .tourism-visitor-show-weather > h3,
+ .update-notice-items > section > div > h3,
+ .airport-news-facts > h3,
+ .airport-news-documents > h3
+) {font-weight:600!important}
+
+/* Requested airport middle titles only: body values and the burgundy page role stay unchanged. */
+:root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"] {color:var(--ink,#111111)!important;font-weight:700!important}
+:root body :is(.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]) :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"] {font-weight:600!important}
+@media(forced-colors:active){:root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"]{color:CanvasText!important}}

@@ -76,7 +76,7 @@ for(const {lang,width} of cases)test(`compact monthly country cards and airline 
  const section=await openMonthly(page,lang,width);
  const monthLabels=lang==='ko'?['9월','10월']:lang==='en'?['Sep','Oct']:['9月','10月'];
  const basis=section.getByTestId('airport-month-basis');
- if(lang==='ko')await expect(basis).toHaveText('2026 · 9월 마감 일평균 / 10월 MTD 일평균 · 10/10까지');
+ if(lang==='ko')await expect(basis).toHaveText('2026-09월 전체 수집분 일평균 / 2026-10월-10일 MTD 일평균');
 
  const countries=section.getByTestId('destination-daily-changes');
  const cards=countries.locator('li[data-country]');

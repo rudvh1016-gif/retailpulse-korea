@@ -823,9 +823,9 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
         <h2 data-heading="section" id="tourism-limits-title"><span className="heading-marker" aria-hidden="true"/>{copy.sectionLimits}</h2>
         <p>{copy.limitsIntro}</p>
       </header>
-      <ul className="tourism-limits">
+      <details className="methodology-details"><summary>{{ko:'집계 기준 보기',en:'Counting methodology',zh:'查看统计口径',ja:'集計基準を見る'}[lang]}</summary><ul className="tourism-limits">
         {limitLines(lang, areaName).map((line) => <li key={line}>{line}</li>)}
-      </ul>
+      </ul></details>
     </section>
   </section>;
 }

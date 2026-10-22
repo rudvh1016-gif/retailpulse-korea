@@ -8,7 +8,7 @@ const chart=signals.match(/function AirportMonthChart\([\s\S]*?\n\}\n/)?.[0]??''
 const css=read('app/airport-models.css');
 
 test('daily forecast marks are moderately thicker without narrowing the full-day controls',()=>{
- assert.match(chart,/const barWidth = Math\.min\(3, slot \* 0\.48\)/);
+ assert.match(chart,/const barWidth = Math\.min\(8, slot \* 0\.66\)/);
  assert.match(chart,/const slot = width \/ slots/);
  assert.match(chart,/style=\{\{ flex: `0 0 \$\{100 \/ slots\}%` \}\}/);
  assert.match(chart,/<button[^>]*type="button" aria-pressed=\{day\.date === shownDay\.date\}/);
@@ -38,7 +38,7 @@ test('refinement preserves the zero baseline, missing-day ticks and exact select
 
 // Geometry is verified in airport-month-daily-trend.spec.ts at phone/desktop widths.
 test('long daily strips cap horizontal pitch with aligned ticks and no date truncation',()=>{
- assert.match(chart,/const plotStyle = \{ width: days.length > 9 \? `\$\{slots \* 12\}px` : undefined, maxWidth: "100%" \}/);
+ assert.ok(chart.includes("`min(100%, calc(${slots} * clamp(12px, 1.6vw, 22px)))`"));
  assert.match(chart,/<div className="airport-month-plot" style=\{plotStyle\}>/);
  assert.match(chart,/<div className="airport-month-ticks" style=\{plotStyle\}/);
  assert.match(chart,/const slots = days.length/);
@@ -50,8 +50,10 @@ test('daily readouts are reachable by hover, focus, tap and keyboard without cha
  assert.match(chart,/onPointerEnter=\{\(\) => setActive\(day\.date\)\}/);
  assert.match(chart,/onFocus=\{\(\) => setActive\(day\.date\)\}/);
  assert.match(chart,/data-value=\{day\.total\}/);
- for(const count of [22,31])for(const available of [292,354,394,1280]){
-  const pitch=Math.min(available,count*12)/count,width=Math.min(3,100/count*.48)*Math.min(available,count*12)/100;
-  assert.ok(width>4&&width<=5.76+.001);assert.ok(pitch-width>0);assert.ok(pitch<=12);
+ for(const count of [10,22,28,29,30,31])for(const [viewport,available] of [[320,292],[390,354],[430,394],[1024,420],[1280,500],[1920,700]]){
+  const pitchLimit=Math.max(12,Math.min(viewport*.016,22));
+  const plot=Math.min(available,count*pitchLimit),pitch=plot/count,width=Math.min(8,100/count*.66)*plot/100;
+  assert.ok(width>6&&width<=14.52+.001);assert.ok(pitch-width>0);assert.ok(pitch<=22);
+  assert.ok(Math.abs(width/pitch-.66)<.001);
  }
 });

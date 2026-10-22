@@ -21,7 +21,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`rendered rate and count d
 });
 test('change colors remain restrained blue, dark red and neutral, without touching congestion or temperature',()=>{
  const css=readFileSync('app/change-rate.css','utf8');
- assert.match(css,/\.change-rate\[data-direction=up\]\{color:#245579\}/);assert.match(css,/\.change-rate\[data-direction=down\]\{color:#a12d3f\}/);assert.match(css,/\.change-rate\[data-direction=neutral\]\{color:#59636e\}/);
+ assert.match(css,/\.change-rate\[data-direction=up\]\{color:#2459a6\}/);assert.match(css,/\.change-rate\[data-direction=down\]\{color:#a12d3f\}/);assert.match(css,/\.change-rate\[data-direction=neutral\]\{color:#59636e\}/);
  assert.doesNotMatch(css,/temperature|congestion/);
 });
 test('More shows the concise reading rule before secondary menus and settings',()=>{
