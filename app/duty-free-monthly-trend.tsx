@@ -4,10 +4,10 @@ import type {Lang} from './retailpulse-data';
 import {validDutyFreeMonthly,type DutyFreeMonthly,type DutyFreeMonth} from '../lib/duty-free-exchange-monthly';
 
 const copy={
- ko:{title:'환율 6개월 월평균 추이',loading:'자료 확인 중…',failed:'월평균 자료 조회 실패',missing:'자료 없음',progress:'수집 중',days:'관측일',note:'신라 인터넷점 · 1 USD 기준 원화. 저장된 관측일만 평균하며, 없는 날짜는 채우지 않습니다.',axis:'세로축',asOf:'자료 기준일'},
- en:{title:'6-month average exchange-rate trend',loading:'Loading…',failed:'Monthly rates could not be loaded',missing:'No data',progress:'In progress',days:'Observed days',note:'Shilla online shop · KRW per USD. Averages use stored observed days only; missing dates are not filled.',axis:'Y-axis',asOf:'Data through'},
- zh:{title:'汇率6个月月均趋势',loading:'正在读取…',failed:'月均汇率读取失败',missing:'暂无数据',progress:'收集中',days:'观测天数',note:'新罗网上免税店 · 每美元韩元。仅对已保存的观测日求平均，不填补缺失日期。',axis:'纵轴',asOf:'数据截至'},
- ja:{title:'為替6か月の月平均推移',loading:'確認中…',failed:'月平均データを取得できません',missing:'データなし',progress:'収集中',days:'観測日数',note:'新羅オンライン店 · 1 USDあたりKRW。保存済みの観測日のみで平均し、欠測日は補いません。',axis:'縦軸',asOf:'データ基準日'}
+ ko:{title:'환율 6개월 · 확보한 날짜 평균',loading:'자료 확인 중…',failed:'월평균 자료 조회 실패',missing:'자료 없음',progress:'수집 중',days:'관측일',note:'신라 인터넷점 · 1 USD 기준 원화. 저장된 관측일만 평균하며, 없는 날짜는 채우지 않습니다.',axis:'세로축',asOf:'자료 기준일',archive:'과거 원문 근거',archiveNote:'공식 사이트 보관본 관측치를 포함합니다. 한 달 전체 평균이나 하루 종일 적용된 환율은 아닙니다.'},
+ en:{title:'6-month exchange rates · observed-date averages',loading:'Loading…',failed:'Monthly rates could not be loaded',missing:'No data',progress:'In progress',days:'Observed days',note:'Shilla online shop · KRW per USD. Averages use stored observed days only; missing dates are not filled.',axis:'Y-axis',asOf:'Data through',archive:'Archived source evidence',archiveNote:'Includes archived official-site observations, not full-month averages or verified all-day rates.'},
+ zh:{title:'6个月汇率 · 已获日期平均',loading:'正在读取…',failed:'月均汇率读取失败',missing:'暂无数据',progress:'收集中',days:'观测天数',note:'新罗网上免税店 · 每美元韩元。仅对已保存的观测日求平均，不填补缺失日期。',axis:'纵轴',asOf:'数据截至',archive:'历史原文依据',archiveNote:'含官方网站存档观测值，并非完整月均值或全天适用汇率。'},
+ ja:{title:'為替6か月 · 確認できた日の平均',loading:'確認中…',failed:'月平均データを取得できません',missing:'データなし',progress:'収集中',days:'観測日数',note:'新羅オンライン店 · 1 USDあたりKRW。保存済みの観測日のみで平均し、欠測日は補いません。',axis:'縦軸',asOf:'データ基準日',archive:'保存された原文の根拠',archiveNote:'公式サイトの保存版の観測値を含みます。月全体の平均や終日適用レートではありません。'}
 };
 const locales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'};
 export function DutyFreeMonthlyTrend({lang}:{lang:Lang}) {
@@ -64,6 +64,11 @@ export function DutyFreeMonthlyTrend({lang}:{lang:Lang}) {
     <ul className="duty-free-month-list">{data.months.map(row=><li key={row.month}>{label(row)}</li>)}</ul>
    </figure>}
    <p className="prep-note">{words.note}</p>
+   {!!data?.archive?.used.length&&<details className="prep-note duty-free-archive"><summary>{words.archive} · {data.archive.used.length}</summary>
+    <p>{words.archiveNote}</p>
+    <ul>{data.archive.used.map(row=><li key={row.observedDateKst}>{row.observedDateKst} · {number.format(row.krwPerUsd)} KRW / USD · {row.provenance.map((source,index)=><span key={source.archiveUrl}>{index>0?' · ':''}<a href={source.archiveUrl} target="_blank" rel="noreferrer">{source.capturedAt} UTC</a></span>)}</li>)}</ul>
+   </details>}
+
   </div>}
  </section>;
 }

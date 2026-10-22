@@ -1,0 +1,376 @@
+{
+  "version": 1,
+  "kind": "ARCHIVED_OBSERVATION",
+  "verifiedAt": "2026-10-21T23:15:48Z",
+  "fullDayApplicabilityVerified": false,
+  "observations": [
+    {
+      "observedDateKst": "2026-05-06",
+      "krwPerUsd": 1484.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-06T09:08:55Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E65772&affl_id=903082",
+          "archiveUrl": "https://web.archive.org/web/20260506090855id_/https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E65772&affl_id=903082",
+          "sha256": "9a424367721799d590e9f5d7b340bba1724db5df55b720c6e0b827094ef76bf4",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-05-07",
+      "krwPerUsd": 1470.5,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-06T16:46:24Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmouahhy5%7Cci%3DER1e161cea-496b-11f1-8324-52562450fb56%7Ctr%3Dsa%7Chk%3D6e7ad21f6403e59054b630d7e796928f0d0edfe6%7Cnacn%3DhwyoBExOdPwH",
+          "archiveUrl": "https://web.archive.org/web/20260506164624id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmouahhy5%7Cci%3DER1e161cea-496b-11f1-8324-52562450fb56%7Ctr%3Dsa%7Chk%3D6e7ad21f6403e59054b630d7e796928f0d0edfe6%7Cnacn%3DhwyoBExOdPwH",
+          "sha256": "c19eed0cd46296b49be7de895a30e4c51fe8dd1df81908a556b18b51bf29be9c",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-06T17:43:31Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&NaPm=ct%3Dmouciy2c%7Cci%3DER189a7c13-4973-11f1-b22b-7a61f114eeb3%7Ctr%3Dsa%7Chk%3D893b3faa42a3349911663370a8586f45e9be02ad%7Cnacn%3DCOyVBEBPRwU9",
+          "archiveUrl": "https://web.archive.org/web/20260506174331id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&NaPm=ct%3Dmouciy2c%7Cci%3DER189a7c13-4973-11f1-b22b-7a61f114eeb3%7Ctr%3Dsa%7Chk%3D893b3faa42a3349911663370a8586f45e9be02ad%7Cnacn%3DCOyVBEBPRwU9",
+          "sha256": "1624aef0b174e3e5ba736c594f32334d8d6c68b0277be06d1d252ce4caf30426",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-06T19:01:53Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/fastshop?affl_id=900168&NaPm=ct%3Dmoucjzym%7Cci%3DER35e0afc0-4973-11f1-a215-4e61dae840e9%7Ctr%3Dsa%7Chk%3D62adac27cc2d3fd8a3fc3c3e20ff76a7c2d217d3%7Cnacn%3D6LLnBEBPSwA0",
+          "archiveUrl": "https://web.archive.org/web/20260506190153id_/https://m.shilladfs.com/estore/kr/ko/fastshop?affl_id=900168&NaPm=ct%3Dmoucjzym%7Cci%3DER35e0afc0-4973-11f1-a215-4e61dae840e9%7Ctr%3Dsa%7Chk%3D62adac27cc2d3fd8a3fc3c3e20ff76a7c2d217d3%7Cnacn%3D6LLnBEBPSwA0",
+          "sha256": "ef9fca7e913fc29d2941e88ec6cb624c8307f5de1f9d8aa2c8f13dd5081eb705",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-05-09",
+      "krwPerUsd": 1450.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-08T21:13:03Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmoxew4hl%7Cci%3DERb34a7aa7-4b22-11f1-8324-52562450fb56%7Ctr%3Dsa%7Chk%3D5da20477fe499fb5c130143351b5e2b2112b0da8%7Cnacn%3D7pOwBExRdwtu",
+          "archiveUrl": "https://web.archive.org/web/20260508211303id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmoxew4hl%7Cci%3DERb34a7aa7-4b22-11f1-8324-52562450fb56%7Ctr%3Dsa%7Chk%3D5da20477fe499fb5c130143351b5e2b2112b0da8%7Cnacn%3D7pOwBExRdwtu",
+          "sha256": "f4075bd109de12c8d888d07854cfba561de2d6d35f45ec3e4a2d38614f1953b1",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-09T02:40:00Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmoxqkkhl%7Cci%3DER5f7d9b0c-4b50-11f1-9041-a2bd0aa822f5%7Ctr%3Dsa%7Chk%3D412b42943f53ea94bcd47fb9289495c3c8cf6cce%7Cnacn%3D2l7wBEBSJ5Cv",
+          "archiveUrl": "https://web.archive.org/web/20260509024000id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmoxqkkhl%7Cci%3DER5f7d9b0c-4b50-11f1-9041-a2bd0aa822f5%7Ctr%3Dsa%7Chk%3D412b42943f53ea94bcd47fb9289495c3c8cf6cce%7Cnacn%3D2l7wBEBSJ5Cv",
+          "sha256": "3cd2c8a5cefcd81476b4655bb46fbe95b25a4eea36d2b3b6146cb0eb05887a7e",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-08T20:07:50Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&NaPm=ct%3Dmoxck9ed%7Cci%3DER971dbcfd-4b19-11f1-92bf-d632e9038ed8%7Ctr%3Dsa%7Chk%3Df1c4a2a3fc4081a63c874664b5f714fc620f93e3%7Cnacn%3Df0qhCICjEHlMB",
+          "archiveUrl": "https://web.archive.org/web/20260508200750id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&NaPm=ct%3Dmoxck9ed%7Cci%3DER971dbcfd-4b19-11f1-92bf-d632e9038ed8%7Ctr%3Dsa%7Chk%3Df1c4a2a3fc4081a63c874664b5f714fc620f93e3%7Cnacn%3Df0qhCICjEHlMB",
+          "sha256": "b4171f5e16c8365724f888bf457d35e4ecbe55186e94c7c94acf418ee3564d1e",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-08T19:30:19Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/fastshop?NaPm=ct%3Dmoxb7znt%7Cci%3DER58c15450-4b14-11f1-9041-a2bd0aa822f5%7Ctr%3Dsa%7Chk%3D6fb287b843bd452817173877047107d1a26f6e24%7Cnacn%3D8Z0rBEhRfd5lA",
+          "archiveUrl": "https://web.archive.org/web/20260508193019id_/https://m.shilladfs.com/estore/kr/ko/fastshop?NaPm=ct%3Dmoxb7znt%7Cci%3DER58c15450-4b14-11f1-9041-a2bd0aa822f5%7Ctr%3Dsa%7Chk%3D6fb287b843bd452817173877047107d1a26f6e24%7Cnacn%3D8Z0rBEhRfd5lA",
+          "sha256": "1ce42525e9cc1d899d7d43eb0e659d939704ed4c1b462c482a4814cee62e4b25",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-09T02:40:39Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/fastshop?NaPm=ct%3Dmoxqlf6u%7Cci%3DER7734ed2e-4b50-11f1-ad7c-5227603a09b8%7Ctr%3Dsa%7Chk%3D66d8e2c4a525438dbb170c3f6841688a22a2e366%7Cnacn%3D8v9cBEBSJpMK",
+          "archiveUrl": "https://web.archive.org/web/20260509024039id_/https://m.shilladfs.com/estore/kr/ko/fastshop?NaPm=ct%3Dmoxqlf6u%7Cci%3DER7734ed2e-4b50-11f1-ad7c-5227603a09b8%7Ctr%3Dsa%7Chk%3D66d8e2c4a525438dbb170c3f6841688a22a2e366%7Cnacn%3D8v9cBEBSJpMK",
+          "sha256": "cbbf4f102ec600162d877a55a2e0229861bb354af1b995ff333b31bd4c288697",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-05-10",
+      "krwPerUsd": 1450.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-09T23:17:20Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/sale?XAREA=GNB&NaPm=ct%3Dmoyyrs6u%7Cci%3DER39c951ca-4bfd-11f1-b22b-7a61f114eeb3%7Ctr%3Dsa%7Chk%3D917a12837a7076761c69417ce258064f53f64e0a%7Cnacn%3Dtb7IBEBT12Pe",
+          "archiveUrl": "https://web.archive.org/web/20260509231720id_/https://www.shilladfs.com/estore/kr/ko/sale?XAREA=GNB&NaPm=ct%3Dmoyyrs6u%7Cci%3DER39c951ca-4bfd-11f1-b22b-7a61f114eeb3%7Ctr%3Dsa%7Chk%3D917a12837a7076761c69417ce258064f53f64e0a%7Cnacn%3Dtb7IBEBT12Pe",
+          "sha256": "ebd608e475ab5febc0ce7ae0263345d3c86216ea02b6dd6c415c4568d723a812",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-05-11",
+      "krwPerUsd": 1450.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-10T19:42:10Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/p/5263896",
+          "archiveUrl": "https://web.archive.org/web/20260510194210id_/https://www.shilladfs.com/estore/kr/ko/p/5263896",
+          "sha256": "ba02b565871961cccb8bcae9c3ae04268cec65ad8f962285b1075a4f6cd668ae",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-05-16",
+      "krwPerUsd": 1491.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-15T18:25:30Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmp78zm8d%7Cci%3DER7424f0c4-508b-11f1-9025-e6b401655f48%7Ctr%3Dsa%7Chk%3D0325a7097f43f88b776ad93385fdd6fcb9f0c345%7Cnacn%3DOfQMCIC1gcfOB",
+          "archiveUrl": "https://web.archive.org/web/20260515182530id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmp78zm8d%7Cci%3DER7424f0c4-508b-11f1-9025-e6b401655f48%7Ctr%3Dsa%7Chk%3D0325a7097f43f88b776ad93385fdd6fcb9f0c345%7Cnacn%3DOfQMCIC1gcfOB",
+          "sha256": "5258d5e1a8eaee2038c53238331561077650b07f38f205c786c388b0d3066bb9",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-15T20:35:11Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&NaPm=ct%3Dmp7dme5m%7Cci%3DER9208495f-509d-11f1-88db-72b991b64c90%7Ctr%3Dsa%7Chk%3D23f90f3a71a4bdb728ec7f5f8fb3b13856473bd4%7Cnacn%3D73kABExaHYrL",
+          "archiveUrl": "https://web.archive.org/web/20260515203511id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&NaPm=ct%3Dmp7dme5m%7Cci%3DER9208495f-509d-11f1-88db-72b991b64c90%7Ctr%3Dsa%7Chk%3D23f90f3a71a4bdb728ec7f5f8fb3b13856473bd4%7Cnacn%3D73kABExaHYrL",
+          "sha256": "da92ed57e6d18eebb2283e6e1b45d6444116556b119dae9b9a5ca5c3feddd3cb",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        },
+        {
+          "capturedAt": "2026-05-16T07:05:37Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/fastshop?NaPm=ct%3Dmp8054kn%7Cci%3DERa3d85790-50f5-11f1-9219-7251e2206318%7Ctr%3Dsa%7Chk%3Dbcc17a6aca0bb0ecea73e3cfb40d1b07fd3b6741%7Cnacn%3DJoRwBERbIJe0A",
+          "archiveUrl": "https://web.archive.org/web/20260516070537id_/https://m.shilladfs.com/estore/kr/ko/fastshop?NaPm=ct%3Dmp8054kn%7Cci%3DERa3d85790-50f5-11f1-9219-7251e2206318%7Ctr%3Dsa%7Chk%3Dbcc17a6aca0bb0ecea73e3cfb40d1b07fd3b6741%7Cnacn%3DJoRwBERbIJe0A",
+          "sha256": "e50b57d00fc6bd0526380ddabacd910292509d72a2ab3b5f8b66a1b43f14fc3f",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-05-17",
+      "krwPerUsd": 1491.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-17T06:26:51Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&affl_id=000309&NaPm=ct%3Dmp7meqt9%7Cci%3DERef7f9f00-50bf-11f1-9edb-aa2ea9c3a15f%7Ctr%3Dsa%7Chk%3Db74cf0b1e94a468f75fe85477e364da1a7e513f2%7Cnacn%3DDl5sBExao3efA",
+          "archiveUrl": "https://web.archive.org/web/20260517062651id_/https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E82169&affl_id=000309&NaPm=ct%3Dmp7meqt9%7Cci%3DERef7f9f00-50bf-11f1-9edb-aa2ea9c3a15f%7Ctr%3Dsa%7Chk%3Db74cf0b1e94a468f75fe85477e364da1a7e513f2%7Cnacn%3DDl5sBExao3efA",
+          "sha256": "fc7710b02062a838743ed85261d2e7dc6875e201618ee85e018580048cfa0512",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-05-25",
+      "krwPerUsd": 1503.5,
+      "provenance": [
+        {
+          "capturedAt": "2026-05-25T01:58:34Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903918",
+          "archiveUrl": "https://web.archive.org/web/20260525015834id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903918",
+          "sha256": "0c8df0be57c7e8b143242f67a521f222b23e66b696a7d5ae92d2eac01212e1c0",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-06-03",
+      "krwPerUsd": 1511.3,
+      "provenance": [
+        {
+          "capturedAt": "2026-06-03T03:21:30Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/",
+          "archiveUrl": "https://web.archive.org/web/20260603032130id_/https://www.shilladfs.com/estore/kr/ko/",
+          "sha256": "e619d0d240f0117dd64f808372ef38e111226b18b1607987e8bb9081f8df7f01",
+          "dateEvidence": "explicit_server_datetime"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-06-23",
+      "krwPerUsd": 1535.0,
+      "provenance": [
+        {
+          "capturedAt": "2026-06-22T18:37:59Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/b/rucipello",
+          "archiveUrl": "https://web.archive.org/web/20260622183759id_/https://www.shilladfs.com/estore/kr/ko/b/rucipello",
+          "sha256": "edb38cf69862dc5d5747fc169ee2dc6de44807cb673e0723f42a6cf5214530a4",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-07-03",
+      "krwPerUsd": 1554.4,
+      "provenance": [
+        {
+          "capturedAt": "2026-07-02T21:00:01Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko",
+          "archiveUrl": "https://web.archive.org/web/20260702210001id_/https://www.shilladfs.com/estore/kr/ko",
+          "sha256": "5eb9694f97ce48804621a4e6c536f85718e0a8a042436943e44ac8fa50c0af1c",
+          "dateEvidence": "explicit_server_datetime"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-07-08",
+      "krwPerUsd": 1531.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-07-08T08:21:03Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=B82267",
+          "archiveUrl": "https://web.archive.org/web/20260708082103id_/https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=B82267",
+          "sha256": "f8aa40c0a3113cb83d3e0f4dd89b7a3c158a6338fe83c4cae1e27e8e06af8ecb",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-07-14",
+      "krwPerUsd": 1507.1,
+      "provenance": [
+        {
+          "capturedAt": "2026-07-14T12:43:39Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/p/5899360",
+          "archiveUrl": "https://web.archive.org/web/20260714124339id_/https://www.shilladfs.com/estore/kr/ko/p/5899360",
+          "sha256": "a73d84b11cf7cc2a67a56856a6573a61f2a28d39a73da751b001d0a313895182",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-07-23",
+      "krwPerUsd": 1475.6,
+      "provenance": [
+        {
+          "capturedAt": "2026-07-23T14:05:32Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/",
+          "archiveUrl": "https://web.archive.org/web/20260723140532id_/https://www.shilladfs.com/estore/kr/ko/",
+          "sha256": "2b1408e7b23a8c7752c56174aa1c01841461c79fe0f68cfb71e10e4ccb1433dc",
+          "dateEvidence": "explicit_server_datetime"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-07-29",
+      "krwPerUsd": 1465.4,
+      "provenance": [
+        {
+          "capturedAt": "2026-07-29T03:07:13Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/ranking?affl_id=900167",
+          "archiveUrl": "https://web.archive.org/web/20260729030713id_/https://m.shilladfs.com/estore/kr/ko/ranking?affl_id=900167",
+          "sha256": "5848edfe4de7eba351aebb597a23956d87a2e5003ff7a77a13a2f6fee67d2d38",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-08-03",
+      "krwPerUsd": 1441.1,
+      "provenance": [
+        {
+          "capturedAt": "2026-08-03T08:07:27Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E69525",
+          "archiveUrl": "https://web.archive.org/web/20260803080727id_/https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E69525",
+          "sha256": "4aedbb19b33aa3cc97f658cac037d96c8dfc0bc9e5e1b49759b15311f2e93f31",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-08-04",
+      "krwPerUsd": 1433.6,
+      "provenance": [
+        {
+          "capturedAt": "2026-08-04T01:51:51Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E83000&affl_id=900166&utm_source=google&utm_medium=sa&utm_campaign=generalkeyword&utm_term=%EB%A9%B4%EC%84%B8%EC%A0%90&gad_source=1&gad_campaignid=23891278798&gclid=Cj0KCQjw-MDTBhCgARIsAKAkdlQiDj002xsAZsZy0739kaZG2zRGtIEkwTjjY4uBf1-dcTMw6ptFZ3gaAtKsEALw_wcB",
+          "archiveUrl": "https://web.archive.org/web/20260804015151id_/https://www.shilladfs.com/estore/kr/ko/event/eventView?eventId=E83000&affl_id=900166&utm_source=google&utm_medium=sa&utm_campaign=generalkeyword&utm_term=%EB%A9%B4%EC%84%B8%EC%A0%90&gad_source=1&gad_campaignid=23891278798&gclid=Cj0KCQjw-MDTBhCgARIsAKAkdlQiDj002xsAZsZy0739kaZG2zRGtIEkwTjjY4uBf1-dcTMw6ptFZ3gaAtKsEALw_wcB",
+          "sha256": "fedab3286a4823a3408bb982da11db5bc17e98fe7f3fc46de2fabf774bc512a4",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-08-14",
+      "krwPerUsd": 1415.0,
+      "provenance": [
+        {
+          "capturedAt": "2026-08-14T02:01:30Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/b/onrunning",
+          "archiveUrl": "https://web.archive.org/web/20260814020130id_/https://www.shilladfs.com/estore/kr/ko/b/onrunning",
+          "sha256": "059c630f3ca75637ef2ce41c375712db16085ab491ed4376dabe1eb13121b822",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-08-20",
+      "krwPerUsd": 1411.0,
+      "provenance": [
+        {
+          "capturedAt": "2026-08-19T23:31:45Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/p/5346624",
+          "archiveUrl": "https://web.archive.org/web/20260819233145id_/https://www.shilladfs.com/estore/kr/ko/p/5346624",
+          "sha256": "b82289bf83e23bcd37bffa3faaabe49eebc27a5132f8fb56c95bf77d4b3508e7",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-08-31",
+      "krwPerUsd": 1380.3,
+      "provenance": [
+        {
+          "capturedAt": "2026-08-31T08:28:32Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/",
+          "archiveUrl": "https://web.archive.org/web/20260831082832id_/https://www.shilladfs.com/estore/kr/ko/",
+          "sha256": "f795a3e15a47d1da631577026906de2b9d429b8126c6ba6f11c8c51017ea2913",
+          "dateEvidence": "explicit_server_datetime"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-09-10",
+      "krwPerUsd": 1341.1,
+      "provenance": [
+        {
+          "capturedAt": "2026-09-10T14:23:34Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903918",
+          "archiveUrl": "https://web.archive.org/web/20260910142334id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903918",
+          "sha256": "498babe3301a316a7963cca024c837a7dfa89ee688958a547aa5f2a49e2a5e11",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-09-11",
+      "krwPerUsd": 1337.9,
+      "provenance": [
+        {
+          "capturedAt": "2026-09-11T05:35:07Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/sale?affl_id=000309&NaPm=ct%3Dmtwb2mme%7Cci%3DER0fe1ca6f-ad84-11f1-b673-1a043dd3d26f%7Ctr%3Dsa%7Chk%3D06ed5ecf4e66efcf83d35b83d3a0cedd193ef2ec%7Cnacn%3DC2OtBMxycb6B",
+          "archiveUrl": "https://web.archive.org/web/20260911053507id_/https://www.shilladfs.com/estore/kr/ko/sale?affl_id=000309&NaPm=ct%3Dmtwb2mme%7Cci%3DER0fe1ca6f-ad84-11f1-b673-1a043dd3d26f%7Ctr%3Dsa%7Chk%3D06ed5ecf4e66efcf83d35b83d3a0cedd193ef2ec%7Cnacn%3DC2OtBMxycb6B",
+          "sha256": "b66084a0377ea775f37ab336b96bc704ea30a2109f249d4ce082b67a1922e9fa",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-10-11",
+      "krwPerUsd": 1339.2,
+      "provenance": [
+        {
+          "capturedAt": "2026-10-11T04:54:58Z",
+          "sourceUrl": "https://www.shilladfs.com/estore/kr/ko/event?XAREA=GNB&affl_id=000309&NaPm=ct%3Dmt662rsq%7Cci%3DER25598a22-9f24-11f1-b668-3eb4e95f5b38%7Ctr%3Dsa%7Chk%3Dfe531e05d3af6e216fd026e8bff8d9efcaecab9b%7Cnacn%3Dtfe0GwEtd688A",
+          "archiveUrl": "https://web.archive.org/web/20261011045458id_/https://www.shilladfs.com/estore/kr/ko/event?XAREA=GNB&affl_id=000309&NaPm=ct%3Dmt662rsq%7Cci%3DER25598a22-9f24-11f1-b668-3eb4e95f5b38%7Ctr%3Dsa%7Chk%3Dfe531e05d3af6e216fd026e8bff8d9efcaecab9b%7Cnacn%3Dtfe0GwEtd688A",
+          "sha256": "693cacbe629f7027158f0259486cd0be5007ee6bb78d92910351077b10960561",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    },
+    {
+      "observedDateKst": "2026-10-14",
+      "krwPerUsd": 1335.8,
+      "provenance": [
+        {
+          "capturedAt": "2026-10-14T02:05:48Z",
+          "sourceUrl": "https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmv7gx6g9%7Cci%3DERc5a46e28-c773-11f1-875c-0e1f8c7c65ea%7Ctr%3Dsa%7Chk%3D9d505e66cb0e556331af887fd64262735af011e3%7Cnacn%3DDMHpBQRdWb66",
+          "archiveUrl": "https://web.archive.org/web/20261014020548id_/https://m.shilladfs.com/estore/kr/ko/event/eventView?affl_id=903747&NaPm=ct%3Dmv7gx6g9%7Cci%3DERc5a46e28-c773-11f1-875c-0e1f8c7c65ea%7Ctr%3Dsa%7Chk%3D9d505e66cb0e556331af887fd64262735af011e3%7Cnacn%3DDMHpBQRdWb66",
+          "sha256": "534c74fcb671111118e0680087c478e3fa49adb470e2377c7b30b8cd4627ce95",
+          "dateEvidence": "archive_kst_plus_departure_default_only"
+        }
+      ]
+    }
+  ]
+}
