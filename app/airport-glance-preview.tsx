@@ -19,6 +19,7 @@ import {passengerCopy as passengerReferenceCopy} from '../lib/passenger-copy';
 import {friendlyCheckpointName} from '../lib/airport-today-summary';
 import {staffDeparturePeak} from '../lib/airport-staff-peak';
 import AirportStaffBriefing from './airport-staff-briefing';
+import type {EventFlightContext} from '../lib/event-country-flights';
 import './airport-glance-preview.css';
 interface MonthReply{status:string;month:string;data:AirportMonthlyRollups|null;calculatedAt:string|null}
 /** On a page that opens on the glance, the two reads the glance makes once the summary names the day
@@ -70,7 +71,7 @@ const passengerCopy={
  zh:{transfer:'预计中转旅客',transferBasis:'中转安检口径 · 到达日',today:'今日预计出境旅客',selected:'所选日预计出境旅客',people:'人',basis:'仁川机场官方全天预测',shared:'T1共用（含登机楼）',collected:'采集',partial:'全天预测不完整'},
  ja:{transfer:'予想乗継客',transferBasis:'乗継保安検査基準・到着日',today:'今日の予想出国者数',selected:'選択日の予想出国者数',people:'人',basis:'仁川空港公式の一日予測',shared:'T1共通（搭乗棟含む）',collected:'取得',partial:'一日予測が不完全'},
 } as const;
-export interface GlanceOverviewContext {passengerBaseline?:PassengerReferenceMonth|null;selectedCountryChanges?:Array<{country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number}>;day:string;scope:GlanceScope;flights:number|null;passengers:number|null;transferPassengers:number|null;referenceSum:number|null;flightComparison:{mean:number;delta:number;percent:number}|null;flightBaseline:{mean:number;delta:number;percent:number|null;days:number;start:string;end:string;previous:boolean}|null}
+export interface GlanceOverviewContext {eventFlights?:EventFlightContext;passengerBaseline?:PassengerReferenceMonth|null;selectedCountryChanges?:Array<{country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number}>;day:string;scope:GlanceScope;flights:number|null;passengers:number|null;transferPassengers:number|null;referenceSum:number|null;flightComparison:{mean:number;delta:number;percent:number}|null;flightBaseline:{mean:number;delta:number;percent:number|null;days:number;start:string;end:string;previous:boolean}|null}
 export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange,overviewHeading,overviewExtras,hideRepeatedFlightSummary=false,hideRepeatedPassengerSummary=false,artworkSrcSet,artworkSizes,artworkNote}:{lang:Lang;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void;overviewHeading?:(context:GlanceOverviewContext)=>ReactNode;overviewExtras?:ReactNode;hideRepeatedFlightSummary?:boolean;hideRepeatedPassengerSummary?:boolean;artworkSrcSet?:string;artworkSizes?:string;artworkNote?:string}){
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
@@ -173,6 +174,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   const countryLabel=(country:string)=>{const src=countryFlag(country);return <span className="glance-country-name">{src&&<img src={src} width="18" height="18" alt="" loading="lazy" decoding="async"/>}<span>{countryName(country)}</span></span>;};
  const knownCountries=data?.countries.filter(row=>row.country!==null)??[],unknownCountry=data?.countries.find(row=>row.country===null);
  const countryLimit=knownCountries[5]?.flights??0,leadingCountries=knownCountries.filter((row,index)=>index<6||row.flights===countryLimit);
+ const eventFlights:EventFlightContext={day,scope,status:data?'READY':payload?.truncated?'PARTIAL':settling?'LOADING':'MISSING',countries:data?.countries??[],baseline:previous,baselinePending:monthRequest.pending};
  const countryDays=previous?.includedDays??[];
  const staffCountryChanges=data&&previous&&countryDays.length&&countryDays.every(value=>value<day)?data.countries.flatMap(row=>{
   if(!row.country||row.country==='KR')return [];
@@ -190,7 +192,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   <div className="glance-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{c.title}</h1>{!published&&<small>{c.preview}</small>}</div>
   <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>chooseScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
-  {overviewHeading?.({passengerBaseline:referenceMonth.reply?.data?.[scope==='all'?'all':forecastTerminal]??null,selectedCountryChanges,day,scope,flights:data?.total??null,passengers:forecastPassengers,transferPassengers,referenceSum:referenceSum?.total??null,flightComparison:dailyComparison,flightBaseline})}
+  {overviewHeading?.({eventFlights,passengerBaseline:referenceMonth.reply?.data?.[scope==='all'?'all':forecastTerminal]??null,selectedCountryChanges,day,scope,flights:data?.total??null,passengers:forecastPassengers,transferPassengers,referenceSum:referenceSum?.total??null,flightComparison:dailyComparison,flightBaseline})}
   <section className="glance-insights" aria-label={overviewHeading?undefined:ui.summary} aria-labelledby={overviewHeading?'airport-staff-briefing-title':undefined}>
    {!hideRepeatedPassengerSummary&&<div className="glance-passenger-pair">
    <a className="glance-passengers" href={targets.forecast} data-testid="glance-key-passengers"><span>{todayLabel?pc.today:pc.selected}</span><strong>{forecastPassengers!==null?`${fmt.format(forecastPassengers)}${pc.people}`:forecastCoverage==='PARTIAL'?pc.partial:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.basis} · {pc.collected} {summary===undefined?stampHold:stamp(forecastAt)}</small></a>
@@ -201,7 +203,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
    <a href={targets.wait} data-testid="glance-key-wait"><span>{overviewHeading&&!isToday?'출국장 대기':ic.wait}</span><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:overviewHeading&&!isToday?'오늘 자료에서 확인':pendingText??ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:<>{ic.waitBasis}{liveHold&&hold(` · 00:00 KST · ${ic.tie}`,'')}</>}</small></a>
    <a href={targets.map} data-testid="glance-key-upcoming"><span>{overviewHeading&&!isToday?'출발편 집중 시간':ic.upcoming}</span><strong>{overviewHeading&&!isToday?'오늘 자료에서 확인':upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{dayText} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
    <a href={targets.monthCountries} data-testid="glance-key-growth"><span>{ic.growth}</span><strong>{growth?<>{countryLabel(growth.country)} <CountChange delta={growth.delta} format={fmt.format} lang={lang} unit={ui.perDay}/>{ranking[1]&&sameDailyChange(ranking[1].delta,growth.delta)?` · ${ic.tie}`:''}</>:comparable?ic.noGrowth:pendingText??ic.unavailable}</strong><small>{previousMonthText} → {monthText} · {ui.days} {daysText(previous)} / {daysText(current)} {ui.dayUnit}</small></a>
-   {overviewHeading&&<AirportStaffBriefing lang={lang} day={day} peak={staffDeparturePeak(day,data?.departures??null)} changes={staffCountryChanges} retrievedAt={payload?.retrievedAt??null}/>}
+   {overviewHeading&&<AirportStaffBriefing lang={lang} day={day} peak={staffDeparturePeak(day,data?.departures??null)} changes={staffCountryChanges} flights={eventFlights} retrievedAt={payload?.retrievedAt??null}/>}
    {overviewExtras&&<div className="glance-overview-extras">{overviewExtras}</div>}
   </section>
   {!ready&&!settling&&<p role="status" className="glance-status">{summary===null?c.missing:payload?.truncated?c.partial:c.missing}</p>}

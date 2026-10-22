@@ -34,7 +34,8 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  const basis=briefing.locator('.staff-route-details');
  await expect(basis).not.toHaveAttribute('open','');
  await expect(basis.locator('p').first()).not.toBeVisible();
- await expect(briefing.locator('.staff-route-metric')).not.toContainText('2026-09');
+ await expect(briefing.locator('.event-country-flights')).toContainText('2026-09');
+ await expect(holiday.locator('.event-country-flights')).toHaveAttribute('data-country',await holiday.getAttribute('data-country')??'');
  const dates=await holiday.locator('time').evaluateAll(nodes=>nodes.map(node=>({date:node.getAttribute('datetime'),text:node.textContent})));
  expect(dates.length).toBeGreaterThan(0);expect(dates.length).toBeLessThanOrEqual(2);
  for(const date of dates)expect(date.text).toMatch(/\d{2}\/\d{2}/);
