@@ -27,7 +27,7 @@ test('open state is scoped to its own summary and declared disclosure buttons',(
  for(const t of triggers){assert.equal(t.tag,'button');assert.ok(t.attrs.includes('aria-expanded'));}
 });
 test('mixed data remains regular and actual title labels are separately targeted',()=>{
- for(const file of ['airport-flight-browser.tsx','airport-duty-free-exchange.tsx','airport-departure-preparation.tsx','commercial-composition.tsx','prediction-evidence.tsx','prediction-view.tsx','week-ahead.tsx','airport-route-country-passengers.tsx'])assert.ok(summaries.some(s=>s.file===file&&s.attrs.includes('data-disclosure-mixed')),file);
+ for(const file of ['airport-flight-browser.tsx','airport-duty-free-exchange.tsx','commercial-composition.tsx','prediction-evidence.tsx','prediction-view.tsx','week-ahead.tsx','airport-route-country-passengers.tsx'])assert.ok(summaries.some(s=>s.file===file&&s.attrs.includes('data-disclosure-mixed')),file);
  for(const file of ['airport-flight-browser','airport-gate-pillars','airport-zone-countries','airport-glance-preview','airport-focus-trends','business-compare','duty-free-monthly-trend'])assert.match(read(`app/${file}.tsx`),/data-disclosure-meta/,file);
  assert.match(css.toString(),/summary \[data-disclosure-title\]/);
  assert.match(css.toString(),/summary small/);

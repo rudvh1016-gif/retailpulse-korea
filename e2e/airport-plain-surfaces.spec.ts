@@ -21,8 +21,8 @@ for(const width of [390,1280])test(`white airport ground and restrained action s
  for(const tab of await tabs.all())await expect(tab).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
  await tabs.nth(2).click();await expect(tabs.nth(2)).toHaveAttribute('aria-selected','true');
  await expect(tabs.nth(2)).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(tabs.nth(2)).toHaveCSS('border-bottom-width','1px');
- const guide=page.getByTestId('departure-preparation').locator(':scope > summary');
- await expect(guide).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
+ const news=page.getByTestId('airport-customs-news-entry');
+ await expect(news).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
  await expect(page.locator('.date-nav-shortcuts button[aria-pressed=true]')).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
  await expect(page.getByTestId('date-calendar-trigger')).toHaveCount(0);
  await expectWhiteGround(page.locator('.airport-view .view-intro'));

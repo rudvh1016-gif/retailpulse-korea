@@ -20,7 +20,7 @@ const cases=[
  {name:'T2 scene',path:'/ko/airport?terminal=T2',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:390,height:844,scale:3,file:'/airport-models/approval-v3/T2.svg'},
  {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:390,height:844,scale:3,file:'/airport-models/approval-v3/OVERVIEW_MOBILE.svg'},
  {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:430,height:932,scale:3,file:'/airport-models/approval-v3/OVERVIEW_MOBILE.svg'},
- {name:'guide entry mark',path:'/ko/airport',image:'[data-testid="departure-guide-entry"] img',width:390,height:844,scale:3,file:'/visuals/news/v1/airport-news-128.webp'},
+ {name:'news entry mark',path:'/ko/airport',image:'[data-testid="airport-customs-news-entry"] img',width:390,height:844,scale:3,file:'/visuals/news/v1/paper-news-256.webp'},
  {name:'Seoul flow model',path:'/ko/myeongdong',image:'[data-testid="seoul-flow-models"] img',width:390,height:844,scale:3,file:'/seoul-flow-models/station-1200.webp'},
  {name:'consumption icon',path:'/ko/consumption',image:'.consumption-category>img',width:390,height:844,scale:3,file:'/commercial-icons/sharp-v1/convenience-192.webp'},
  {name:'district card',path:'/ko/where-to',image:'.district-choice-model',width:360,height:800,scale:2,file:'/visuals/seoul-comparison/myeongdong-320.webp'},
