@@ -1,0 +1,30 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createElement as h} from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {AirportFlowFigure} from '../app/airport-flow-figure';
+import {timeBandReference} from '../app/airport-passenger-stats-client';
+import type {AirportStatsMonth} from '../lib/airport-monthly-stats-read';
+const labels={ko:'회색선 기준 보기',en:'Grey-line reference',zh:'查看灰线依据',ja:'灰色線の基準を見る'};
+for(const lang of ['ko','en','zh','ja'] as const)for(const [month,days] of [['2026-09',30],['2028-02',29],['2026-02',28],['2026-12',31]] as const)test(`${lang} ${month}: original reference and source stay inside closed details`,()=>{
+ const stats={month,rows:[{aggregate:false,startHour:0,endHour:1,departures:days*100}]} as AirportStatsMonth;
+ const reference=timeBandReference(stats,lang)!;
+ const html=renderToStaticMarkup(h(AirportFlowFigure,{lang,showModel:false,timeline:[{targetStartAt:'2026-10-21T00:00:00+09:00',targetEndAt:'2026-10-21T01:00:00+09:00',expectedPassengers:120}],reference,peakStartAt:null,nowBandStart:null,nowBandProgress:null,nowLabel:'',numberLocale:lang,label:'Forecast'}));
+ const disclosure=html.match(/<details class="airport-flow-reference-details">[\s\S]*?<\/details>/)?.[0]??'';
+ assert.ok(disclosure);
+ assert.ok(disclosure.includes(`<summary>${labels[lang]}</summary>`));
+ const escapedNote=renderToStaticMarkup(h('span',null,reference.note)).slice(6,-7);
+ assert.ok(disclosure.includes(escapedNote));
+ assert.ok(disclosure.includes(String(days)));
+ assert.match(disclosure,/href="https:\/\/www.data.go.kr\/data\/15095070\/openapi.do"/);
+ assert.doesNotMatch(disclosure.split('>')[0],/\bopen\b/);
+ assert.equal(reference.hours[0].value,100);
+ assert.ok(!html.replace(disclosure,'').includes(escapedNote));
+});
+test('only grey-line disclosure uses compact type; keyboard focus and 44px target remain',()=>{
+ const css=readFileSync('app/airport-visual.css','utf8');
+ assert.match(css,/\.airport-flow \.airport-flow-reference-details > summary\{[^}]*font-size:12px[^}]*min-height:44px/);
+ assert.match(css,/\.airport-flow-reference-details > summary:focus-visible\{outline:2px solid currentColor/);
+ assert.match(css,/\.airport-flow-reference-details \.airport-flow-reference-note\{font-size:12px;line-height:1.6\}/);
+});

@@ -179,3 +179,8 @@
 
 /* Owner-requested secondary monthly-reference explanation size only. */
 .airport-flow .airport-flow-reference-note{font-size:12px}
+
+/* Only the optional grey-line explanation is compact; retain a full touch target. */
+.airport-flow .airport-flow-reference-details > summary{font-size:12px;line-height:1.6;min-height:44px;box-sizing:border-box;padding:12px 0;cursor:pointer}
+.airport-flow .airport-flow-reference-details > summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.airport-flow .airport-flow-reference-details .airport-flow-reference-note{font-size:12px;line-height:1.6}
