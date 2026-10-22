@@ -41,9 +41,13 @@ test('merged details span the summary grid while retaining readable source-note 
 
 test('peak briefing reuses the existing departures and localizes zone counts without a new request',()=>{
  assert.match(glance,/peak=\{staffDeparturePeak\(day,data\?\.departures\?\?null\)\}/);
- assert.match(briefing,/staffDepartureGateLines\(peak,lang\)\.map\(line=><p key=\{line\}>\{line\}<\/p>\)/);
+ assert.ok(briefing.includes('staffDepartureGateLines(peak,lang).map(line=>/^(?:T1|T2|탑승동|Concourse|卫星厅|搭乗棟) /.test(line)?<p className="staff-gate-summary" key={line}><strong><span aria-hidden="true">· </span>{line}</strong></p>:<p key={line}>{line}</p>)'));
  assert.doesNotMatch(briefing,/peak\.leaders|터미널 순위를 확정|이 시간에는/);
  assert.doesNotMatch(read('../lib/airport-staff-peak.ts'),/\bfetch\s*\(|useEffect|useFlights|useLiveSummary/);
  assert.match(briefing,/선택일 전체 예정편·확인된 게이트 기준/);
  assert.match(briefing,/peak\.tiedHours>1/);
+});
+
+test('gate summary emphasis changes only the full-line weight, not body typography',()=>{
+ assert.match(styles,/\.airport-staff-briefing \.staff-gate-summary strong\{font-size:inherit;font-weight:700\}/);
 });
