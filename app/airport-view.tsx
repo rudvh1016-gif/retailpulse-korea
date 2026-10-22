@@ -18,7 +18,7 @@ import { IndustryGuide } from "./industry-guide";
 import { AirportDepartureOverview } from "./airport-departure-overview";
 import { AirportConcourse } from "./airport-concourse";
 import { AirportTaxRefundGuide } from "./airport-tax-refund-guide";
-import { AirportDeparturePreparation } from "./airport-departure-preparation";
+import { AirportNewsEntry } from "./airport-news-entry";
 import { MonthRangePicker } from "./month-range-picker";
 import { localText } from "./local-text";
 
@@ -78,7 +78,7 @@ export function AirportView({
         </div>
       </div>
 
-      {(concourse||section === "now")&&<AirportDeparturePreparation lang={lang}/>}
+      {(concourse||section === "now")&&<AirportNewsEntry lang={lang}/>}
       <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">
         {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? <><span>{localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" })}</span><small>T1·T2</small></> : item}</button>)}
         <button className={concourse?'active':''} onClick={()=>setConcourse(true)} role="tab" aria-selected={concourse}>{localText(lang,{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})}</button>

@@ -95,17 +95,3 @@ test('monthly paired bars transition on district and month; missing values and b
  await expect(page.locator('[data-category="여행"] .consumption-pair g')).toHaveCount(0);await shot(page,'consumption-390');
  await page.goBack();await expect(page).toHaveURL(/consumption/);await settled(page);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
-
-test('departure order is opt-in finite, conditional-plan-safe and stops offscreen',async({page})=>{
- await page.setViewportSize({width:320,height:950});await instrument(page);await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await page.getByTestId('departure-guide-entry').click();await expect(page.getByTestId('departure-preparation')).toHaveAttribute('open','');
- await page.getByTestId('prep-route').getByRole('button',{name:'T1 본관 탑승',exact:true}).click();
- const order=page.getByTestId('departure-order-motion');await order.scrollIntoViewIfNeeded();await expect(order.locator('[data-order-step]')).toHaveCount(4);
- const summary=page.getByTestId('prep-live-summary'),before=await summary.innerText();await order.getByRole('button',{name:'순서 보기'}).focus();await page.keyboard.press('Enter');
- await expect.poll(()=>order.locator('[data-order-link]').first().getAttribute('style')).not.toBeNull();
- await order.getByRole('button',{name:'순서 보기'}).click();await page.waitForTimeout(2600);expect(await summary.innerText()).toBe(before);
- await expect.poll(()=>order.locator('[data-order-link]').evaluateAll(nodes=>nodes.every(n=>!(n as HTMLElement).style.transform))).toBe(true);
- await shot(page,'departure-320');await order.getByRole('button',{name:'순서 보기'}).click();await page.evaluate(()=>scrollTo(0,0));
- await expect.poll(()=>order.locator('[data-order-link]').evaluateAll(nodes=>nodes.every(n=>!(n as HTMLElement).style.transform))).toBe(true);
- await page.emulateMedia({reducedMotion:'reduce'});await order.getByRole('button',{name:'순서 보기'}).click();expect(await order.locator('[data-order-link]').evaluateAll(nodes=>nodes.every(n=>!(n as HTMLElement).style.transform))).toBe(true);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-});

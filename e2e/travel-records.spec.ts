@@ -26,7 +26,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,390,430
 }
 test('news entry remains keyboard-usable and hidden travel records stay accessible by direct URL',async({page})=>{
  await add(page,'Synthetic preserved hidden-entry QA');
- await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const guide=page.getByTestId('departure-preparation');await guide.locator(':scope > summary').click();const link=page.getByTestId('airport-customs-news-entry');await expect(link).toHaveAttribute('href','/ko/airport-news');await link.focus();await page.keyboard.press('Enter');await expect(page.getByTestId('airport-customs-news')).toBeVisible();await expect(page.locator('a[href*="/travel-records"]')).toHaveCount(0);
+ await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const link=page.getByTestId('airport-customs-news-entry');await expect(link).toHaveAttribute('href','/ko/airport-news');await link.focus();await page.keyboard.press('Enter');await expect(page.getByTestId('airport-customs-news')).toBeVisible();await expect(page.locator('a[href*="/travel-records"]')).toHaveCount(0);
  await page.goto('/ko/travel-records');await expect(page.getByTestId('travel-card')).toHaveCount(1);await expect(page.getByTestId('travel-card')).toContainText('Synthetic preserved hidden-entry QA');expect(await recordCount(page)).toBe(1);
 });
 test('add, reopen, edit, reload and locale change keep the same device record',async({page})=>{
