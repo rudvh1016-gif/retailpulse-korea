@@ -14,3 +14,5 @@
 /* Country/event is the title; dates and institution limits remain body text. */
 .airport-staff-briefing .staff-holiday-event h4{font-size:13px;line-height:1.7;font-weight:700;color:var(--ink);margin:0 0 4px;overflow-wrap:anywhere}
 .airport-staff-briefing .staff-holiday-event p,.airport-staff-briefing .staff-holiday-scope{font-weight:400}
+
+.airport-staff-briefing .staff-gate-summary strong{font-size:inherit;font-weight:700}

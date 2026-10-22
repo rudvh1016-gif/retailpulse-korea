@@ -28,9 +28,9 @@ test('Japan and Korean summer breaks retain exact dates and applicability in opt
  assert.match(trendCalendarText(korea),/2026-08\(직전 월\).*초등학교 방학기간 참고.*개별 학교 예시.*한국 출발지 참고/);
  const visible=html().split('<details')[0];
  for(const text of ['한국 일정은 출발지 기준','증감 원인 단정 불가'])assert.ok(visible.includes(text),text);
- for(const text of ['일본 여름방학','한국 여름방학','일본 공휴일','한국 공휴일']){assert.ok(!visible.includes(text),text);assert.ok(html().split('<details')[1].includes(text),text);}
+ for(const text of ['일본 · <b>여름방학</b>','<b>추석 연휴</b>'])assert.ok(visible.includes(text),text);
  assert.match(html(),/<details class="focus-source" data-testid="monthly-calendar-reference"><summary style="min-height:44px/);
- assert.ok(html().includes('비교 시기 참고 일정 · 공식 근거'));
+ assert.ok(html().includes('일정 근거'));
 });
 
 test('Korean public holidays accompany each supported destination with selected and adjacent month labels',()=>{
@@ -116,11 +116,11 @@ test('annual KR reviews are withheld from frozen previews and never extrapolate 
 test('source details retain official URLs and dates without repeating full visible event summaries',()=>{
  const rendered=html(),result=countryTrendCalendar(events,query);
  for(const item of result.summary){
-  assert.equal(rendered.split(trendCalendarText(item,{compact:true})).length-1,1);
+  assert.equal(rendered.split(`<b>${item.title.split(' ').slice(1).join(' ').replace(/^공휴일 · /,'')}</b>`).length>1,true);
   assert.ok(rendered.includes(item.sourceURL));
   assert.ok(rendered.includes(`확인일 ${item.verifiedAt}`));
  }
- assert.match(rendered,/비교 시기 참고 일정 · 공식 근거/);
+ assert.match(rendered,/일정 근거/);
  assert.ok(rendered.includes('신주쿠 구립학교 여름방학'));
 });
 
@@ -139,7 +139,7 @@ test('Chuseok shows the complete reviewed range without inventing missing or sub
  const result=countryTrendCalendar(events,query);
  const chuseok=result.summary.find(item=>item.country==='KR'&&item.name==='추석 연휴')!;
  assert.deepEqual([chuseok.start,chuseok.end],['2026-09-24','2026-09-26']);
- assert.match(html().split('<details')[1],/추석 연휴 2026-09-24–2026-09-26/);
+ assert.match(html().split('<details')[0],/추석 연휴<\/b> 2026-09-24–2026-09-26/);
  assert.doesNotMatch(html(),/내리숲초등학교|경기 화성/);
  assert.match(html(),/초등학교 방학기간 참고 · 개별 학교 예시/);
  const incomplete=countryTrendCalendar(events.filter(item=>item.start!=='2026-09-25'),query);
@@ -160,8 +160,51 @@ test('Chuseok grouping preserves input evidence and rejects mismatched reviews',
  }
 });
 
-for(const [lang,label] of Object.entries({ko:"비교 시기 참고 일정 · 공식 근거",en:"Comparison-period calendar · official sources",zh:"比较期间日程 · 官方依据",ja:"比較期間の日程・公式根拠"}))test(`${lang}: optional calendar control is localized`,()=>{assert.ok(html({lang:lang as "ko"|"en"|"zh"|"ja"}).includes(`>${label}</summary>`));});
+for(const [lang,label] of Object.entries({ko:"일정 근거",en:"Comparison-period calendar · official sources",zh:"比较期间日程 · 官方依据",ja:"比較期間の日程・公式根拠"}))test(`${lang}: optional calendar control is localized`,()=>{assert.ok(html({lang:lang as "ko"|"en"|"zh"|"ja"}).includes(`>${label}</summary>`));});
 
 test("production and preview pass the selected language to the calendar control",()=>{
  for(const file of ["app/airport-focus-production.tsx","app/airport-focus-preview.tsx"]){const source=readFileSync(file,"utf8");for(const call of source.match(/<CountryTrends\b[^>]*>/g)??[])assert.match(call,/lang=\{lang\}/,file);}
+});
+
+test('compact US rows show at most three events and keep all evidence in one closed list',()=>{
+ const rendered=html({row:{...row,code:'US'}});
+ const [visible,evidence]=rendered.split('<details');
+ assert.equal((rendered.match(/<details/g)??[]).length,1);
+ assert.doesNotMatch(rendered,/<details[^>]*\bopen(?:[=> ]|$)/);
+ assert.match(visible,/🇺🇸.*미국 · <b>노동절<\/b> 2026-09-07 · 연방공무원/);
+ assert.match(visible,/🇰🇷.*한국 · <b>추석 연휴<\/b> 2026-09-24–2026-09-26/);
+ assert.match(visible,/<b>여름방학<\/b> 2026-07-28–2026-08-19 · 학교별 상이 · 예시 · 직전 월/);
+ assert.doesNotMatch(rendered,/2026-09-07–2026-09-07/);
+ for(const name of ['노동절','추석 연휴'])assert.equal(visible.split(name).length-1,1,name);
+ assert.doesNotMatch(visible,/광복절|<sup>/);
+ assert.match(evidence,/광복절 대체공휴일<\/b> 2026-08-17 · 직전 월/);
+ assert.doesNotMatch(visible,/공식 원문|확인일|해당 기관·대상에만 적용|내리숲초등학교/);
+ assert.match(evidence,/<ul>/);
+ assert.match(evidence,/연방공무원 대상 · 해당 기관·대상에만 적용/);
+ assert.match(evidence,/한국 일정은 한국인 여객 통계가 아닙니다/);
+ assert.equal((visible.match(/<b>/g)??[]).length,3);
+ for(const country of ['JP','CN','VN','US','FR']){const compact=html({row:{...row,code:country}}).split('<details')[0];assert.ok((compact.match(/<b>/g)??[]).length<=3,country);}
+ const result=countryTrendCalendar(events,{...query,country:'US'});
+ assert.equal((evidence.match(/<li>/g)??[]).length,result.details.length);
+ for(const item of result.details){assert.ok(evidence.includes(item.sourceURL));assert.ok(evidence.includes(item.verifiedAt));}
+});
+
+test('identical evidence is deduplicated but distinct regional/institutional schedules are retained',()=>{
+ const event=events.find(item=>item.country==='JP'&&item.kind==='school_break')!;
+ const result=countryTrendCalendar([event,{...event,id:'duplicate-evidence'}],query,[]);
+ assert.equal(result.details.length,1);
+ for(const variant of [{region:'別の自治体'},{scope:'institutional'},{name:'別の学校の夏休み'},{sourceURL:'https://example.org/different-reviewed-source'}]){
+  const distinct=countryTrendCalendar([event,{...event,...variant,id:'distinct-evidence'} as CalendarEvent],query,[]);
+  assert.equal(distinct.details.length,2,JSON.stringify(variant));
+ }
+});
+
+test('compact institutional labels retain their full reviewed scope only in evidence',()=>{
+ const federal=events.find(item=>item.country==='US'&&item.start==='2026-09-07')!;
+ for(const [region,compact] of [['미국 연방공무원(관측 휴일)','연방공무원'],['방콕 금융기관 대상','금융기관'],['특정 지역 대상','특정 지역 대상']]){
+  const [visible,evidence]=html({row:{...row,code:'US'},events:[{...federal,region}]}).split('<details');
+  assert.ok(visible.includes(` · ${compact}`));
+  assert.ok(evidence.includes(`${region} · 해당 기관·대상에만 적용`));
+  if(region!==compact)assert.ok(!visible.includes(region));
+ }
 });

@@ -20,7 +20,15 @@ export function trendCalendarText(item:TrendCalendarItem,options:{compact?:boole
  * month, next year's dates, passenger nationality, or a cause of a change. */
 export function countryTrendCalendar(events:readonly CalendarEvent[],query:Omit<CalendarQuery,'includeOriginContext'|'includePreviousMonth'>,schools:readonly CalendarEvent[]=reviewedSchools.events as CalendarEvent[]){
  const schoolExamples=schools.filter(event=>event.country==='KR'&&event.kind==='school_break'&&event.scope!=='national');
- const sourceEvents=[...events,...schoolExamples];
+ // Deduplicate identical evidence, not merely matching dates: regional and
+ // institutional schedules with distinct applicability must remain separate.
+ const seen=new Set<string>();
+ const sourceEvents=[...events,...schoolExamples].filter(event=>{
+  const key=JSON.stringify([event.country,event.kind,event.name,event.scope,event.region,event.start,event.end,event.sourceURL,event.verifiedAt,event.status,event.reviewValidUntil]);
+  if(seen.has(key))return false;
+  seen.add(key);
+  return true;
+ });
  const matched=matchCalendarContext(sourceEvents,{...query,includeOriginContext:true,includePreviousMonth:true}).details;
  const details:TrendCalendarItem[]=[];
  for(const item of matched){
