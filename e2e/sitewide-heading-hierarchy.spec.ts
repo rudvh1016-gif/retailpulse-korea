@@ -79,14 +79,9 @@ async function verifyEnlargedPageTitle(page:Page){
   (node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important');
  });
  await expect(title).toHaveText(text);
+ // Short localized titles may still fit at 200%; normal wrapping must be allowed,
+ // not forced. The full title, accessibility, zero prefix and overflow checks apply.
  await verifyHeadings(page);
- const lines=await title.evaluate(node=>{
-  const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT,{acceptNode:child=>child.textContent?.trim()&&!child.parentElement?.closest('[aria-hidden="true"]')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
-  const lines=new Set<number>();let textNode;
-  while((textNode=walker.nextNode())){const range=document.createRange();range.selectNodeContents(textNode);for(const rect of Array.from(range.getClientRects()))lines.add(Math.round(rect.y));}
-  return lines.size;
- });
- expect(lines,'200% topmost title wraps rather than clipping or reserving a prefix').toBeGreaterThan(1);
 }
 
 const routes=['','airport','airport-countries','airport-prepare','more','where-to','consumption','tourism-desk','travel-records','about'];
