@@ -246,7 +246,8 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       // Airport pills no longer share a rectangle; other screens keep their lock.
       await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width', route === '/airport' ? '0px' : '1px');
       if (route === '/airport') await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('gap', '6px');
-      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(route === '/airport' ? 46 : 48);
+      if (route === '/airport') expect((await control.boundingBox())!.height).toBeLessThan(52);
     }
     if (!route || route === '/airport' || route === '/hongdae') {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));

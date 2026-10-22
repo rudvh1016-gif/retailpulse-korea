@@ -73,6 +73,8 @@ details.guide > summary.entry,.tripEntry {height:auto;min-height:64px;grid-templ
 @media(max-width:600px){
  details.guide > summary.entry,.tripEntry {grid-template-columns:minmax(0,1fr) 40px;gap:6px;padding:6px 8px}
  .tripEntry img,.newsMark {width:40px;height:40px}
+ /* Reserve three English label lines equally without fixing height or clipping enlarged text. */
+ .launcher:lang(en) details.guide > summary.entry,.launcher:lang(en) .tripEntry {min-height:72px}
 }
 :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]) {min-height:46px;padding:4px 10px;gap:1px}
 

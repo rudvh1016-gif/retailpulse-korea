@@ -94,9 +94,12 @@ for(const lang of ['en','zh','ja'])test(`localized heading wrapping /${lang} at 
 });
 
 
-for(const width of [320,390,430,1440])test(`complete Korean trend title and its own link row at ${width}px`,async({page})=>{
+for(const width of [320,390,430,1440])test(`complete Korean trend title and its own link row at ${width}px`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:1000});await fixtures(page);
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ // Activate the existing viewport-lazy component before waiting for its loaded link.
+ await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
  const section=page.locator('.focus-trends:not([aria-busy])'),title=section.locator('.focus-trend-question'),link=section.locator('.focus-trend-more');
  await expect(link).toBeVisible();await page.evaluate(()=>document.fonts.ready);
  await expect(title).toHaveText('한 달의 변화일까, 이어지는 흐름일까');
@@ -109,12 +112,14 @@ for(const width of [320,390,430,1440])test(`complete Korean trend title and its 
  });
  const normal=await metrics();expect(normal.lines).toBe(1);expect(normal.overflow).toBeLessThanOrEqual(1);expect(normal.clipped).toBe(false);expect(normal.whiteSpace).toBe('normal');
  const linkBox=(await link.boundingBox())!;expect(linkBox.y).toBeGreaterThanOrEqual(normal.bottom);expect(linkBox.height).toBeGreaterThanOrEqual(44);
+ await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}.png`)});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  if(width<=430){
   // Emulate 200% text-only enlargement; safe wrapping takes priority over one line.
   await title.evaluate((node,size)=>(node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important'),normal.size);
   const enlarged=await metrics();expect(enlarged.size).toBe(normal.size*2);expect(enlarged.lines).toBeGreaterThan(1);expect(enlarged.overflow).toBeLessThanOrEqual(1);expect(enlarged.clipped).toBe(false);
   expect((await link.boundingBox())!.y).toBeGreaterThanOrEqual(enlarged.bottom);
+  await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}-200-percent.png`)});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  }
 });
