@@ -10,8 +10,16 @@ const priorityCountries=['일본','중국','베트남','미국','대만','태국
 async function expectPriorityCountryTables(page:Page){
  const cards=page.locator('#focus-country-trends .focus-trend-grid > article');
  await expect(cards.locator('.focus-trend-top h3')).toHaveText(priorityCountries);
- await expect(cards.locator(':scope > .focus-month-values > caption')).toHaveText(priorityCountries.map(name=>`${name} 월별 출발 여객과 전월비`));
- for(const card of await cards.all())await expect(card.locator(':scope > .focus-month-values')).toHaveCount(1);
+ await expect(cards.locator(':scope > .focus-month-table-details > .focus-month-values > caption')).toHaveText(priorityCountries.map(name=>`${name} 월별 출발 여객과 전월비`));
+ for(const card of await cards.all()){
+  const disclosure=card.locator(':scope > .focus-month-table-details');
+  const table=disclosure.locator(':scope > .focus-month-values');
+  await expect(disclosure).toHaveCount(1);await expect(table).toHaveCount(1);
+  await expect(disclosure).not.toHaveAttribute('open');await expect(table).not.toBeVisible();
+  await disclosure.locator(':scope > summary').click();
+  await expect(disclosure).toHaveAttribute('open','');await expect(table).toBeVisible();
+  await expect(table.locator('tbody tr').first().locator('td').first()).toContainText(/[0-9]/);
+ }
 }
 
 // The captured payload is a selected past day. Undated requests receive clock

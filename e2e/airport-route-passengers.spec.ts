@@ -29,7 +29,10 @@ for(const [lang,japan,heading] of [['ko','일본','노선 국가별 출발 여�
   await expect(block).toContainText('Synthetic Country Z');
   await expect(block.locator('tbody th',{hasText:/^(미국|United States)$/})).toHaveCount(0);
   await expect(block.locator('table').first().locator('tbody tr')).toHaveCount(8);
-  await block.locator('details > summary').click();
+  const remaining=block.locator(':scope > details:not(.concise-explainer)');
+  await expect(remaining).toHaveCount(1);
+  await remaining.locator(':scope > summary').click();
+  await expect(remaining.locator('table')).toBeVisible();
   await expect(block.locator('table').nth(1).locator('tbody tr')).toHaveCount(4);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  });
