@@ -48,3 +48,7 @@
 .duty-free-rate-sources[open] .duty-free-trigger-closed{display:none}
 .duty-free-rate-sources[open]>summary::after{transform:rotate(225deg)}
 @media(max-width:820px){.airport-duty-free-exchange .duty-free-rate-detail{max-height:calc(100dvh - 150px - var(--safe-area-top,0px) - var(--safe-area-bottom,0px));padding-bottom:16px}}
+
+.duty-free-archive>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;touch-action:manipulation}
+.duty-free-archive>summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.duty-free-archive a{display:inline-flex;align-items:center;min-height:44px;touch-action:manipulation;overflow-wrap:anywhere;max-width:100%}

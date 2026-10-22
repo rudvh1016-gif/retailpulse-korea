@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SqliteD1 } from './helpers/operational-sqlite.mjs';
+import { measureSource } from '../lib/operational-evidence.ts';
+import { verifyAirportRecoveryToday } from '../lib/airport-recovery-verification.ts';
 import { OperationalMemory } from '../lib/operational-memory.ts';
 import { runSelectedProductionSources } from '../lib/production-runner.ts';
 import { executeAirportMidnightDirect } from '../lib/airport-midnight-direct-recovery.ts';
@@ -172,3 +174,46 @@ for (const mode of ['public-false', 'public-unknown', 'verification-throw', 'fin
     assert.equal(calls.provider, 1);
   });
 }
+
+// Real production verification wiring, not a stubbed boolean success.
+for (const mode of ['matching','wrong-date','wrong-count','stale-public','partial-scan','stale-health','invalid-row','public-error','capped','health-error','partial-terminal','scope-mismatch']) {
+  test(`A1 real verifier and collector: ${mode}`, async t => {
+    const { db, deps, calls } = scenario(t);
+    let publicRequests = 0;
+    deps.verifyToday = async (day, now) => {
+      if (mode === 'partial-scan') db.raw.prepare("UPDATE collector_runs SET detail='partial' WHERE source_id=?").run(SOURCE);
+      if (mode === 'stale-health') db.raw.prepare("UPDATE source_health SET last_retrieved_at='2026-10-09T00:00:00Z' WHERE source_id=?").run(SOURCE);
+      if (mode === 'health-error') db.raw.prepare("UPDATE source_health SET status='ERROR' WHERE source_id=?").run(SOURCE);
+      if (mode === 'partial-terminal') db.raw.prepare("UPDATE airport_flights SET terminal=NULL, gate=NULL, quality_status='PARTIAL'").run();
+      if (mode === 'capped') {
+        const row = db.raw.prepare('SELECT * FROM airport_flights LIMIT 1').get();
+        const keys = Object.keys(row);
+        const insert = db.raw.prepare(`INSERT INTO airport_flights (${keys.join(',')}) VALUES (${keys.map(()=>'?').join(',')})`);
+        for(let i=1;i<2000;i++) insert.run(...keys.map(key=>key==='id'||key==='physical_flight_id'||key==='flight_number' ? `${row[key]}-${i}` : row[key]));
+      }
+      if (mode === 'invalid-row') db.raw.prepare("UPDATE airport_flights SET quality_status='INVALID'").run();
+      return verifyAirportRecoveryToday(db, day, now, async url => {
+        publicRequests++;
+        assert.equal(url, 'https://koretaildata.com/api/live/summary');
+        if (mode === 'public-error') return new Response('', {status:503});
+        return Response.json({ mode:'live-summary', serviceDateKst:mode === 'wrong-date' ? '2026-10-10' : DAY,
+          airport: {departuresTrackedToday: mode === 'wrong-count' ? 2 : 1,
+            departuresTrackedTodayByTerminal:mode==='partial-terminal'?{}:{T1:1},
+            departuresTrackedTodayRetrievedAt:mode === 'stale-public' ? '2026-10-09T00:00:00Z' : NOW,
+            flightScope:{total:1,T1:mode==='partial-terminal'?0:1,T2:mode==='scope-mismatch'?1:0,CONCOURSE:0,other:0,unassigned:mode==='partial-terminal'?1:0,conflicting:0,capped:false}} });
+      });
+    };
+    const result = await executeAirportMidnightDirect(deps);
+    assert.equal(result.state, ['matching','partial-terminal'].includes(mode) ? 'RECOVERED' : mode === 'public-error'
+      ? 'HUMAN_REVIEW_READ_OR_WRITE_UNAVAILABLE' : 'HUMAN_REVIEW_RECOVERY_UNVERIFIED');
+    assert.equal(publicRequests, ['partial-scan','stale-health','invalid-row','capped','health-error'].includes(mode) ? 0 : 1);
+    assert.equal(calls.provider,1);
+  });
+}
+
+test('ordinary A1 measurement remains a bounded presence probe, not a 2000-row health-poll multiplier', async t => {
+  const {db} = scenario(t);
+  await measureSource(db,SOURCE,NOW);
+  assert.ok(db.calls.some(sql=>sql.includes('physical_flight_id')&&sql.includes('LIMIT 1')));
+  assert.ok(!db.calls.some(sql=>sql.includes('LIMIT 2000')));
+});

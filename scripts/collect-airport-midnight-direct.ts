@@ -1,10 +1,10 @@
 /** Runs only inside the reviewed A1 reusable child, after its concurrency wait. */
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
-import { airportMidnightRecoveryActivation, A1_SOURCE } from '../lib/airport-midnight-recovery';
+import { airportMidnightRecoveryActivation } from '../lib/airport-midnight-recovery';
 import { airportDirectContext, executeAirportMidnightDirect } from '../lib/airport-midnight-direct-recovery';
 import { runSelectedProductionSources } from '../lib/production-runner';
 import { collectAirportComposition } from '../lib/airport-composition-history';
-import { measureSource, readPublicEvidence, verifyPublicMeasurement } from '../lib/operational-evidence';
+import { verifyAirportRecoveryToday } from '../lib/airport-recovery-verification';
 import { resolveProductionDatabaseConfig } from './production-database';
 import { airportMidnightReaders } from './airport-midnight-recovery';
 import { failureText } from '../lib/airport-midnight-direct-recovery';
@@ -37,11 +37,9 @@ if (!gate.allowed) {
         return source;
       },
       verifyToday: async (targetDate, verifiedAt) => {
-        const measured = await measureSource(database, A1_SOURCE, verifiedAt);
         if (targetDate !== airportDirectContext(process.env, verifiedAt)?.targetDate)
           return { dataValid: false, storageValid: false, publicValid: null };
-        verifyPublicMeasurement(measured, await readPublicEvidence(verifiedAt));
-        return { dataValid: measured.dataValid, storageValid: measured.storageValid, publicValid: measured.publicValid };
+        return verifyAirportRecoveryToday(database, targetDate, verifiedAt);
       },
     });
     console.log(JSON.stringify({ airportMidnightRecovery: result }));

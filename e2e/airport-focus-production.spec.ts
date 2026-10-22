@@ -18,7 +18,12 @@ async function expectPriorityCountryTables(page:Page){
   await expect(disclosure).not.toHaveAttribute('open');await expect(table).not.toBeVisible();
   await disclosure.locator(':scope > summary').click();
   await expect(disclosure).toHaveAttribute('open','');await expect(table).toBeVisible();
-  await expect(table.locator('tbody tr').first().locator('td').first()).toContainText(/[0-9]/);
+  const name=await card.locator('.focus-trend-top h3').innerText();
+  const current=passengerStats.current.ROUTE_COUNTRY_PASSENGERS.rows.find(row=>row.label===name&&!row.aggregate);
+  expect(current?.departures).not.toBeNull();expect(current).toBeDefined();
+  const latest=table.locator('tbody tr').last();
+  await expect(latest.locator('th')).toHaveText(passengerStats.month);
+  await expect(latest.locator('td').first()).toHaveText(`${new Intl.NumberFormat('ko-KR').format(current!.departures!)}명`);
  }
 }
 
