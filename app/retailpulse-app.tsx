@@ -2,6 +2,7 @@
 import './airport-history-polish.css';
 import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
+import {ConciseExplainer} from './concise-explainer';
 import {ChangeRate} from './change-rate';
 import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
@@ -207,19 +208,20 @@ const copy = {
  * is worth looking at. Every metric on the insights screen carries one, which
  * is what stops a bare "86" from being the whole story.
  */
-function MetricExplainer({ lang, what, high, source, why }: { lang: Lang; what: string; high: string; source: string; why: string }) {
+function MetricExplainer({ lang, summary, what, high, source, why }: { lang: Lang; summary?: string; what: string; high: string; source: string; why: string }) {
   const labels = {
     what: localText(lang, { ko: "무엇인가요", en: "What it is", zh: "这是什么", ja: "これは何か" }),
     high: localText(lang, { ko: "높으면", en: "When it is high", zh: "数值高时", ja: "高いとき" }),
     source: localText(lang, { ko: "출처", en: "Source", zh: "来源", ja: "出典" }),
     why: localText(lang, { ko: "왜 보나요", en: "Why look at it", zh: "为何要看", ja: "なぜ見るのか" }),
   };
-  return <dl className="metric-explainer">
+  const explanation = <dl className="metric-explainer">
     <div><dt>{labels.what}</dt><dd>{what}</dd></div>
     <div><dt>{labels.high}</dt><dd>{high}</dd></div>
     <div><dt>{labels.source}</dt><dd>{source}</dd></div>
     <div><dt>{labels.why}</dt><dd>{why}</dd></div>
   </dl>;
+  return summary ? <ConciseExplainer summary={summary}>{explanation}</ConciseExplainer> : explanation;
 }
 
 type SignupSegment = "visitor" | "airport" | "store" | "research";
@@ -263,7 +265,7 @@ function BetaSignup({ lang }: { lang: Lang }) {
   return <section className="beta-signup" aria-labelledby="beta-signup-title">
     <div className="beta-signup-copy">
       <p className="eyebrow">PUBLIC BETA</p>
-      <h2 id="beta-signup-title">{localText(lang, { ko: "공개 베타 소식 받기", en: "GET PUBLIC BETA UPDATES", zh: "接收公开测试更新", ja: "公開ベータの更新を受け取る" })}</h2>
+      <h2 data-heading="section" id="beta-signup-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "공개 베타 소식 받기", en: "GET PUBLIC BETA UPDATES", zh: "接收公开测试更新", ja: "公開ベータの更新を受け取る" })}</h2>
       <p>{localText(lang, {
         ko: "공개 베타와 중요한 데이터 업데이트만 이메일로 안내합니다.",
         en: "Get public-beta and material data updates by email.",
@@ -574,7 +576,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <>
             <section className="hero demand-hero" aria-labelledby="hero-title">
               <div className="hero-copy">
-                <h1 id="hero-title">{homeVisible ? localText(lang, {ko:"서울과 공항의 흐름",en:"Seoul & airport, at a glance",zh:"首尔与机场的流动",ja:"ソウルと空港の流れ"}) : areaHeadline[lang](areaLocalName(selected, lang))}</h1>
+                <h1 data-heading="page" id="hero-title"><span className="heading-marker" aria-hidden="true"/>{homeVisible ? localText(lang, {ko:"서울과 공항의 흐름",en:"Seoul & airport, at a glance",zh:"首尔与机场的流动",ja:"ソウルと空港の流れ"}) : areaHeadline[lang](areaLocalName(selected, lang))}</h1>
                 <p className="hero-line">{localText(lang,{ko:"서울 4개 상권과 인천공항, 지금과 앞으로의 흐름",en:"Four Seoul districts and Incheon Airport. Now and next.",zh:"首尔4个商圈与仁川机场，当前与未来趋势",ja:"ソウル4商圏と仁川空港、現在とこれからの流れ"})}</p>
                 <TodayAnswerLines lines={[areaAnswerText(todayAnswer, lang, homeVisible ? undefined : selected as TodayAnswerArea)]} />
               </div>
@@ -688,7 +690,7 @@ function BusinessView({
       <div className="view-intro">
         <div>
           <p className="eyebrow">KORETAIL FOR BUSINESS</p>
-          <h1>{localText(lang, { ko: "지금 무엇을\n준비하면 좋을까요?", en: "What should you\nprepare right now?", zh: "现在应该\n准备什么？", ja: "いま何を\n準備すればいい？" })}</h1>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "지금 무엇을\n준비하면 좋을까요?", en: "What should you\nprepare right now?", zh: "现在应该\n准备什么？", ja: "いま何を\n準備すればいい？" })}</h1>
           <p>{localText(lang, {
             ko: "인천공항 흐름과 업종별 점검 목록을 확인합니다. 서울 지역 참고자료도 함께 제공합니다. 일반 운영 안내이며 매출이나 방문객 수를 예측하지 않습니다.",
             en: "Review Incheon Airport flows and industry checklists, with additional Seoul-area reference data. General operating guidance, not a sales or visitor forecast.",
@@ -782,10 +784,11 @@ function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; sele
   return <section className="business-history">
     <div className="area-tabs" role="tablist">{(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={selected === id ? "active" : ""} onClick={() => setSelected(id)} role="tab" aria-selected={selected === id}>{areaLocalName(id, lang)}</button>)}</div>
     <div className="section-head">
-      <div><p className="eyebrow">OFFICIAL HISTORICAL · SEOUL SHORT-STAY FOREIGN POPULATION</p><h2>{localText(lang, { ko: `${area.ko} 외국인 생활인구 흐름`, en: `${area.en} foreign population history`, zh: `${area.zh}外国人生活人口趋势`, ja: `${area.ja}の外国人生活人口推移` })}</h2></div>
+      <div><p className="eyebrow">OFFICIAL HISTORICAL · SEOUL SHORT-STAY FOREIGN POPULATION</p><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: `${area.ko} 외국인 생활인구 흐름`, en: `${area.en} foreign population history`, zh: `${area.zh}外国人生活人口趋势`, ja: `${area.ja}の外国人生活人口推移` })}</h2></div>
       <span className="official-label">OFFICIAL HISTORICAL</span>
     </div>
     <MetricExplainer
+      summary={localText(lang, { ko: "월별 단기체류 외국인 · 시간당 평균 · 방문·매출 아님", en: "Monthly short-stay foreign presence · hourly mean, not visits or sales", zh: "月度短期停留外国人 · 每小时平均，非访问量或销售额", ja: "月別の短期滞在外国人・時間平均（訪問数・売上ではありません）" })}
       lang={lang}
       what={localText(lang, { ko: "서울시가 집계한 월별·시간당 평균 단기체류 외국인 수입니다.", en: "Seoul's monthly average hourly count of short-stay foreign residents.", zh: "首尔市统计的月度每小时平均短期停留外国人数。", ja: "ソウル市が集計した月別・時間当たり平均の短期滞在外国人数です。" })}
       high={localText(lang, { ko: "그 지역에 머무는 외국인이 평소보다 많았다는 뜻입니다.", en: "More foreign visitors were present in that area than usual.", zh: "表示该地区停留的外国人多于平常。", ja: "その地域に滞在した外国人が普段より多かったことを意味します。" })}
@@ -869,7 +872,7 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
       <div className="view-intro">
         <div>
           <p className="eyebrow">OFFICIAL RECORDS</p>
-          <h1>{recordText('title', lang)}</h1>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{recordText('title', lang)}</h1>
           <p>{recordText('intro', lang)}</p>
         </div>
       </div>
@@ -880,7 +883,7 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
       <details className="records-reference records-details"><summary>{recordText('reference', lang)}</summary>
       <section className="insight-block" aria-labelledby="insight-terminal-title">
         <div className="section-head">
-          <div><p className="eyebrow">02 · T1 VS T2 · OFFICIAL HISTORICAL</p><h2 id="insight-terminal-title">{localText(lang, { ko: "터미널별 출국객 비중", en: "Departure share by terminal", zh: "各航站楼出境占比", ja: "ターミナル別の出国者比率" })}</h2></div>
+          <div><p className="eyebrow">02 · T1 VS T2 · OFFICIAL HISTORICAL</p><h2 data-heading="section" id="insight-terminal-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "터미널별 출국객 비중", en: "Departure share by terminal", zh: "各航站楼出境占比", ja: "ターミナル別の出国者比率" })}</h2></div>
           <span className="official-label">OFFICIAL HISTORICAL</span>
         </div>
         <MetricExplainer
@@ -903,7 +906,7 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
 
       <section className="insight-block" aria-labelledby="insight-foreign-title">
         <div className="section-head">
-          <div><p className="eyebrow">03 · AREA · OFFICIAL HISTORICAL</p><h2 id="insight-foreign-title">{localText(lang, { ko: "지역 외국인 생활인구", en: "Foreign living population by area", zh: "各地区外国人生活人口", ja: "エリア別の外国人生活人口" })}</h2></div>
+          <div><p className="eyebrow">03 · AREA · OFFICIAL HISTORICAL</p><h2 data-heading="section" id="insight-foreign-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "지역 외국인 생활인구", en: "Foreign living population by area", zh: "各地区外国人生活人口", ja: "エリア別の外国人生活人口" })}</h2></div>
           <span className="official-label">OFFICIAL HISTORICAL</span>
         </div>
         <div className="area-tabs" role="tablist">
@@ -921,7 +924,7 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
 
       <section className="insight-block" aria-labelledby="insight-accuracy-title">
         <div className="section-head">
-          <div><p className="eyebrow">04 · TRACK RECORD</p><h2 id="insight-accuracy-title">{localText(lang, { ko: "예측 성적표는 아직 없습니다", en: "There is no accuracy record yet", zh: "目前还没有预测成绩", ja: "予測の成績はまだありません" })}</h2></div>
+          <div><p className="eyebrow">04 · TRACK RECORD</p><h2 data-heading="section" id="insight-accuracy-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "예측 성적표는 아직 없습니다", en: "There is no accuracy record yet", zh: "目前还没有预测成绩", ja: "予測の成績はまだありません" })}</h2></div>
         </div>
         <p className="section-intro">{localText(lang, {
           ko: "서울 지역 상세의 앞으로 시간대는 서울시 공식 예상입니다. 별도의 예측 메뉴는 서울 한눈에로 바뀌었으며, 기존 예상·관측·계산 기록은 그대로 보존합니다. 정확도 성적은 주장하지 않습니다.",
@@ -1033,7 +1036,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       <div className="view-intro">
         <div>
           <p className="eyebrow">ABOUT KORETAIL</p>
-          <h1>{localText(lang, { ko: "공식 데이터만,\n있는 그대로", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "공식 데이터만,\n있는 그대로", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
           <p>{localText(lang, { ko: "인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.", en: "KORETAIL combines Korea and Retail, focusing on Incheon Airport flights, passenger trends and travel preparation, with source dates and references.", zh: "KORETAIL 由 Korea 与 Retail 组合而成，以仁川机场航班、旅客趋势与出行准备为中心，并标明资料日期和来源。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。仁川空港のフライト・旅客動向・旅行準備を中心に、資料の日付と出典を案内します。" })}</p>
         </div>
       </div>
@@ -1041,7 +1044,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       <div className="about-sections">
         {sections.map((section) => <section key={section.eyebrow} className="about-section">
           <p className="eyebrow">{section.eyebrow}</p>
-          <h2>{section.title}</h2>
+          <h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{section.title}</h2>
           <p>{section.body}</p>
         </section>)}
       </div>
@@ -1078,7 +1081,7 @@ function MoreView({
       <div className="view-intro">
         <div>
           <p className="eyebrow">SETTINGS &amp; SOURCES</p>
-          <h1>{localText(lang, { ko: "설정과 데이터 출처", en: "Settings and sources", zh: "设置与数据来源", ja: "設定とデータ出典" })}</h1>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "설정과 데이터 출처", en: "Settings and sources", zh: "设置与数据来源", ja: "設定とデータ出典" })}</h1>
         </div>
       </div>
 
@@ -1093,7 +1096,7 @@ function MoreView({
       <CollectionStatus lang={lang} />
 
       <section className="preference-block" aria-labelledby="preference-title">
-        <div className="section-head"><div><p className="eyebrow">SAVED ON THIS DEVICE</p><h2 id="preference-title">{localText(lang, { ko: "저장된 설정", en: "Saved preferences", zh: "已保存的设置", ja: "保存された設定" })}</h2></div></div>
+        <div className="section-head"><div><p className="eyebrow">SAVED ON THIS DEVICE</p><h2 data-heading="section" id="preference-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "저장된 설정", en: "Saved preferences", zh: "已保存的设置", ja: "保存された設定" })}</h2></div></div>
         <ul className="preference-rows">
           <li><span>{localText(lang, { ko: "언어", en: "Language", zh: "语言", ja: "言語" })}</span><b>{lang === "ko" ? "한국어" : lang === "en" ? "English" : lang === "zh" ? "简体中文" : "日本語"}</b></li>
           <li><span>{localText(lang, { ko: "지역", en: "Area", zh: "地区", ja: "エリア" })}</span><b>{areaLocalName(selected, lang)}</b></li>
@@ -1107,12 +1110,12 @@ function MoreView({
       </section>
 
       <section className="about-link-block">
-        <div><p className="eyebrow">ABOUT</p><h2>{localText(lang, { ko: "KORETAIL이 처음이신가요?", en: "New to KORETAIL?", zh: "第一次使用 KORETAIL？", ja: "KORETAIL は初めてですか？" })}</h2><p>{localText(lang, { ko: "무엇을 보여주는 서비스인지, 어떤 데이터를 쓰는지 소개 페이지에 정리했습니다.", en: "The About page explains what this service shows and which data it uses.", zh: "关于页面介绍了本服务展示的内容与所用数据。", ja: "紹介ページで、何を表示するサービスかと使用データを説明しています。" })}</p></div>
+        <div><p className="eyebrow">ABOUT</p><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "KORETAIL이 처음이신가요?", en: "New to KORETAIL?", zh: "第一次使用 KORETAIL？", ja: "KORETAIL は初めてですか？" })}</h2><p>{localText(lang, { ko: "무엇을 보여주는 서비스인지, 어떤 데이터를 쓰는지 소개 페이지에 정리했습니다.", en: "The About page explains what this service shows and which data it uses.", zh: "关于页面介绍了本服务展示的内容与所用数据。", ja: "紹介ページで、何を表示するサービスかと使用データを説明しています。" })}</p></div>
         <button onClick={onAbout}>{localText(lang, { ko: "소개 보기", en: "READ ABOUT", zh: "查看介绍", ja: "紹介を見る" })} ↗</button>
       </section>
 
       <section className="source-block" aria-labelledby="source-title">
-        <div className="section-head"><div><p className="eyebrow">DATA SOURCES</p><h2 id="source-title">{localText(lang, { ko: "사용 중인 공식 자료", en: "Official sources in use", zh: "使用中的官方资料", ja: "利用中の公式資料" })}</h2></div>
+        <div className="section-head"><div><p className="eyebrow">DATA SOURCES</p><h2 data-heading="section" id="source-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "사용 중인 공식 자료", en: "Official sources in use", zh: "使用中的官方资料", ja: "利用中の公式資料" })}</h2></div>
           <button className="source-toggle" onClick={() => setSourcesOpen((open) => !open)} aria-expanded={sourcesOpen}>{sourcesOpen ? localText(lang, { ko: "접기", en: "COLLAPSE", zh: "收起", ja: "閉じる" }) : localText(lang, { ko: "전체 보기", en: "SHOW ALL", zh: "查看全部", ja: "すべて見る" })}</button>
         </div>
         <ol className="source-rows">

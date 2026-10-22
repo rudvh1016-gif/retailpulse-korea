@@ -10,8 +10,21 @@ const priorityCountries=['일본','중국','베트남','미국','대만','태국
 async function expectPriorityCountryTables(page:Page){
  const cards=page.locator('#focus-country-trends .focus-trend-grid > article');
  await expect(cards.locator('.focus-trend-top h3')).toHaveText(priorityCountries);
- await expect(cards.locator(':scope > .focus-month-values > caption')).toHaveText(priorityCountries.map(name=>`${name} 월별 출발 여객과 전월비`));
- for(const card of await cards.all())await expect(card.locator(':scope > .focus-month-values')).toHaveCount(1);
+ await expect(cards.locator(':scope > .focus-month-table-details > .focus-month-values > caption')).toHaveText(priorityCountries.map(name=>`${name} 월별 출발 여객과 전월비`));
+ for(const card of await cards.all()){
+  const disclosure=card.locator(':scope > .focus-month-table-details');
+  const table=disclosure.locator(':scope > .focus-month-values');
+  await expect(disclosure).toHaveCount(1);await expect(table).toHaveCount(1);
+  await expect(disclosure).not.toHaveAttribute('open');await expect(table).not.toBeVisible();
+  await disclosure.locator(':scope > summary').click();
+  await expect(disclosure).toHaveAttribute('open','');await expect(table).toBeVisible();
+  const name=await card.locator('.focus-trend-top h3').innerText();
+  const current=passengerStats.current.ROUTE_COUNTRY_PASSENGERS.rows.find(row=>row.label===name&&!row.aggregate);
+  expect(current?.departures).not.toBeNull();expect(current).toBeDefined();
+  const latest=table.locator('tbody tr').last();
+  await expect(latest.locator('th')).toHaveText(passengerStats.month);
+  await expect(latest.locator('td').first()).toHaveText(`${new Intl.NumberFormat('ko-KR').format(current!.departures!)}명`);
+ }
 }
 
 // The captured payload is a selected past day. Undated requests receive clock

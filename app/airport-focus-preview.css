@@ -142,9 +142,22 @@
 /* Upcoming dates: country/event heading, civil dates, then optional evidence. */
 .focus-preparation-brief .focus-preparation-events{font-size:var(--type-body);line-height:1.6;margin:0 0 5px}
 .focus-preparation-brief .focus-preparation-event+.focus-preparation-event{margin-top:12px}
-.focus-preparation-brief .focus-preparation-event h4{font:inherit;font-weight:var(--weight-strong);margin:0}
+.focus-preparation-brief .focus-preparation-event h4{font:inherit;font-weight:700;color:var(--ink,#24272c);margin:0}
+.focus-preparation-brief .focus-preparation-event h4 .focus-event-country{font-weight:inherit}
+.focus-preparation-brief .focus-event-scope{display:block;font-weight:400}
 .focus-preparation-brief .focus-event-dates{overflow-wrap:anywhere}
 .focus-preparation-brief .focus-event-timing{display:block}
 .focus-preparation-brief .focus-event-details{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
 .focus-preparation-brief .focus-event-details summary{cursor:pointer;padding:10px 0;min-height:44px;box-sizing:border-box;width:fit-content}
 .focus-preparation-brief .focus-event-details summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+
+/* Keep the comparison readable; methodology remains available on demand. */
+.focus-report-lines .focus-passenger-comparison p{margin:0;font:inherit;color:inherit}
+.focus-passenger-calculation,.focus-monthly-calculation{overflow-wrap:anywhere}
+.focus-passenger-calculation>summary,.focus-monthly-calculation>summary{min-height:44px;box-sizing:border-box;padding:10px 0;cursor:pointer;width:fit-content}
+.focus-passenger-calculation>summary:focus-visible,.focus-monthly-calculation>summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+
+.focus-monthly-selection-basis{font-size:11px;line-height:1.6;color:var(--focus-muted)}
+
+.focus-passenger-rate{display:inline-block;white-space:nowrap}
+.focus-passenger-zero-basis{display:block;overflow-wrap:anywhere}

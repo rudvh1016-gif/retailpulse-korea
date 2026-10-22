@@ -57,7 +57,7 @@ export default function UpdateNotice({lang}:{lang:string}){
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
  }}>
   <div className="update-notice-top"><span className="update-notice-new">NEW</span></div>
-  <h2 id="update-notice-title" tabIndex={-1}>{UPDATE_NOTICE_TITLE}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-21T00:00:00+09:00">2026년 10월 21일 00:00 KST</time></small>}
+  <h2 data-heading="section" id="update-notice-title" tabIndex={-1}><span className="heading-marker" aria-hidden="true"/>{UPDATE_NOTICE_TITLE}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-21T00:00:00+09:00">2026년 10월 21일 00:00 KST</time></small>}
   <div className="update-notice-items">
    {focusNotice&&<ReferenceChangeNotices dialog={dialog} calendarHref={focusHref('prepare')} allowanceHref={focusHref('prepare&section=arrival#arrival-allowances')} onNavigate={()=>dismiss.current(false)}/>}
    {focusNotice?previewItems.map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>

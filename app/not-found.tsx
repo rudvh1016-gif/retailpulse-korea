@@ -27,7 +27,7 @@ export default function NotFound() {
   const areas = { ko: ["명동", "홍대", "성수", "이태원"], en: ["Myeongdong", "Hongdae", "Seongsu", "Itaewon"], zh: ["明洞", "弘大", "圣水", "梨泰院"], ja: ["明洞", "弘大", "聖水", "梨泰院"] }[locale];
   return <main className="not-found">
     <p className="eyebrow">404 · KORETAIL</p>
-    <h1>{title}</h1>
+    <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{title}</h1>
     <p>{description}</p>
     <nav aria-label="Recommended pages">
       <Link href={`/${locale}`}>HOME</Link><Link href={`/${locale}/myeongdong`}>{areas[0]}</Link><Link href={`/${locale}/hongdae`}>{areas[1]}</Link><Link href={`/${locale}/seongsu`}>{areas[2]}</Link><Link href={`/${locale}/itaewon`}>{areas[3]}</Link><Link href={`/${locale}/airport`}>AIRPORT</Link>

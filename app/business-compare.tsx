@@ -67,7 +67,7 @@ export function UsualComparisonBlock({ lang, place, today }: { lang: Lang; place
     </details>;
   }
   return <div className="prep-block prep-compare" data-testid="usual-comparison">
-    <h3>{compareCopy.usualTitle[lang]}</h3>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{compareCopy.usualTitle[lang]}</h3>
     {body}
   </div>;
 }
@@ -129,7 +129,7 @@ export function LastCheckBlock({ lang, snapshot, serviceDate, nowIso }: { lang: 
     {deviceNote}
   </details>;
   return <div className="prep-block prep-last-check" data-testid="last-check">
-    <h3>{compareCopy.lastTitle[lang]}</h3>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{compareCopy.lastTitle[lang]}</h3>
     {body}
     <details className={`prep-evidence ${styles.disclosure}`}><summary>{prepCopy.evidence[lang]}<span className={styles.toggle} aria-hidden="true" /></summary>{deviceNote}</details>
   </div>;

@@ -74,7 +74,7 @@ export function AirportView({
       <div className="view-intro">
         <div>
           <p className="eyebrow">INCHEON AIRPORT · OFFICIAL · KST</p>
-          <h1>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</h1>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export function AirportView({
 
       {!concourse&&section === "history" && <section className="airport-history" aria-labelledby="airport-history-title">
         <div className="section-head">
-          <div><p className="eyebrow">OFFICIAL MONTHLY STATISTICS</p><h2 id="airport-history-title">{localText(lang, { ko: "공식 월별 여객 실적", en: "Official monthly passenger results", zh: "官方月度旅客实绩", ja: "公式月次旅客実績" })}</h2></div>
+          <div><p className="eyebrow">OFFICIAL MONTHLY STATISTICS</p><h2 data-heading="section" id="airport-history-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "공식 월별 여객 실적", en: "Official monthly passenger results", zh: "官方月度旅客实绩", ja: "公式月次旅客実績" })}</h2></div>
           <span className="official-label">OFFICIAL HISTORICAL</span>
         </div>
         <p className="section-intro">{localText(lang, {

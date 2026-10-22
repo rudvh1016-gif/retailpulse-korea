@@ -86,7 +86,7 @@ export function FeelingLogBlock({ lang, place, industry, today }: { lang: Lang; 
     }
   };
   return <div className="prep-block prep-feeling" data-testid="feeling-log">
-    <h3>{reviewCopy.feelingTitle[lang]}</h3>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{reviewCopy.feelingTitle[lang]}</h3>
     {entries === null ? <p className="prep-note">{reviewCopy.storageBlocked[lang]}</p> : <>
       <div className="prep-feeling-choices" role="group" aria-label={reviewCopy.feelingTitle[lang]}>
         {FEELINGS.map((feeling) => <button key={feeling} type="button" aria-pressed={current === feeling} onClick={() => choose(feeling)}>{feelingLabels[feeling][lang]}</button>)}

@@ -36,7 +36,7 @@ export function AirportTopReference({ lang, date, scope, wholeDay, entries, onWh
   const partial = ready && presentation?.some(entry=>!entry.pillars);
   const scopeText = scope === 'T1' ? words.scopeT1[lang] : scope === 'T2' ? 'T2' : scope === 'CONCOURSE' ? words.scopeConcourse[lang] : words.scopeAll[lang];
   return <section className="airport-top-reference" data-testid="airport-top-reference" data-state={reason ?? (partial ? 'PARTIAL' : ready ? 'READY' : 'UNAVAILABLE')} data-scope={scope ?? 'all'}>
-    <h3 data-testid="top-reference-heading">{words.heading[lang]} · {scopeText} <small>{date} KST</small></h3>
+    <h3 data-heading="subsection" data-testid="top-reference-heading"><span className="heading-marker" aria-hidden="true"/>{words.heading[lang]} · {scopeText} <small>{date} KST</small></h3>
     {reason ? <p role="status">{words[reason][lang]}{' '}<button type="button" className="prep-link" onClick={reason === 'concourse' ? onT1Day : onWholeDay}>{words[reason === 'concourse' ? 't1Day' : 'wholeDay'][lang]}</button></p>
       : <>
         {scope === 'all' && <p className="prep-note">{words.all[lang]}</p>}

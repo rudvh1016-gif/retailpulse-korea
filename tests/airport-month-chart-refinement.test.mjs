@@ -35,3 +35,12 @@ test('refinement preserves the zero baseline, missing-day ticks and exact select
  assert.match(chart,/const showEachValue = days\.length <= 5/);
  assert.doesNotMatch(chart,/<(?:linearGradient|image|animate)\b/);
 });
+
+// Geometry is verified in airport-month-daily-trend.spec.ts at phone/desktop widths.
+test('long daily strips cap horizontal pitch with aligned ticks and no date truncation',()=>{
+ assert.match(chart,/const plotStyle = \{ width: days.length > 9 \? `\$\{slots \* 12\}px` : undefined, maxWidth: "100%" \}/);
+ assert.match(chart,/<div className="airport-month-plot" style=\{plotStyle\}>/);
+ assert.match(chart,/<div className="airport-month-ticks" style=\{plotStyle\}/);
+ assert.match(chart,/const slots = days.length/);
+ assert.match(chart,/days.map\(\(day\) => <button/);
+});

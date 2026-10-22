@@ -196,7 +196,7 @@ export function InstallAppButton({ lang }: { lang: InstallLang }) {
         onClick={(event) => event.stopPropagation()}
       >
         <p className="eyebrow">KORETAIL · INSTALL</p>
-        <h2 id="install-title">{installed ? guide.installedTitle : guide.title}</h2>
+        <h2 data-heading="section" id="install-title"><span className="heading-marker" aria-hidden="true"/>{installed ? guide.installedTitle : guide.title}</h2>
 
         {installed ? <p id="install-description" className="install-intro">{guide.installedBody}</p> : <>
           <p id="install-description" className="install-intro">{guide.intro}</p>

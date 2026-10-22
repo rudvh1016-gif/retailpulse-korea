@@ -89,3 +89,85 @@ test.describe('country detail native mobile label taps',()=>{
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  });
 });
+
+async function monthPosition(chart:Locator,index:number){
+ const box=(await chart.locator('.focus-month-plot').boundingBox())!;
+ return {x:box.x+(48+index*256/5)/332*box.width,y:box.y+box.height*.55};
+}
+async function selectedReadout(chart:Locator,month:string){
+ const target=chart.locator(`button[data-month="${month}"]`);
+ const label=(await target.getAttribute('aria-label'))!;
+ const expected=label.slice(label.indexOf('년 ')+2);
+ await expect(target).toHaveAttribute('aria-pressed','true');
+ await expect(chart.getByRole('tooltip')).toHaveText(expected);
+}
+
+test('country monthly mouse hold scrubs both directions, clamps outside plot, then keeps keyboard controls',async({page})=>{
+ await page.setViewportSize({width:1440,height:1000});
+ const chart=await openCountryRoute(page,'direct',false),start=await monthPosition(chart,0);
+ await page.mouse.move(start.x,start.y);await page.mouse.down();
+ for(const index of [1,3,5,2]){
+  const point=await monthPosition(chart,index);await page.mouse.move(point.x,point.y,{steps:6});
+  await selectedReadout(chart,`2026-${String(index+4).padStart(2,'0')}`);
+ }
+ const box=(await chart.boundingBox())!;
+ await page.mouse.move(box.x+box.width+40,start.y);await selectedReadout(chart,'2026-09');
+ await page.mouse.up();await selectedReadout(chart,'2026-09');
+ await chart.locator('button[data-month="2026-08"]').focus();
+ await page.keyboard.press('ArrowRight');await selectedReadout(chart,'2026-09');
+ await page.keyboard.press('Home');await selectedReadout(chart,'2026-04');
+ await page.keyboard.press('End');await selectedReadout(chart,'2026-09');
+ await page.keyboard.press('Escape');await expect(chart.getByRole('tooltip')).toHaveCount(0);
+});
+
+test.describe('country monthly held touch scrubbing',()=>{
+ test.use({hasTouch:true,isMobile:true});
+ test('native touch sequence updates before release and leaves vertical page scrolling available',async({page,browserName})=>{
+  test.skip(browserName!=='chromium','CDP dispatches native touch input in the normal Chromium CI project');
+  await page.setViewportSize({width:390,height:900});
+  const chart=await openCountryRoute(page,'direct',true);
+  const client=await page.context().newCDPSession(page);
+  const touch=async(type:'touchStart'|'touchMove'|'touchEnd'|'touchCancel',point?:{x:number;y:number})=>client.send('Input.dispatchTouchEvent',{type,touchPoints:point?[{...point,id:1,radiusX:2,radiusY:2}]:[]});
+  const start=await monthPosition(chart,0);
+  await touch('touchStart',start);
+  for(const index of [1,3,5,2]){
+   const point=await monthPosition(chart,index);await touch('touchMove',point);
+   await selectedReadout(chart,`2026-${String(index+4).padStart(2,'0')}`);
+  }
+  await touch('touchEnd');await selectedReadout(chart,'2026-06');
+  await expect(chart.getByRole('tooltip')).toHaveText('6월 · 자료 없음');
+  // A fresh gesture must work after capture release; cancellation dismisses it.
+  await touch('touchStart',await monthPosition(chart,4));
+  await touch('touchMove',await monthPosition(chart,5));await selectedReadout(chart,'2026-09');
+  await touch('touchCancel');await expect(chart.getByRole('tooltip')).toHaveCount(0);
+  const before=await page.evaluate(()=>scrollY),vertical=await monthPosition(chart,2);
+  await touch('touchStart',vertical);
+  for(const delta of [20,45,80,130])await touch('touchMove',{x:vertical.x,y:vertical.y-delta});
+  await touch('touchEnd');
+  await expect.poll(()=>page.evaluate(()=>scrollY)).toBeGreaterThan(before+20);
+  await expect(chart.getByRole('tooltip')).toHaveCount(0);
+ });
+});
+
+test('all country monthly tables start folded and open with their complete accessible rows',async({page})=>{
+ await page.setViewportSize({width:390,height:900});
+ await openCountryRoute(page,'direct',true);
+ const cards=page.locator('#focus-country-trends article');
+ expect(await cards.count()).toBeGreaterThan(1);
+ for(const card of await cards.all()){
+  const details=card.locator('.focus-month-table-details'),table=details.locator('table');
+  await expect(details).toHaveCount(1);
+  await expect(details).not.toHaveAttribute('open','');
+  await expect(table).not.toBeVisible();
+  const toggle=details.locator('summary');
+  await expect(toggle).toHaveText('월별 수치 보기');
+  await toggle.focus();await page.keyboard.press('Enter');
+  await expect(table).toBeVisible();
+  await expect(table.locator('thead th')).toHaveText(['월','출발 여객','전월비']);
+  await expect(table.locator('tbody tr')).toHaveCount(6);
+  await expect(table.locator('tbody th')).toHaveText(['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09']);
+  await expect(table.locator('caption')).toContainText('월별 출발 여객과 전월비');
+  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await page.keyboard.press('Enter');await expect(table).not.toBeVisible();
+ }
+});

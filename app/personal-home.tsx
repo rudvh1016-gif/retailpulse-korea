@@ -48,7 +48,7 @@ function Setup({lang,initial,onCancel,onDone}:{lang:PersonalLang;initial:Persona
   const titles=['role','location','interests','preference'] as const;
   return <section className="personal-sheet personal-setup" data-testid="personal-onboarding" aria-labelledby="personal-setup-title">
     <p className="personal-kicker">KORETAIL · {step+1} / 4</p>
-    <h2 ref={heading} tabIndex={-1} id="personal-setup-title">{pc(titles[step],lang)}</h2>
+    <h2 data-heading="section" ref={heading} tabIndex={-1} id="personal-setup-title"><span className="heading-marker" aria-hidden="true"/>{pc(titles[step],lang)}</h2>
     <div className="personal-progress" aria-hidden="true">{titles.map((title,i)=><span key={title} className={i<=step?'complete':''}/>)}</div>
     {step===0&&<><p>{pc('promise',lang)}</p><div className="personal-options">{roles.map(role=><button type="button" key={role} aria-pressed={p.role===role} data-role={role} onClick={()=>setP({...p,role,day:p.selectedDays?p.day:recommendedPreferences(role).day,interests:[...new Set(selectedLocations.flatMap(v=>recommendedPreferences(role,v).interests))]})}><strong>{pc(role,lang)}</strong><span>{pc(`${role}Note`,lang)}</span></button>)}</div><AnalyticsChoice value={p.analytics} onChange={consent} lang={lang}/></>}
     {step===1&&<><p>{pc('multiple',lang)}</p><div className="personal-options">{locations.map(location=><button key={location} data-location={location} aria-pressed={selectedLocations.includes(location)} onClick={()=>changeLocation(location)}>{pc(location,lang)}</button>)}</div>{selectedLocations.includes('airport')&&<div className="personal-inline" aria-label={pc('airport',lang)}>{terminals.map(terminal=><button key={terminal} aria-pressed={selectedTerminals.includes(terminal)} onClick={()=>changeTerminal(terminal)}>{terminalName(terminal,lang)}</button>)}</div>}</>}
@@ -78,7 +78,7 @@ function Briefing({p,lang}:{p:PersonalPreferences;lang:PersonalLang}) {
   },[date,summary,identity,p,lang]);
   const title=p.day==='yesterday'?'yesterday':p.role==='manager'?(p.day==='today'?'managerToday':'managerTomorrow'):p.role==='guide'?(p.day==='today'?'guideToday':'guideTomorrow'):p.day;
   const href=`/${lang}/${p.location}`;
-  return <section className="personal-sheet" data-testid="personal-briefing" aria-labelledby="personal-title"><p className="personal-kicker">KORETAIL · {pc(p.role,lang)}</p><h2 id="personal-title">{pc(title,lang)}</h2><p className="personal-place">{pc(p.location,lang)}{p.location==='airport'?` ${terminalName(p.terminal,lang)}`:''} · {date ?? '…'}</p><small className="personal-timezone">{pc('timeBasis',lang)}</small>{p.day==='yesterday'&&<p>{pc('pastNote',lang)}</p>}
+  return <section className="personal-sheet" data-testid="personal-briefing" aria-labelledby="personal-title"><p className="personal-kicker">KORETAIL · {pc(p.role,lang)}</p><h2 data-heading="section" id="personal-title"><span className="heading-marker" aria-hidden="true"/>{pc(title,lang)}</h2><p className="personal-place">{pc(p.location,lang)}{p.location==='airport'?` ${terminalName(p.terminal,lang)}`:''} · {date ?? '…'}</p><small className="personal-timezone">{pc('timeBasis',lang)}</small>{p.day==='yesterday'&&<p>{pc('pastNote',lang)}</p>}
     {p.day==='yesterday'&&p.location!=='airport'&&<p className="personal-note">{pc('pastSeoulNote',lang)}</p>}
     {!p.interests.length?<p>{pc('noLocalInterests',lang)}</p>:!date||!summary?<LiveLoadMessage loading={today===undefined||summary===undefined} lang={lang}/>:<>
       {p.location==='airport'&&p.terminal!=='CONCOURSE'&&(p.interests.includes('passengers')||p.interests.includes('crowding'))&&summary.mode==='live-summary'&&summary.serviceDateKst===date&&summary.airport?.serviceDateKst===date
@@ -117,7 +117,7 @@ export default function PersonalHome({lang,children,openRequest=0}:{lang:Persona
     return()=>window.clearTimeout(timer);
   },[openRequest,ready]);
   useEffect(()=>{if(ready)setAnalyticsConsent(p?.analytics??false);},[ready,p?.analytics]);
-  if(!ready)return <div className="personal-loading"><header className="personal-heading"><h1>{pc('myBriefing',lang)}</h1></header><LiveLoadMessage loading lang={lang}/></div>;
+  if(!ready)return <div className="personal-loading"><header className="personal-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{pc('myBriefing',lang)}</h1></header><LiveLoadMessage loading lang={lang}/></div>;
   /**
    * A first visit shows the information, not a form.
    *
@@ -141,7 +141,7 @@ export default function PersonalHome({lang,children,openRequest=0}:{lang:Persona
     {children}
     <div ref={panel} className="personal-sheet">
       <p className="personal-kicker">KORETAIL</p>
-      <h2>{pc('myBriefing',lang)}</h2>
+      <h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{pc('myBriefing',lang)}</h2>
       <p>{pc('promise',lang)}</p>
       {storageFailed&&<p role="status">{pc('storageError',lang)}</p>}
       <div className="personal-actions"><button className="personal-primary" onClick={()=>setEditing(true)}>{pc('startSetup',lang)}</button></div>
@@ -149,7 +149,7 @@ export default function PersonalHome({lang,children,openRequest=0}:{lang:Persona
   </>;
   return <>
     <div ref={panel} className="personal-home">
-    <header className="personal-heading"><h1>{pc('myBriefing',lang)}</h1>{p&&!editing&&<button onClick={()=>setEditing(true)}>{pc('edit',lang)}</button>}</header>
+    <header className="personal-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{pc('myBriefing',lang)}</h1>{p&&!editing&&<button onClick={()=>setEditing(true)}>{pc('edit',lang)}</button>}</header>
     {(!p||editing)?<Setup lang={lang} initial={p} onCancel={()=>{setEditing(false);setAnalyticsConsent(p?.analytics??false);}} onDone={()=>setEditing(false)}/>:<SelectedBriefing key={JSON.stringify(p)} p={p} lang={lang}/>}
     {storageFailed&&<p role="status">{pc('storageError',lang)}</p>}
     {p&&!editing&&<details className="personal-settings"><summary>{pc('settings',lang)}</summary><p>{pc(p.role,lang)} · {(p.selectedLocations??[p.location]).map(v=>pc(v,lang)).join(' · ')} · {(p.selectedTerminals??[p.terminal]).map(v=>terminalName(v,lang)).join(' · ')} · {(p.selectedDays??[p.day]).map(v=>pc(v,lang)).join(' · ')}</p><p>{p.interests.map(i=>pc(i,lang)).join(' · ')}</p><p>{pc('remembered',lang)}</p><p>{pc('storageNote',lang)}</p><div className="personal-inline"><button onClick={()=>{savePersonalPreferences(null);setAnalyticsConsent(false);}}>{pc('reset',lang)}</button></div><AnalyticsChoice lang={lang} value={p.analytics} onChange={value=>{savePersonalPreferences({...p,analytics:value});setAnalyticsConsent(value);}}/><p>{pc('install',lang)}</p><p>{pc('push',lang)}</p><small>{pc('pushNote',lang)}</small></details>}

@@ -1,6 +1,7 @@
 'use client';
 
-import {useEffect,useId,useRef,useState,type KeyboardEvent} from 'react';
+import {useEffect,useId,useRef,useState,type KeyboardEvent,type PointerEvent as ReactPointerEvent} from 'react';
+import {nearestMonthlyPoint} from '../lib/monthly-chart-pointer';
 import type {FocusTrend} from './airport-focus-data';
 
 const number=new Intl.NumberFormat('ko-KR');
@@ -12,6 +13,8 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
  const chart=useRef<HTMLDivElement>(null);
  const targets=useRef<Array<HTMLButtonElement|null>>([]);
  const tooltipId=useId();
+ const drag=useRef<{id:number;x:number;y:number;moving:boolean}|null>(null);
+ const suppressClick=useRef(false);
  const values=row.points.flatMap(point=>point.departures===null?[]:[point.departures]);
  const activeIndex=row.points.findIndex(point=>point.month===activeMonth);
  const active=row.points[activeIndex];
@@ -19,7 +22,7 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
  useEffect(()=>{
   if(!activeMonth)return;
   const dismiss=(event:PointerEvent)=>{if(!chart.current?.contains(event.target as Node)){setActiveMonth(null);setPinned(false);}};
-  const escape=(event:globalThis.KeyboardEvent)=>{if(event.key==='Escape'){setActiveMonth(null);setPinned(false);}};
+  const escape=(event:globalThis.KeyboardEvent)=>{if(event.key==='Escape'){drag.current=null;setActiveMonth(null);setPinned(false);}};
   if(pinned)document.addEventListener('pointerdown',dismiss);
   document.addEventListener('keydown',escape);
   return()=>{document.removeEventListener('pointerdown',dismiss);document.removeEventListener('keydown',escape);};
@@ -41,9 +44,41 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
   if(next!==null){event.preventDefault();targets.current[next]?.focus();}
  };
 
+ const selectAt=(event:ReactPointerEvent<HTMLDivElement>)=>{
+  const bounds=event.currentTarget.getBoundingClientRect();
+  const index=nearestMonthlyPoint(event.clientX,bounds.left,bounds.width,row.points.length);
+  if(index!==null){setActiveMonth(row.points[index].month);setPinned(true);}
+ };
+ const endDrag=(event:ReactPointerEvent<HTMLDivElement>,cancelled=false)=>{
+  if(drag.current?.id!==event.pointerId)return;
+  if(cancelled){setActiveMonth(null);setPinned(false);}
+  else if(drag.current.moving)selectAt(event);
+  drag.current=null;
+  if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);
+ };
+
  return <figure className="focus-line-chart focus-interactive-line-chart">
   <div ref={chart} className="focus-month-plot" role="group" aria-label={`${row.label} 월별 출발 여객`}
-   onPointerLeave={event=>{if(event.pointerType!=='touch'&&!pinned&&!chart.current?.contains(document.activeElement))setActiveMonth(null);}}
+   onPointerDown={event=>{
+    if(!event.isPrimary||event.button!==0||drag.current)return;
+    suppressClick.current=false;
+    drag.current={id:event.pointerId,x:event.clientX,y:event.clientY,moving:false};
+    selectAt(event);
+   }}
+   onPointerMove={event=>{
+    const current=drag.current;if(!current||current.id!==event.pointerId)return;
+    if(!current.moving){
+     const dx=Math.abs(event.clientX-current.x),dy=Math.abs(event.clientY-current.y);
+     if(dx<4||dx<=dy)return;
+     current.moving=true;suppressClick.current=true;
+     event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    selectAt(event);
+   }}
+   onPointerUp={event=>endDrag(event)} onPointerCancel={event=>endDrag(event,true)}
+   onLostPointerCapture={event=>{if(event.target===event.currentTarget&&drag.current?.id===event.pointerId)drag.current=null;}}
+   onClickCapture={event=>{if(suppressClick.current&&event.detail!==0){event.preventDefault();event.stopPropagation();suppressClick.current=false;}}}
+   onPointerLeave={event=>{if(event.pointerType==='mouse'&&drag.current&&!drag.current.moving)drag.current=null;if(!drag.current&&event.pointerType!=='touch'&&!pinned&&!chart.current?.contains(document.activeElement))setActiveMonth(null);}}
    onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget)){setActiveMonth(null);setPinned(false);}}}>
    <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false">
     {[low,(low+high)/2,high].map(tick=><g key={tick}>
@@ -66,10 +101,10 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
     className="focus-month-target" style={{left:`${boundary(index)/width*100}%`,width:`${(boundary(index+1)-boundary(index))/width*100}%`}} data-month={point.month}
     aria-label={`${row.label} ${point.month.slice(0,4)}년 ${readout(point)}`} aria-pressed={activeMonth===point.month}
     aria-describedby={activeMonth===point.month?tooltipId:undefined}
-    onPointerEnter={event=>{if(event.pointerType!=='touch')setActiveMonth(point.month);}}
+    onPointerEnter={event=>{if(event.pointerType!=='touch'&&!drag.current)setActiveMonth(point.month);}}
     onFocus={()=>setActiveMonth(point.month)} onClick={()=>{setActiveMonth(point.month);setPinned(true);}}
     onKeyDown={event=>move(event,index)}><span className="sr-only">{monthLabel(point.month)} 여객 수 확인</span></button>)}
-   {active&&<div key={active.month} id={tooltipId} role="tooltip" className="focus-month-tooltip"
+   {active&&<div id={tooltipId} role="tooltip" className="focus-month-tooltip"
     style={{left:`clamp(8px, calc(${x(activeIndex)/width*100}% - 76px), calc(100% - 160px))`,top:`max(0px, calc(${(active.departures===null?100:y(active.departures))/height*100}% - 38px))`}}>{readout(active)}</div>}
   </div>
   <figcaption>세로축 {number.format(low)}–{number.format(high)}명 · 국가별 범위 다름</figcaption>

@@ -70,7 +70,7 @@ function ToiletDirectory({area,lang}: {area:SeoulFacilityArea;lang:Lang}) {
 
 export function SeoulFacilityGuide({area,lang}: {area:SeoulFacilityArea;lang:Lang}) {
   return <section className="facility-guide" aria-labelledby={`facility-guide-${area}`} data-testid="seoul-facility-guide">
-    <h3 id={`facility-guide-${area}`}>{copy.title[lang]}</h3>
+    <h3 data-heading="subsection" id={`facility-guide-${area}`}><span className="heading-marker" aria-hidden="true"/>{copy.title[lang]}</h3>
     <ToiletDirectory key={area} area={area} lang={lang}/>
     <details data-testid="seoul-lockers"><summary>{copy.lockers[lang]}</summary><Symbol name="lockers" lang={lang}/><p>{copy.unknown[lang]}</p><p>{copy.lockerNote[lang]}</p><a href="https://data.seoul.go.kr/dataList/OA-22731/A/1/datasetView.do" target="_blank" rel="noopener noreferrer">{copy.source[lang]} ↗</a></details>
   </section>;

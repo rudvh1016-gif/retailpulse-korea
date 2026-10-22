@@ -37,7 +37,7 @@ export function CommercialComposition({context,lang}:{context:SeoulContext;lang:
  const active=model.segments.find(s=>s.key===selected);
  const present=model.segments.filter(s=>(s.ratio??0)>0);
  return <div className="consumption-categories composition-card" data-testid="commercial-composition" data-status={model.status}>
-  <h3>{t('어떤 업종에서 소비하나요?','Activity by business category','哪些行业有消费？','どの業種で消費していますか？')}</h3>
+  <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{t('어떤 업종에서 소비하나요?','Activity by business category','哪些行业有消费？','どの業種で消費していますか？')}</h3>
   <small>{t('서울시·신한카드 내국인 소비 · 10분 관측','Seoul/Shinhan domestic-card activity · 10-minute observation','首尔市·新韩卡本国人消费 · 10分钟观测','ソウル市・新韓カード国内消費・10分間の観測')} · {context.commercialAt?`${context.commercialAt.slice(5,16).replace('T',' ')} KST`:t('관측 시각 미제공','Observation time not supplied','未提供观测时间','観測時刻未提供')}</small>
   <div className="commercial-composition-layout">
    <div className="commercial-ring-stage">

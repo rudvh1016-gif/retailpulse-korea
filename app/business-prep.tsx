@@ -188,13 +188,13 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
   return <section ref={motionRoot} className="business-prep" data-testid="business-prep" data-place={place.kind} aria-labelledby={`${id}-title`}>
     <div className="section-head"><div>
       <p className="eyebrow">KORETAIL · {prepCopy.eyebrow[lang]}</p>
-      <h2 id={`${id}-title`}>{prepCopy.title[lang]}</h2>
+      <h2 data-heading="section" id={`${id}-title`}><span className="heading-marker" aria-hidden="true"/>{prepCopy.title[lang]}</h2>
     </div></div>
     <Conditions key={`${preferences.place}:${preferences.terminal}:${preferences.side ?? ''}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}
       lang={lang} place={place} preferences={preferences} saved={saved} storageFailed={storageFailed} industry={industry} onIndustryChange={onIndustryChange} onSaved={()=>setDismissedScope(scopeKey)}/>
     {!summary || !prep ? <LiveLoadMessage loading={summary === undefined || !ready} lang={lang}/> : <>
       <div className="prep-block">
-        <h3>{prepCopy.factsTitle[lang]}</h3>
+        <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{prepCopy.factsTitle[lang]}</h3>
         {/* The whole-day east/west flight comparison is the card at the top of the airport block (same sentences as the shared text and image). */}
         {prep.facts.some((fact) => !isWholeDayFact(fact))
           ? <ul className="prep-facts" data-testid="prep-facts" key={`${serviceDate}:${place.kind === 'area' ? place.area : place.terminal}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}>{prep.facts.filter((fact) => !isWholeDayFact(fact)).map((fact, index) => <li key={index} data-prep-motion={`fact:${fact.kind}`} data-fact={fact.kind}>{place.kind === 'area'
@@ -207,7 +207,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
       {prep.status !== 'PAST' && <UsualComparisonBlock lang={lang} place={place} today={summary.dayRelation === 'TODAY'}/>}
       <LastCheckBlock lang={lang} snapshot={snapshot} serviceDate={serviceDate} nowIso={nowIso}/>
       <div className="prep-block">
-        <h3>{prepCopy.actionsTitle[lang]}</h3>
+        <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{prepCopy.actionsTitle[lang]}</h3>
         {prep.actions.length ? <ol className="prep-actions" data-testid="prep-actions">{prep.actions.map((action) => {
           const text = actionText(action, serviceDate, industry, lang);
           const evidence = evidenceText(action, serviceDate, lang);

@@ -237,14 +237,14 @@ test("the install guide uses one type scale and two weights", async ({ page }) =
     return { sizes: [...sizes].sort(), weights: [...weights].sort(), heights: [...heights].sort() };
   });
 
-  // 20px title · 13px anything the reader must read · 12px the note beneath
+  // 26px section title · 13px anything the reader must read · 12px the note beneath
   // it, plus the 10px eyebrow every panel in the product already uses.
-  expect(used.sizes).toEqual(["10px", "12px", "13px", "20px"]);
+  expect(used.sizes).toEqual(["10px", "12px", "13px", "26px"]);
   // A non-standard weight is synthesised when the variable font has not
   // loaded, and that alone makes a block look like a different typeface.
   expect(used.weights).toEqual(["400", "600"]);
   // Prose shares one rhythm; the title is the only exception.
-  expect(used.heights, `line-height ratios in use: ${used.heights.join(", ")}`).toEqual(["1.30", "1.70"]);
+  expect(used.heights, `line-height ratios in use: ${used.heights.join(", ")}`).toEqual(["1.35", "1.70"]);
 });
 
 /**

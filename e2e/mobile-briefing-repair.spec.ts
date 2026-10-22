@@ -219,7 +219,7 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       // Approved glance root retains its existing compact type and flat tabs.
       await expect(page.getByTestId('airport-glance-preview')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
       await expect(page.locator('.glance-preview')).toHaveCSS('font-size', '12px');
-      await expect(page.locator('.glance-heading h1')).toHaveCSS('font-size', '19px');
+      await expect(page.locator('.glance-heading h1')).toHaveCSS('font-size', '28px');
       for (const tab of await page.locator('.glance-controls>div button').all()) {
         await expect(tab).toHaveCSS('border-top-width', '0px');
         await expect(tab).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');

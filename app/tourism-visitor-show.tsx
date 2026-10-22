@@ -154,7 +154,7 @@ export function TourismVisitorShow({
     <div className="tourism-visitor-show-inner">
       <header className="tourism-visitor-show-header">
         <div>
-          <h2 id={titleId}>{labels.title}</h2>
+          <h2 data-heading="section" id={titleId}><span className="heading-marker" aria-hidden="true"/>{labels.title}</h2>
           <p id={descriptionId}>{labels.description}</p>
         </div>
         <button

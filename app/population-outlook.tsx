@@ -56,7 +56,7 @@ export function PopulationOutlook({points,current,lang,now}:{points:FlowPoint[];
   </g>;
  })();
  return <section ref={container} className="population-outlook" aria-labelledby={`${id}-title`} data-testid="population-outlook">
-  <div className="outlook-heading"><h3 id={`${id}-title`}>{t('앞으로','Coming hours','未来时段','これから')}</h3><span>{t('예상','Forecast','预测','予想')}</span></div>
+  <div className="outlook-heading"><h3 data-heading="subsection" id={`${id}-title`}><span className="heading-marker" aria-hidden="true"/>{t('앞으로','Coming hours','未来时段','これから')}</h3><span>{t('예상','Forecast','预测','予想')}</span></div>
   {forecasts.length?<>
    <svg className="outlook-trend" viewBox={`0 0 ${width} 220`} data-ceiling={ceiling} data-domain-start={start} data-domain-end={end} data-plot={`${left} ${top} ${right} ${bottom}`} role="img" aria-label={t('서울시 공식 예상 인원 최소~최대 범위','Seoul official forecast minimum–maximum population','首尔官方预测最少至最多人数','ソウル市公式予想人数の最小～最大範囲')}
     onPointerDown={event=>{if(event.button!==0)return;press.current={pointer:event.pointerId,x:event.clientX,y:event.clientY,moved:false};event.currentTarget.setPointerCapture?.(event.pointerId);}}

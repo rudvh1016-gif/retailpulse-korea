@@ -11,7 +11,7 @@ test('one airport-flow heading groups the original metrics followed immediately 
  assert.equal((glance.match(/>주목할 공항 흐름<\/h2>/g)??[]).length,1);
  assert.doesNotMatch(glance,/오늘 업무에서 먼저 확인|선택일 업무 지표/);
  assert.match(glance,/<section className="glance-insights"[^>]+aria-labelledby=\{overviewHeading\?'airport-staff-briefing-title':undefined\}/);
- assert.match(glance,/<h2 id="airport-staff-briefing-title" className="glance-workday-heading">주목할 공항 흐름<\/h2>/);
+ assert.match(glance,/<h2 data-heading="section" id="airport-staff-briefing-title" className="glance-workday-heading"><span className="heading-marker" aria-hidden="true"\/>주목할 공항 흐름<\/h2>/);
  const markers=['id="airport-staff-briefing-title"','data-testid="glance-key-wait"','data-testid="glance-key-upcoming"','data-testid="glance-key-growth"','<AirportStaffBriefing ','className="glance-overview-extras"'];
  const positions=markers.map(marker=>glance.indexOf(marker));
  assert.ok(positions.every((position,index)=>position>=0&&(index===0||position>positions[index-1])));
@@ -25,7 +25,7 @@ test('merged detail body retains its source dates, three subsections, boundaries
  assert.match(briefing,/KST 수집/);
  assert.match(briefing,/공식 일정 확인 \{event\.verifiedAt\}/);
  assert.match(briefing,/href=\{event\.sourceURL\}/);
- assert.deepEqual([...briefing.matchAll(/<h3>(.*?)<\/h3>/g)].map(match=>match[1]),['01 시간·터미널','02 노선·휴일 준비','03 품목별 확인']);
+ assert.deepEqual([...briefing.matchAll(/<h3 data-heading="section"><span className="heading-marker" aria-hidden="true"\/>(.*?)<\/h3>/g)].map(match=>match[1]),['01 시간·터미널','02 노선·휴일 준비','03 품목별 확인']);
  for(const text of ['고객 수나 매장 혼잡 예측은 아닙니다.','노선 국가를 고객 국적으로 해석하지 않으며','확인이 보류된 규정은 단정하지 않습니다.'])assert.ok(briefing.includes(text));
  for(const path of ['/airport${suffix}','/airport-countries${suffix}','/airport-prepare${suffix}#arrival-allowances','/airport-news'])assert.ok(briefing.includes(path));
  assert.equal((briefing.match(/<details(?: open)?>/g)??[]).length,3);

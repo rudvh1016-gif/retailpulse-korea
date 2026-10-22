@@ -47,7 +47,7 @@ test('missing, wrong-operation, invalid, future or unfinished months do not crea
 
 test('older stored month is explicit, never relabelled as requested month; missing previous history is not zero',()=>{
  const data=stats([row('인도',8)],'2026-07'),selection=select(data),html=renderToStaticMarkup(React.createElement(HomeMonthlyCountryBasis,{selection}));
- assert.match(html,/2026년 7월 기준/);assert.match(html,/요청 2026-10 대신 최신 보유 공개월 실적/);assert.match(html,/상위 1개 국가·지역/);
+ assert.match(html,/2026년 7월 · 공항 전체/);assert.match(html,/요청 2026-10 대신 최신 보유 공개월 실적/);assert.match(html,/상위 1개국·지역/);
  assert.equal(homeMonthlyCountryTrends(selection,[data]).flatMap(row=>row.points).filter(point=>point.departures===null).length,5);
 });
 
@@ -61,7 +61,9 @@ test('new basis is localized in all four languages and does not assert global co
  const selection=select(stats([row('미국',9),row('베트남',9),row('중국',9),row('일본',9),row('기준 미확인',99)]));
  for(const lang of ['ko','en','zh','ja'] as const){
   const html=renderToStaticMarkup(React.createElement(HomeMonthlyCountryBasis,{selection,lang}));
-  assert.match(html,/2026/);assert.match(html,/3/);assert.doesNotMatch(html,/TOP 3|오늘 편수/);
+  assert.match(html,/2026/);assert.match(html,/3/);
+  assert.match(html,/<details class="focus-monthly-calculation">/);
+  assert.doesNotMatch(html.split('<details')[0],/2026-10|제외|동률/);assert.doesNotMatch(html,/TOP 3|오늘 편수/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
   const pending=renderToStaticMarkup(React.createElement(HomeMonthlyCountryBasis,{lang}));assert.match(pending,/role="status"/);if(lang!=='ko')assert.doesNotMatch(pending,/[가-힣]/);
  }
