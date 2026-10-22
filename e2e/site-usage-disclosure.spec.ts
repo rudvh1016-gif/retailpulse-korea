@@ -47,7 +47,14 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  await expect(context.locator(':scope > p')).toHaveText('일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준');
  await expect(details).not.toHaveAttribute('open','');
  await expect(context.locator('[data-calendar-role]').first()).toBeVisible();
- expect(await context.locator('[data-calendar-role] b').count()).toBeLessThanOrEqual(3);
+ // This fixture's four verified matches stay visible; only source evidence folds.
+ await expect(context.locator('[data-calendar-role] b')).toHaveCount(4);
+ for(const [role,text] of [
+  ['route','중국 · 중추절 2026-09-25–2026-09-27'],
+  ['route','중국 · 여름방학 2026-07-01–2026-08-31'],
+  ['route','중국 · 여름방학 2026-07-08–2026-08-31'],
+  ['origin','한국 · 여름방학 2026-07-28–2026-08-19'],
+ ])await expect(context.locator(`[data-calendar-role="${role}"] > p`).filter({hasText:text})).toBeVisible();
  await expect(details.locator('ul')).toBeHidden();
  await toggle.focus();await page.keyboard.press('Enter');
  await expect(details.locator('ul')).toBeVisible();
