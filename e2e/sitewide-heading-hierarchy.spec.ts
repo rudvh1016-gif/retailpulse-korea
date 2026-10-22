@@ -23,14 +23,25 @@ async function verifyHeadings(page:Page){
   return {text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,
    hidden:marker?.getAttribute('aria-hidden'),markerText:marker?.textContent,
-   markerWidth:marker?.getBoundingClientRect().width,markerColor:markerStyle?.backgroundColor,color:style.color};
+   markerCount:node.querySelectorAll(':scope > .heading-marker').length,
+   markerWidth:marker?.getBoundingClientRect().width,markerHeight:marker?.getBoundingClientRect().height,
+   markerRadius:markerStyle?.borderRadius,markerColor:markerStyle?.backgroundColor,color:style.color};
  }));
  for(const row of rows){
   expect(row.text).toBeTruthy();
   expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
+  expect(row.markerCount).toBe(1);
   expect(row.markerWidth).toBeGreaterThan(0);
+  expect(row.markerHeight).toBeGreaterThan(0);
+  if(row.role==='subsection'){
+   expect(row.markerWidth!,`middle heading hyphen: ${row.text}`).toBeGreaterThan(row.markerHeight!*3);
+   expect(row.markerRadius).toBe('0px');
+  }else{
+   expect(row.markerWidth!,`major heading dot: ${row.text}`).toBeCloseTo(row.markerHeight!,1);
+   expect(row.markerRadius).toBe('50%');
+  }
   expect(row.markerColor).toBe(row.color);
   expect(row.left,`left edge: ${row.text}`).toBeGreaterThanOrEqual(-1);
   expect(row.right,`right edge: ${row.text}`).toBeLessThanOrEqual(page.viewportSize()!.width+1);
@@ -49,6 +60,9 @@ for(const width of [320,390,1440])for(const route of routes)test(`sitewide headi
  else await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await verifyHeadings(page);
  if(!route){
+  await expect(page.locator('.focus-report-title h2')).toHaveAttribute('data-heading','section');
+  await expect(page.locator('.focus-today-title')).toHaveAttribute('data-heading','subsection');
+  for(const heading of await page.locator('.focus-selected-country-changes h3,.focus-preparation-brief h3').all())await expect(heading).toHaveAttribute('data-heading','subsection');
   const staff=page.locator('.staff-brief-grid > section > h3');
   await expect(staff).toHaveText(['01 시간·터미널','02 노선·휴일 준비','03 품목별 확인']);
   await expect(staff.locator(':scope > .heading-marker')).toHaveCount(3);
