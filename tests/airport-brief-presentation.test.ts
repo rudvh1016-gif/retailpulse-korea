@@ -121,8 +121,8 @@ test('event title and institutional scope remain distinct without removing evide
  const html=renderToStaticMarkup(h(PreparationEvent,{event}));
  assert.match(html,/<h4>.*Chulalongkorn 국왕 추모일<\/h4><small class="focus-event-scope">\(금융기관\)<\/small>/);
  assert.match(html,/민간 전체 휴무가 아닙니다/);assert.match(html,/https:\/\/example.test\/th/);
- const staff=readFileSync('app/airport-staff-briefing.tsx','utf8');
- assert.match(staff,/<h4>\{event.countryLabel\} \{event.name\}<\/h4>/);
- assert.match(staff,/className="staff-holiday-scope">\(금융기관\)/);
- assert.match(staff,/<p>\{event.scope\}<\/p>/);
+ const staff=readFileSync('app/airport-staff-route-holiday.tsx','utf8');
+ assert.match(staff,/<h4>\{countryName\(event.country,event.countryLabel,lang\)\} \{label.name\}<\/h4>/);
+ assert.match(staff,/className="staff-holiday-scope">\{scope\}/);
+ assert.match(staff,/<p>\{label.scope\}<\/p>/);
 });

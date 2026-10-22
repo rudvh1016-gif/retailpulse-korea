@@ -6,6 +6,7 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const glance=read('../app/airport-glance-preview.tsx');
 const briefing=read('../app/airport-staff-briefing.tsx');
 const styles=read('../app/airport-staff-briefing.css');
+const routeHoliday=read('../app/airport-staff-route-holiday.tsx');
 
 test('one airport-flow heading groups the original metrics followed immediately by the staff briefing',()=>{
  assert.equal((glance.match(/>주목할 공항 흐름<\/h2>/g)??[]).length,1);
@@ -23,13 +24,16 @@ test('one airport-flow heading groups the original metrics followed immediately 
 test('merged detail body retains its source dates, three subsections, boundaries and destination links',()=>{
  assert.match(briefing,/day\|\|'기준일 확인 중'/);
  assert.match(briefing,/KST 수집/);
- assert.match(briefing,/공식 일정 확인 \{event\.verifiedAt\}/);
- assert.match(briefing,/href=\{event\.sourceURL\}/);
+ assert.match(routeHoliday,/공식 일정 확인/);
+ assert.match(routeHoliday,/\{event\.verifiedAt\}/);
+ assert.match(routeHoliday,/href=\{event\.sourceURL\}/);
  assert.deepEqual([...briefing.matchAll(/<h3 data-heading="section"><span className="heading-marker" aria-hidden="true"\/>(.*?)<\/h3>/g)].map(match=>match[1]),['01 시간·터미널','02 노선·휴일 준비','03 품목별 확인']);
- for(const text of ['고객 수나 매장 혼잡 예측은 아닙니다.','노선 국가를 고객 국적으로 해석하지 않으며','확인이 보류된 규정은 단정하지 않습니다.'])assert.ok(briefing.includes(text));
+ for(const text of ['고객 수나 매장 혼잡 예측은 아닙니다.','노선 국가를 고객 국적으로 해석하지 않으며','확인이 보류된 규정은 단정하지 않습니다.'])assert.ok((briefing+routeHoliday).includes(text));
  for(const path of ['/airport${suffix}','/airport-countries${suffix}','/airport-prepare${suffix}#arrival-allowances','/airport-news'])assert.ok(briefing.includes(path));
  assert.equal((briefing.match(/<details(?: open)?>/g)??[]).length,3);
  assert.match(briefing,/<details open><summary>패션·명품<\/summary>/);
+ assert.match(briefing,/<StaffRouteHoliday route=\{route\} event=\{event\} matched=\{matched\} day=\{day\} lang=\{lang\}>/);
+ assert.match(routeHoliday,/<details className="staff-route-details">/);
 });
 
 test('merged details span the summary grid while retaining readable source-note typography',()=>{

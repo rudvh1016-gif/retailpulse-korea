@@ -56,8 +56,9 @@ for(const width of [320,390,1440])for(const route of routes)test(`sitewide headi
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
   const bodySize=await page.locator('.staff-brief-grid p').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(bodySize+3);
-  await expect(page.locator('.staff-brief-grid details').first()).toHaveAttribute('open','');
-  const disclosure=page.locator('.staff-brief-grid details').nth(1);
+  await expect(page.locator('.staff-brief-grid details').filter({has:page.getByText('패션·명품',{exact:true})})).toHaveAttribute('open','');
+  const disclosure=page.locator('.staff-route-details');
+  await expect(disclosure).not.toHaveAttribute('open','');
   await disclosure.locator('summary').focus();await page.keyboard.press('Enter');await expect(disclosure).toHaveAttribute('open','');
   await page.keyboard.press('Enter');await expect(disclosure).not.toHaveAttribute('open','');
   if(width<=820){await expect(page.locator('.bottom-nav.glass-nav')).toBeVisible();await expect(page.locator('.bottom-nav.glass-nav a')).toHaveCount(5);}

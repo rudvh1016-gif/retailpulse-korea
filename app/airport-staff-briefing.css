@@ -16,3 +16,7 @@
 .airport-staff-briefing .staff-holiday-event p,.airport-staff-briefing .staff-holiday-scope{font-weight:400}
 
 .airport-staff-briefing .staff-gate-summary strong{font-size:inherit;font-weight:700}
+
+.airport-staff-briefing .staff-route-rate,.airport-staff-briefing .staff-route-sample{display:inline-block;white-space:nowrap}
+.airport-staff-briefing .staff-route-details>summary{min-height:44px;box-sizing:border-box;padding:11px 0;touch-action:manipulation}
+.airport-staff-briefing .staff-route-details>summary:focus-visible{outline:2px solid var(--navy,#24272c);outline-offset:3px}
