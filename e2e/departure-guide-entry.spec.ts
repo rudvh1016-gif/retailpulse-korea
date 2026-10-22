@@ -11,6 +11,11 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,390,128
  await expect(page.getByTestId('departure-guide-entry')).toHaveCount(0);await expect(page.getByTestId('departure-preparation')).toHaveCount(0);
  const image=entry.locator('img');await expect(image).toHaveAttribute('src','/visuals/news/v1/paper-news-128.webp');await expect.poll(()=>image.evaluate((i:HTMLImageElement)=>i.complete&&i.naturalWidth>0)).toBe(true);
  const bounds=(await entry.boundingBox())!;expect(bounds.height).toBeGreaterThanOrEqual(44);expect(bounds.width).toBeLessThanOrEqual(420);await expect(entry.getByRole('img')).toHaveCount(0);
+ // Preserve the former news column's exact responsive width, not a wider replacement card.
+ const originalWidth=await entry.evaluate(node=>{const parent=node.parentElement!.parentElement!,style=getComputedStyle(parent);const contentWidth=parent.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);return (Math.min(contentWidth,856)-16)/2;});
+ expect(Math.abs(bounds.width-originalWidth)).toBeLessThanOrEqual(1);
+ expect(bounds.height).toBe(width<=600&&lang==='en'?72:64);
+ const imageBounds=(await image.boundingBox())!;expect(imageBounds.width).toBe(width<=600?40:56);expect(imageBounds.height).toBe(width<=600?40:42);
  await expect(page.locator('.airport-purpose-links')).toHaveCount(0);await expect(page.locator('a[href="#airport-data-flow"]')).toHaveCount(0);await expect(page.locator('#airport-data-flow')).toBeVisible();await expect(page.locator('#airport-data-flow').getByRole('tab',{name:'T1',exact:true})).toBeVisible();await expect(page.locator('.airport-context-nav')).toBeVisible();
  await entry.focus();await expect(entry).toBeFocused();expect(await entry.evaluate(e=>getComputedStyle(e).outlineStyle)).toBe('solid');
  expect(await tofuCharacters(entry)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

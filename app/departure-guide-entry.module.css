@@ -1,4 +1,4 @@
-.launcher { display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:start; max-width:420px; margin:20px 0 18px; }
+.launcher { display:grid; grid-template-columns:minmax(0,1fr); gap:16px; align-items:start; width:calc((100% - 16px)/2); max-width:420px; margin:20px 0 18px; }
 details.guide { padding: 0; margin:0; border: 0; grid-column:1; grid-row:1; }
 details.guide[open] { grid-column:1/-1; }
 details.guide[open] > summary.entry { width:calc((100% - 16px)/2); }
