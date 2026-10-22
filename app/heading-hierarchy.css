@@ -22,8 +22,9 @@
 /* Preserve deliberately larger editorial introductions rather than shrinking them. */
 :root body :is(.hero,.view-intro,.tourism-desk-head,.not-found) [data-heading="page"] {font-size:clamp(32px,4vw,48px)!important}
 :root body .airport-view .view-intro [data-heading="page"] {font-size:clamp(28px,3vw,36px)!important}
-/* An empty, hidden-from-AT circle is decorative, never part of the accessible name.
- * Absolute positioning keeps wrapped title lines aligned with text, not with the dot. */
+/* Empty, hidden-from-AT markers never enter the accessible name.
+ * Page/major section titles keep their dots; semantic subsections use hyphens.
+ * Absolute positioning keeps wrapped title lines aligned with the same text inset. */
 :root body [data-heading] > .heading-marker {
  position:absolute;
  inset-inline-start:0;
@@ -41,6 +42,14 @@
  font-size:inherit;
  line-height:inherit;
  pointer-events:none;
+}
+/* Owner-requested middle headings (e.g. Today / Today's notable changes).
+ * Use the explicit role, not h3: the three major staff briefing titles are h3s. */
+:root body [data-heading="subsection"] > .heading-marker {
+ top:.64em;
+ width:.36em;
+ height:.08em;
+ border-radius:0;
 }
 :root body [data-heading] > small {white-space:normal;overflow-wrap:anywhere}
 @media(forced-colors:active){:root body [data-heading] > .heading-marker{background:CanvasText}}
