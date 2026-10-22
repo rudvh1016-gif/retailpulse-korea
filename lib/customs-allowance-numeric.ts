@@ -19,7 +19,7 @@ export async function storeJapanNumericUpdate(db:Store,candidate:{templateSha256
 }
 export async function readJapanNumericUpdate(db:Pick<D1Database,'prepare'>,country:Record<string,unknown>){
  const row=await db.prepare("SELECT * FROM customs_allowance_numeric_current WHERE jurisdiction='JP'").first<Row>();if(!row)return null;
- const fields=['id','scope','conditions','results','notes','sources','effectiveDate','effectiveLabel'];
+ const fields=['id','scope','conditions','results','guidance','procedures','notes','sources','effectiveDate','effectiveLabel'];
  const datasetHash=await sha256(Object.fromEntries(fields.filter(key=>Object.prototype.hasOwnProperty.call(country,key)).map(key=>[key,country[key]])));
  if(row.dataset_hash!==datasetHash)return null;
  try{const values:unknown=JSON.parse(row.values_json),previous:unknown=row.previous_values_json?JSON.parse(row.previous_values_json):null;

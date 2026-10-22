@@ -17,12 +17,30 @@ test('unavailable automation keeps the reviewed snapshot with an honest pending 
 });
 
 test('small manual review date remains distinct from newer collection attempts and missing evidence',async({page})=>{
- await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[{id:'JP',state:'SOURCE_UNCHANGED',lastCheckedAt:'2026-10-22T00:00:00Z',nextCheckAt:'2026-10-23T00:00:00Z'}]}}));
+ await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[{id:'JP',state:'SOURCE_UNCHANGED',lastCheckedAt:'2026-10-23T00:00:00Z',nextCheckAt:'2026-10-24T00:00:00Z'}]}}));
  await page.goto('/ko/airport-prepare',{waitUntil:'domcontentloaded'});
  const dialog=page.getByRole('dialog');if(await dialog.isVisible())await dialog.getByRole('button',{name:'닫기',exact:true}).click();
- for(const [id,date] of [['CN','2026-10-21'],['VN','2026-10-21'],['TH','2026-10-21'],['JP','2026-10-20'],['PH','미확인 · 검토 필요'],['MY','미확인 · 검토 필요']]){
+ for(const [id,date] of [['CN','2026-10-22'],['VN','2026-10-22'],['TH','2026-10-22'],['JP','2026-10-22'],['PH','미확인 · 검토 필요'],['MY','미확인 · 검토 필요']]){
   await page.getByLabel('도착 국가·지역',{exact:true}).selectOption(id);
-  const line=page.locator('.arrival-review-date');await expect(line).toBeVisible();await expect(line).toHaveCount(1);await expect(line).toContainText(date==='미확인 · 검토 필요'?'공식 자료를 확인한 날짜가 없어 직접 확인이 필요해요.':`${date}에 공식 자료를 확인했어요. ·`);
-  expect(await line.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBeLessThanOrEqual(12);await expect(line).not.toContainText('2026-10-22');
+  const line=page.locator('.arrival-review-date');await expect(line).toBeVisible();await expect(line).toHaveCount(1);await expect(line).toContainText(date==='미확인 · 검토 필요'?'표시 기준 수동 확인일 미확인':`표시 기준 수동 확인 ${date}`);
+  expect(await line.evaluate(node=>parseFloat(getComputedStyle(node).fontSize))).toBeLessThanOrEqual(12);expect(await line.evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('.arrival-filters')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);await expect(line).not.toContainText('2026-10-23');
  }
+});
+
+// Route coverage only: the reviewed legal guidance is Korean, not translated.
+for(const locale of ['ko','en','zh','ja'])test(`${locale}: condition guidance switches without carrying another country's answers`,async({page})=>{
+ await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[{id:'CN',state:'CHECK_UNAVAILABLE',accessReviewRequired:true,lastSuccessfulCheckAt:null,lastCheckedAt:'2026-10-21T00:00:00Z',nextCheckAt:'2026-10-22T00:00:00Z'}]}}));
+ await page.goto(`/${locale}/airport-prepare`,{waitUntil:'domcontentloaded'});
+ const dialog=page.getByRole('dialog');if(await dialog.isVisible())await dialog.locator('.update-notice-close').click();
+ const section=page.locator('#arrival-allowances');await expect(section).toHaveAttribute('lang','ko');
+ await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('CN');
+ for(const [label,value] of [['여행·물품 구분','ordinary'],['통상 거주지 (국적과 다름)','visitor'],['중국 본토 직전 출발지','korea'],['나이','adult'],['이번 입국을 포함한 15일 이내 중국 본토 입국','frequent']])await section.getByLabel(label,{exact:true}).selectOption(value);
+ await expect(section.locator('.arrival-condition-guidance')).toContainText('15일 내 반복 입국');await expect(section.locator('.arrival-condition-guidance')).toContainText('적색통로');await expect(section.locator('.arrival-result dl')).toHaveCount(0);
+ const conditionDetails=section.locator('.arrival-condition-guidance details');await expect(conditionDetails).toHaveJSProperty('open',false);await expect(conditionDetails.locator('a').first()).toBeHidden();await conditionDetails.locator('summary').click();await expect(conditionDetails.locator('a').first()).toBeVisible();await expect(conditionDetails).toContainText('이번 입국을 포함');
+ await expect(section.locator('.arrival-check-status')).toContainText('자동 조회 미구성');await section.locator('.arrival-source summary').click();await expect(section.locator('.arrival-source')).toContainText('원문을 요청하지 않았습니다');await expect(section.locator('.arrival-review-date')).toContainText('2026-10-22');
+ await section.getByLabel('이번 입국을 포함한 15일 이내 중국 본토 입국',{exact:true}).selectOption('normal');await expect(section.locator('.arrival-result')).toContainText('CNY 2,000');
+ await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('JP');await expect(section.getByLabel('여행·물품 구분',{exact:true})).toHaveValue('');await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('child');await expect(section.locator('.arrival-condition-guidance')).toContainText('본인이 사용할');
+ await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('VN');await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('minor');await expect(section.locator('.arrival-result')).toContainText('VND 10,000,000');
+ await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('TH');await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('gift');await expect(section.locator('.arrival-condition-guidance')).toContainText('선물은 본인용 한도로 단정하지 않습니다');await expect(section.locator('.arrival-result dl')).toHaveCount(0);
 });
