@@ -10,9 +10,6 @@ import { tofuCharacters } from "../e2e/font-glyphs";
  * six viewports. Screenshots are kept as artifacts for the report.
  */
 const WHITE = "rgb(255, 255, 255)";
-// Exact owner-approved airport canvas from the first release. Ordinary page,
-// card and header surfaces remain white; this is not a general image exemption.
-const FOCUS_CANVAS = "linear-gradient(145deg, rgb(250, 251, 253) 0%, rgb(240, 243, 246) 52%, rgb(248, 250, 251) 100%)";
 const locales = ["ko", "en", "zh", "ja"] as const;
 const viewports = [390, 430, 768, 1280, 1440, 1920] as const;
 const routes = [
@@ -24,6 +21,7 @@ const surfaces = [
   ".airport-context-nav", ".hero", ".signal-group", ".terminal-brief-card",
   ".airport-today-grid article", ".airport-detail-section", ".airport-composition",
   ".airport-composition-tabs", ".airport-composition-panel", ".business-pro",
+  ".airport-focus-shell", ".airport-focus-shell .glance-preview", ".airport-focus-shell .focus-detail",
   ".tourism-desk", ".tourism-shift-brief", ".tourism-event", ".tourism-subway",
   ".tourism-current-reading", ".tourism-background-item", ".tourism-link-block",
 ];
@@ -32,7 +30,7 @@ const registeredCountryCodes = [...new Set(Object.values(AIRLINE_REGISTRY)
   .map((entry) => entry.country))].sort();
 
 const paintedBackground = async (page: import("@playwright/test").Page, selector: string) => page.evaluate((sel) => {
-  const out: { colour: string; focusCanvas: boolean }[] = [];
+  const out: string[] = [];
   for (const start of Array.from(document.querySelectorAll(sel)).slice(0, 4)) {
     // The airport dusk poster band (owner decision 2026-10-02, PR #246) is a figure, not a page surface.
     if (start.closest(".airport-hero")) continue;
@@ -41,10 +39,7 @@ const paintedBackground = async (page: import("@playwright/test").Page, selector
       const style = getComputedStyle(node);
       const bg = style.backgroundColor;
       if (!(bg === "rgba(0, 0, 0, 0)" || bg === "transparent") || style.backgroundImage !== "none") {
-        out.push({
-          colour: style.backgroundImage !== "none" ? `image:${style.backgroundImage}` : bg,
-          focusCanvas: node.matches(".airport-focus-shell.airport-focus-operating"),
-        });
+        out.push(style.backgroundImage !== "none" ? `image:${style.backgroundImage}` : bg);
         break;
       }
       node = node.parentElement;
@@ -103,22 +98,53 @@ for (const locale of locales) {
       for (const route of routes) {
         await openRoute(page, `/${locale}${route}`);
         for (const selector of surfaces) {
-          for (const { colour, focusCanvas } of await paintedBackground(page, selector)) {
-            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(
-              focusCanvas && colour.startsWith("image:") ? `image:${FOCUS_CANVAS}` : WHITE,
-            );
+          for (const colour of await paintedBackground(page, selector)) {
+            expect(colour, `${locale}${route} @${width}px ${selector}`).toBe(WHITE);
           }
         }
         // Pixel samples at safe empty positions: page gutter (left edge, mid
         // height) and the top-right corner of the header, never on text.
         // On the airport page the dusk poster band bleeds to the page edge; sample the gutter just above it.
-        const gutterY = await page.evaluate(() => {
+        let gutterY = await page.evaluate(() => {
           const band = document.querySelector(".airport-hero")?.getBoundingClientRect();
           return band && band.top <= 450 && band.bottom >= 450 ? Math.max(90, Math.floor(band.top) - 6) : 450;
         });
-        const left = await samplePixel(page, 2, gutterY);
+        const mobileAirport = route === "/airport" && (width === 390 || width === 430);
+        if (mobileAirport) {
+          // CI 39694086259: (2,450) intersects the approved day-pill shadow,
+          // not a page fill. Use the intro's vertical midpoint, above the
+          // action/day controls, at both outer gutters. It follows heading
+          // reflow in every language; no fixed text height, blank-space
+          // requirement, material change or colour-based pixel search.
+          const geometry = await page.evaluate(() => {
+            const intro = document.querySelector(".airport-view > .view-intro")?.getBoundingClientRect();
+            if (!intro || intro.height <= 0) {
+              throw new Error("Airport intro gutter anchor is missing or hidden");
+            }
+            return {
+              y: Math.floor(intro.top + intro.height / 2),
+              viewportHeight: innerHeight,
+              scrollWidth: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
+              days: Array.from(document.querySelectorAll(".airport-view .airport-date-reserved .date-nav-shortcuts > button"), node => {
+                const box = node.getBoundingClientRect();
+                return { left: box.left, right: box.right };
+              }),
+            };
+          });
+          expect(geometry.scrollWidth, `${locale}${route} horizontal overflow`).toBeLessThanOrEqual(width);
+          expect(geometry.days).toHaveLength(3);
+          for (const day of geometry.days) {
+            expect(day.left).toBeGreaterThanOrEqual(0);
+            expect(day.right).toBeLessThanOrEqual(width);
+          }
+          expect(geometry.y).toBeGreaterThanOrEqual(0);
+          expect(geometry.y).toBeLessThan(geometry.viewportHeight);
+          gutterY = geometry.y;
+        }
+        for (const x of mobileAirport ? [2, width - 3] : [2]) {
+          expect(await samplePixel(page, x, gutterY), `${locale}${route} gutter pixel (${x},${gutterY})`).toEqual([255, 255, 255]);
+        }
         const corner = await samplePixel(page, width - 3, 3);
-        expect(left, `${locale}${route} gutter pixel`).toEqual([255, 255, 255]);
         expect(corner, `${locale}${route} header corner pixel`).toEqual([255, 255, 255]);
         if (width === 390 || width === 1440) {
           await testInfo.attach(`${locale}${route || "-home"}-${width}.png`, { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
