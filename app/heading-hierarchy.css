@@ -14,7 +14,7 @@
  font-weight:var(--weight-strong,600)!important;
  letter-spacing:-.025em;
 }
-:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important}
+:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important;padding-inline-start:0}
 :root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,26px)!important}
 :root body :is(h1,h2,h3)[data-heading="subsection"] {font-size:clamp(18px,1.7vw,20px)!important}
 /* The airport-flow parent stays above its three requested major briefing titles. */
@@ -23,7 +23,7 @@
 :root body :is(.hero,.view-intro,.tourism-desk-head,.not-found) [data-heading="page"] {font-size:clamp(32px,4vw,48px)!important}
 :root body .airport-view .view-intro [data-heading="page"] {font-size:clamp(28px,3vw,36px)!important}
 /* Empty, hidden-from-AT markers never enter the accessible name.
- * Page/major section titles keep their dots; semantic subsections use hyphens.
+ * Internal major sections keep their dots; semantic subsections use hyphens.
  * Absolute positioning keeps wrapped title lines aligned with the same text inset. */
 :root body [data-heading] > .heading-marker {
  position:absolute;
@@ -43,6 +43,9 @@
  line-height:inherit;
  pointer-events:none;
 }
+/* Topmost page titles have no prefix or reserved marker inset, in every locale.
+ * Target the semantic role: internal major sections can also be h1/h2/h3. */
+:root body [data-heading="page"] > .heading-marker {display:none}
 /* Owner-requested middle headings (e.g. Today / Today's notable changes).
  * Use the explicit role, not h3: the three major staff briefing titles are h3s. */
 :root body [data-heading="subsection"] > .heading-marker {
@@ -55,7 +58,7 @@
 @media(forced-colors:active){:root body [data-heading] > .heading-marker{background:CanvasText}}
 
 /* Airport-only hierarchy: charcoal titles, quieter informational subheadings.
- * Keep the established size ladder and the page/section dots + subsection hyphens. */
+ * Keep the established size ladder and internal section dots + subsection hyphens. */
 :root body .airport-view :is(h1,h2)[data-heading] {color:#24272c;font-weight:650!important}
 :root body .airport-view h3[data-heading="subsection"],
 :root body .airport-view .airport-hero h3[data-heading="subsection"] {color:#465361;font-weight:600!important;opacity:1}
