@@ -17,8 +17,8 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
   for(const side of ['CENTER','EAST']) await expect(model.locator(`.airport-concept-counts [data-side=${side}] small`)).toHaveText('20%');
   await expect(model.getByTestId('model-unverified-share')).toContainText('20%');
   const west=page.getByTestId('map-zone-countries').locator('.airport-zone-country-grid > [data-side=WEST]');
-  await expect(west.locator('li[data-country=JP]')).toHaveAttribute('data-share','50.0');
-  await expect(west.locator('li[data-country=HK]')).toHaveAttribute('data-share','50.0');
+  await expect(west.locator('li[data-country=JP]')).toHaveAttribute('data-share','50');
+  await expect(west.locator('li[data-country=HK]')).toHaveAttribute('data-share','50');
   expect(await tofuCharacters(model)).toEqual([]);
   for(const [index,total,westShare,centerShare] of [[0,14,'36%','21%'],[1,5,'40%','20%'],[3,3,'33%','33%'],[2,5,'40%','20%'],[0,14,'36%','21%'],[2,5,'40%','20%']] as const){
    await page.locator('.terminal-selector button').nth(index).click();
@@ -46,3 +46,4 @@ test('missing retrieval is unavailable, not a confirmed zero',async({page})=>{
  await expect(page.getByTestId('map-unavailable')).toContainText('not a confirmed zero');
  await expect(page.getByTestId('airport-concept-model')).toHaveCount(0);
 });
+

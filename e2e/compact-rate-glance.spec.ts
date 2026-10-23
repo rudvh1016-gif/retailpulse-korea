@@ -59,7 +59,8 @@ for(const width of [360,390,430,1280])test(`glance agrees with summary at 38 min
 test('More starts with the concise change-notation reading guide',async({page})=>{
  await page.goto('/ko/more');
  const guide=page.getByTestId('change-reading-guide');
- await expect(guide).toHaveText('수치 읽는 법: 파란색 +는 증가, 빨간색 ▲는 감소입니다. 비교 기간과 단위를 함께 확인하세요.');
+ await expect(guide).toHaveText('수치 읽는 법: 파란색 +는 증가, 빨간색 ▲는 감소입니다. 비교 기간과 단위를 함께 확인하세요. 인원·비율은 소수 첫째 자리 5 이상 올림, 5 미만 버림으로 표시합니다. 계산은 원본값 기준이며, 0%로 표시돼도 작은 증감이 있을 수 있습니다.');
  await expect(guide).toBeVisible();
  expect(await guide.evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('.more-section-links')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
 });
+
