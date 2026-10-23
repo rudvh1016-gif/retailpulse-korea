@@ -17,7 +17,7 @@ const plain=(html:string)=>html.replace(/<[^>]*>/g,'');
 test('event is immediately followed by its own country metrics, not the highest-delta Taiwan route',()=>{
  const before=JSON.stringify({flights,event});
  const html=render({children:h('p',null,'Preserved school-calendar context')}),[visible,details]=html.split('<details');
- assert.match(visible,/<h4>태국 Chulalongkorn 국왕 추모일<\/h4><div class="event-country-flights" data-country="TH"/);
+ assert.match(visible,/<h4><img [^>]+>태국 Chulalongkorn 국왕 추모일<\/h4><div class="event-country-flights" data-country="TH"/);
  for(const fact of ['선택일 2026-10-22','공항 전체','태국행','16편','2026-09월 전체 수집분 일평균 대비','▲ 2.5편','▲ 13.4%','10/23'])assert.ok(visible.includes(fact),fact);
  assert.doesNotMatch(visible,/대만|90편|18\.5|귀국 준비|공식 일정 확인|국적|특수금융기관/);
  assert.equal((html.match(/<details/g)??[]).length,1);assert.match(details,/^ class="staff-route-details">/);
@@ -41,7 +41,7 @@ test('single dates collapse once, multi-day and cross-year ranges retain both en
 test('institutional and partial applicability stays visible without duplicate bold financial scope',()=>{
  for(const type of ['bank_holiday','public_holiday']){
   const visible=render({event:{...event,type}}).split('<details')[0];
-  assert.match(visible,/<h4>태국 Chulalongkorn 국왕 추모일<\/h4>/);
+  assert.match(visible,/<h4><img [^>]+>태국 Chulalongkorn 국왕 추모일<\/h4>/);
   assert.equal((plain(visible).match(/금융기관/g)??[]).length,1);assert.doesNotMatch(visible,/전국 공휴일/);
  }
  for(const scope of ['13:00 이후 적용 범위 확인 중','지정 지역만 적용']){
@@ -101,4 +101,17 @@ test('no event preserves the existing ranked route summary and its folded compar
   assert.match(details,/^ class="staff-route-details">/);
  }
  const ko=render({event:null}).split('<details')[0];assert.match(ko,/대만행 90편/);assert.match(ko,/9월 일평균 대비/);
+});
+
+
+test('Thai holiday heading has one decorative flag in every locale, other countries stay unchanged',()=>{
+ for(const lang of ['ko','en','zh','ja'] as Lang[]){
+  const html=render({lang}),heading=html.match(/<h4>(.*?)<\/h4>/)?.[1]??'';
+  assert.match(heading,/^<img src="\/images\/airport-flags\/fallback\/th\.svg" width="18" height="14" alt=""/);
+  assert.equal((html.match(/src="\/images\/airport-flags\/fallback\/th\.svg"/g)??[]).length,1);
+ }
+ const other=render({event:{...event,country:'JP',countryLabel:'일본',name:'일본 일정'}});
+ assert.match(other,/<h4>일본 일본 일정<\/h4>/);
+ assert.doesNotMatch(other,/th\.svg/);
+ assert.doesNotMatch(render({event:null}),/th\.svg/);
 });
