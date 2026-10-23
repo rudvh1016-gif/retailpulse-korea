@@ -8,7 +8,7 @@ test('briefing parent, day group and figures have distinct compact title sizes',
  assert.ok(css.includes('.focus-report-title > h2[data-heading="section"] {font-size:clamp(24px,2.4vw,28px)!important}'));
  assert.ok(css.includes('.focus-report .focus-today-title[data-heading="subsection"] {font-size:20px!important}'));
  assert.ok(css.includes('.focus-report .focus-figures-title[data-heading="subsection"] {font-size:16px!important}'));
- assert.match(css,/color:#35566a!important;font-weight:650!important/);
+ assert.match(css,/color:#29272a!important;font-weight:650!important/);
  assert.match(css,/color:#542632!important;font-weight:750!important/);
  assert.match(css,/color:var\(--ink,#111111\)!important;font-weight:700!important/);
  assert.match(css,/white-space:normal/);assert.match(css,/overflow-wrap:anywhere/);
@@ -35,4 +35,5 @@ test('figures title has an 8px total gap in both grid and block layouts',()=>{
  assert.ok(css.includes('.focus-report-lines{grid-column:1;grid-row:3;display:block}'));
  assert.equal(3+5,8,'grid margin + row gap matches the desktop block margin');
 });
+
 

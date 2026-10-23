@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page){
   if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
-  const palette={page:['rgb(84, 38, 50)','750'],section:['rgb(53, 86, 106)','650'],subsection:['rgb(81, 77, 80)','500']} as const;
+  const palette={page:['rgb(84, 38, 50)','750'],section:['rgb(41, 39, 42)','650'],subsection:['rgb(81, 77, 80)','500']} as const;
   const [color,weight]=row.flowItem||row.blackMiddle?['rgb(17, 17, 17)','700']:palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
@@ -202,4 +202,5 @@ for(const width of [320,390,430,768,1440])test(`complete Korean trend title and 
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  }
 });
+
 
