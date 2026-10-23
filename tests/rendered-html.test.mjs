@@ -464,7 +464,7 @@ test("labels the S2 signal as delayed official data in all four languages", asyn
   const foreignBlock = signals.match(/if \(block\?\.foreignPresence\) \{([\s\S]*?)\n  \}/)?.[1] ?? "";
   assert.ok(foreignBlock.length > 0);
   assert.doesNotMatch(foreignBlock, /trend|delta|arrow|DEMO|↑|↓|%/i);
-  assert.match(signals, /maximumFractionDigits: 1/);
+  assert.match(signals, /maximumFractionDigits: 0/);
 });
 
 test("keeps departure congestion in Airport detail and removes it from Seoul demand signals", async () => {
