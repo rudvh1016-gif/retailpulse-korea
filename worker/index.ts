@@ -5,6 +5,7 @@ import { dispatchScheduledCollection } from "../lib/realtime-dispatch";
 import { redirectHttpToHttps } from "./https-redirect";
 import { shouldRouteToSummaryCache } from "./summary-cache-routing";
 import { canonicalSummaryRequest } from "./summary-cache-key";
+import { rewriteNotFoundMetadata } from "./not-found-metadata";
 
 interface Env {
   ASSETS: Fetcher;
@@ -79,7 +80,7 @@ const worker = {
       if (summaryCache) return summaryCache.fetch(canonicalSummaryRequest(request, url));
     }
 
-    return handler.fetch(request, env, ctx);
+    return rewriteNotFoundMetadata(request, await handler.fetch(request, env, ctx));
   },
 
   /**
@@ -127,3 +128,4 @@ export const SummaryCache = {
     return handler.fetch(request, env, ctx);
   },
 };
+
