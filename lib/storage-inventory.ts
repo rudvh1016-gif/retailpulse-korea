@@ -68,6 +68,10 @@ const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const BY_AREA = { column: "area", values: AREAS } as const;
 
 export const STORAGE_TABLES: readonly TableInventory[] = [
+  { table: "pageview_totals", recordClass: "C_AGGREGATE", retentionDays: null, prunedBy: null, readWindowDays: null,
+    readers: "One singleton: actual-start cumulative views and current KST day; disabled by default; durable budget/incomplete guard" },
+  { table: "pageview_receipts", recordClass: "F_OPERATIONAL_EVIDENCE", retentionDays: 10 / 1440, prunedBy: "lib/pageviews-server.ts (up to 8 expired receipts per POST; idle rows removed on next traffic)", readWindowDays: 2 / 1440,
+    readers: "Two-minute event replay window, random navigation IDs only; no visitor identity, IP or raw URLs", personal: true },
   // Bounded current reference data: maximum 24 source checks, one JP numeric row and two calendars.
   { table: "customs_allowance_observations", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "Latest source-check status and last verified hash; hard cap 24, no raw pages/history", insertedAt: "checked_at" },
@@ -539,3 +543,4 @@ export function retentionDryRun(input: RetentionInput) {
     estimatedBytes: input.bytesPerRow === null ? null : candidateRows * input.bytesPerRow,
   };
 }
+

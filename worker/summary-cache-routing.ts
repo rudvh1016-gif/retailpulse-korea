@@ -41,5 +41,6 @@ const CACHEABLE_METHODS = new Set(["GET", "HEAD"]);
  */
 export function shouldRouteToSummaryCache(method: string, pathname: string): boolean {
   if (!CACHEABLE_METHODS.has(method.toUpperCase())) return false;
-  return pathname === SUMMARY_CACHE_PATH || pathname === DUTY_FREE_CACHE_PATH || pathname === "/api/live/duty-free-exchange/monthly" || pathname === FLIGHTS_CACHE_PATH || AIRPORT_MONTH_CACHE_PATHS.some(path => path === pathname);
+  return pathname === "/api/pageviews" || pathname === SUMMARY_CACHE_PATH || pathname === DUTY_FREE_CACHE_PATH || pathname === "/api/live/duty-free-exchange/monthly" || pathname === FLIGHTS_CACHE_PATH || AIRPORT_MONTH_CACHE_PATHS.some(path => path === pathname);
 }
+
