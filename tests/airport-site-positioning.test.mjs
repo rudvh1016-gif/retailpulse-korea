@@ -9,8 +9,8 @@ test('site and home metadata describe the current airport-first scope without cl
   for(const locale of seoLocales){
     assert.match(pageTitle(locale),/인천공항|Incheon Airport|仁川机场|仁川空港/);
     const metadata=buildMetadata(locale);
-    assert.equal(metadata.openGraph.description,shareDescription);
-    assert.equal(metadata.twitter.description,shareDescription);
+    assert.equal(metadata.openGraph.description,locale === 'en' ? pageDescription('en') : shareDescription);
+    assert.equal(metadata.twitter.description,metadata.openGraph.description);
     assert.equal(metadata.alternates.canonical,`/${locale}`);
     assert.equal(pageStructuredData(locale)[0].description,pageDescription(locale));
   }

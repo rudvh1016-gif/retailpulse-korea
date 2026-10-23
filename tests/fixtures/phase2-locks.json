@@ -29,7 +29,7 @@
     "app/retailpulse-app.tsx": "39860e5caeb41e53946e4727a0110efed601f73bd0e5e46a1f085516256d330c",
     "app/retailpulse-data.ts": "e2594121d72008dc09edb9bc523ed61497befc55be5bc22ba88296320b83c6c3",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "799019d18d958ab37bd4b69297b24d24e6474a5962ba99559d9c66eefe3d8b99",
+    "app/seo-config.ts": "852a80f9a72c5e23a11b02fcd8e5dc1ad9566e5ad010f26e91cd9f2a6045d30a",
     "app/site-usage-guide.tsx": "492dd631382c9aab606c5fb08238e9e84d925e762749c53d44b5294a715b4067",
     "app/sitemap.ts": "31ccb4d7cad836a09c3973f14c35ef638d8570413e6198a031c0ce2cd978063f",
     "app/source-status.tsx": "8556b0a7bd1012437694dddc7d035e154814023c19abe2ecd9b285437ab36b67",
@@ -181,6 +181,18 @@
         "current": "f0145c746f1580736177367c3e784846b99045e42f62513a1c378673ab8b43a0",
         "proposedBlob": "9687cddf930322cab0991a34386f47d2df8c9702",
         "exactUnifiedDiff": "--- a/app/tourism-desk.tsx\n+++ b/app/tourism-desk.tsx\n@@ -776,7 +776,7 @@\n         {hasBackground ? <div className=\"tourism-background-list\">\n           {block?.foreignPresence && <article className=\"tourism-background-item\">\n             <h3 data-heading=\"subsection\"><span className=\"heading-marker\" aria-hidden=\"true\"/>{copy.foreignPresence}</h3>\n-            <p className=\"tourism-background-value\">{numberText(block.foreignPresence.value, lang)} {copy.people}</p>\n+            <p className=\"tourism-background-value\">{numberText(block.foreignPresence.value, lang, 0)} {copy.people}</p>\n             <p className=\"tourism-background-period\">{formatKstDateTime(block.foreignPresence.referenceAt,lang)} KST</p>{foreignPeriod && <PeriodNote period={foreignPeriod} />}\n             <p className=\"tourism-source\">{copy.foreignSource}</p>\n             <p className=\"tourism-limit-note\">{copy.foreignCaveat}</p>\n@@ -829,3 +829,4 @@\n     </section>\n   </section>;\n }\n+\n"
+      }
+    ]
+  },
+  "technicalChanges20261023EnglishSearchCopy": {
+    "comparisonBase": "a60f3f046ba8e28502cdc8f0770a697b5ed396e7",
+    "ownerRequestDate": "2026-10-23",
+    "description": "Owner-requested English search/share correction: English routes use their existing English airport-home description for OG/Twitter instead of Korean. Other locales, page title/description/canonical, data and UI styles unchanged. PR468 audit against 84cf11c6e63d6ad2842d7c5179aaf26fc9528cd0.",
+    "changes": [
+      {
+        "file": "app/seo-config.ts",
+        "previous": "799019d18d958ab37bd4b69297b24d24e6474a5962ba99559d9c66eefe3d8b99",
+        "current": "852a80f9a72c5e23a11b02fcd8e5dc1ad9566e5ad010f26e91cd9f2a6045d30a"
       }
     ]
   }

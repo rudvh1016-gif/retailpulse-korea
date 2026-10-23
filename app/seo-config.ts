@@ -149,16 +149,18 @@ export function buildMetadata(locale: SeoLocale, requestedSlug?: SeoSlug, touris
   ]));
   const title = pageTitle(locale, slug, tourismArea);
   const description = pageDescription(locale, slug, tourismArea);
+  // Preserve the approved Korean card; English routes must not advertise Korean copy.
+  const localizedShareDescription = locale === "en" ? pageDescription("en") : shareDescription;
   return {
     title,
     description,
     alternates: { canonical: path, languages: { ...equivalents, "x-default": seoPath("en", slug, tourismArea) } },
     openGraph: {
-      title: "KORETAIL", description: shareDescription, url: path, siteName: "KORETAIL", type: "website",
+      title: "KORETAIL", description: localizedShareDescription, url: path, siteName: "KORETAIL", type: "website",
       locale: locale === "ko" ? "ko_KR" : locale === "zh" ? "zh_CN" : locale === "ja" ? "ja_JP" : "en_US",
       images: [socialImage],
     },
-    twitter: { card: "summary_large_image", title: "KORETAIL", description: shareDescription, images: [socialImage.url] },
+    twitter: { card: "summary_large_image", title: "KORETAIL", description: localizedShareDescription, images: [socialImage.url] },
   };
 }
 
@@ -192,3 +194,4 @@ export function pageStructuredData(locale: SeoLocale, requestedSlug?: SeoSlug, t
   const breadcrumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items };
   return [webPage, breadcrumbs];
 }
+
