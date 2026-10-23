@@ -33,7 +33,7 @@
     "app/site-usage-guide.tsx": "492dd631382c9aab606c5fb08238e9e84d925e762749c53d44b5294a715b4067",
     "app/sitemap.ts": "31ccb4d7cad836a09c3973f14c35ef638d8570413e6198a031c0ce2cd978063f",
     "app/source-status.tsx": "8556b0a7bd1012437694dddc7d035e154814023c19abe2ecd9b285437ab36b67",
-    "app/tourism-desk.tsx": "fd4ed95e80fdaada5c222ffd5df1075d39c4342e318cc985fe1303f94de838cd",
+    "app/tourism-desk.tsx": "f0145c746f1580736177367c3e784846b99045e42f62513a1c378673ab8b43a0",
     "app/tourism-visitor-show.tsx": "4197bd9d611333e736c2ff2f9f9f0d8e9971a3c6b82340de0cc906bfe047a910",
     "lib/realtime-dispatch.ts": "dba7bb0e688ec073df674bd5e5cfbb62c3810d8ad5ec181ed06e8bbe449d0a35",
     "public/_headers": "a10cad25ce8bd0c0b7c92225180a71718fc3d2bf5329ac714bf7b2ac6e22676f",
@@ -173,6 +173,14 @@
         "previous": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
         "current": "e2594121d72008dc09edb9bc523ed61497befc55be5bc22ba88296320b83c6c3",
         "exactUnifiedDiff": "--- a/app/retailpulse-data.ts\n+++ b/app/retailpulse-data.ts\n@@ -1,3 +1,4 @@\n+import {roundDisplayInteger} from \"../lib/display-number\";\n export type Lang = \"ko\" | \"en\" | \"zh\" | \"ja\";\n export type Terminal = \"all\" | \"T1\" | \"T2\";\n export type AirportDirection = \"departure\" | \"arrival\" | \"total\";\n@@ -114,10 +115,10 @@\n   const suffix = unit === \"flights\"\n     ? (lang === \"ko\" ? \"편\" : lang === \"zh\" ? \"班\" : lang === \"ja\" ? \"便\" : \" flights\")\n     : (lang === \"ko\" ? \"명\" : lang === \"zh\" || lang === \"ja\" ? \"人\" : \" passengers\");\n-  return `${Math.round(value).toLocaleString(locale)}${suffix}`;\n+  return `${roundDisplayInteger(value).toLocaleString(locale)}${suffix}`;\n }\n \n export function formatInteger(lang: Lang, value: number) {\n   const locale = lang === \"ko\" ? \"ko-KR\" : lang === \"zh\" ? \"zh-CN\" : lang === \"ja\" ? \"ja-JP\" : \"en-US\";\n-  return Math.round(value).toLocaleString(locale);\n+  return roundDisplayInteger(value).toLocaleString(locale);\n }\n"
+      },
+      {
+        "file": "app/tourism-desk.tsx",
+        "comparisonBase": "8f392982c9105c4bdf02abb2a65f012dc0567fee",
+        "previous": "fd4ed95e80fdaada5c222ffd5df1075d39c4342e318cc985fe1303f94de838cd",
+        "current": "f0145c746f1580736177367c3e784846b99045e42f62513a1c378673ab8b43a0",
+        "proposedBlob": "9687cddf930322cab0991a34386f47d2df8c9702",
+        "exactUnifiedDiff": "--- a/app/tourism-desk.tsx\n+++ b/app/tourism-desk.tsx\n@@ -776,7 +776,7 @@\n         {hasBackground ? <div className=\"tourism-background-list\">\n           {block?.foreignPresence && <article className=\"tourism-background-item\">\n             <h3 data-heading=\"subsection\"><span className=\"heading-marker\" aria-hidden=\"true\"/>{copy.foreignPresence}</h3>\n-            <p className=\"tourism-background-value\">{numberText(block.foreignPresence.value, lang)} {copy.people}</p>\n+            <p className=\"tourism-background-value\">{numberText(block.foreignPresence.value, lang, 0)} {copy.people}</p>\n             <p className=\"tourism-background-period\">{formatKstDateTime(block.foreignPresence.referenceAt,lang)} KST</p>{foreignPeriod && <PeriodNote period={foreignPeriod} />}\n             <p className=\"tourism-source\">{copy.foreignSource}</p>\n             <p className=\"tourism-limit-note\">{copy.foreignCaveat}</p>\n@@ -829,3 +829,4 @@\n     </section>\n   </section>;\n }\n+\n"
       }
     ]
   }

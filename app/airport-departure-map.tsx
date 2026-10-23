@@ -23,7 +23,7 @@ import {
   buildingsOf, customWindow, departureMap, minuteOfDay, presetWindow,
   type DepartureMap, type MapBuilding, type MapFlight, type MapTerminal, type MapWindow, type WindowPreset, type FlightBuildingScope,
 } from '../lib/airport-departure-map';
-import { flightLine, groupShare, statusText, leadLine, mapCopy as copy, mapShareText, windowCountsLine, windowText } from '../lib/airport-departure-map-copy';
+import { flightLine, groupShareDisplay, statusText, leadLine, mapCopy as copy, mapShareText, windowCountsLine, windowText } from '../lib/airport-departure-map-copy';
 import type { DestinationGroup } from '../lib/airport-destinations';
 import { AirportConceptModel } from './airport-concept-model';
 import { AirportSceneModel } from './airport-scene-model';
@@ -206,7 +206,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       <p className="prep-note" data-testid="model-check-times">{contextText(lang,'수집 성공 확인','Successful collection check','采集成功确认','収集成功の確認')}: {successCheck?kstClock(successCheck,date):'—'} · {contextText(lang,'화면 자료 조회','Page data read','页面资料查询','画面データ取得')}: {validQueryAt?kstClock(validQueryAt,date):'—'}</p>
       <AirportFlightBrowser lang={lang} flights={map.flights} testId="map-flights"/>
       <details className="prep-evidence" data-testid="map-counting-basis"><summary>{contextText(lang,'항공편 출처·공식 좌표','Flight sources and official coordinates','航班来源与官方坐标','便の出典・公式座標')}</summary><p>{basis} · {copy.notPeople[lang]}</p><p data-testid="map-counts">{windowCountsLine(map,lang)}</p><p data-testid="map-lead">{leadLine(map,lang)}</p>
-        <OpenableList testId="map-destinations" summary={copy.destinations[lang]}>{()=> <table data-testid="map-groups"><tbody>{map.groups.map(group=><tr key={group.group}><th scope="row">{copy.groups[group.group][lang]}</th><td>{group.flights}{unit}</td><td>{groupShare(group,map.flights.length)??'—'}%</td></tr>)}</tbody></table>}</OpenableList>
+        <OpenableList testId="map-destinations" summary={copy.destinations[lang]}>{()=> <table data-testid="map-groups"><tbody>{map.groups.map(group=><tr key={group.group}><th scope="row">{copy.groups[group.group][lang]}</th><td>{group.flights}{unit}</td><td>{groupShareDisplay(group,map.flights.length)??'—'}%</td></tr>)}</tbody></table>}</OpenableList>
         <OpenableList testId="map-official-coordinates" summary={contextText(lang,'공식 지도 탑승구 좌표','Gate coordinates on official maps','官方地图登机口坐标','公式地図の搭乗口座標')}>{()=> <>{(buildingScope==='all'?['T1','T2','CONCOURSE'] as const:buildingScope?[buildingScope]:buildingsOf(terminal)).map(building=><BuildingMap key={building} lang={lang} building={building} map={map} flights={map.flights} selected={selected} onSelect={setSelected}/>)}<p>{copy.schematic[lang]}</p>{selected&&<FlightRows lang={lang} flights={map.flights.filter(flight=>`${flight.building}:${flight.gate}`===selected)} testId="map-gate-list"/>}</>}</OpenableList>
         <button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>{copied==='OK'&&<p role="status">{copy.copied[lang]}</p>}{copied==='FAILED'&&<><p role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{whiteSpace:'pre-wrap'}}>{share}</pre></>}
       </details>
@@ -246,7 +246,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       <table data-testid="map-groups" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
         <tbody>
           {map.groups.map((row) => {
-            const share = groupShare(row, map.flights.length);
+            const share = groupShareDisplay(row, map.flights.length);
             const days = holidayFor(row.group);
             return <tr key={row.group} data-group={row.group} style={{ borderTop: '1px solid var(--line)' }}>
               <th scope="row" style={{ textAlign: 'left', fontWeight: 400, padding: '6px 0' }}>
@@ -300,3 +300,4 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
     {copied === 'FAILED' && <><p className="prep-note" role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{share}</pre></>}
   </div>;
 }
+
