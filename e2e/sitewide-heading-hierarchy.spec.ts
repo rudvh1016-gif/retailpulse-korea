@@ -24,7 +24,7 @@ async function verifyHeadings(page:Page){
   const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT,{acceptNode:child=>child.textContent?.trim()&&!child.parentElement?.closest('[aria-hidden="true"]')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
   const textNode=walker.nextNode();
   const range=document.createRange();if(textNode)range.selectNodeContents(textNode);
-  return {blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  return {figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
    textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
@@ -37,7 +37,7 @@ async function verifyHeadings(page:Page){
  }));
  for(const row of rows){
   expect(row.text).toBeTruthy();
-  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem?16:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem||row.figuresTitle?16:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page){
   if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
-  const palette={page:['rgb(84, 38, 50)','750'],section:['rgb(41, 39, 42)','650'],subsection:['rgb(81, 77, 80)','500']} as const;
+  const palette={page:['rgb(84, 38, 50)','750'],section:['rgb(53, 86, 106)','650'],subsection:['rgb(81, 77, 80)','500']} as const;
   const [color,weight]=row.flowItem||row.blackMiddle?['rgb(17, 17, 17)','700']:palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
@@ -202,3 +202,4 @@ for(const width of [320,390,430,768,1440])test(`complete Korean trend title and 
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  }
 });
+

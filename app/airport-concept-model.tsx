@@ -25,7 +25,7 @@ export function AirportConceptModel({ map, lang, evidence }: { map: DepartureMap
   const perBuilding = scope === 'all' ? buildingZoneCounts(map) : null;
   const text = zoneShareCopy[lang];
   const unit = { ko: '편', en: ' flights', zh: '班', ja: '便' }[lang];
-  const share = (side: 'EAST' | 'WEST' | 'CENTER' | 'UNVERIFIED') => shares[side] === null ? text.zero : `${shares[side].toFixed(1)}%`;
+  const share = (side: 'EAST' | 'WEST' | 'CENTER' | 'UNVERIFIED') => shares[side] === null ? text.zero : `${shares[side].toFixed(0)}%`;
   return <figure className="airport-concept-model" data-testid="airport-concept-model" data-denominator={denominator}>
     <figcaption data-testid="airport-map-model-scope" data-terminal={scope}>{airportModelScope(scope,lang)} · {windowText(map.window, lang)}</figcaption>
     {evidence && <p className="prep-note" data-testid="model-source-evidence">{evidence}</p>}
@@ -37,7 +37,7 @@ export function AirportConceptModel({ map, lang, evidence }: { map: DepartureMap
       return <div key={building} className={`airport-concept-counts${perBuilding ? ' airport-concept-building-counts' : ''}`} data-building={building} data-denominator={counts.total} role="group" aria-label={`${copy.building[building][lang]} · ${gatesPending ? text.gatesPending : text.basis}`}>
         {gatesPending ? <div data-testid="model-gates-pending" style={{gridColumn:'1 / -1'}}><span className="airport-concept-zone-name">{{ko:'전체 출발편',en:'Total departure flights',zh:'全部出发航班',ja:'全出発便'}[lang]}</span><span className="airport-concept-zone-values"><strong>{counts.total.toLocaleString(lang==='zh'?'zh-CN':lang)}{unit}</strong><small>{text.gatesPending}</small></span></div> : (['WEST', 'CENTER', 'EAST'] as const).map(side => <div key={side} data-side={side}>
           <span className="airport-concept-zone-name">{copy.side[side][lang]}</span>
-          <span className="airport-concept-zone-values"><strong>{counts[side]}{unit}</strong><small>{buildingShares[side] === null ? text.zero : `${buildingShares[side].toFixed(1)}%`}</small></span>
+          <span className="airport-concept-zone-values"><strong>{counts[side]}{unit}</strong><small>{buildingShares[side] === null ? text.zero : `${buildingShares[side].toFixed(0)}%`}</small></span>
         </div>)}
       </div>;
     })}
@@ -53,4 +53,3 @@ export function AirportConceptModel({ map, lang, evidence }: { map: DepartureMap
     <p className="prep-note" data-testid="model-unverified-share">{copy.side.UNVERIFIED[lang]} {map.sides.UNVERIFIED}{unit} · {share('UNVERIFIED')}{map.concourse !== null ? ` · ${copy.concourse[lang]} ${map.concourse}${unit}` : ''}</p>
   </figure>;
 }
-

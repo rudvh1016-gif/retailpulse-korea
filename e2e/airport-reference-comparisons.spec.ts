@@ -15,7 +15,7 @@ test('same-basis full-month daily mean is visible, not departure-only change',as
  await fixtures(page);await page.route('**/api/live/passenger-reference*',route=>route.fulfill({json:{status:'READY',month:'2026-09',data:{all:baseline,T1:baseline,T2:baseline}}}));
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.focus-passenger-comparison')).toContainText('100,000명');
- await expect(page.locator('.focus-passenger-comparison')).toContainText('+12.4%');
+ await expect(page.locator('.focus-passenger-comparison')).toContainText('+12%');
  await expect(page.locator('.focus-passenger-total')).toHaveText('= 단순합계 112,403명');
 });
 test('incomplete prior month shows covered dates and never a misleading percentage',async({page})=>{

@@ -32,7 +32,7 @@ test('brief topic boundaries total 25px rather than stacking full section margin
   assert.deepEqual(Object.fromEntries(rule.nodes.map(n=>[n.prop,n.value])),{'margin-top':'12px','padding-top':'12px','border-top':'var(--section-rule-width,1px) solid var(--section-rule-color,#d5d9de)'});
  }
  const cssText=css.toString();
- assert.match(cssText,/\.airport-focus-shell \.focus-report \.focus-report-title\{margin-bottom:16px\}/);
+ assert.match(cssText,/\.airport-focus-shell \.focus-report \.focus-report-title\{margin-bottom:20px\}/);
  assert.match(cssText,/\.airport-focus-shell \.focus-report \.focus-selected-country-changes\{margin-top:0\}/);
  assert.match(cssText,/\.focus-preparation-brief > div > h3\{margin:0 0 10px\}/);
  const overrides=[];css.walkRules(rule=>{if(rule.selector==='.airport-focus-shell .focus-report .focus-preparation-brief > div:first-child')overrides.push(rule);});
@@ -45,3 +45,4 @@ test('CI geometry checks cover the breakpoint, return topic, title gaps and righ
  for(const evidence of ['999,1000','layout-return-fixture','topicGap','leftTops','firstFuture','toBeLessThanOrEqual(28)','report.screenshot'])assert.ok(source.includes(evidence),evidence);
  assert.match(read('.github/workflows/ci.yml'),/e2e\/brief-desktop-row-spacing.spec.ts/);
 });
+

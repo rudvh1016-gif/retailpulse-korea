@@ -153,8 +153,7 @@ test('a small previous daily mean keeps the full large growth rate inside the 32
  await airlines.locator('summary').click();
  const table=airlines.locator('table');
  const rareRow=table.locator('tbody tr').filter({has:page.locator('.airport-month-airline-code',{hasText:/^LX$/})});
- await expect(rareRow.locator('td').last()).toHaveText('+299900.0%');
+ await expect(rareRow.locator('td').last()).toHaveText('+299900%');
  await expectContainedNumbers(table);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
-

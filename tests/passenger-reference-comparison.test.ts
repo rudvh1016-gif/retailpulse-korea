@@ -47,9 +47,9 @@ test('one-day arithmetic total versus a prior-month DAILY mean preserves count a
  const down=compare(52_919,'2026-10-21',baseline())!;
  assert.equal(down.currentDays,1);assert.equal(down.currentMean,52_919);assert.equal(down.baselineDays,30);
  assert.equal(down.delta,-7_081);assert.equal(down.percent,-7_081/60_000*100);
- assert.equal(passengerDailyDeltaText(down.delta),'7,081명/일 감소');assert.equal(formatChangeRate(down.percent),'▲ 11.8%');
+ assert.equal(passengerDailyDeltaText(down.delta),'7,081명/일 감소');assert.equal(formatChangeRate(down.percent),'▲ 12%');
  const up=compare(67_081,'2026-10-21',baseline())!;
- assert.equal(up.delta,7_081);assert.equal(formatChangeRate(up.percent),'+11.8%');assert.equal(passengerDailyDeltaText(up.delta),'7,081명/일 증가');
+ assert.equal(up.delta,7_081);assert.equal(formatChangeRate(up.percent),'+12%');assert.equal(passengerDailyDeltaText(up.delta),'7,081명/일 증가');
  const same=compare(60_000,'2026-10-21',baseline())!;
  assert.equal(same.delta,0);assert.equal(same.percent,0);assert.equal(passengerDailyDeltaText(same.delta),'0명/일 · 차이 없음');
 });
@@ -79,5 +79,5 @@ test('true zero current count is -100%; zero baseline withholds rate but not an 
 test('fractional daily means are not rounded before comparison and tiny differences keep direction',()=>{
  const mean=100/30,change=compare(3,'2026-10-21',baseline('2026-09',mean))!;
  assert.equal(change.delta,3-mean);assert.equal(change.percent,(3-mean)/mean*100);
- assert.equal(passengerDailyDeltaText(.01),'0.1명/일 미만 증가');assert.equal(passengerDailyDeltaText(-.01),'0.1명/일 미만 감소');
+ assert.equal(passengerDailyDeltaText(.01),'0명/일 증가');assert.equal(passengerDailyDeltaText(-.01),'0명/일 감소');
 });

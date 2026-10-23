@@ -24,12 +24,9 @@ export function rangeChange(currentMin: unknown, currentMax: unknown, baselineMi
  * heading can print the number without slicing it back out of the sentence
  * below. Locale-independent by construction: it is signs and digits only.
  *
- * A real change smaller than the printed resolution must not read as "no
- * change". `(+0.04).toFixed(1)` is "+0.0", which tells a reader the count held
- * steady when one more person was actually counted. Below the resolution the
- * sign is still known, so the bound is printed instead of a rounded zero:
- * `+<0.1%` and `▲ <0.1%` say "moved, by less than a tenth of a percent".
- * Exactly zero keeps "0%", because that one genuinely is no change.
+ * Display percentages are rounded to whole percentage units. Nonzero raw
+ * changes retain their direction even when the rounded display is +0% or ▲ 0%.
+ * Exactly zero alone is neutral 0%. Calculations always use the original values.
  */
 export function comparisonValue(change: RangeChange): string {
   const signed = formatChangeRate;
@@ -58,4 +55,3 @@ export function withAreaBaselines(sql: string, table: "seoul_realtime_area" | "s
       AND h.source_id = current.sourceId AND h.schema_version = current.schemaVersion LIMIT 1) AS baseline${days}`).join(", ")}
     FROM (${sql}) current`;
 }
-

@@ -31,7 +31,7 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:1});
  const countryNames=new Intl.DisplayNames([lang],{type:'region'});
  const value=(number:number|null)=>number===null?'—':fmt.format(number);
- const percentage=(number:number|null)=>number===null?'—':fmt.format(number)+'%';
+ const percentage=(number:number|null)=>number===null?'—':new Intl.NumberFormat(lang,{maximumFractionDigits:0}).format(number)+'%';
  const labels:Record<MonthScope,string>={ALL:t(lang,'전체','All','全部','全体'),T1:t(lang,'T1 · 본관','T1 · main building','T1 · 主楼','T1 · 本館'),T2:'T2',CONCOURSE:t(lang,'탑승동','Concourse','卫星厅','搭乗棟'),UNKNOWN:t(lang,'터미널 미정','Terminal unconfirmed','航站楼未确认','ターミナル未確認')};
  const selected:MonthScope=MONTH_SCOPES.includes(scope)?scope:'ALL';
  const metric=(key:(counts:MonthCounts)=>number)=>monthlyMetric(current,previous,selected,key);

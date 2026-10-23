@@ -21,6 +21,10 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  const figuresTitle=figures.locator('h3');
  await expect(figuresTitle).toHaveText(({ko:'출국객·항공편',en:'Passengers and flights',zh:'出境旅客与航班',ja:'出国者・便数'} as Record<string,string>)[lang]);
  await expect(figuresTitle).toHaveAttribute('data-heading','subsection');
+ await expect(figuresTitle).toHaveCSS('font-size','16px');
+ await expect(report.locator('.focus-today-title')).toHaveCSS('font-size','20px');
+ const parentSize=await report.locator('.focus-report-title > h2').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
+ expect(parentSize).toBeGreaterThanOrEqual(24);expect(parentSize).toBeLessThanOrEqual(28);
  const topics=stack.locator(':scope > .focus-selected-country-changes');await expect(topics).toHaveCount(2);
  await page.evaluate(()=>document.fonts.ready);
  for(const heading of await report.locator('h3[data-heading="subsection"]').all()){
@@ -38,8 +42,8 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
   }
   const title=(await report.locator('.focus-today-title').boundingBox())!;
   const reportTitle=(await report.locator('.focus-report-title').boundingBox())!;
-  expect(title.y-reportTitle.y-reportTitle.height).toBeGreaterThanOrEqual(15);
-  expect(title.y-reportTitle.y-reportTitle.height).toBeLessThanOrEqual(17);
+  expect(title.y-reportTitle.y-reportTitle.height).toBeGreaterThanOrEqual(19);
+  expect(title.y-reportTitle.y-reportTitle.height).toBeLessThanOrEqual(21);
   const numbers=(await figures.boundingBox())!,right=(await future.boundingBox())!;
   const changeTitle=(await topics.nth(0).locator('h3').boundingBox())!;
   const returnTitle=(await topics.nth(1).locator('h3').boundingBox())!;
@@ -51,8 +55,8 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
   for(const topic of [figures,...await topics.all(),...await future.locator(':scope > div').all()]){
    const h=topic.locator(':scope > h3'),content=topic.locator(':scope > h3 + *');
    const hb=(await h.boundingBox())!,cb=(await content.boundingBox())!;
-   expect(cb.y-hb.y-hb.height).toBeGreaterThanOrEqual(9);
-   expect(cb.y-hb.y-hb.height).toBeLessThanOrEqual(14);
+   expect(cb.y-hb.y-hb.height).toBeGreaterThanOrEqual(topic===figures?7:9);
+   expect(cb.y-hb.y-hb.height).toBeLessThanOrEqual(topic===figures?10:14);
   }
   if(width>=1000){
    expect(numbers.y-title.y-title.height).toBeGreaterThanOrEqual(11);
@@ -74,3 +78,4 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  // A taller right column must not redistribute whitespace inside the left one.
  for(let i=0;i<leftTops[0].length;i++)expect(Math.abs(leftTops[0][i]-leftTops[1][i])).toBeLessThanOrEqual(1);
 });
+

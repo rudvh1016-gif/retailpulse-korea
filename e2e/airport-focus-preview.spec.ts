@@ -49,7 +49,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-line-chart').first()).toContainText('9월');
  await expect(page.locator('.focus-report')).toContainText('567편');
  await expect(page.locator('.focus-selected-country-changes')).toContainText('일본행 161편');
- await expect(page.locator('.focus-selected-country-changes')).toContainText('+2.5%');
+ await expect(page.locator('.focus-selected-country-changes')).toContainText('+2%');
  await expect(page.locator('.focus-report')).toContainText('출근 후 30초 확인');
  await expect(page.locator('.focus-staff-links a')).toHaveAttribute('href','/ko/airport-news');
  await expect(page.locator('.focus-report')).toContainText('552.9편');
@@ -112,7 +112,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await expect(page.locator('.focus-trend-summary').first()).toContainText('3개월 연속 증가');
  await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('6–8월 3개월 연속 증가');
- await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('▲ 21.1%');
+ await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('▲ 21%');
  await expect(page.locator('.focus-trend-context[data-country="CN"]')).toContainText('160,405명');
  await expect(page.locator('.focus-month-values').first().locator('thead')).toContainText('전월비');
  await expect(page.locator('.focus-month-values').first().locator('tbody tr').first()).toContainText('비교자료 없음');

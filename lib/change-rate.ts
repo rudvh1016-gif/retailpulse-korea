@@ -4,14 +4,14 @@ export function formatChangeRate(value: number | null, unit: '%' | '%p' = '%'): 
   if (value === null || !Number.isFinite(value)) return '—';
   if (value === 0) return `0${unit}`;
   const magnitude = Math.abs(value);
-  return `${value > 0 ? '+' : '▲ '}${magnitude < 0.05 ? '<0.1' : magnitude.toFixed(1)}${unit}`;
+  return `${value > 0 ? '+' : '▲ '}${Math.round(magnitude)}${unit}`;
 }
 /** Count changes use the same signs while retaining the caller's count/day units. */
-export function formatCountChange(value: number | null, format: (value:number)=>string): string {
+export function formatCountChange(value: number | null, format: (value:number)=>string, integer = false): string {
   if (value === null || !Number.isFinite(value)) return '—';
   if (value === 0) return '0';
   const magnitude = Math.abs(value);
-  return `${value > 0 ? '+' : '▲ '}${magnitude < 0.05 ? '<'+format(0.1) : format(magnitude)}`;
+  return `${value > 0 ? '+' : '▲ '}${!integer && magnitude < 0.05 ? '<'+format(0.1) : format(magnitude)}`;
 }
 export function spokenRateText(text: string, lang: RateLang): string {
   const labels = {

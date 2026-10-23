@@ -61,9 +61,9 @@ export function CommercialComposition({context,lang}:{context:SeoulContext;lang:
     <div className="commercial-donut-center"><strong>{model.complete?number.format(model.total):'—'}</strong><small>{t('건','payments','笔','件')}</small><span>{t('공개 업종 합계','Published category total','公开行业合计','公開業種の合計')}</span></div>
    </div>
    <div className="commercial-miniature-grid" role="group" aria-label={t('전체 업종 결제 비중','Payment shares for all categories','所有行业支付占比','全業種の決済割合')}>
-    {model.segments.map(s=>{const icon=commercialCategoryIcons[s.row.category]??commercialCategoryFallback;return <button type="button" className="commercial-miniature-card" key={s.key} data-category={s.row.category} style={{'--slice':s.color} as CSSProperties} aria-label={`${s.row.category}, ${s.ratio===null?'—':`${new Intl.NumberFormat(commercialLocales[lang],{maximumFractionDigits:1}).format(s.ratio*100)}%`}`} aria-pressed={selected===s.key} aria-controls={`${id}-selected`} onClick={()=>setSelected(selected===s.key?null:s.key)} title={s.row.category}>
+    {model.segments.map(s=>{const icon=commercialCategoryIcons[s.row.category]??commercialCategoryFallback;return <button type="button" className="commercial-miniature-card" key={s.key} data-category={s.row.category} style={{'--slice':s.color} as CSSProperties} aria-label={`${s.row.category}, ${s.ratio===null?'—':`${new Intl.NumberFormat(commercialLocales[lang],{maximumFractionDigits:0}).format(s.ratio*100)}%`}`} aria-pressed={selected===s.key} aria-controls={`${id}-selected`} onClick={()=>setSelected(selected===s.key?null:s.key)} title={s.row.category}>
      <CategoryMiniature src={icon.src.replace('/commercial-icons/','/commercial-icons/miniatures/').replace('-64.webp','-128.webp')}/>
-     <span className="commercial-short-name">{names[s.row.category]?.[lang]??s.row.category}</span><strong className="commercial-share">{s.ratio===null?'—':`${new Intl.NumberFormat(commercialLocales[lang],{maximumFractionDigits:1}).format(s.ratio*100)}%`}</strong>
+     <span className="commercial-short-name">{names[s.row.category]?.[lang]??s.row.category}</span><strong className="commercial-share">{s.ratio===null?'—':`${new Intl.NumberFormat(commercialLocales[lang],{maximumFractionDigits:0}).format(s.ratio*100)}%`}</strong>
     </button>;})}
    </div>
   </div>

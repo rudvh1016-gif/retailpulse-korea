@@ -10,9 +10,9 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`tourism desk and brief re
  data.areas.myeongdong!.subwayRidership!.trend!.sameWeekdayLastWeek!.changeTenthsPercent=-86;
  await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(data));
  await page.goto(`/${lang}/tourism-desk/myeongdong`);
- const rate=page.locator('.tourism-subway-comparisons li').first().getByRole('img');await expect(rate).toHaveText('▲ 8.6%');
+ const rate=page.locator('.tourism-subway-comparisons li').first().getByRole('img');await expect(rate).toHaveText('▲ 9%');
  await expect(rate).toHaveAccessibleName(new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
- await expect(page.locator('.tourism-shift-brief')).toContainText('▲ 8.6%');
+ await expect(page.locator('.tourism-shift-brief')).toContainText('▲ 9%');
  await expect(page.locator('.tourism-brief-line [lang="ko"]').first()).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
@@ -25,9 +25,9 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`owner rate signs and decr
   await expect(page.locator('.comparison-heading')).toContainText('같은 날짜·시간에 관측된 업종별 카드 결제 흐름을 비교합니다.');
  }
  const decrease=page.locator('[data-category="한식"] .consumption-category-title strong');
- await expect(decrease).toHaveText('▲ 50.0%');await expect(decrease.getByRole('img')).toHaveAttribute('aria-label',new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
+ await expect(decrease).toHaveText('▲ 50%');await expect(decrease.getByRole('img')).toHaveAttribute('aria-label',new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
  await expect(decrease.getByRole('img')).toHaveAccessibleName(new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
- await expect(page.locator('[data-category="편의점"] .consumption-category-title strong')).toHaveText('+100.0%');
+ await expect(page.locator('[data-category="편의점"] .consumption-category-title strong')).toHaveText('+100%');
  await expect(page.locator('[data-category="여행"] .consumption-category-title strong')).toHaveText('0%');
  await expect(decrease.locator('.change-rate')).toHaveCSS('color','rgb(161, 45, 63)');
  await expect(page.locator('[data-category="편의점"] .change-rate')).toHaveCSS('color','rgb(36, 89, 166)');

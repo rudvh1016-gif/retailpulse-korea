@@ -3,7 +3,7 @@ import {passengerReferenceDailyChange} from '../lib/passenger-reference-comparis
 import {comparisonBasisLabel} from '../lib/comparison-basis';
 import type {Lang} from './retailpulse-data';
 import {ChangeRate,CountChange} from './change-rate';
-const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:1});
+const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
 
 export function PassengerBriefComparison({total,day,baseline,lang='ko'}:{total:number|null;day:string;baseline?:PassengerReferenceMonth|null;lang?:Lang}){
  const t=(ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
@@ -15,7 +15,7 @@ export function PassengerBriefComparison({total,day,baseline,lang='ko'}:{total:n
     includedDays:baseline!.observedDays?.map(row=>row.date)??Array.from({length:change.baselineDays},(_,i)=>`${baseline!.month}-${String(i+1).padStart(2,'0')}`),
     through:change.observedDaysOnly?[...baseline!.observedDays!].map(row=>row.date).sort().at(-1):baseline!.end,
     provenance:'forecast'},lang)} {number.format(change.mean)}{t('명 대비 ',' people compared with: ','人相比：','人比：')}
-    <CountChange delta={change.delta} format={value=>number.format(value)} lang={lang} unit={t('명/일',' people/day','人/天','人/日')}/>{' '}
+    <CountChange integer delta={change.delta} format={value=>number.format(value)} lang={lang} unit={t('명/일',' people/day','人/天','人/日')}/>{' '}
     {change.delta>0?t('증가','increase','增加','増加'):change.delta<0?t('감소','decrease','减少','減少'):t('차이 없음','no change','无变化','変化なし')}{' '}
     {change.percent===null?<span className="focus-passenger-zero-basis">{t('기준값 0명 · 증감률 계산 불가','Zero baseline · percentage change unavailable','基准值为0人 · 无法计算变化率','基準値0人 · 増減率は算出不可')}</span>:<span className="focus-passenger-rate">(<ChangeRate value={change.percent} lang={lang}/>)</span>}
    </p>

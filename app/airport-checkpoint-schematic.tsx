@@ -62,7 +62,7 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T
     const {heat,value}=wait(row);
     const raw=row.waitTimeRaw?.trim();
     const detailWait=value!==null?`${value}${raw==='60+'?'+':''}${minute}`:raw||t(lang,'미확인','Unconfirmed','未确认','未確認');
-    const people=typeof row.waitingCount==='number'?`${row.waitingCount.toLocaleString(locale)}${t(lang,'명',' people','人','人')}`:t(lang,'미확인','Unconfirmed','未确认','未確認');
+    const people=typeof row.waitingCount==='number'?`${row.waitingCount.toLocaleString(locale,{maximumFractionDigits:0})}${t(lang,'명',' people','人','人')}`:t(lang,'미확인','Unconfirmed','未确认','未確認');
     return <li key={`${row.zone}-${row.observedAt}-${index}`} data-observation={row.zone} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis}>
      <div><strong>{friendlyCheckpointName(row.zone,lang)}</strong><span>{detailWait}</span></div>
      <p>{t(lang,'대기 인원','Waiting','等候人数','待機人数')} {people} · <time dateTime={row.observedAt}>{stamp(row.observedAt)} KST</time></p>
