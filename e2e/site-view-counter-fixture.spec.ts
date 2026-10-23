@@ -11,14 +11,20 @@ test.beforeAll(async () => {
   const client = '\0counter-fixture-client';
   const result = await build({
     configFile: false, logLevel: 'error', define: { 'process.env.NODE_ENV': JSON.stringify('production') }, esbuild: { jsx: 'automatic' },
-    plugins: [{ name: 'isolated-counter-snapshot',
+    plugins: [{ name: 'isolated-counter-snapshot', enforce: 'pre',
       resolveId(id) { if (id.endsWith('/pageviews-client') || id === 'virtual:counter-snapshot') return client; },
       load(id) { if (id === client) return `let value=null;const listeners=new Set();export const getPageviewsSnapshot=()=>value;export const subscribePageviews=fn=>{listeners.add(fn);return()=>listeners.delete(fn)};export function publishFixture(next){value=next;listeners.forEach(fn=>fn())}`; },
     }],
     build: { write: false, minify: false, lib: { entry: fileURLToPath(new URL('./fixtures/site-view-counter-entry.tsx', import.meta.url)), name: 'CounterFixture', cssFileName: 'counter-fixture', formats: ['iife'] } },
   });
   for (const output of (Array.isArray(result) ? result : [result])) if ('output' in output) for (const item of output.output) {
-    if (item.type === 'chunk') script += item.code;
+    if (item.type === 'chunk') {
+      // Vite's normal resolver otherwise wins before this test-only replacement.
+      // Fail at bundle construction rather than silently subscribing to the OFF store.
+      expect(Object.keys(item.modules)).toContain(client);
+      expect(Object.keys(item.modules).some(id => /[/\\]lib[/\\]pageviews-client\.ts$/.test(id))).toBe(false);
+      script += item.code;
+    }
     else if (item.fileName.endsWith('.css')) styles += String(item.source);
   }
 });
