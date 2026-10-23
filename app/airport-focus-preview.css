@@ -205,24 +205,30 @@
 /* Approved number-first briefing: shared source order, quiet rules, no card fill. */
 .airport-focus-shell .focus-report{background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 .airport-focus-shell .focus-report .focus-today-title{padding-bottom:12px;border-bottom:1px solid var(--section-rule-color,#d5d9de)}
-.airport-focus-shell .focus-report .focus-number-first-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+.airport-focus-shell .focus-report .focus-number-first-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .airport-focus-shell .focus-report .focus-core-metric{min-width:0;overflow-wrap:anywhere}
 .airport-focus-shell .focus-report .focus-core-metric p{margin:0;font-size:16px;line-height:1.5}
-.airport-focus-shell .focus-report .focus-core-metric .focus-metric-label{font-weight:650;margin-bottom:8px}
-.airport-focus-shell .focus-report .focus-core-metric .focus-metric-total{font-size:clamp(32px,3.2vw,44px);line-height:1.15;letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere}
-.airport-focus-shell .focus-report .focus-passenger-comparison{margin-top:6px;font-size:16px}
+.airport-focus-shell .focus-report .focus-core-metric .focus-metric-label{font-weight:650;margin-bottom:4px}
+.airport-focus-shell .focus-report .focus-core-metric .focus-metric-total{font-size:24px;line-height:1.15;letter-spacing:-.025em;font-variant-numeric:tabular-nums;white-space:normal;overflow-wrap:anywhere}
+.airport-focus-shell .focus-report .focus-passenger-comparison{margin-top:4px;font-size:16px}
 .airport-focus-shell .focus-report .focus-passenger-comparison-core,
-.airport-focus-shell .focus-report .focus-flight-comparison{display:flex;flex-direction:column;gap:6px;font-size:16px;line-height:1.5}
-.airport-focus-shell .focus-report .focus-flight-comparison{margin-top:6px}
-.airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change){order:-1;font-size:20px;font-weight:700}
-.airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis,.focus-passenger-parts){color:var(--text-muted,#667484);font-size:16px}
-.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{margin-top:8px}
+.airport-focus-shell .focus-report .focus-flight-comparison{display:flex;flex-direction:column;gap:4px;font-size:16px;line-height:1.5}
+.airport-focus-shell .focus-report .focus-flight-comparison{margin-top:4px}
+.airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change){order:-1;font-size:16px;font-weight:700}
+.airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis,.focus-passenger-parts){color:var(--text-muted,#667484);font-size:14px}
+.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{margin-top:6px;font-size:14px}
 .airport-focus-shell .focus-report .focus-selected-country-changes{min-height:0}
 .airport-focus-shell .focus-report .focus-selected-country-changes p{font-size:16px;line-height:1.5;margin:4px 0}
-.airport-focus-shell .focus-report .focus-selected-country-changes :is(.staff-route-metric b,p>b){font-size:24px;font-variant-numeric:tabular-nums}
+.airport-focus-shell .focus-report .focus-selected-country-changes :is(.staff-route-metric b,p>b){font-size:20px;font-variant-numeric:tabular-nums}
 .airport-focus-shell .focus-report .focus-selected-country-changes .focus-preparation-event+.focus-preparation-event{margin-top:12px}
 .airport-focus-shell .focus-report :is(.focus-selected-country-changes>small,.focus-event-scope,.focus-event-dates,.focus-event-timing){font-size:14px;line-height:1.5}
 @media(min-width:1200px){
  .airport-focus-shell .focus-report .focus-number-first-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px}
 }
 
+
+
+/* Keep Today metrics proportional to the existing 16px reading text. */
+@media(min-width:1000px){
+ .airport-focus-shell .focus-report .focus-core-metric .focus-metric-total{font-size:28px}
+}
