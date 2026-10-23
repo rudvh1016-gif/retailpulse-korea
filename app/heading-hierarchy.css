@@ -14,19 +14,19 @@
  opacity:1!important;
  letter-spacing:-.025em;
 }
-/* Heading-only palette: burgundy page titles, neutral major sections.
+/* Owner-approved charcoal hierarchy: size and weight distinguish title levels.
  * Body, data colors and surfaces keep their existing styles. */
-:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,36px)!important;color:#542632!important;font-weight:750!important}
-:root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,26px)!important;color:#29272a!important;font-weight:650!important}
-:root body :is(h1,h2,h3)[data-heading="subsection"] {font-size:clamp(18px,1.7vw,20px)!important;color:#514d50!important;font-weight:500!important}
-/* JP/SC ship static 400/600 faces: keep their supported semibold, not a 500
- * request that selects regular. Size and color still separate the three roles. */
+:root body :is(h1,h2,h3)[data-heading="page"] {font-size:clamp(28px,3vw,32px)!important;color:#222326!important;font-weight:750!important}
+:root body :is(h1,h2,h3)[data-heading="section"] {font-size:clamp(22px,2.2vw,24px)!important;color:#222326!important;font-weight:700!important}
+:root body :is(h1,h2,h3)[data-heading="subsection"] {font-size:18px!important;color:#222326!important;font-weight:600!important}
+/* JP/SC ship static 400/600 faces: use supported semibold.
+ * Size separates the roles without synthetic weights or decorative colors. */
 :root body :is(.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]) :is(h1,h2,h3)[data-heading] {font-weight:600!important}
 /* The airport-flow parent stays above its three requested major briefing titles. */
-:root body .glance-workday-heading[data-heading="section"] {font-size:clamp(26px,2.6vw,30px)!important}
-/* Preserve deliberately larger editorial introductions rather than shrinking them. */
-:root body :is(.hero,.view-intro,.tourism-desk-head,.not-found) [data-heading="page"] {font-size:clamp(32px,4vw,48px)!important}
-:root body .airport-view .view-intro [data-heading="page"] {font-size:clamp(28px,3vw,36px)!important}
+:root body .glance-workday-heading[data-heading="section"] {font-size:clamp(22px,2.2vw,24px)!important}
+/* Editorial introductions share the approved compact top-title scale. */
+:root body :is(.hero,.view-intro,.tourism-desk-head,.not-found) [data-heading="page"] {font-size:clamp(28px,3vw,32px)!important}
+:root body .airport-view .view-intro [data-heading="page"] {font-size:clamp(28px,3vw,32px)!important}
 /* No heading-prefix dots, hyphens or reserved inset in any role or locale.
  * Keep existing empty aria-hidden spans inert; body separators are untouched. */
 :root body [data-heading] > .heading-marker {display:none!important}
@@ -63,14 +63,15 @@
  .airport-news-documents > h3
 ) {font-weight:600!important}
 
-/* Requested airport middle titles only: body values and the burgundy page role stay unchanged. */
-:root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"] {color:var(--ink,#111111)!important;font-weight:700!important}
+/* Requested airport middle titles only: body values and change-indicator colors stay unchanged. */
+:root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"] {color:#222326!important;font-weight:700!important}
 :root body :is(.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]) :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"] {font-weight:600!important}
 @media(forced-colors:active){:root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"]{color:CanvasText!important}}
 
-/* Briefing hierarchy: parent > day group > numeric topic. Keep every flow peer unchanged. */
-:root body .focus-report-title > h2[data-heading="section"] {font-size:clamp(24px,2.4vw,28px)!important}
-:root body .focus-report .focus-today-title[data-heading="subsection"] {font-size:20px!important}
-:root body .focus-report .focus-figures-title[data-heading="subsection"] {font-size:16px!important}
+/* Briefing hierarchy: parent > day group > numeric topic. Keep every flow peer at the same subsection level. */
+:root body .focus-report-title > h2[data-heading="section"] {font-size:clamp(28px,3vw,32px)!important}
+:root body .focus-report :is(.focus-today-title,.focus-selected-country-changes > h3,.focus-preparation-brief > div > h3)[data-heading="subsection"] {font-size:clamp(22px,2.2vw,24px)!important}
+:root body .focus-report .focus-figures-title[data-heading="subsection"] {font-size:18px!important}
+
 
 

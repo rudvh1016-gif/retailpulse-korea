@@ -5,7 +5,7 @@ import ts from 'typescript';
 import postcss from 'postcss';
 const read=file=>readFileSync(file,'utf8');
 
-test('passenger and flight figures gain one real localized heading without wrapping or reordering their content',()=>{
+test('passenger and flight figures gain one real localized heading with number-first grouping and all source figures preserved',()=>{
  const source=read('app/airport-focus-preview.tsx');
  const tree=ts.createSourceFile('focus.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
  let figures;
@@ -15,11 +15,13 @@ test('passenger and flight figures gain one real localized heading without wrapp
  }
  visit(tree);assert.ok(figures);
  const children=figures.children.filter(node=>ts.isJsxElement(node)||ts.isJsxSelfClosingElement(node));
- assert.deepEqual(children.map(node=>(ts.isJsxElement(node)?node.openingElement:node).tagName.getText(tree)),['h3','p','p','PassengerBriefComparison','p']);
+ assert.deepEqual(children.map(node=>(ts.isJsxElement(node)?node.openingElement:node).tagName.getText(tree)),['h3','div']);
  for(const text of ['출국객·항공편','Passengers and flights','出境旅客与航班','出国者・便数'])assert.ok(children[0].getText(tree).includes(text));
  assert.match(children[0].getText(tree),/data-heading="subsection"/);
- assert.match(children[1].getText(tree),/context\.passengers/);assert.match(children[1].getText(tree),/context\.transferPassengers/);
- assert.match(children[2].getText(tree),/context\.referenceSum/);assert.match(children[4].getText(tree),/context\.flights/);
+ for(const field of ['passengers','transferPassengers','referenceSum','flights'])assert.ok(children[1].getText(tree).includes(`context.${field}`));
+ const metrics=children[1].getText(tree);
+ assert.ok(metrics.indexOf('context.referenceSum')<metrics.indexOf('focus-passenger-parts'));
+ assert.match(metrics,/focus-number-first-grid/);assert.match(metrics,/focus-core-metric focus-people-metric/);assert.match(metrics,/focus-core-metric focus-flight-metric/);
  const order=['focus-today-title','focus-report-lines','focus-selected-country-stack','<PreparationBrief lang={lang}','className="focus-report-basis"'].map(text=>source.indexOf(text,source.indexOf('export function OverviewHeadline')));
  assert.ok(order.every((n,i)=>n>=0&&(!i||n>order[i-1])),'mobile DOM reading order stays unchanged');
 });
@@ -45,4 +47,5 @@ test('CI geometry checks cover the breakpoint, return topic, title gaps and righ
  for(const evidence of ['999,1000','layout-return-fixture','topicGap','leftTops','firstFuture','toBeLessThanOrEqual(28)','report.screenshot'])assert.ok(source.includes(evidence),evidence);
  assert.match(read('.github/workflows/ci.yml'),/e2e\/brief-desktop-row-spacing.spec.ts/);
 });
+
 

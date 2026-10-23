@@ -4,12 +4,12 @@
  * chevrons, hit areas, layout and event handlers exactly as they are. */
 :root body details > summary,
 :root body button[data-disclosure-trigger][aria-expanded] {
- color:#514d50!important;
+ color:#222326!important;
  font-weight:600!important;
 }
 :root body details[open] > summary,
 :root body button[data-disclosure-trigger][aria-expanded="true"] {
- color:#542632!important;
+ color:#222326!important;
 }
 /* Counts, dates, rates and descriptive strings are not automatically headings.
  * Explicit title spans allow mixed summaries to emphasize only their label. */
@@ -20,17 +20,17 @@
  font-weight:400!important;
 }
 :root body details > summary [data-disclosure-title] {
- color:#514d50!important;
+ color:#222326!important;
  font-weight:600!important;
 }
 :root body details[open] > summary [data-disclosure-title] {
- color:#542632!important;
+ color:#222326!important;
 }
 /* A date/hour can itself be the entire label; its existing functional marker
  * still provides a restrained accent without bolding the data. Native open
  * marker rotation remains the non-color state cue. */
-:root body details > summary::marker {color:#514d50}
-:root body details[open] > summary::marker {color:#542632}
+:root body details > summary::marker {color:#222326}
+:root body details[open] > summary::marker {color:#222326}
 /* Preserve existing focus rules, adding a consistent fallback for summaries
  * which previously depended only on the browser's default outline. */
 :root body details > summary:focus-visible,
@@ -51,3 +51,4 @@
  :root body details > summary::marker,
  :root body details[open] > summary::marker {color:ButtonText}
 }
+

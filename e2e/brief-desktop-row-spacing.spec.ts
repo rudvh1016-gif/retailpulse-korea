@@ -21,14 +21,14 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  const figuresTitle=figures.locator('h3');
  await expect(figuresTitle).toHaveText(({ko:'출국객·항공편',en:'Passengers and flights',zh:'出境旅客与航班',ja:'出国者・便数'} as Record<string,string>)[lang]);
  await expect(figuresTitle).toHaveAttribute('data-heading','subsection');
- await expect(figuresTitle).toHaveCSS('font-size','16px');
- await expect(report.locator('.focus-today-title')).toHaveCSS('font-size','20px');
+ await expect(figuresTitle).toHaveCSS('font-size','18px');
+ await expect(report.locator('.focus-today-title')).toHaveCSS('font-size',`${Math.min(24,Math.max(22,width*.022))}px`);
  const parentSize=await report.locator('.focus-report-title > h2').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
- expect(parentSize).toBeGreaterThanOrEqual(24);expect(parentSize).toBeLessThanOrEqual(28);
+ expect(parentSize).toBeGreaterThanOrEqual(28);expect(parentSize).toBeLessThanOrEqual(32);
  const topics=stack.locator(':scope > .focus-selected-country-changes');await expect(topics).toHaveCount(2);
  await page.evaluate(()=>document.fonts.ready);
  for(const heading of await report.locator('h3[data-heading="subsection"]').all()){
-  await expect(heading).toHaveCSS('color','rgb(17, 17, 17)');
+  await expect(heading).toHaveCSS('color','rgb(34, 35, 38)');
   await expect(heading).toHaveCSS('font-weight',lang==='ja'||lang==='zh'?'600':'700');
  }
  // Supporting dates remain subordinate rather than inheriting title weight/color.
@@ -78,4 +78,5 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  // A taller right column must not redistribute whitespace inside the left one.
  for(let i=0;i<leftTops[0].length;i++)expect(Math.abs(leftTops[0][i]-leftTops[1][i])).toBeLessThanOrEqual(1);
 });
+
 

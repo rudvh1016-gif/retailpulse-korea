@@ -5,12 +5,12 @@ const read=p=>readFileSync(new URL(`../app/${p}`,import.meta.url),'utf8');
 
 test('briefing parent, day group and figures have distinct compact title sizes',()=>{
  const css=read('heading-hierarchy.css');
- assert.ok(css.includes('.focus-report-title > h2[data-heading="section"] {font-size:clamp(24px,2.4vw,28px)!important}'));
- assert.ok(css.includes('.focus-report .focus-today-title[data-heading="subsection"] {font-size:20px!important}'));
- assert.ok(css.includes('.focus-report .focus-figures-title[data-heading="subsection"] {font-size:16px!important}'));
- assert.match(css,/color:#29272a!important;font-weight:650!important/);
- assert.match(css,/color:#542632!important;font-weight:750!important/);
- assert.match(css,/color:var\(--ink,#111111\)!important;font-weight:700!important/);
+ assert.ok(css.includes('.focus-report-title > h2[data-heading="section"] {font-size:clamp(28px,3vw,32px)!important}'));
+ assert.ok(css.includes('.focus-report :is(.focus-today-title,.focus-selected-country-changes > h3,.focus-preparation-brief > div > h3)[data-heading="subsection"] {font-size:clamp(22px,2.2vw,24px)!important}'));
+ assert.ok(css.includes('.focus-report .focus-figures-title[data-heading="subsection"] {font-size:18px!important}'));
+ assert.match(css,/color:#222326!important;font-weight:700!important/);
+ assert.match(css,/color:#222326!important;font-weight:750!important/);
+ assert.match(css,/color:#222326!important;font-weight:700!important/);
  assert.match(css,/white-space:normal/);assert.match(css,/overflow-wrap:anywhere/);
 });
 
@@ -22,7 +22,7 @@ test('title gaps stay modest and apply to mobile as well as desktop',()=>{
  assert.ok(!css.includes('.focus-figures-title{margin-bottom:10px}'));
  // The six airport-flow peers retain their own uniform scale, independent of briefing nesting.
  const flow=read('airport-staff-briefing.css');
- assert.match(flow,/font-size:16px!important;font-weight:700!important;color:var\(--ink,#111111\)!important/);
+ assert.match(flow,/font-size:18px!important;font-weight:700!important;color:#222326!important/);
  assert.match(flow,/margin:0 0 10px/);
 });
 
@@ -35,5 +35,6 @@ test('figures title has an 8px total gap in both grid and block layouts',()=>{
  assert.ok(css.includes('.focus-report-lines{grid-column:1;grid-row:3;display:block}'));
  assert.equal(3+5,8,'grid margin + row gap matches the desktop block margin');
 });
+
 
 

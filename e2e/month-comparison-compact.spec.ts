@@ -78,6 +78,22 @@ for(const {lang,width} of cases)test(`compact monthly country cards and airline 
  const basis=section.getByTestId('airport-month-basis');
  if(lang==='ko')await expect(basis).toHaveText('2026-09월 전체 수집분 일평균 / 2026-10월-10일 MTD 일평균');
 
+ const zones=section.getByTestId('airport-month-zones');
+ await expect(zones.locator('h4')).toBeVisible();
+ await expect(zones.locator('caption')).toContainText('2026');
+ await expect(zones.locator('tbody tr')).toHaveCount(4);
+ await expectContainedNumbers(zones.locator('table'));
+ expect(await zones.locator('h4').evaluate(el=>getComputedStyle(el).color)).toBe('rgb(34, 35, 38)');
+ for(const disclosure of await section.locator(':scope > details').all()) {
+  const label=disclosure.locator(':scope > summary');
+  expect(await label.evaluate(el=>Number(getComputedStyle(el).fontWeight))).toBeGreaterThanOrEqual(600);
+  expect(await label.evaluate(el=>getComputedStyle(el).color)).toBe('rgb(34, 35, 38)');
+  await label.focus();await page.keyboard.press('Enter');await expect(disclosure).toHaveAttribute('open','');
+  expect(await label.evaluate(el=>getComputedStyle(el).color)).toBe('rgb(34, 35, 38)');
+  await page.keyboard.press('Space');await expect(disclosure).not.toHaveAttribute('open','');
+ }
+ if(width===1280)expect(await zones.locator('table').evaluate(el=>el.getBoundingClientRect().width)).toBeLessThanOrEqual(832);
+
  const countries=section.getByTestId('destination-daily-changes');
  const cards=countries.locator('li[data-country]');
  await expect(cards).toHaveCount(3);
@@ -157,3 +173,4 @@ test('a small previous daily mean keeps the full large growth rate inside the 32
  await expectContainedNumbers(table);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+
