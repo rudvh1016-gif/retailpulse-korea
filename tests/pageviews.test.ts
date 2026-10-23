@@ -12,7 +12,16 @@ const migration = readFileSync(new URL('../drizzle/0034_first_party_pageviews.sq
 const at = Date.parse('2026-10-23T12:00:00Z');
 function setup(limit = 100) { const db = new DatabaseSync(':memory:'); db.exec(migration); if (limit) db.prepare('UPDATE pageview_totals SET enabled=1, admission_limit=1000, daily_limit=? WHERE id=1').run(limit); return db; }
 function insert(db: DatabaseSync, now = at, id = `${now}.${randomUUID()}`) { db.prepare(INSERT_RECEIPT_SQL).run(id, now); return id; }
-function totals(db: DatabaseSync) { return db.prepare(READ_TOTALS_SQL).get() as Parameters<typeof snapshotFromTotals>[0]; }
+function totals(db: DatabaseSync): Parameters<typeof snapshotFromTotals>[0] {
+  const row = db.prepare(READ_TOTALS_SQL).get();
+  if (!row) return null;
+  const { enabled, incomplete, partial_day, day, today, total, started_at } = row;
+  assert.ok(typeof enabled === 'number' && typeof incomplete === 'number');
+  assert.ok(typeof partial_day === 'string' && typeof day === 'string');
+  assert.ok(typeof today === 'number' && typeof total === 'number');
+  assert.ok(started_at === null || typeof started_at === 'number');
+  return { enabled, incomplete, partial_day, day, today, total, started_at };
+}
 function request(headers: Record<string,string> = {}, body = '{}') { return new Request('https://koretaildata.com/api/pageviews', { method:'POST', headers:{ origin:'https://koretaildata.com','sec-fetch-site':'same-origin','content-type':'application/json','x-koretail-pageview':'1','user-agent':'Mozilla/5.0 Chrome/130',...headers },body }); }
 test('migration disabled with no seeded views or fabricated start', () => { const db=setup(0); insert(db); assert.equal(totals(db)?.total,0); assert.equal(totals(db)?.started_at,null); assert.deepEqual(snapshotFromTotals(totals(db),at),{available:false,reason:'disabled'}); db.close(); });
 test('actual first event starts counter; duplicate exactly once', () => { const db=setup();const id=insert(db); insert(db,at,id); assert.deepEqual(snapshotFromTotals(totals(db),at),{available:true,today:1,total:1,totalComplete:true,day:'2026-10-23',startedAt:'2026-10-23T12:00:00.000Z'}); assert.equal(db.prepare('SELECT count(*) n FROM pageview_receipts').get()?.n,1); db.close(); });
@@ -21,7 +30,16 @@ test('KST midnight resets today only; UTC budget resets separately', () => { con
 test('budget exhaustion durable gap; edge duplicates not false gap', () => {const db=setup(1);const id=insert(db);insert(db,at,id);assert.equal(totals(db)?.incomplete,0);insert(db);assert.equal(totals(db)?.incomplete,1);assert.equal(totals(db)?.total,1);insert(db,at+86_400_000);assert.equal(totals(db)?.total,2);assert.deepEqual(snapshotFromTotals(totals(db),at+86_400_000),{available:true,today:1,total:null,totalComplete:false,day:'2026-10-24',startedAt:'2026-10-23T12:00:00.000Z'});db.close();});
 test('day without traffic shows zero today, not yesterday',()=>{const db=setup();insert(db);const v=snapshotFromTotals(totals(db),at+86_400_000);assert.equal(v.available&&v.today,0);assert.equal(v.available&&v.total,1);db.close();});
 test('expiry cleanup indexed and bounded to eight; recent receipts survive',()=>{const db=setup();for(let i=0;i<12;i++)insert(db,at-RECEIPT_TTL_MS-1);const recent=insert(db);db.prepare(PRUNE_RECEIPTS_SQL).run(at-RECEIPT_TTL_MS);assert.equal(db.prepare('SELECT count(*) n FROM pageview_receipts').get()?.n,5);assert.ok(db.prepare('SELECT event_id FROM pageview_receipts WHERE event_id=?').get(recent));assert.match(JSON.stringify(db.prepare('EXPLAIN QUERY PLAN '+PRUNE_RECEIPTS_SQL).all(at-RECEIPT_TTL_MS)),/pageview_receipts_received_idx/);assert.match(JSON.stringify(db.prepare('EXPLAIN QUERY PLAN '+READ_TOTALS_SQL).all()),/INTEGER PRIMARY KEY/);db.close();});
-test('production origin JSON only; basic bot, GPC, DNT rejection',()=>{assert.equal(acceptsPageviewRequest(request()),true);for(const h of [{origin:'https://evil.example'},{'sec-fetch-site':'cross-site'},{'content-type':'text/plain'},{'x-koretail-pageview':'0'},{'user-agent':'Googlebot'},{'user-agent':'HeadlessChrome'},{dnt:'1'},{'sec-gpc':'1'},{'content-length':'513'}])assert.equal(acceptsPageviewRequest(request(h as Record<string,string>)),false);});
+test('production origin JSON only; basic bot, GPC, DNT rejection', () => {
+  assert.equal(acceptsPageviewRequest(request()), true);
+  const rejectedHeaders: Record<string, string>[] = [
+    { origin: 'https://evil.example' }, { 'sec-fetch-site': 'cross-site' },
+    { 'content-type': 'text/plain' }, { 'x-koretail-pageview': '0' },
+    { 'user-agent': 'Googlebot' }, { 'user-agent': 'HeadlessChrome' },
+    { dnt: '1' }, { 'sec-gpc': '1' }, { 'content-length': '513' },
+  ];
+  for (const headers of rejectedHeaders) assert.equal(acceptsPageviewRequest(request(headers)), false);
+});
 test('fresh random IDs and allowlisted path only; no arbitrary URLs or extras',()=>{const b={id:`${at}.${randomUUID()}`,path:'/ko/airport'};assert.equal(validPageviewEvent(b,at),true);assert.equal(validPageviewEvent(b,at+120_001),false);assert.equal(validPageviewEvent(b,at-120_001),false);for(const c of [{...b,path:'/ko/airport?secret=1'},{...b,path:'/admin'},{...b,ip:'1.2.3.4'},{...b,id:'persistent-user'}])assert.equal(validPageviewEvent(c,at),false);assert.equal(pageviewPath('/ko/airport/'),'/ko/airport');assert.equal(pageviewPath('/ko/airport-focus-preview'),null);});
 test('streaming body size enforced without Content-Length',async()=>{assert.deepEqual(await readPageviewBody(request({},'{"a":1}')),{a:1});await assert.rejects(readPageviewBody(request({},'x'.repeat(513))),/body_too_large/);});
 test('D1 failure unavailable, never fabricated zero',async()=>{const statement={bind(){return this;},async first(){return {blocked:0};}};const db={prepare:()=>statement,batch:async()=>[{success:false}]};await assert.rejects(recordPageview(db as unknown as D1Database,`${at}.${randomUUID()}`,at),/unavailable/);assert.equal(validPageviewsSnapshot({available:true,today:4,total:3,day:'2026-10-23',startedAt:new Date(at).toISOString()}),false);});
@@ -126,4 +144,13 @@ test('recovered contract accepts null cumulative but rejects numeric partial or 
  assert.equal(validPageviewsSnapshot({...base,total:8,totalComplete:false}),false);
  assert.equal(validPageviewsSnapshot({...base,total:null,totalComplete:true}),false);
  assert.equal(validPageviewsSnapshot({...base,total:8}),false);
+});
+
+test('SQLite test adapter maps a missing totals row to unavailable, not an unsafe cast', () => {
+  const db = setup(0);
+  try {
+    db.exec('DELETE FROM pageview_totals');
+    assert.equal(totals(db), null);
+    assert.deepEqual(snapshotFromTotals(totals(db), at), { available: false, reason: 'unavailable' });
+  } finally { db.close(); }
 });
