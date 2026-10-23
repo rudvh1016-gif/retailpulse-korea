@@ -688,7 +688,7 @@ function localizeAreaBrief(brief: AreaCurrentBrief, lang: Lang, selectedDay = fa
   let freshness: string | null = null;
   if (brief.current) {
     const level = congestionLabels[brief.current.congestionLevel]?.[lang] ?? String(brief.current.congestionLevel);
-    const range = `${brief.current.populationMin.toLocaleString(locale)}–${brief.current.populationMax.toLocaleString(locale)}`;
+    const range = `${brief.current.populationMin.toLocaleString(locale, {maximumFractionDigits:0})}–${brief.current.populationMax.toLocaleString(locale, {maximumFractionDigits:0})}`;
     const people = lang === "en" ? " people" : lang === "ko" ? "명" : "人";
     // The metric is named before the number here too: a bare range next to a
     // congestion word is the exact ambiguity this phase set out to remove.
@@ -715,8 +715,8 @@ function localizeAreaBrief(brief: AreaCurrentBrief, lang: Lang, selectedDay = fa
 
   if (brief.weatherAdvice) {
     const advice = brief.weatherAdvice;
-    if (advice.kind === "UMBRELLA") lines.push(lang === "ko" ? `비 가능성 ${advice.probability}% · 우산을 챙기세요` : lang === "en" ? `${advice.probability}% chance of rain · bring an umbrella` : lang === "zh" ? `降雨概率${advice.probability}% · 请带伞` : `降水確率${advice.probability}% · 傘を用意してください`);
-    else if (advice.kind === "CHECK_RAIN") lines.push(lang === "ko" ? `비 가능성 ${advice.probability}% · 이동 전 날씨를 확인하세요` : lang === "en" ? `${advice.probability}% chance of rain · check before heading out` : lang === "zh" ? `降雨概率${advice.probability}% · 出发前请确认天气` : `降水確率${advice.probability}% · 移動前に天気を確認してください`);
+    if (advice.kind === "UMBRELLA") lines.push(lang === "ko" ? `비 가능성 ${Math.round(advice.probability)}% · 우산을 챙기세요` : lang === "en" ? `${Math.round(advice.probability)}% chance of rain · bring an umbrella` : lang === "zh" ? `降雨概率${Math.round(advice.probability)}% · 请带伞` : `降水確率${Math.round(advice.probability)}% · 傘を用意してください`);
+    else if (advice.kind === "CHECK_RAIN") lines.push(lang === "ko" ? `비 가능성 ${Math.round(advice.probability)}% · 이동 전 날씨를 확인하세요` : lang === "en" ? `${Math.round(advice.probability)}% chance of rain · check before heading out` : lang === "zh" ? `降雨概率${Math.round(advice.probability)}% · 出发前请确认天气` : `降水確率${Math.round(advice.probability)}% · 移動前に天気を確認してください`);
     else if (advice.kind === "HOT") lines.push(lang === "ko" ? `최고 ${advice.temperatureC.toFixed(0)}°C · 가벼운 복장과 물을 준비하세요` : lang === "en" ? `Up to ${advice.temperatureC.toFixed(0)}°C · dress lightly and carry water` : lang === "zh" ? `最高${advice.temperatureC.toFixed(0)}°C · 建议轻装并备水` : `最高${advice.temperatureC.toFixed(0)}°C · 軽い服装と水を用意してください`);
     else lines.push(lang === "ko" ? `최저 ${advice.temperatureC.toFixed(0)}°C · 겉옷을 챙기세요` : lang === "en" ? `Down to ${advice.temperatureC.toFixed(0)}°C · bring an outer layer` : lang === "zh" ? `最低${advice.temperatureC.toFixed(0)}°C · 建议携带外套` : `最低${advice.temperatureC.toFixed(0)}°C · 上着を用意してください`);
   }
@@ -801,7 +801,7 @@ function localizeAirportBrief(
     const now = brief.nowBand;
     const share = now.peakShare === null ? null : Math.round(now.peakShare * 100);
     const next = now.nextExpectedPassengers === null ? null : Math.round(now.nextExpectedPassengers);
-    const nextPeople = next === null ? null : next.toLocaleString(locale);
+    const nextPeople = next === null ? null : next.toLocaleString(locale, {maximumFractionDigits:0});
     const nextBand = now.nextTargetStartAt && now.nextTargetEndAt ? formatKstBand(now.nextTargetStartAt, now.nextTargetEndAt).replace(" KST", "") : null;
     const sharePart = share === null ? null : {
       ko: `현재 시간대 · 오늘 피크의 ${share}%`, en: `This hour · ${share}% of today's peak`,
@@ -858,7 +858,7 @@ function localizeAirportBrief(
       }[lang];
     }
     if (brief.checkpoint.waitingCount === null) return null;
-    const people = brief.checkpoint.waitingCount.toLocaleString(locale);
+    const people = brief.checkpoint.waitingCount.toLocaleString(locale, {maximumFractionDigits:0});
     return {
       ko: `${where} 대기 ${people}명`, en: `${where}: ${people} waiting`,
       zh: `${where} 等候${people}人`, ja: `${where} 待機${people}人`,
@@ -1440,12 +1440,12 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       </section></>}
       <div className="transfer-forecast" data-testid="transfer-forecast">
         {(airport.transferForecast ?? []).filter(r => r.serviceDate === summary.serviceDateKst && (isAll || r.terminal === terminal)).map(r =>
-          <small key={r.terminal} style={{display:'block'}}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale)}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</small>)}
+          <small key={r.terminal} style={{display:'block'}}>{r.terminal} · {passengerCopy.transfer[lang]} {r.expectedTransferPassengers.toLocaleString(numberLocale, {maximumFractionDigits:0})}{peopleUnit} · {formatHumanFreshness(r.retrievedAt,nowIso,lang,"collected")}</small>)}
         {((isAll ? ['T1','T2'] : [terminal]) as string[]).filter(t => !(airport.transferForecast ?? []).some(r => r.serviceDate === summary.serviceDateKst && r.terminal === t)).map(t => <p key={t}>{t} · {passengerCopy[summary.sources?.some(s => s.sourceId === 'INCHEON_TRANSFER_FORECAST' && s.status === 'ERROR' && s.detail?.includes(`service_date=${summary.serviceDateKst}`)) ? 'failed' : summary.dayRelation === 'FUTURE' && new Date(new Date(nowIso).getTime()+9*3600000).getUTCHours()<17 ? 'pending' : 'unavailable'][lang]}</p>)}
       </div>
 
       </>}
-      {showCrowding && checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p>{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale)}${peopleUnit}` : airportTodayText.unavailable[lang]} · {kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</p></aside>}
+      {showCrowding && checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p>{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale, {maximumFractionDigits:0})}${peopleUnit}` : airportTodayText.unavailable[lang]} · {kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</p></aside>}
       {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · <strong><RateText text={passengerChanges.join(" · ")} lang={lang}/></strong></p>}
       {showFlights && flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.map(({days,change})=>{
         const exact=change.baselineMin!==undefined&&change.baselineMin===change.baselineMax && (change.baselineMin ?? 0)>0&&Number.isSafeInteger(change.baselineMin);
@@ -1542,7 +1542,7 @@ function formatEventDistance(lang: Lang, event: { distanceM: number | null }): s
 
 function formatPeopleValue(lang: Lang, value: number): string {
   const locale = airportLocale(lang);
-  return value.toLocaleString(locale, { maximumFractionDigits: 1 });
+  return value.toLocaleString(locale, { maximumFractionDigits: 0 });
 }
 
 function formatKrwCompact(lang: Lang, amount: number): string {
@@ -2138,7 +2138,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const fact = (kind: WeatherMetricKind, value: string) => { kinds.push(kind); parts.push(value); };
     if (condition && conditionLabels[condition]) fact(condition === 'clear' ? 'sun' : condition === 'snow' ? 'snow' : condition === 'rain' || condition === 'shower' ? 'rain' : 'cloud', conditionLabels[condition][lang]);
     if (firstTemp !== null && firstTemp !== undefined) fact('temperature', `${(firstTemp / 10).toFixed(0)}°C`);
-    if (hasProbability) fact('rain', `${text.rainChance[lang]} ${maxPop}%`);
+    if (hasProbability) fact('rain', `${text.rainChance[lang]} ${Math.round(maxPop)}%`);
 
     // Richer categories from the same KMA response. Each is shown only where
     // the provider actually published it: a missing category is left out
@@ -2155,7 +2155,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const dayHigh = firstOf((row) => row.dailyMaxTemperatureTenthC);
 
     const observation = block?.context?.weather ?? null;
-    if (humidity !== undefined) fact('humidity', `${text.humidity[lang]} ${humidity}%`);
+    if (humidity !== undefined) fact('humidity', `${text.humidity[lang]} ${Math.round(humidity)}%`);
     if (wind !== undefined) fact('wind', `${text.wind[lang]} ${(wind / 10).toFixed(1)}m/s`);
     if (rainfall) fact('rain', `${text.rainfall[lang]} ${(rainfall.precipitationAmountTenthMm! / 10).toFixed(1)}mm`);
     if (dayLow !== undefined) fact('temperature', `${text.dayLow[lang]} ${(dayLow / 10).toFixed(0)}°C`);

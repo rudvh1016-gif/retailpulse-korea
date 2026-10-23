@@ -28,7 +28,7 @@ export function AirportZoneCountries({map,lang,basis,date,isToday=false}:{map:De
  };
  const row=(item:ZoneCountry,total:number)=>{
   const label=item.country?destinationName(item.country):unknown;
-  const share=(item.flights/total*100).toFixed(1);
+  const share=(item.flights/total*100).toFixed(0);
   return <li className={styles.row} key={item.country??'unknown'} data-country={item.country??'UNKNOWN'} data-value={item.flights} data-share={share}>
    <span className={styles.flag} aria-hidden="true">{item.country&&blenderFlags.has(item.country)
     ? <img src={`/images/airport-flags/${item.country}.webp`} width="36" height="36" alt="" loading="lazy" decoding="async"/>
@@ -49,7 +49,7 @@ export function AirportZoneCountries({map,lang,basis,date,isToday=false}:{map:De
    const known=zone.countries.filter(item=>item.country!==null);
    const remaining=known.slice(zone.leaders.length);
    return <div key={zone.side} data-side={zone.side} data-total={zone.total}>
-    <h5 className={styles.zoneHeading}>{mapCopy.side[zone.side][lang]} <span>{zone.total}{unit} · {flights.length?`${(zone.total/flights.length*100).toFixed(1)}%`:zoneShareCopy[lang].zero}</span></h5>
+    <h5 className={styles.zoneHeading}>{mapCopy.side[zone.side][lang]} <span>{zone.total}{unit} · {flights.length?`${(zone.total/flights.length*100).toFixed(0)}%`:zoneShareCopy[lang].zero}</span></h5>
     {zone.total===0?<p className="prep-note">0{unit}</p>:<ul>{zone.leaders.map(item=>row(item,zone.total))}</ul>}
     {zone.unknown>0&&<ul>{row({country:null,flights:zone.unknown},zone.total)}</ul>}
     {remaining.length>0&&<details className={styles.moreCountries}><summary>{{ko:'국가 전체 보기',en:'All countries',zh:'全部国家',ja:'国を全て表示'}[lang]} <span data-disclosure-meta>({known.length})</span></summary><ul>{remaining.map(item=>row(item,zone.total))}</ul></details>}
@@ -57,7 +57,7 @@ export function AirportZoneCountries({map,lang,basis,date,isToday=false}:{map:De
   })}</div>
   {unverified&&unverified.total>0&&<details className={`${styles.unverified} ${disclosureStyles.disclosure}`} data-testid="country-unverified-details" data-side="UNVERIFIED" data-total={unverified.total}>
    <summary><span>※ {mapCopy.side.UNVERIFIED[lang]} <span data-disclosure-meta>{unverified.total}{unit}</span></span><span className={disclosureStyles.toggle} aria-hidden="true" /></summary>
-   <p className="prep-note">{zoneShareCopy[lang].basis} {unverified.total}{unit} · {(unverified.total/flights.length*100).toFixed(1)}%</p>
+   <p className="prep-note">{zoneShareCopy[lang].basis} {unverified.total}{unit} · {(unverified.total/flights.length*100).toFixed(0)}%</p>
    <ul>{unverified.countries.map(item=>row(item,unverified.total))}</ul>
   </details>}
  </section>;

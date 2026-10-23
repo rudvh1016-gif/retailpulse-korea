@@ -20,7 +20,7 @@ for(const lang of ['ko','en','zh','ja'])test(`event country beats largest unrela
  await page.setViewportSize({width:390,height:1000});await fixture(page);await page.goto(`/${lang}?date=${day}`);
  const event=page.locator('.staff-holiday-event');await expect(event).toContainText('TH fixture holiday');
  const metric=event.locator('.event-country-flights');await expect(metric).toHaveAttribute('data-country','TH');await expect(metric).toHaveAttribute('data-flight-day',day);
- await expect(metric).toContainText('16');await expect(metric).toContainText('▲ 2.5');await expect(metric).toContainText('▲ 13.4%');await expect(metric).toContainText('2026-09');await expect(metric).not.toContainText('90');
+ await expect(metric).toContainText('16');await expect(metric).toContainText('▲ 2.5');await expect(metric).toContainText('▲ 13%');await expect(metric).toContainText('2026-09');await expect(metric).not.toContainText('90');
  expect(await event.locator('h4').evaluate(node=>node.nextElementSibling?.classList.contains('event-country-flights'))).toBe(true);
  await expect(event.locator('time')).toHaveAttribute('datetime','2026-10-23');
  const details=page.locator('.staff-route-details');await expect(details).not.toHaveAttribute('open','');await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');await expect(details).toContainText('18.5');await page.keyboard.press('Enter');await expect(details).not.toHaveAttribute('open','');
@@ -30,7 +30,7 @@ test('multiple Today event countries each receive their own flight comparison an
  await page.setViewportSize({width:1280,height:1000});await fixture(page,{multiple:true});await page.goto(`/ko?date=${day}`);
  const today=page.locator('[aria-label="오늘 귀국 준비"]');
  const thai=today.locator('.focus-preparation-event[data-country="TH"] .event-country-flights'),japan=today.locator('.focus-preparation-event[data-country="JP"] .event-country-flights');
- await expect(thai).toContainText('16편');await expect(thai).toContainText('▲ 13.4%');await expect(japan).toContainText('20편');await expect(japan).toContainText('0%');await expect(japan.locator('[data-direction="neutral"]')).not.toHaveCount(0);
+ await expect(thai).toContainText('16편');await expect(thai).toContainText('▲ 13%');await expect(japan).toContainText('20편');await expect(japan).toContainText('0%');await expect(japan.locator('[data-direction="neutral"]')).not.toHaveCount(0);
  await expect(today.locator('.focus-preparation-event')).toHaveCount(2);
  const previous=await page.locator('.focus-selected-country-stack > .focus-selected-country-changes').first().boundingBox(),current=await today.boundingBox();expect(previous&&current).toBeTruthy();expect(current!.y).toBeGreaterThanOrEqual(previous!.y+previous!.height-1);
 });
@@ -38,7 +38,7 @@ for(const state of ['missing','partial','zero','partial-flights'] as const)test(
  await fixture(page,state==='partial-flights'?{partial:true}:{baseline:state});await page.goto(`/ko?date=${day}`);
  const metric=page.locator('.staff-holiday-event .event-country-flights');await expect(metric).toHaveAttribute('data-country','TH');
  if(state==='missing'){await expect(metric).toContainText('16편');await expect(metric).toContainText('비교자료 없음');await expect(metric).not.toContainText('0%');}
- if(state==='partial'){await expect(metric).toContainText('2026-09월 수집분 일평균 (2/30일) 대비');await expect(metric).toContainText('+11편');await expect(metric).toContainText('+220.0%');}
+ if(state==='partial'){await expect(metric).toContainText('2026-09월 수집분 일평균 (2/30일) 대비');await expect(metric).toContainText('+11편');await expect(metric).toContainText('+220%');}
  if(state==='zero'){await expect(metric).toContainText('+16편');await expect(metric).toContainText('증감률 계산 불가');await expect(metric).not.toContainText('0%');}
  if(state==='partial-flights'){await expect(metric).toContainText('일부 자료');await expect(metric).toContainText('비교 보류');await expect(metric).not.toContainText('16편');}
 });

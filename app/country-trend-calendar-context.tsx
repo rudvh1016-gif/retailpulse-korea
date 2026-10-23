@@ -1,3 +1,4 @@
+import {CountryFlag} from './airport-country-flag';
 import type {CalendarEvent} from '../lib/calendar-context.mjs';
 import {calendarCountryName,countryTrendCalendar} from '../lib/country-trend-calendar';
 import type {Lang} from './retailpulse-data';
@@ -19,7 +20,7 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
     const name=eventName(item);
     const scope=item.kind==='school_break'?'학교별 상이 · 예시':item.scope==='national'?'':item.region?.includes('연방공무원')?'연방공무원':item.region?.includes('금융기관')?'금융기관':item.region;
     return <p className="focus-source" key={index}>
-     <span aria-hidden="true">{String.fromCodePoint(...[...item.country].map(char=>127397+char.charCodeAt(0)))}</span> {calendarCountryName(item.country)} · <b>{name}</b> {item.start}{item.start!==item.end?`–${item.end}`:''}{scope?` · ${scope}`:''}{item.relation==='previous'?' · 직전 월':''}
+     <span aria-hidden="true" style={{display:'inline-flex',verticalAlign:'-2px'}}><CountryFlag code={item.country} size={16}/></span> {calendarCountryName(item.country)} · <b>{name}</b> {item.start}{item.start!==item.end?`–${item.end}`:''}{scope?` · ${scope}`:''}{item.relation==='previous'?' · 직전 월':''}
     </p>;
    })}
   </div>)}
@@ -35,3 +36,4 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
   </details>
  </div>;
 }
+

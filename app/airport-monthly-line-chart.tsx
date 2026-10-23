@@ -4,7 +4,7 @@ import {useEffect,useId,useRef,useState,type KeyboardEvent,type PointerEvent as 
 import {nearestMonthlyPoint} from '../lib/monthly-chart-pointer';
 import type {FocusTrend} from './airport-focus-data';
 
-const number=new Intl.NumberFormat('ko-KR');
+const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
 const width=332,height=178;
 
 export default function MonthlyLineChart({row}:{row:FocusTrend}){

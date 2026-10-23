@@ -1182,19 +1182,19 @@ test("Tourism Desk retains six guide sections and evidence-backed subway compari
   const briefLines = desk.locator(".tourism-shift-brief .tourism-brief-line");
   await expect(briefLines).toHaveCount(5);
   await expect(briefLines.nth(0)).toContainText("현재 명동");
-  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 +12.4%");
+  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 +12%");
 
   const comparisons = desk.locator(".tourism-subway-comparisons li");
   await expect(comparisons).toHaveCount(4);
   await expect(comparisons.nth(0)).toContainText("지난주 같은 요일 대비");
-  await expect(comparisons.nth(0)).toContainText("+12.4%");
+  await expect(comparisons.nth(0)).toContainText("+12%");
   await expect(comparisons.nth(1)).toContainText("최근 7일 평균 대비");
-  await expect(comparisons.nth(1)).toContainText("+8.1%");
+  await expect(comparisons.nth(1)).toContainText("+8%");
   await expect(comparisons.nth(1)).toContainText("정확히 직전 7일");
   await expect(comparisons.nth(2)).toContainText("전일 대비");
-  await expect(comparisons.nth(2)).toContainText("+4.2%");
+  await expect(comparisons.nth(2)).toContainText("+4%");
   await expect(comparisons.nth(3)).toContainText("최근 4주 같은 요일 평균 대비");
-  await expect(comparisons.nth(3)).toContainText("+10.2%");
+  await expect(comparisons.nth(3)).toContainText("+10%");
   await expect(desk.locator(".tourism-subway-secondary")).toContainText("2026년 8월 30일");
   await expect(desk.locator(".tourism-subway")).toContainText("고유 방문객 수나 이 지역 전체 방문객 수가 아닙니다");
 });

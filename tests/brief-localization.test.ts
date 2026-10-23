@@ -29,19 +29,19 @@ for(const lang of ['en','zh'] as const){
  test(`${lang}: complete, partial, missing, zero and sub-resolution comparisons preserve numerical truth`,()=>{
   const base:PassengerReferenceMonth={month:'2026-09',start:'2026-09-01',end:'2026-09-30',expectedDays:30,completeDays:30,missingDates:[],mean:60000,status:'COMPLETE'};
   const render=(total:number|null,baseline=base)=>renderToStaticMarkup(h(PassengerBriefComparison,{total,baseline,lang,day:'2026-10-21'}));
-  assert.match(render(52919),/60,000/);assert.match(render(52919),/7,081/);assert.match(render(52919),/▲ 11.8%/);assert.doesNotMatch(render(52919),hangul);
-  assert.match(render(61000),/\+1.7%/);
+  assert.match(render(52919),/60,000/);assert.match(render(52919),/7,081/);assert.match(render(52919),/▲ 12%/);assert.doesNotMatch(render(52919),hangul);
+  assert.match(render(61000),/\+2%/);
   const partial=render(52919,{...base,status:'PARTIAL',mean:null,completeDays:22,missingDates:Array.from({length:8},(_,i)=>`2026-09-0${i+1}`)});
   assert.match(partial,/22/);assert.match(partial,/30/);assert.match(partial,/8/);assert.doesNotMatch(partial,/%|[가-힣]/);
   const observed:PassengerReferenceMonth={...base,status:'PARTIAL',mean:null,completeDays:22,
    missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),
    observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50000,transfers:10000}))};
   const sample=render(52919,observed);
-  for(const value of ['60,000','7,081','▲ 11.8%','1,320,000','22','30','8'])assert.ok(sample.includes(value),value);
+  for(const value of ['60,000','7,081','▲ 12%','1,320,000','22','30','8'])assert.ok(sample.includes(value),value);
   assert.doesNotMatch(sample,hangul);
   assert.match(sample,lang==='en'?/Forecast arithmetic sum/ : /预报简单合计/);
   assert.match(sample,lang==='en'?/Not a full-month average/ : /非全月平均值/);
-  assert.match(render(61000,observed),/\+1.7%/);
+  assert.match(render(61000,observed),/\+2%/);
   assert.doesNotMatch(render(100,{...observed,observedDays:observed.observedDays!.map(row=>({...row,departures:0,transfers:0}))}),/%|[가-힣]/);
   assert.doesNotMatch(render(null),hangul);assert.doesNotMatch(render(100,{...base,mean:0}),/%|[가-힣]/);
   for(const delta of [0,.01,-.01,100,-100,NaN])assert.doesNotMatch(passengerDailyDeltaText(delta,lang),hangul);

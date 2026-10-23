@@ -159,11 +159,16 @@ export function groupShare(row: GroupRow, total: number): number | null {
   return total > 0 ? Math.round((row.flights * 1000) / total) / 10 : null;
 }
 
-/** "일본 42편(31.1%) · 중국(본토) 20편(14.8%) · …" */
+/** Display the raw group share as an integer, without changing calculation precision. */
+export function groupShareDisplay(row: GroupRow, total: number): string | null {
+  return total > 0 ? String(Math.round(row.flights * 100 / total)) : null;
+}
+
+/** "일본 42편(31%) · 중국(본토) 20편(15%) · …" */
 export function groupsLine(map: DepartureMap, lang: Lang): string {
   const total = map.flights.length;
   return map.groups.map((group) => {
-    const share = groupShare(group, total);
+    const share = groupShareDisplay(group, total);
     return `${mapCopy.groups[group.group][lang]} ${flights(group.flights, lang)}${share === null ? "" : ` (${share}%)`}`;
   }).join(" · ");
 }
@@ -203,3 +208,4 @@ export function mapShareText(map: DepartureMap, input: { date: string; filter: D
   lines.push(input.url);
   return lines.join("\n");
 }
+

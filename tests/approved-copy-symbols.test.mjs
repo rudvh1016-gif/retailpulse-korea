@@ -18,7 +18,7 @@ test('Seoul no-quieter copy states current grade and limits the comparison to pu
 test('passenger arithmetic operators are gated by the validated reference sum and retain dynamic values',()=>{
  const source=readFileSync(new URL('../app/airport-glance-preview.tsx',import.meta.url),'utf8');
  for(const operator of ['+','=']) assert.ok(source.includes(`{referenceSum&&<span className="glance-sum-operator">${operator} </span>}`));
- for(const value of ['forecastPassengers','transferPassengers','referenceSum.total']) assert.ok(source.includes(`fmt.format(${value})`));
+ for(const value of ['forecastPassengers','transferPassengers','referenceSum.total']) assert.ok(source.includes(`integer.format(${value})`));
  assert.ok(source.includes('passengerReferenceCopy.arithmeticNote[lang]'));
  assert.ok(!source.includes('47,917'));
 });

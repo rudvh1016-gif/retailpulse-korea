@@ -66,14 +66,14 @@ test('every semantic heading has no decorative prefix, generated marker or reser
  }
  assert.match(read('app/airport-staff-briefing.tsx'),/<span aria-hidden="true">· <\/span>/); // Terminal-line dot is not a heading marker.
 });
-test('the three heading-only colors and supported weights distinguish roles without recoloring the site',()=>{
+test('one charcoal heading palette uses supported weights without recoloring body or data',()=>{
  const css=postcss.parse(read('app/heading-hierarchy.css'));
- const palette={page:['#542632','750'],section:['#29272a','650'],subsection:['#514d50','500']};
+ const palette={page:['#222326','750'],section:['#222326','700'],subsection:['#222326','600']};
  const colors=[];
  css.walkDecls('color',decl=>{
   if(decl.value==='CanvasText'){assert.equal(decl.parent.parent.params,'(forced-colors:active)');return;}
   if(decl.parent.selector===':root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"]'){
-   assert.equal(decl.value,'var(--ink,#111111)');assert.ok(decl.important);
+   assert.equal(decl.value,'#222326');assert.ok(decl.important);
    const weight=decl.parent.nodes.find(node=>node.prop==='font-weight');assert.equal(weight.value,'700');assert.ok(weight.important);return;
   }
   const role=decl.parent.selector.match(/^:root body :is\(h1,h2,h3\)\[data-heading="(page|section|subsection)"\]$/)?.[1];
@@ -99,7 +99,7 @@ test('hierarchy is opt-in, wrapping-safe, and leaves navigation/theme/body token
  assert.match(read('app/layout.tsx'),/import "\.\/heading-hierarchy.css"/);
  for(const role of ['page','section','subsection'])assert.ok(css.includes(`[data-heading="${role}"]`));
  assert.match(css,/overflow-wrap:anywhere/);assert.match(css,/white-space:normal/);
- assert.match(css,/font-size:clamp\(28px,3vw,36px\)/);assert.match(css,/font-size:clamp\(22px,2.2vw,26px\)/);assert.match(css,/font-size:clamp\(18px,1.7vw,20px\)/);
+ assert.match(css,/font-size:clamp\(28px,3vw,32px\)/);assert.match(css,/font-size:clamp\(22px,2.2vw,24px\)/);assert.match(css,/font-size:18px/);
  assert.match(css,/forced-colors:active/);
  assert.doesNotMatch(css,/--type-body:|\.glass-nav\s*\{|\.bottom-nav\s*\{|body\s*\{/);
 });
@@ -114,3 +114,6 @@ test('the full home question and destination link have separate rows with only n
  assert.doesNotMatch(css,/white-space:nowrap|text-overflow|overflow:hidden/);
  assert.doesNotMatch(css,/\.airport-view[^{}]*\{[^}]*color:/,'airport headings use the same semantic palette');
 });
+
+
+

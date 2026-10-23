@@ -4,7 +4,7 @@ import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
 
-for(const width of [390,1440])test(`whole today/week/month report glass stays bounded on white ${width}`,async({page})=>{
+for(const width of [390,1440])test(`number-first today/week/month report stays unfilled and bounded on white ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
@@ -12,9 +12,12 @@ for(const width of [390,1440])test(`whole today/week/month report glass stays bo
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  const report=page.locator('.airport-focus-shell .focus-report');
  await expect(report).toHaveCount(1);await expect(report).toContainText('단순합계 112,403명');
- await expect(report).toHaveCSS('background-color','rgba(255, 255, 255, 0.4)');
- await expect(report).toHaveCSS('background-image','none');await expect(report).toHaveCSS('backdrop-filter','blur(14px)');
+ await expect(report).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+ await expect(report).toHaveCSS('background-image','none');await expect(report).toHaveCSS('backdrop-filter','none');
+ await expect(report).toHaveCSS('box-shadow','none');
  await expect(report).toHaveCSS('border-radius','22px');
+ await expect(report.locator('.focus-people-metric > .focus-metric-label')).toHaveText('예상 인원 · 단순합계');
+ await expect(report.locator('.focus-passenger-total')).toHaveText('112,403명');
  for(const selector of ['body','.airport-focus-shell'])await expect(page.locator(selector).first()).toHaveCSS('background-color','rgb(255, 255, 255)');
  const appPaint=await page.locator('.app').first().evaluate(node=>{const css=getComputedStyle(node);return {background:css.backgroundColor,image:css.backgroundImage,blur:css.backdropFilter};});
  expect(['rgb(255, 255, 255)','rgba(0, 0, 0, 0)']).toContain(appPaint.background);expect(appPaint.image).toBe('none');expect(appPaint.blur).toBe('none');
@@ -34,3 +37,4 @@ for(const width of [390,1440])test(`whole today/week/month report glass stays bo
  await expect(nextMonth.locator('[data-country="US"] .focus-country-month-trend')).toHaveCount(0);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+

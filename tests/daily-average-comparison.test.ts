@@ -9,10 +9,10 @@ const visible=(html:string)=>html.replace(/<span class="sr-only">.*?<\/span>/g,'
 test('count appears once with direction, honest basis, rate and four locales',()=>{
  for(const lang of ['ko','en','zh','ja'] as const){
   const html=visible(renderToStaticMarkup(h(DailyAverageComparison,{basis:'2026-09',mean:100000,delta:505,percent:.505,lang})));
-  assert.equal((html.match(/505/g)||[]).length,1);assert.match(html,/\+505/);assert.match(html,/\+0.5%/);
+  assert.equal((html.match(/505/g)||[]).length,1);assert.match(html,/\+505/);assert.match(html,/\+1%/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
   const down=visible(renderToStaticMarkup(h(DailyAverageComparison,{basis:'2026-09',mean:50,delta:-.6,percent:-1.3,lang})));
-  assert.match(down,/▲ 0.6/);assert.match(down,/▲ 1.3%/);assert.doesNotMatch(down,/-0.6/);
+  assert.match(down,/▲ 0.6/);assert.match(down,/▲ 1%/);assert.doesNotMatch(down,/-0.6/);
  }
 });
 test('zero and subresolution preserve direction and zero denominator withholds percentage',()=>{
@@ -28,8 +28,17 @@ test('passenger sample retains baseline value, collected-day evidence and no dup
  for(const lang of ['ko','en','zh','ja'] as const){
  const html=renderToStaticMarkup(h(PassengerBriefComparison,{total:100505,day:'2026-10-22',baseline:ref,lang}));
  const core=visible(html.split('<details')[0]);
- assert.match(core,/100,000/);assert.equal((core.match(/505/g)||[]).length,1);assert.match(core,/\+0.5%/);
+ assert.match(core,/100,000/);assert.equal((core.match(/505/g)||[]).length,1);assert.match(core,/\+1%/);
  assert.doesNotMatch(core,/MTD|마감/);assert.doesNotMatch(html,/<details[^>]* open/);
  if(lang==='ko'){assert.match(core,/수집분 예보 일평균/);assert.match(core,/명 대비/);assert.match(core,/증가/);assert.match(html,/월전체 평균 아님/);}
+ }
+});
+
+test('person means and deltas round once while flight means stay fractional',()=>{
+ for(const lang of ['ko','en','zh','ja'] as const){
+  for(const [delta,expected] of [[.49,'+0'],[.5,'+1'],[-.49,'▲ 0'],[-.5,'▲ 1']] as const){
+   const html=visible(renderToStaticMarkup(h(DailyAverageComparison,{basis:'2026-09',mean:463.7,delta,percent:delta,lang,unit:'people'})));
+   assert.match(html,/464/);assert.ok(html.includes(expected));assert.doesNotMatch(html,/463[.,]7|&lt;0/);
+  }
  }
 });

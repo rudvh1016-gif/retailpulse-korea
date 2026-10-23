@@ -18,8 +18,8 @@ for(const width of [320,390,430])test(`destination flags and all-country disclos
  await page.goto('/ko/airport?terminal=T1');
  const zone=page.getByTestId('map-zone-countries').locator('[data-side=WEST]');
  await expect(zone).toHaveAttribute('data-total','12');
- await expect(zone.locator('li[data-country=JP]')).toHaveAttribute('data-share','33.3');
- await expect(zone.locator('li[data-country=UNKNOWN]')).toHaveAttribute('data-share','8.3');
+ await expect(zone.locator('li[data-country=JP]')).toHaveAttribute('data-share','33');
+ await expect(zone.locator('li[data-country=UNKNOWN]')).toHaveAttribute('data-share','8');
  await expect(zone.locator('li[data-country=CN]')).toContainText('중국행');
  await expect(zone.locator('li[data-country=UNKNOWN]')).toContainText('목적지 국가 미정');
  await expect(zone.locator('.airport-country-prism')).toHaveCount(0);
@@ -52,3 +52,4 @@ for(const width of [320,390,430])test(`destination flags and all-country disclos
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(errors).toEqual([]);
 });
+

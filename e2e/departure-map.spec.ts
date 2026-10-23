@@ -93,7 +93,7 @@ test('the time selection moves the counts, the dots and the list together', asyn
 test('a destination region filters the map and the list; shares keep their own base', async ({ page }) => {
   const { map } = await openMap(page);
   const groups = map.getByTestId('map-groups');
-  await expect(groups.locator('tr[data-group="JP"]')).toContainText('3편 · 33.3%');
+  await expect(groups.locator('tr[data-group="JP"]')).toContainText('3편 · 33%');
   await expect(groups.locator('tr[data-group="UNKNOWN"]')).toContainText('1편');
   await expect(map.getByTestId('map-groups-basis')).toContainText('출발편 9편 기준(목적지 지역 미확인 1편 포함)');
   await groups.getByRole('button', { name: '일본' }).click();

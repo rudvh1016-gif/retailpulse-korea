@@ -776,7 +776,7 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
         {hasBackground ? <div className="tourism-background-list">
           {block?.foreignPresence && <article className="tourism-background-item">
             <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{copy.foreignPresence}</h3>
-            <p className="tourism-background-value">{numberText(block.foreignPresence.value, lang)} {copy.people}</p>
+            <p className="tourism-background-value">{numberText(block.foreignPresence.value, lang, 0)} {copy.people}</p>
             <p className="tourism-background-period">{formatKstDateTime(block.foreignPresence.referenceAt,lang)} KST</p>{foreignPeriod && <PeriodNote period={foreignPeriod} />}
             <p className="tourism-source">{copy.foreignSource}</p>
             <p className="tourism-limit-note">{copy.foreignCaveat}</p>
@@ -829,3 +829,4 @@ export function TourismDeskView({ lang, area, onAreaChange }: {
     </section>
   </section>;
 }
+

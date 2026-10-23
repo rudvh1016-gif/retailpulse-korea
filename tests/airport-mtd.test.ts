@@ -81,11 +81,11 @@ test("the previous range is the same span of the previous month", () => {
 
 test("growth is computed from the two totals and rounds the way every other comparison does", () => {
   const mtd = buildMonthToDate(index({ ...august(13), ...september(13) }), "2026-09-13", "all");
-  // current 46,800 vs previous 42,120 → +11.1%
+  // current 46,800 vs previous 42,120 → +11%
   assert.equal(mtd.current.total, 46800);
   assert.equal(mtd.previous?.total, 42120);
   assert.ok(mtd.change);
-  assert.equal(comparisonValue(mtd.change!), "+11.1%");
+  assert.equal(comparisonValue(mtd.change!), "+11%");
 });
 
 test("a real but sub-resolution change keeps its direction instead of reading as flat", () => {
@@ -93,7 +93,7 @@ test("a real but sub-resolution change keeps its direction instead of reading as
   const rows = index({ ...august(13), ...september(13) });
   const mtd = buildMonthToDate(rows, "2026-09-13", "all");
   const tiny = { ...mtd.change!, minPercent: 0.002, maxPercent: 0.002 };
-  assert.equal(comparisonValue(tiny), "+<0.1%");
+  assert.equal(comparisonValue(tiny), "+0%");
 });
 
 test("scopes are isolated: T1 and T2 each sum only their own rows", () => {
@@ -176,4 +176,3 @@ test("month arithmetic is calendar-correct across year and leap boundaries", () 
   assert.equal(previousMonthSameDay("2026-03-29"), null, "2026 February has 28 days");
   assert.deepEqual(summarizeRange(new Map(), "2026-09-13", "2026-09-01", "all").days, [], "a reversed span is empty");
 });
-

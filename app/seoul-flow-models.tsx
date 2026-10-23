@@ -36,7 +36,7 @@ function ModelImage({name}:{name:string}) {
 /** Receives the caller's existing summary. No additional request or provider collection. */
 export function SeoulFlowModels({summary,area,lang,publication}:{summary:LiveSummary|null;area:SeoulFlowArea;lang:Lang;publication?:{releaseMonth?:string}}) {
  const data=fromSummary(summary,area,publication),t=copy[lang];
- const number=new Intl.NumberFormat(locales[lang],{maximumFractionDigits:1});
+ const number=new Intl.NumberFormat(locales[lang],{maximumFractionDigits:0});
  const value=(n:number|null|undefined)=>n==null?t.missing:number.format(n);
  const station=data.station,living=data.foreignLivingPopulation,movement=data.tourismPurposeMovement;
  const whole=new Intl.NumberFormat(locales[lang],{maximumFractionDigits:0});

@@ -32,7 +32,7 @@ export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;m
  const replacement=useContext(RoutePassengerPlacement);
  if(replacement)return <>{replacement}</>;
  const current=reply?.current.ROUTE_COUNTRY_PASSENGERS,previous=reply?.previous.ROUTE_COUNTRY_PASSENGERS;
- const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang]);
+ const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:0});
  const names=new Intl.DisplayNames([lang],{type:'region'});
  const label=(row:AirportStatsRow)=>{const code=codes?.get(row.label);return code?names.of(code)??row.label:row.label;};
  const before=new Map((previous?.rows??[]).filter(row=>!row.aggregate).map(row=>[row.label,row.departures]));
@@ -56,4 +56,3 @@ export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;m
   <p className="prep-note"><a href="https://www.data.go.kr/data/15095071/openapi.do" target="_blank" rel="noreferrer">{t(lang,'출처: 인천국제공항공사','Source: Incheon International Airport Corporation','来源：仁川国际机场公社','出典: 仁川国際空港公社')} ↗</a></p>
  </section>;
 }
-

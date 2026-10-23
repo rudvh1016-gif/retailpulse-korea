@@ -41,21 +41,21 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await includedSummary.click();await expect(includedDates).toHaveAttribute('open','');await expect(includedDates.locator('.airport-month-period').first()).toBeVisible();
  await expect(includedDates).toContainText('2026-09-01–2026-09-30');await expect(includedDates).toContainText('2/30');await expect(includedDates).toContainText('1/9');
  await includedSummary.click();
- await expect(section).toContainText('+200.0%');
+ await expect(section).toContainText('+200%');
  await expect(section.getByTestId('destination-daily-changes')).toBeVisible();
  await expect(section.getByTestId('country-side-rates')).toHaveCount(1);
  if(lang==='ko'&&width===390){await section.evaluate(el=>window.scrollTo(0,window.scrollY+el.getBoundingClientRect().top-180));await page.screenshot({path:info.outputPath('monthly-cross-fixture-390.png')});}
  const countries=section.getByTestId('month-list-destinationCountries');await countries.locator('summary').focus();await page.keyboard.press('Enter');await expect(countries).toHaveAttribute('open','');
  await expect(countries.locator('tbody tr')).toHaveCount(1);
- for(let repeat=0;repeat<2;repeat++){await page.getByRole('tab',{name:'T1',exact:true}).click();await page.getByRole('tab',{name:'T2',exact:true}).click();await expect(section).toContainText('+100.0%');}
+ for(let repeat=0;repeat<2;repeat++){await page.getByRole('tab',{name:'T1',exact:true}).click();await page.getByRole('tab',{name:'T2',exact:true}).click();await expect(section).toContainText('+100%');}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });
 test('a slower old month cannot replace a new selection; failures and zero baselines are explicit',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',async route=>{const month=new URL(route.request().url()).searchParams.get('month');if(month==='2026-09')await new Promise(resolve=>setTimeout(resolve,300));await route.fulfill({json:reply(month??undefined)});});
- await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section).toContainText('+200.0%');
- await section.locator('select').selectOption('2026-09');await section.locator('select').selectOption('2026-10');await page.waitForTimeout(400);await expect(section.locator('select')).toHaveValue('2026-10');await expect(section).toContainText('+200.0%');
- await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계');await expect(section).not.toContainText('+200.0%');
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section).toContainText('+200%');
+ await section.locator('select').selectOption('2026-09');await section.locator('select').selectOption('2026-10');await page.waitForTimeout(400);await expect(section.locator('select')).toHaveValue('2026-10');await expect(section).toContainText('+200%');
+ await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계');await expect(section).not.toContainText('+200%');
 });
 
 test('legacy update and missing months use three bounded checks; failed refresh keeps the exact last-good month',async({page})=>{
@@ -73,10 +73,10 @@ test('legacy update and missing months use three bounded checks; failed refresh 
  await page.clock.runFor(2100);await expect.poll(()=>reads).toBe(2);await expect(section).toContainText('2026-10-10T00:00:02Z');
  await page.clock.runFor(10100);await expect.poll(()=>reads).toBe(3);await expect(section).toContainText('2026-10-10T00:00:03Z');
  await page.clock.runFor(30000);expect(reads).toBe(3);
- ready=true;await section.getByRole('button',{name:'자료 다시 확인'}).click();await expect(section).toContainText('+200.0%');
- await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계 자료가 아직 없습니다');await expect(section).not.toContainText('+200.0%');
+ ready=true;await section.getByRole('button',{name:'자료 다시 확인'}).click();await expect(section).toContainText('+200%');
+ await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계 자료가 아직 없습니다');await expect(section).not.toContainText('+200%');
  await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));
- await section.locator('select').selectOption('2026-10');await expect(section).toContainText('마지막 확인 집계');await expect(section).toContainText('+200.0%');await expect(section).toContainText('2026-10-10');
+ await section.locator('select').selectOption('2026-10');await expect(section).toContainText('마지막 확인 집계');await expect(section).toContainText('+200%');await expect(section).toContainText('2026-10-10');
 });
 
 // The map's loading slot and its loaded layout both show the monthly block. Whether the
@@ -88,7 +88,7 @@ for(const [label,monthDelay,flightDelay] of [['month first',100,700],['flights f
  await page.route('**/api/live/flights*',async route=>{await new Promise(resolve=>setTimeout(resolve,flightDelay));await route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:'2026-10-10',flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
  await page.route('**/api/live/airport-months*',async route=>{await new Promise(resolve=>setTimeout(resolve,monthDelay));await route.fulfill({json:reply()});});
  await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');
- await expect(section).toContainText('+200.0%');await section.scrollIntoViewIfNeeded();await page.waitForTimeout(1000);
+ await expect(section).toContainText('+200%');await section.scrollIntoViewIfNeeded();await page.waitForTimeout(1000);
  expect(sent).toEqual(['?month=2026-10']);
 });
 

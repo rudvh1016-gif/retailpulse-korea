@@ -1,4 +1,5 @@
 "use client";
+import {formatDisplayInteger} from "../lib/display-number";
 import './airport-history-polish.css';
 import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
@@ -818,7 +819,7 @@ function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; sele
       <p className="eyebrow">2026-07 · {area.en}</p>
       <ol>
         <li><span>{localText(lang, { ko: "월평균", en: "Monthly average", zh: "月均", ja: "月平均" })}</span><b>{formatCount(lang, detail.average)}</b></li>
-        <li><span>{localText(lang, { ko: "중국 국적", en: "Chinese nationality", zh: "中国国籍", ja: "中国籍" })}</span><b>{formatCount(lang, detail.china)} · {detail.chinaShare}%</b></li>
+        <li><span>{localText(lang, { ko: "중국 국적", en: "Chinese nationality", zh: "中国国籍", ja: "中国籍" })}</span><b>{formatCount(lang, detail.china)} · {formatDisplayInteger(detail.chinaShare, lang)}%</b></li>
         <li><span>{localText(lang, { ko: "가장 많은 시간대", en: "Highest hour", zh: "人数最多时段", ja: "最も多い時間帯" })}</span><b>{detail.peakHour}</b></li>
       </ol>
     </div>
@@ -894,12 +895,12 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
           why={localText(lang, { ko: "이용할 터미널이 최근 더 붐비는 쪽인지 미리 가늠할 수 있습니다.", en: "It tells you in advance whether your terminal is the busier one lately.", zh: "可提前判断您将使用的航站楼近期是否更为繁忙。", ja: "利用するターミナルが最近混んでいる側かを事前に把握できます。" })}
         />
         <div className="compare-bars">
-          <div><span>T1</span><i style={{ width: `${100 - recentT2Share}%` }} /><b>{(100 - recentT2Share).toFixed(1)}%</b></div>
-          <div><span>T2</span><i style={{ width: `${recentT2Share}%` }} /><b>{recentT2Share.toFixed(1)}%</b></div>
+          <div><span>T1</span><i style={{ width: `${100 - recentT2Share}%` }} /><b>{formatDisplayInteger(100 - recentT2Share, lang)}%</b></div>
+          <div><span>T2</span><i style={{ width: `${recentT2Share}%` }} /><b>{formatDisplayInteger(recentT2Share, lang)}%</b></div>
         </div>
         <ul className="reading-notes">
           <li><span>{localText(lang, { ko: "기준 기간", en: "Period", zh: "统计期间", ja: "対象期間" })}</span><b>{recentMonths}</b></li>
-          <li><span>{localText(lang, { ko: "직전 3개월", en: "Previous three months", zh: "此前3个月", ja: "直前3か月" })}</span><b>{priorMonths} · T2 {priorT2Share.toFixed(1)}%</b></li>
+          <li><span>{localText(lang, { ko: "직전 3개월", en: "Previous three months", zh: "此前3个月", ja: "直前3か月" })}</span><b>{priorMonths} · T2 {formatDisplayInteger(priorT2Share, lang)}%</b></li>
           <li><span>{localText(lang, { ko: "T2 변화", en: "T2 change", zh: "T2变化", ja: "T2の変化" })}</span><b><ChangeRate value={shareDelta} lang={lang} unit="%p"/></b></li>
         </ul>
       </section>
@@ -1085,7 +1086,7 @@ function MoreView({
         </div>
       </div>
 
-      <p className="truth-note" data-testid="change-reading-guide">{localText(lang, { ko: "수치 읽는 법: 파란색 +는 증가, 빨간색 ▲는 감소입니다. 비교 기간과 단위를 함께 확인하세요.", en: "Reading changes: blue + means increase; red ▲ means decrease. Check the comparison period and unit together.", zh: "数值读法：蓝色 + 表示增加，红色 ▲ 表示减少。请同时确认比较时段和单位。", ja: "数値の読み方：青の + は増加、赤の ▲ は減少です。比較期間と単位も確認してください。" })}</p>
+      <p className="truth-note" data-testid="change-reading-guide">{localText(lang, { ko: "수치 읽는 법: 파란색 +는 증가, 빨간색 ▲는 감소입니다. 비교 기간과 단위를 함께 확인하세요. 인원·비율은 소수 첫째 자리 5 이상 올림, 5 미만 버림으로 표시합니다. 계산은 원본값 기준이며, 0%로 표시돼도 작은 증감이 있을 수 있습니다.", en: "Reading changes: blue + means increase; red ▲ means decrease. Check the comparison period and unit together. People and percentages are rounded to whole numbers: a fractional part of 0.5 or more rounds up in magnitude, otherwise down. Calculations use original values; 0% may still represent a small change.", zh: "数值读法：蓝色 + 表示增加，红色 ▲ 表示减少。请同时确认比较时段和单位。人数及百分比按绝对值四舍五入到整数；计算使用原始值，显示0%仍可能存在小幅变化。", ja: "数値の読み方：青の + は増加、赤の ▲ は減少です。比較期間と単位も確認してください。人数・比率は絶対値の小数第1位を四捨五入して整数表示します。計算は元の値を使い、0%表示でも小さな増減がある場合があります。" })}</p>
 
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         <button type="button" className="update-notice-trigger" aria-haspopup="dialog" onClick={()=>window.dispatchEvent(new Event(UPDATE_NOTICE_OPEN_EVENT))}>{localText(lang,{ko:'공지사항 보기',en:'View update notice',zh:'查看更新公告',ja:'更新のお知らせ'})}</button>
