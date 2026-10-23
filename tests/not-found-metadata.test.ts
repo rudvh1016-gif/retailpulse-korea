@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {notFoundMetadataForPath, rewriteNotFoundMetadata} from '../worker/not-found-metadata';
 
 test('only complete supported first path segments select a translation', () => {
@@ -166,3 +168,11 @@ test('a failed or never-ending transformed body cannot replace the original resp
   }
 });
 
+
+test('garbage collection cannot cancel the original probe stream, including reader-only ownership', () => {
+  const result = spawnSync(process.execPath, ['--expose-gc', '--import', 'tsx', fileURLToPath(new URL('./fixtures/not-found-probe-gc.ts', import.meta.url))], {
+    cwd: fileURLToPath(new URL('../', import.meta.url)), encoding: 'utf8', timeout: 10_000,
+  });
+  assert.equal(result.error, undefined, result.error?.message);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+});

@@ -29,7 +29,7 @@
     "app/retailpulse-app.tsx": "168ac8b40b49507929f33f03c5498c9d222af859a5abb59bc9ea139758eecba4",
     "app/retailpulse-data.ts": "2a965cde02012978eb446a955b82bbcbfbec83f74f862e0e2846fae1ca348ecd",
     "app/robots.ts": "75a92f2af60baf3b683f34146fadf23b99fe84fcd33904bc2707ea4e062ef7af",
-    "app/seo-config.ts": "799019d18d958ab37bd4b69297b24d24e6474a5962ba99559d9c66eefe3d8b99",
+    "app/seo-config.ts": "852a80f9a72c5e23a11b02fcd8e5dc1ad9566e5ad010f26e91cd9f2a6045d30a",
     "app/site-usage-guide.tsx": "492dd631382c9aab606c5fb08238e9e84d925e762749c53d44b5294a715b4067",
     "app/sitemap.ts": "31ccb4d7cad836a09c3973f14c35ef638d8570413e6198a031c0ce2cd978063f",
     "app/source-status.tsx": "8556b0a7bd1012437694dddc7d035e154814023c19abe2ecd9b285437ab36b67",
@@ -137,6 +137,18 @@
         "file": "app/retailpulse-app.tsx",
         "previous": "da7f38a88b79119fa86193dc306683c4163e7a1e39ae201f7ce6a28cb805e321",
         "current": "168ac8b40b49507929f33f03c5498c9d222af859a5abb59bc9ea139758eecba4"
+      }
+    ]
+  },
+  "technicalChanges20261023EnglishSearchCopy": {
+    "comparisonBase": "a60f3f046ba8e28502cdc8f0770a697b5ed396e7",
+    "ownerRequestDate": "2026-10-23",
+    "description": "Owner-requested English search/share correction: English routes use their existing English airport-home description for OG/Twitter instead of Korean. Other locales, page title/description/canonical, data and UI styles unchanged. PR468 audit against 84cf11c6e63d6ad2842d7c5179aaf26fc9528cd0.",
+    "changes": [
+      {
+        "file": "app/seo-config.ts",
+        "previous": "799019d18d958ab37bd4b69297b24d24e6474a5962ba99559d9c66eefe3d8b99",
+        "current": "852a80f9a72c5e23a11b02fcd8e5dc1ad9566e5ad010f26e91cd9f2a6045d30a"
       }
     ]
   }

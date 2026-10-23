@@ -32,9 +32,20 @@ export function notFoundMetadataForPath(pathname: string) {
 export const NOT_FOUND_METADATA_MAX_BYTES = 128 * 1024;
 export const NOT_FOUND_METADATA_READ_TIMEOUT_MS = 1000;
 
+// Older Node/Undici releases attach a clone finalizer to the original tee
+// branch. Keep every probe Response alive for as long as its original can be
+// returned to the caller; retaining just the reader is not sufficient there.
+// Key by the original STREAM so a reader also keeps the clone alive after
+// its Response wrapper is dropped. Weak keys do not retain abandoned streams.
+const probeResponses = new WeakMap<ReadableStream<Uint8Array>, Response>();
+
 async function completeSmallBody(response: Response, maxBytes = NOT_FOUND_METADATA_MAX_BYTES): Promise<Uint8Array<ArrayBuffer> | null> {
   let reader: ReadableStreamDefaultReader<Uint8Array>;
-  try { reader = response.clone().body!.getReader(); }
+  try {
+    const probe = response.clone();
+    probeResponses.set(response.body!, probe);
+    reader = probe.body!.getReader();
+  }
   catch { return null; }
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -110,6 +121,7 @@ export async function rewriteNotFoundMetadata(request: Request, response: Respon
     // Keep a small allowance for longer translated metadata at the input limit.
     const output = await completeSmallBody(rewritten, NOT_FOUND_METADATA_MAX_BYTES + 4096);
     void rewritten.body?.cancel().catch(() => {});
+    probeResponses.delete(rewritten.body!);
     if (output === null) return response;
     const headers = new Headers(rewritten.headers);
     headers.delete('content-length');
@@ -119,9 +131,11 @@ export async function rewriteNotFoundMetadata(request: Request, response: Respon
     const result = new Response(output, { status: response.status, statusText: response.statusText, headers });
     // The clone has reached EOF; release the original tee's bounded buffer.
     void response.body.cancel().catch(() => {});
+    probeResponses.delete(response.body!);
     return result;
   } catch {
     // Parsing/transform setup must never replace the original error response.
     return response;
   }
 }
+
