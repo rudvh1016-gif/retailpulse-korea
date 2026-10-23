@@ -15,10 +15,10 @@ for(const lang of ['ko','en','zh'] as const)test(`${lang}: complete screenshot b
  const markup=render('2026-10-21');
  if(lang==='ko')assert.equal(markup.replace(/ data-heading="(?:page|section|subsection)"/g,'').replace(/<span class="heading-marker" aria-hidden="true"><\/span>/g,''),readFileSync('tests/fixtures/brief-ko-localization-baseline.html','utf8'));
  else{assert.doesNotMatch(markup,/[가-힣]/);assert.doesNotMatch(render(''),/[가-힣]/);assert.doesNotMatch(render('2026-10-21',{...context,flights:null,passengers:null,transferPassengers:null,referenceSum:null,flightBaseline:null,selectedCountryChanges:[]}),/[가-힣]/);}
- for(const value of ['43,319','9,600','52,919','264','2026-10-21','T2','+4.4%','▲ 14.9%'])assert.ok(markup.includes(value),value);
+ for(const value of ['43,319','9,600','52,919','264','2026-10-21','T2','+4%','▲ 15%'])assert.ok(markup.includes(value),value);
  assert.ok(markup.includes('focus-preparation-brief'));assert.ok(markup.includes('focus-report-basis'));
  const observed=render('2026-10-21',{...context,passengerBaseline:{month:'2026-09',start:'2026-09-01',end:'2026-09-30',expectedDays:30,completeDays:22,mean:null,status:'PARTIAL',missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50000,transfers:10000}))}});
- for(const value of ['60,000','7,081','▲ 11.8%','1,320,000','2026-09-23','2026-09-30'])assert.ok(observed.includes(value),value);
+ for(const value of ['60,000','7,081','▲ 12%','1,320,000','2026-09-23','2026-09-30'])assert.ok(observed.includes(value),value);
  if(lang!=='ko')assert.doesNotMatch(observed,/[가-힣]/);
  assert.ok(observed.includes(lang==='ko'?'출국·환승 예보':lang==='en'?'complete departure and transfer forecasts':'出境和中转预报均完整'));
 });

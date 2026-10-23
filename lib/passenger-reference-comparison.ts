@@ -40,12 +40,12 @@ export function passengerReferenceDailyChange(total:number|null|undefined,day:st
   ...(observed?{observedDaysOnly:true as const,baselineTotal:observed.total,missingDays:expectedDays-baselineDays}:{})};
 }
 
-const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:1});
+const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
 /** Keep sub-resolution changes directional rather than displaying a false zero. */
 export function passengerDailyDeltaText(delta:number,lang:Lang='ko'){
  const t=(ko:string,en:string,zh:string)=>briefText(lang,ko,en,zh);
  if(!Number.isFinite(delta))return t('확인 중','Checking','确认中');
  if(delta===0)return t('0명/일 · 차이 없음','0 people/day · no change','0人/天 · 无变化');
- const magnitude=Math.abs(delta),amount=magnitude<0.05?t('0.1명/일 미만','less than 0.1 people/day','不足0.1人/天'):t(`${number.format(magnitude)}명/일`,`${number.format(magnitude)} people/day`,`${number.format(magnitude)}人/天`);
+ const magnitude=Math.abs(delta),amount=t(`${number.format(magnitude)}명/일`,`${number.format(magnitude)} people/day`,`${number.format(magnitude)}人/天`);
  return `${amount} ${delta>0?t('증가','increase','增加'):t('감소','decrease','减少')}`;
 }

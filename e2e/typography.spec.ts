@@ -238,13 +238,13 @@ test("the install guide keeps body weights separate from its semantic section ti
     return { sizes: [...sizes].sort(), weights: [...weights].sort(), headingWeights: [...headingWeights].sort(), heights: [...heights].sort() };
   });
 
-  // 26px section title · 13px anything the reader must read · 12px the note beneath
+  // 24px section title · 13px anything the reader must read · 12px the note beneath
   // it, plus the 10px eyebrow every panel in the product already uses.
-  expect(used.sizes).toEqual(["10px", "12px", "13px", "26px"]);
+  expect(used.sizes).toEqual(["10px", "12px", "13px", "24px"]);
   // Body weights stay unchanged; the Korean section title uses a supported
-  // variable-font semibold, independently of body emphasis.
+  // variable-font bold, independently of body emphasis.
   expect(used.weights).toEqual(["400", "600"]);
-  expect(used.headingWeights).toEqual(["650"]);
+  expect(used.headingWeights).toEqual(["700"]);
   // Prose shares one rhythm; the title is the only exception.
   expect(used.heights, `line-height ratios in use: ${used.heights.join(", ")}`).toEqual(["1.35", "1.70"]);
 });
@@ -1025,3 +1025,4 @@ test("과거 headline figures are sized for a phone, not for a desktop", async (
     expect(figure.fontSize, "still the card's headline figure").toBeGreaterThanOrEqual(18);
   }
 });
+

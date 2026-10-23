@@ -76,9 +76,9 @@ for(const width of [320,390,430,1280]) {
   await expect(countryNote).toHaveAttribute('data-total','3');
   const total=await countries.locator('[data-total]').evaluateAll(nodes=>nodes.reduce((sum,node)=>sum+Number(node.getAttribute('data-total')),0));
   expect(total).toBe(6);
-  await expect(countries.locator('.airport-zone-country-grid h5').first()).toContainText('16.7%');
+  await expect(countries.locator('.airport-zone-country-grid h5').first()).toContainText('17%');
   await countryNote.locator('summary').click();
-  await expect(countryNote.locator('li')).toContainText('3편 · 100.0%');
+  await expect(countryNote.locator('li')).toContainText('3편 · 100%');
   await countryNote.locator('summary').click();
   await countries.screenshot({path:`../ui-headings-evidence-20261006/country-headings-${width}.png`});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

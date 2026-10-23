@@ -8,6 +8,7 @@ import schools from '../data/korean-school-vacations.json';
 import annual from '../data/official-calendar/priority-country-multiyear.json';
 import type {CalendarEvent} from '../lib/calendar-context.mjs';
 import {calendarEventTitle,countryTrendCalendar,trendCalendarText} from '../lib/country-trend-calendar';
+import {CountryFlag} from '../app/airport-country-flag';
 import {CountryTrendCalendarContext} from '../app/country-trend-calendar-context';
 
 const events=seed.events.map(event=>({...event,region:event.region??undefined})) as CalendarEvent[];
@@ -171,8 +172,8 @@ test('compact rows expose every matched event and keep sources in one closed lis
  const [visible,evidence]=rendered.split('<details');
  assert.equal((rendered.match(/<details/g)??[]).length,1);
  assert.doesNotMatch(rendered,/<details[^>]*\bopen(?:[=> ]|$)/);
- assert.match(visible,/🇺🇸.*미국 · <b>노동절<\/b> 2026-09-07 · 연방공무원/);
- assert.match(visible,/🇰🇷.*한국 · <b>추석 연휴<\/b> 2026-09-24–2026-09-26/);
+ assert.match(visible,/US\.webp.*미국 · <b>노동절<\/b> 2026-09-07 · 연방공무원/);
+ assert.match(visible,/kr\.svg.*한국 · <b>추석 연휴<\/b> 2026-09-24–2026-09-26/);
  assert.match(visible,/<b>여름방학<\/b> 2026-07-28–2026-08-19 · 학교별 상이 · 예시 · 직전 월/);
  assert.doesNotMatch(rendered,/2026-09-07–2026-09-07/);
  for(const name of ['노동절','추석 연휴'])assert.equal(visible.split(name).length-1,1,name);
@@ -224,4 +225,27 @@ test('Japan screenshot regression: all selected and comparison-month holidays an
  assert.doesNotMatch(visible,/공식 원문|확인일/);
  assert.match(evidence,/공식 원문/);
  assert.match(evidence,/개별 학교 예시/);
+});
+
+test('calendar flags use local images on Windows while preserving compact rows',()=>{
+ for(const [country,path] of [['JP','JP.webp'],['CN','CN.webp'],['VN','VN.webp'],['US','US.webp'],['FR','fallback/fr.svg']]){
+  const rendered=html({row:{...row,code:country}}).split('<details')[0];
+  const contexts=countryTrendCalendar(events,{...query,country}).details;
+  if(contexts.some(item=>item.country===country))assert.ok(rendered.includes('/images/airport-flags/'+path),country);
+  assert.ok(rendered.includes('/images/airport-flags/fallback/kr.svg'),country);
+  assert.equal((rendered.match(/<img /g)??[]).length,contexts.length);
+  assert.equal((rendered.match(/width="16" height="16" alt=""/g)??[]).length,contexts.length);
+  assert.doesNotMatch(rendered,/[\u{1F1E6}-\u{1F1FF}]/u);
+ }
+});
+
+
+test('shared country flags keep existing size and never invent unknown assets',()=>{
+ const standard=renderToStaticMarkup(createElement(CountryFlag,{code:'TH'}));
+ assert.match(standard,/fallback\/th\.svg/);
+ assert.match(standard,/width="24" height="24"/);
+ for(const code of ['ZZ','OTHER','']){
+  const unknown=renderToStaticMarkup(createElement(CountryFlag,{code,size:16}));
+  assert.doesNotMatch(unknown,/<img|src=/);
+ }
 });

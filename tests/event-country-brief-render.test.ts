@@ -30,5 +30,5 @@ test('staff event selection cannot attach the largest unrelated route to the Tha
 
 test('staff briefing without a verified event retains its existing ranked route summary',()=>{
  const html=renderToStaticMarkup(h(AirportFocusData.Provider,{value:{...provider,asOf:'',calendarEvents:[]}},h(AirportStaffBriefing,{lang:'ko',day:context.day,peak:null,flights:context.eventFlights!,retrievedAt:null,changes:[{country:'TW',label:'대만',count:90,mean:1,delta:89,percent:8900,month:'2026-09',days:30}]})));
- assert.match(html,/staff-route-metric" data-country="TW"/);assert.match(html,/대만행 90편/);assert.match(html,/8900.0%/);assert.doesNotMatch(html,/staff-holiday-event/);
+ assert.match(html,/staff-route-metric" data-country="TW"/);assert.match(html,/대만행 90편/);assert.match(html,/8900%/);assert.doesNotMatch(html,/staff-holiday-event/);
 });

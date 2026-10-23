@@ -13,19 +13,19 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
   await page.goto(`/${lang}/airport?terminal=T2`);
   const model=page.getByTestId('airport-concept-model');await expect(model).toHaveAttribute('data-denominator','5');
   await expect(model.getByTestId('zone-range-EAST')).toHaveText('(253–270, 273–291)');
-  await expect(model.locator('.airport-concept-counts [data-side=WEST] small')).toHaveText('40.0%');
-  for(const side of ['CENTER','EAST']) await expect(model.locator(`.airport-concept-counts [data-side=${side}] small`)).toHaveText('20.0%');
-  await expect(model.getByTestId('model-unverified-share')).toContainText('20.0%');
+  await expect(model.locator('.airport-concept-counts [data-side=WEST] small')).toHaveText('40%');
+  for(const side of ['CENTER','EAST']) await expect(model.locator(`.airport-concept-counts [data-side=${side}] small`)).toHaveText('20%');
+  await expect(model.getByTestId('model-unverified-share')).toContainText('20%');
   const west=page.getByTestId('map-zone-countries').locator('.airport-zone-country-grid > [data-side=WEST]');
-  await expect(west.locator('li[data-country=JP]')).toHaveAttribute('data-share','50.0');
-  await expect(west.locator('li[data-country=HK]')).toHaveAttribute('data-share','50.0');
+  await expect(west.locator('li[data-country=JP]')).toHaveAttribute('data-share','50');
+  await expect(west.locator('li[data-country=HK]')).toHaveAttribute('data-share','50');
   expect(await tofuCharacters(model)).toEqual([]);
-  for(const [index,total,westShare,centerShare] of [[0,14,'35.7%','21.4%'],[1,5,'40.0%','20.0%'],[3,3,'33.3%','33.3%'],[2,5,'40.0%','20.0%'],[0,14,'35.7%','21.4%'],[2,5,'40.0%','20.0%']] as const){
+  for(const [index,total,westShare,centerShare] of [[0,14,'36%','21%'],[1,5,'40%','20%'],[3,3,'33%','33%'],[2,5,'40%','20%'],[0,14,'36%','21%'],[2,5,'40%','20%']] as const){
    await page.locator('.terminal-selector button').nth(index).click();
    await expect(model).toHaveAttribute('data-denominator',String(total));
    if(index===0){
     await expect(model.locator('.airport-concept-counts')).toHaveCount(3);
-    for(const [building,n,w,c]of[['T1',5,'40.0%','20.0%'],['T2',5,'40.0%','20.0%'],['CONCOURSE',3,'33.3%','33.3%']] as const){const row=model.locator(`.airport-concept-counts[data-building=${building}]`);await expect(row).toHaveAttribute('data-denominator',String(n));await expect(row.locator('[data-side=WEST] small')).toHaveText(w);await expect(row.locator('[data-side=CENTER] small')).toHaveText(c);}
+    for(const [building,n,w,c]of[['T1',5,'40%','20%'],['T2',5,'40%','20%'],['CONCOURSE',3,'33%','33%']] as const){const row=model.locator(`.airport-concept-counts[data-building=${building}]`);await expect(row).toHaveAttribute('data-denominator',String(n));await expect(row.locator('[data-side=WEST] small')).toHaveText(w);await expect(row.locator('[data-side=CENTER] small')).toHaveText(c);}
    }else{
     if(westShare)await expect(model.locator('.airport-concept-counts [data-side=WEST] small')).toHaveText(westShare);
     if(centerShare)await expect(model.locator('.airport-concept-counts [data-side=CENTER] small')).toHaveText(centerShare);
@@ -46,3 +46,4 @@ test('missing retrieval is unavailable, not a confirmed zero',async({page})=>{
  await expect(page.getByTestId('map-unavailable')).toContainText('not a confirmed zero');
  await expect(page.getByTestId('airport-concept-model')).toHaveCount(0);
 });
+

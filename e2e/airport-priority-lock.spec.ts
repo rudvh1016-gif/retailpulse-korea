@@ -133,7 +133,7 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
       await expect(mtd).toContainText("46,800");           // 13 x 3,600
       await expect(mtd).toContainText(mtdCopy.previous[lang]);
       await expect(mtd).toContainText("42,120");           // 13 x 3,240
-      await expect(mtd).toContainText("+11.1%");
+      await expect(mtd).toContainText("+11%");
       await expect(mtd).toContainText("9/1–9/13");
       await expect(mtd).toContainText("8/1–8/13");
 

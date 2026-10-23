@@ -442,7 +442,7 @@ test("공항 페이지는 요약 → 예보 차트 → 상세 격자 → 구성 
   assert.ok(summary.includes('<AirportCheckpointSchematic'), 'observations stay integrated after composition');
   const schematic = readFileSync('app/airport-checkpoint-schematic.tsx', 'utf8');
   assert.ok(schematic.includes('displayedQueueMinutes(row)'), 'the original wait values stay available');
-  assert.ok(schematic.includes('row.waitingCount.toLocaleString(locale)'), 'the original waiting headcounts stay available');
+  assert.ok(schematic.includes('row.waitingCount.toLocaleString(locale,{maximumFractionDigits:0})'), 'the original waiting headcounts stay available');
   assert.ok(schematic.includes('dateTime={row.observedAt}'), 'the official observation time stays available');
 });
 

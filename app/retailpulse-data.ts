@@ -1,3 +1,4 @@
+import {roundDisplayInteger} from "../lib/display-number";
 export type Lang = "ko" | "en" | "zh" | "ja";
 export type Terminal = "all" | "T1" | "T2";
 export type AirportDirection = "departure" | "arrival" | "total";
@@ -114,10 +115,10 @@ export function formatCount(lang: Lang, value: number, unit: "people" | "flights
   const suffix = unit === "flights"
     ? (lang === "ko" ? "편" : lang === "zh" ? "班" : lang === "ja" ? "便" : " flights")
     : (lang === "ko" ? "명" : lang === "zh" || lang === "ja" ? "人" : " passengers");
-  return `${Math.round(value).toLocaleString(locale)}${suffix}`;
+  return `${roundDisplayInteger(value).toLocaleString(locale)}${suffix}`;
 }
 
 export function formatInteger(lang: Lang, value: number) {
   const locale = lang === "ko" ? "ko-KR" : lang === "zh" ? "zh-CN" : lang === "ja" ? "ja-JP" : "en-US";
-  return Math.round(value).toLocaleString(locale);
+  return roundDisplayInteger(value).toLocaleString(locale);
 }

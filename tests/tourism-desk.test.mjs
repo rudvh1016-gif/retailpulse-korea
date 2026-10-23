@@ -148,23 +148,23 @@ test("an event says only that today is inside its official period, never that it
 
 test("subway comparison priority is D-7, then recent seven-day average, then D-1", () => {
   const d7 = buildTourismDeskBrief(full(), "ko", "명동").find(({ key }) => key === "subway");
-  assert.equal(d7?.text, "명동역 4호선 하차 흐름 · 지난주 같은 요일 대비 +12.4%");
+  assert.equal(d7?.text, "명동역 4호선 하차 흐름 · 지난주 같은 요일 대비 +12%");
   assert.deepEqual(d7?.koreanText, { value: "명동역 4호선", position: "start" });
 
   const averageInput = full();
   averageInput.subway.trend = trend({ sameWeekdayLastWeek: null });
   const average = buildTourismDeskBrief(averageInput, "ko", "명동").find(({ key }) => key === "subway");
-  assert.equal(average?.text, "명동역 4호선 하차 흐름 · 최근 7일 평균 대비 +8.1%");
+  assert.equal(average?.text, "명동역 4호선 하차 흐름 · 최근 7일 평균 대비 +8%");
   assert.match(average?.basis ?? "", /정확히 직전 7일의 일일 집계 평균이며 같은 요일 보정이 아닙니다/);
 
   const d1Input = full();
   d1Input.subway.trend = trend({ sameWeekdayLastWeek: null, recentSevenDayAverage: null });
   const d1 = buildTourismDeskBrief(d1Input, "ko", "명동").find(({ key }) => key === "subway");
-  assert.equal(d1?.text, "명동역 4호선 하차 흐름 · 전일 대비 +4.2%");
+  assert.equal(d1?.text, "명동역 4호선 하차 흐름 · 전일 대비 +4%");
 });
 
 test("tourism brief uses the same increase, filled-triangle decrease and exact-zero format", () => {
-  for (const lang of ['ko','en','zh','ja']) for (const [value,display] of [[-86,'▲ 8.6%'],[86,'+8.6%'],[0,'0%']]) {
+  for (const lang of ['ko','en','zh','ja']) for (const [value,display] of [[-86,'▲ 9%'],[86,'+9%'],[0,'0%']]) {
     const input=full();input.subway.trend.sameWeekdayLastWeek.changeTenthsPercent=value;
     const line=buildTourismDeskBrief(input,lang,'명동').find(({key})=>key==='subway');
     assert.ok(line.text.includes(display));assert.doesNotMatch(line.text,/[△▼]/);
@@ -310,4 +310,3 @@ test("the route, metadata and selected-area summary access exist in four languag
   assert.match(desk, /summary\?\.areas\?\.\[area\]/);
   assert.doesNotMatch(app, /className="desk-entry"/);
 });
-

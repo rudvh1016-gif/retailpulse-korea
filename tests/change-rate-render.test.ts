@@ -8,7 +8,7 @@ const render=<P extends object>(component:FunctionComponent<P>,props:P)=>renderT
 const format=new Intl.NumberFormat('ko',{maximumFractionDigits:1}).format;
 for(const lang of ['ko','en','zh','ja'] as const)test(`rendered rate and count directions preserve units and accessible words: ${lang}`,()=>{
  const words={ko:['증가','감소'],en:['increase','decrease'],zh:['增长','下降'],ja:['増加','減少']}[lang];
- for(const unit of ['%','%p'] as const)for(const [value,direction,visible,word] of [[2.7,'up','+2.7',words[0]],[-2.7,'down','▲ 2.7',words[1]],[0,'neutral','0','0'],[-0,'neutral','0','0'],[.001,'up','+&lt;0.1',words[0]],[-.001,'down','▲ &lt;0.1',words[1]]] as const){
+ for(const unit of ['%','%p'] as const)for(const [value,direction,visible,word] of [[2.7,'up','+3',words[0]],[-2.7,'down','▲ 3',words[1]],[0,'neutral','0','0'],[-0,'neutral','0','0'],[.001,'up','+0',words[0]],[-.001,'down','▲ 0',words[1]]] as const){
   const html=render(ChangeRate,{value,lang,unit});assert.ok(html.includes(`data-direction="${direction}"`));assert.ok(html.includes(`${visible}${unit}</span>`));assert.ok(html.includes(`aria-label="${word}`));
  }
  for(const value of [null,NaN,Infinity,-Infinity])assert.match(render(ChangeRate,{value,lang}),/data-direction="neutral".*>—<\/span>/);

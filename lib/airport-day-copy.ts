@@ -16,6 +16,7 @@ type Row = Record<Lang, string>;
 const row = (ko: string, en: string, zh: string, ja: string): Row => ({ ko, en, zh, ja });
 const locale = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" } as const;
 const num = (value: number, lang: Lang) => new Intl.NumberFormat(locale[lang], { maximumFractionDigits: 1 }).format(value);
+const percent = (value: number, lang: Lang) => new Intl.NumberFormat(locale[lang], { maximumFractionDigits: 0 }).format(value);
 const fl = (value: number, lang: Lang) => lang === "en" ? `${num(value, lang)} ${value === 1 ? "flight" : "flights"}` : `${num(value, lang)}${({ ko: "편", zh: "班", ja: "便" } as const)[lang]}`;
 const hourSpan = (hour: number, lang: Lang) => lang === "en" ? `${String(hour).padStart(2, "0")}:00–${String(hour + 1).padStart(2, "0")}:00` : `${String(hour).padStart(2, "0")}–${String(hour + 1).padStart(2, "0")}${({ ko: "시", zh: "时", ja: "時" } as const)[lang]}`;
 
@@ -162,7 +163,7 @@ export function radarLine(item: RadarItem, terminal: string, lang: Lang, checked
     case "WEEKDAY_TOTAL":
       return standingSentence(`${terminal} ${dayCopy.rows.total[lang]}`, item.standing, (value) => fl(value, lang), lang, item.days.length);
     case "WEEKDAY_EAST_SHARE":
-      return standingSentence(dayCopy.rows.east[lang], item.standing, (value) => `${num(value, lang)}%`, lang, item.days.length);
+      return standingSentence(dayCopy.rows.east[lang], item.standing, (value) => `${percent(value, lang)}%`, lang, item.days.length);
     case "WEEKDAY_GROUP":
       return standingSentence(GROUP[item.group][lang], item.standing, (value) => fl(value, lang), lang, item.days.length);
     case "SINCE_LAST": {
@@ -231,7 +232,7 @@ export function similarHighlights(item:SimilarDay,current:TerminalDay,lang:Lang)
  for(const group of ['JP','CN','OTHER'] as const){
   const a=now[group],b=past[group];
   const label=group==='JP'?GROUP.JP[lang]:group==='CN'?GROUP.CN[lang]:row('기타국적행','To other countries','飞往其他国家','その他の国行き')[lang];
-  facts.push({label,current:a===null?'—':`${num(a,lang)}%`,previous:b===null?'—':`${num(b,lang)}%`,difference:`${difference} ${a===null||b===null?'—':formatChangeRate(a-b,'%p')}`});
+  facts.push({label,current:a===null?'—':`${percent(a,lang)}%`,previous:b===null?'—':`${percent(b,lang)}%`,difference:`${difference} ${a===null||b===null?'—':formatChangeRate(a-b,'%p')}`});
  }
  return facts;
 }
@@ -242,3 +243,4 @@ export function similarDestinationNote(current:TerminalDay,previous:TerminalDay,
  const excluded=row('목적지 미확인·누락 제외','Unknown/missing destinations excluded','排除目的地未知或缺失航班','行き先不明・欠測を除外')[lang];
  return `${basis} ${excluded}: ${currentLabel} ${now.unknown===null?'—':fl(now.unknown,lang)} · ${dayCopy.thatDay[lang]} ${past.unknown===null?'—':fl(past.unknown,lang)}.`;
 }
+

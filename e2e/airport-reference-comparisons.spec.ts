@@ -15,8 +15,9 @@ test('same-basis full-month daily mean is visible, not departure-only change',as
  await fixtures(page);await page.route('**/api/live/passenger-reference*',route=>route.fulfill({json:{status:'READY',month:'2026-09',data:{all:baseline,T1:baseline,T2:baseline}}}));
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.focus-passenger-comparison')).toContainText('100,000명');
- await expect(page.locator('.focus-passenger-comparison')).toContainText('+12.4%');
- await expect(page.locator('.focus-passenger-total')).toHaveText('= 단순합계 112,403명');
+ await expect(page.locator('.focus-passenger-comparison')).toContainText('+12%');
+ await expect(page.locator('.focus-people-metric > .focus-metric-label')).toHaveText('예상 인원 · 단순합계');
+ await expect(page.locator('.focus-passenger-total')).toHaveText('112,403명');
 });
 test('incomplete prior month shows covered dates and never a misleading percentage',async({page})=>{
  await fixtures(page);const partial={...baseline,status:'PARTIAL',mean:null,completeDays:29,missingDates:['2026-09-01']};
@@ -33,3 +34,4 @@ test('holiday comparison renders fetched completed daily flight observations and
  await expect(page.locator('.focus-recent-calendar').filter({hasText:'국경절'})).toContainText('일평균 100편');
  await expect(page.locator('.focus-recent-calendar').filter({hasText:'국경절'})).toContainText('일부 날짜 미확인');
 });
+

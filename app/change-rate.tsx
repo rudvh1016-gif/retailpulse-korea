@@ -9,8 +9,8 @@ export function ChangeRate({value,lang,unit='%'}:{value:number|null;lang:RateLan
   return <RateText text={formatChangeRate(value,unit)} lang={lang}/>;
 }
 /** Count/day units stay outside the formatter; only presentation uses absolute magnitude. */
-export function CountChange({delta,format,lang,unit=''}:{delta:number|null;format:(value:number)=>string;lang:RateLang;unit?:string}){
-  const text=formatCountChange(delta,format);
+export function CountChange({delta,format,lang,unit='',integer=false}:{delta:number|null;format:(value:number)=>string;lang:RateLang;unit?:string;integer?:boolean}){
+  const text=formatCountChange(delta,format,integer);
   const direction=delta===null||!Number.isFinite(delta)||delta===0?'neutral':delta>0?'up':'down';
   return <span className="glance-count-change change-rate" data-direction={direction} data-delta={direction==='neutral'?undefined:direction}><span aria-hidden="true">{text}{unit}</span><span className="sr-only">{spokenRateText(text+unit,lang)}</span></span>;
 }

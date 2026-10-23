@@ -22,7 +22,7 @@ test('disclosure hierarchy changes typography and focus only, never geometry or 
 test('open state is scoped to its own summary and declared disclosure buttons',()=>{
  assert.match(css.toString(),/details\[open\] > summary/);
  assert.match(css.toString(),/\[aria-expanded="true"\]/);
- assert.match(css.toString(),/#542632/);
+ assert.match(css.toString(),/#222326/);
  assert.deepEqual(triggers.map(t=>t.file).sort(),['airport-day-radar.tsx','duty-free-monthly-trend.tsx']);
  for(const t of triggers){assert.equal(t.tag,'button');assert.ok(t.attrs.includes('aria-expanded'));}
 });
@@ -50,3 +50,4 @@ test('forced colors also match every higher-specificity open-state color selecto
   for(const selector of rule.selectors)assert.ok(forcedSelectors.has(selector),selector);
  }
 });
+

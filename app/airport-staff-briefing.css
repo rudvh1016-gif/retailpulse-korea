@@ -25,7 +25,7 @@
 /* One six-item airport-flow group: same heading and column rhythm, no step numbers.
    Scope the override to this named group; values and source copy keep their roles. */
 :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{
- font-family:var(--font-ui);font-size:16px!important;font-weight:700!important;color:var(--ink,#111111)!important;
+ font-family:var(--font-ui);font-size:18px!important;font-weight:700!important;color:#222326!important;
  line-height:1.4!important;letter-spacing:-.025em;margin:0 0 10px;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:start
 }
 :root body :is(.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]) .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{font-weight:600!important}
@@ -40,3 +40,4 @@
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section+section{border-top:0;padding-top:0}
 }
 @media(forced-colors:active){:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{color:CanvasText!important}}
+
