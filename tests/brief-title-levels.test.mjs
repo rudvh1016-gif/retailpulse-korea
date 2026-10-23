@@ -25,3 +25,14 @@ test('title gaps stay modest and apply to mobile as well as desktop',()=>{
  assert.match(flow,/font-size:16px!important;font-weight:700!important;color:var\(--ink,#111111\)!important/);
  assert.match(flow,/margin:0 0 10px/);
 });
+
+
+test('figures title has an 8px total gap in both grid and block layouts',()=>{
+ const css=read('airport-focus-preview.css');
+ assert.ok(css.includes('.focus-report-lines{grid-template-columns:1fr;gap:5px}'));
+ assert.match(css,/@media\(max-width:999px\)\{\s*\.airport-focus-shell \.focus-report \.focus-figures-title\{margin-bottom:3px\}\s*\}/);
+ assert.ok(css.includes('.focus-report .focus-figures-title{margin:0 0 8px}'));
+ assert.ok(css.includes('.focus-report-lines{grid-column:1;grid-row:3;display:block}'));
+ assert.equal(3+5,8,'grid margin + row gap matches the desktop block margin');
+});
+

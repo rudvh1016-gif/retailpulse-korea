@@ -194,3 +194,10 @@
  .airport-focus-shell .focus-report .focus-preparation-brief > div:first-child{margin-top:0;padding-top:0;border-top:0}
 }
 
+
+/* Below the desktop breakpoint, the existing grid contributes 5px itself.
+   Keep the figures-title-to-body gap at 8px total, not 8px + 5px. */
+@media(max-width:999px){
+ .airport-focus-shell .focus-report .focus-figures-title{margin-bottom:3px}
+}
+
