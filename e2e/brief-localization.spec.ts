@@ -40,7 +40,8 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
  for(const detail of await brief.locator('details').all()){await detail.locator('summary').click();await expect(detail).toHaveAttribute('open','');}
  await expect(brief).toContainText('2026-09-23');await expect(brief).toContainText('2026-09-30');
  if(lang!=='ko')expect(await brief.textContent()).not.toMatch(/[가-힣]/);
- await expect(brief.locator('.focus-passenger-total')).toContainText(lang==='ko'?'단순합계 112,403명':lang==='en'?'arithmetic sum 112,403 people':'简单合计 112,403人');
+ await expect(brief.locator('.focus-people-metric > .focus-metric-label')).toHaveText(lang==='ko'?'예상 인원 · 단순합계':lang==='en'?'Forecast people · arithmetic sum':'预计人数 · 简单合计');
+ await expect(brief.locator('.focus-passenger-total')).toHaveText(lang==='ko'?'112,403명':lang==='en'?'112,403 people':'112,403人');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(await brief.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
  // Match the existing locale cascades in globals.css; Chinese already uses Noto Sans SC.
@@ -49,3 +50,4 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
  await brief.screenshot({path:info.outputPath(`brief-${lang}-${width}.png`)});
  for(const detail of await brief.locator('details').all()){await detail.locator('summary').click();await expect(detail).not.toHaveAttribute('open','');}
 });
+
