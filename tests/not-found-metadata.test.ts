@@ -13,7 +13,7 @@ test('only complete supported first path segments select a translation', () => {
 });
 
 test('normal pages, redirects, API responses, RSC and non-HTML bypass rewriting', async () => {
-  const cases = [
+  const cases: Array<{status?: number; type?: string; path?: string; headers?: HeadersInit; method?: string; empty?: boolean}> = [
     {status: 200}, {status: 301}, {status: 500}, {type: 'application/json'},
     {type: 'text/x-component'}, {path: '/api/missing'}, {path: '/api'},
     {headers: {rsc: '1'}}, {headers: {accept: 'text/x-component'}},
@@ -165,3 +165,4 @@ test('a failed or never-ending transformed body cannot replace the original resp
     if (previous === undefined) delete runtime.HTMLRewriter; else runtime.HTMLRewriter = previous;
   }
 });
+
