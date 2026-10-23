@@ -27,7 +27,7 @@ test('small scoped manual date is visible before traveler selectors, with effect
  assert.equal((source.match(/className="focus-source arrival-review-date"/g)??[]).length,1);
  const data=JSON.parse(read('data/airport-focus-preview/arrival-allowances.json'));
  for(const row of data.countries){
-  const expected=['CN','JP','VN','TH'].includes(row.id)?'2026-10-22':['PH','MY'].includes(row.id)?'미확인 · 검토 필요':'2026-10-20';
+  const expected=row.id==='SG'?'2026-10-24':['CN','JP','VN','TH'].includes(row.id)?'2026-10-22':['PH','MY'].includes(row.id)?'미확인 · 검토 필요':'2026-10-20';
   assert.equal(arrivalReviewDateLabel(row),expected,row.id);
  }
 });

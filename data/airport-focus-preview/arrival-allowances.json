@@ -1633,7 +1633,7 @@
       "id": "SG",
       "name": "싱가포르",
       "scope": "GST 수입면제와 주류 관세면세를 구분합니다. 개인소지품 재반입은 별도입니다.",
-      "checkedAt": "2026-10-20",
+      "checkedAt": "2026-10-24",
       "effectiveLabel": "GST 금액 2019-02-19 · 주류 조합 2019-04-01 시행",
       "conditions": [
         {
@@ -2447,7 +2447,7 @@
       "reviewStatus": "official_sources_checked_pending_release_review",
       "effectiveDate": null,
       "changeAnnouncement": null,
-      "verifiedAt": "2026-10-20"
+      "verifiedAt": "2026-10-24"
     },
     {
       "id": "AU",

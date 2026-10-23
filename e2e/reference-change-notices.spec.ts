@@ -18,8 +18,8 @@ for(const width of [360,390,430,1440])test(`stored changes appear in the general
  await page.route('**/api/airport/calendar',route=>{calendarReads++;return route.fulfill({json:calendar});});
  await page.route('**/api/airport/allowance-status',route=>{allowanceReads++;return route.fulfill({json:allowance});});
  await page.goto('/ko/airport-focus-preview');const dialog=page.getByRole('dialog');
- await expect(dialog.locator('[data-change-id]')).toHaveCount(3);
- await expect(dialog).toContainText('미국 연방공무원');await expect(dialog).toContainText('규정이 바뀌었다고 확정한 것은 아닙니다');
+ await expect(dialog.locator('[data-change-id]')).toHaveCount(2);
+ await expect(dialog).toContainText('미국 연방공무원');await expect(dialog).not.toContainText('검토 중');await expect(dialog).not.toContainText('대만 반입 면세');
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
  await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기'})).toBeInViewport({ratio:1});
  await expect(dialog.locator('#update-notice-title')).toBeFocused();
@@ -29,7 +29,7 @@ for(const width of [360,390,430,1440])test(`stored changes appear in the general
  await page.screenshot({path:info.outputPath(`general-reference-notices-${width}.png`)});
  const ids=await dialog.locator('[data-change-id]').evaluateAll(elements=>elements.map(element=>element.getAttribute('data-change-id')));
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
- await expect(dialog.locator('[data-change-id]')).toHaveCount(3);
+ await expect(dialog.locator('[data-change-id]')).toHaveCount(2);
  expect(await dialog.locator('[data-change-id]').evaluateAll(elements=>elements.map(element=>element.getAttribute('data-change-id')))).toEqual(ids);
  expect(calendarReads).toBe(1);expect(allowanceReads).toBe(1);
  await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();await page.reload();await expect(dialog).not.toBeVisible();
@@ -39,7 +39,7 @@ test('new stored changes never bypass an existing one-week hide',async({page})=>
  await page.clock.setFixedTime(new Date(at));let reads=0;
  await page.route('**/api/airport/calendar',route=>route.fulfill({json:calendar}));
  await page.route('**/api/airport/allowance-status',route=>{reads++;return route.fulfill({json:allowance});});
- await page.goto('/ko/airport-focus-preview');await expect(page.locator('[data-change-id]')).toHaveCount(3);
+ await page.goto('/ko/airport-focus-preview');await expect(page.locator('[data-change-id]')).toHaveCount(2);
  await page.getByRole('button',{name:'일주일 동안 안 보기'}).click();
  expect(Number(await page.evaluate(key=>localStorage.getItem(key),UPDATE_NOTICE_UNTIL_KEY))).toBe(Date.parse(at)+NOTICE_WEEK_MS);
  await page.route('**/api/airport/calendar',route=>route.fulfill({json:{...calendar,changes:[{country:'US',id:'c'.repeat(64),changedAt:at}]}}));
@@ -56,7 +56,7 @@ test('closing during an in-flight check does not reopen the dialog when data arr
  await page.route('**/api/airport/calendar',async route=>{await gate;await route.fulfill({json:calendar});});
  await page.route('**/api/airport/allowance-status',async route=>{await gate;await route.fulfill({json:allowance});});
  await page.goto('/ko/airport-focus-preview');await page.getByRole('button',{name:'닫기',exact:true}).click();release();
- await expect(page.locator('[data-change-id]')).toHaveCount(3);await expect(page.getByRole('dialog')).not.toBeVisible();
+ await expect(page.locator('[data-change-id]')).toHaveCount(2);await expect(page.getByRole('dialog')).not.toBeVisible();
 });
 
 test('same-page week-hide expiry refreshes changes once without polling or a reload',async({page})=>{
@@ -64,11 +64,19 @@ test('same-page week-hide expiry refreshes changes once without polling or a rel
  let latest=calendar;
  await page.route('**/api/airport/calendar',route=>{calendarReads++;return route.fulfill({json:latest});});
  await page.route('**/api/airport/allowance-status',route=>{allowanceReads++;return route.fulfill({json:allowance});});
- await page.goto('/ko/airport-focus-preview');const dialog=page.getByRole('dialog');await expect(dialog.locator('[data-change-id]')).toHaveCount(3);
+ await page.goto('/ko/airport-focus-preview');const dialog=page.getByRole('dialog');await expect(dialog.locator('[data-change-id]')).toHaveCount(2);
  await page.getByRole('button',{name:'일주일 동안 안 보기'}).click();await expect(dialog).not.toBeVisible();
  latest={...calendar,changes:[{country:'US',id:'c'.repeat(64),changedAt:new Date(Date.parse(at)+NOTICE_WEEK_MS).toISOString()}]};
  await page.clock.setFixedTime(new Date(Date.parse(at)+NOTICE_WEEK_MS-1));await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect(dialog).not.toBeVisible();expect(allowanceReads).toBe(1);
  await page.clock.setFixedTime(new Date(Date.parse(at)+NOTICE_WEEK_MS+1));await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
  await expect(dialog.locator(`[data-change-id="calendar:US:${'c'.repeat(64)}"]`)).toBeVisible();expect(calendarReads).toBe(2);expect(allowanceReads).toBe(2);
- await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect(dialog.locator('[data-change-id]')).toHaveCount(3);expect(calendarReads).toBe(2);expect(allowanceReads).toBe(2);
+ await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect(dialog.locator('[data-change-id]')).toHaveCount(2);expect(calendarReads).toBe(2);expect(allowanceReads).toBe(2);
+});
+
+test('pending source reviews do not publish notice cards or resurrect older updates',async({page})=>{
+ await page.route('**/api/airport/calendar',route=>route.fulfill({json:{...calendar,sources:[{...calendar.sources[0],status:'REVIEW_REQUIRED',reason:'CALENDAR_CANCELLATION_REVIEW'}]}}));
+ await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{...allowance,countries:[{id:'JP',state:'REVIEW_REQUIRED'}],reviewNotices:[...allowance.reviewNotices,{sourceId:'SG-01',country:'SG',sourceHash:hash,baselineHash:baseline,checkedAt:at}]}}));
+ await page.goto('/ko/airport-focus-preview');const dialog=page.getByRole('dialog');
+ await expect(dialog).toBeVisible();await expect(dialog.locator('[data-change-id]')).toHaveCount(0);
+ await expect(dialog).not.toContainText('검토 중');await expect(dialog).not.toContainText('최근 확인');
 });

@@ -12,7 +12,7 @@ const list=(value:unknown)=>Array.isArray(value)?value.slice(0,24):[];
 /** Timestamp-only polls never enter an identity. New API fields are optional so
  * old deployments / absent tables simply produce no invented notices. */
 export function referenceChangeNotices(calendar:unknown,allowance:unknown):ReferenceChangeNotice[]{
- const result:ReferenceChangeNotice[]=[];
+ const result:ReferenceChangeNotice[]=[],pending=new Set<string>();
  if(object(calendar)){
   const sources=list(calendar.sources).filter(object);
   for(const change of list(calendar.changes)){
@@ -23,8 +23,7 @@ export function referenceChangeNotices(calendar:unknown,allowance:unknown):Refer
   }
   for(const source of sources){
    if(!['JP','US'].includes(String(source.country))||source.status!=='REVIEW_REQUIRED'||!clock(source.checkedAt)||typeof source.reason!=='string'||!/^[A-Z0-9_]{1,80}$/.test(source.reason))continue;
-   const country=String(source.country),baseline=clock(source.lastVerifiedAt)?source.lastVerifiedAt:'none';
-   result.push({id:`calendar:${country}:review:${source.reason}:${baseline}`,topic:'calendar',country,reviewRequired:true,title:`${names[country]} 공휴일 변경 검토 중`,body:baseline==='none'?'공식 자료에서 검토가 필요한 내용을 확인했어요. 변경을 확정하지 않았으며 새 일정은 아직 반영하지 않았습니다.':'공식 자료에서 검토가 필요한 내용을 확인했어요. 일정 변경은 아직 확정하지 않았으며 마지막 검증값을 유지합니다.',checkedAt:source.checkedAt,timeLabel:'최근 확인'});
+   pending.add(`calendar:${String(source.country)}`);
   }
  }
  if(object(allowance)){
@@ -40,11 +39,10 @@ export function referenceChangeNotices(calendar:unknown,allowance:unknown):Refer
   }
   for(const item of list(allowance.reviewNotices)){
    if(!object(item)||typeof item.sourceId!=='string'||!/^([A-Z]{2})-\d{2}$/.test(item.sourceId)||item.country!==item.sourceId.slice(0,2)||!hash(item.sourceHash)||!hash(item.baselineHash)||!clock(item.checkedAt))continue;
-   const country=String(item.country);
-   result.push({id:`allowance:${item.sourceId}:review:${item.baselineHash}`,topic:'allowance',country,reviewRequired:true,title:`${names[country]??country} 반입 면세 원문 검토 중`,body:'공식 원문의 변경을 감지했지만 면세 규정이 바뀌었다고 확정한 것은 아닙니다. 마지막 검토값을 유지하며 적용 조건을 확인 중이에요.',checkedAt:item.checkedAt,timeLabel:'최근 확인'});
+   pending.add(`allowance:${String(item.country)}`);
   }
  }
- // Pending source review takes precedence over an older published value notice.
- const pending=new Set(result.filter(item=>item.reviewRequired).map(item=>`${item.topic}:${item.country}`));
- return [...new Map(result.filter(item=>item.reviewRequired||!pending.has(`${item.topic}:${item.country}`)).map(item=>[item.id,item])).values()].sort((a,b)=>Number(b.reviewRequired)-Number(a.reviewRequired)||b.checkedAt.localeCompare(a.checkedAt)||a.id.localeCompare(b.id)).slice(0,6);
+ // Review evidence stays in source status/detail, never in public update notices.
+ // It still suppresses older confirmed notices so pending rules cannot look current.
+ return [...new Map(result.filter(item=>!pending.has(`${item.topic}:${item.country}`)).map(item=>[item.id,item])).values()].sort((a,b)=>b.checkedAt.localeCompare(a.checkedAt)||a.id.localeCompare(b.id)).slice(0,6);
 }
