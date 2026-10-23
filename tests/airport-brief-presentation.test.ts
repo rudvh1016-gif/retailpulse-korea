@@ -37,8 +37,9 @@ test('number-first briefing removes the surface while retaining provenance and a
  const surface=css.split('/* Approved number-first briefing:')[1];
  assert.match(surface,/background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none/);
  assert.match(surface,/grid-template-columns:minmax\(0,1fr\)/);
- assert.match(surface,/font-size:clamp\(32px,3.2vw,44px\)/);
- assert.match(surface,/order:-1;font-size:20px;font-weight:700/);
+ assert.match(surface,/\.focus-core-metric \.focus-metric-total\{font-size:24px/);
+ assert.match(surface,/@media\(min-width:1000px\)\{\s*\.airport-focus-shell \.focus-report \.focus-core-metric \.focus-metric-total\{font-size:28px\}/);
+ assert.match(surface,/order:-1;font-size:16px;font-weight:700/);
  assert.match(surface,/border-bottom:1px solid/);
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
  for(const label of ['예상 인원 · 단순합계','Forecast people · arithmetic sum','预计人数 · 简单合计','予想人数 · 単純合計'])assert.ok(source.includes(label));assert.match(source,/중복을 제거한 공식 총출국객 수가 아닙니다/);assert.match(source,/미확인 날짜:/);
