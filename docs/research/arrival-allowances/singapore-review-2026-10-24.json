@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "sourceId": "SG-01",
+  "repositoryCommit": "7bc128eb9be40579940a3048b65d441655ebfca4",
+  "retrievedAt": "2026-10-23T16:17:43.228Z",
+  "retrievedAtKst": "2026-10-24T01:17:43.228+09:00",
+  "displayReviewDate": "2026-10-24",
+  "timeZone": "Asia/Seoul",
+  "method": "Current official-source review against stored Singapore fields; one bounded direct SG-01 HTTP GET, with no redirect, retries, database writes or publication.",
+  "http": {
+    "status": 200,
+    "contentType": "text/html",
+    "byteLength": 634858,
+    "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/"
+  },
+  "previousSourceSha256": "200bbbf64d09f5c918978fc8812674d18257a1d736ad7837a9f0542340d57f81",
+  "reviewedSourceSha256": "7cbd9506f099617dd4f691e6fc6048cbc61e17e3b3d7eb8c6b4b4d0dfb158fef",
+  "datasetSemanticHash": "576938eeec3346d8fe3ee6c33fede371e1a304081dc085ef1ab74dea3cd52e8f",
+  "result": "STORED_SINGAPORE_VALUES_MATCH_CURRENT_OFFICIAL_SOURCES",
+  "policyChangeConfirmed": false,
+  "publicChangeNotice": false,
+  "storedValuesChanged": false,
+  "findings": [
+    {"field": "GST relief", "comparison": "Unchanged: eligible travellers receive SGD 500 at 48 hours or more abroad, otherwise SGD 100. Excluded passes and crew remain excluded; liquor, tobacco and commercial goods do not qualify.", "sourceIds": ["SG-01", "SG-02"]},
+    {"field": "Liquor", "comparison": "Unchanged: age 18+, at least 48 hours abroad, not arriving from Malaysia, own consumption, non-prohibited goods. The same five allowed combinations remain; two litres of spirits alone is not one.", "sourceIds": ["SG-01"]},
+    {"field": "Tobacco", "comparison": "Unchanged: no duty-free or GST allowance; age 21+, personal-use packaging requirements and 400g maximum remain separate from taxation. Vapes remain prohibited.", "sourceIds": ["SG-01", "SG-04", "SG-05"]},
+    {"field": "Used belongings", "comparison": "Unchanged: separate ownership/re-export conditions; newly purchased items do not qualify merely because used during travel.", "sourceIds": ["SG-01"]},
+    {"field": "Effective dates", "comparison": "Preserve 2019-02-19 GST and 2019-04-01 liquor effective dates. Retrieval and webpage update dates are not new effective dates.", "sourceIds": ["SG-02", "SG-03"]}
+  ],
+  "sourcePageUpdatedOn": "2026-03-25",
+  "siteFooterUpdatedOn": "2026-10-22",
+  "byteChangeAssessment": "A full-page hash changed. The article and shared footer have different update dates, but the previous raw bytes were not retained; the exact changed bytes and a design-only cause are NOT proven.",
+  "sources": [
+    {"id": "SG-01", "url": "https://www.customs.gov.sg/at-customs/arriving-in-singapore/duty-free-concession-gst-relief/", "role": "Current allowance conditions"},
+    {"id": "SG-02", "url": "https://www.iras.gov.sg/news-events/newsroom/revision-in-gst-import-relief-for-travellers-with-effect-from-19-february-2019", "role": "GST effective-date evidence"},
+    {"id": "SG-03", "url": "https://www.customs.gov.sg/news-and-media/publications/2019-01-01-Issue52.pdf", "role": "Historical liquor effective-date evidence, printed page 12 (PDF page 8)"},
+    {"id": "SG-04", "url": "https://www.hsa.gov.sg/tobacco-regulation/overview/", "role": "Current age, packaging and prohibited-product conditions"},
+    {"id": "SG-05", "url": "https://www.customs.gov.sg/doing-business/import-operations/import-procedures/controlled-and-prohibited-goods-for-imports/", "role": "Current prohibited imports"}
+  ],
+  "deploymentBoundary": "Local review/rebaseline only. Existing production observation has not been cleared or rewritten. Unseen future source hashes require internal review; this record does not approve them.",
+  "retention": "Publish only this review metadata and existing original links, not the fetched source HTML. Keep at most one local raw response for handoff; do not add raw HTML to the repository."
+}
