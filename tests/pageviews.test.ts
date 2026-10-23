@@ -79,7 +79,9 @@ test('one-event UTC cap cannot be bypassed by alternating request days',()=>{
  assert.equal(totals(db)?.total,1);assert.equal(totals(db)?.incomplete,1);db.close();
 });
 
-function admit(db: DatabaseSync, day: string) { return db.prepare(ADMIT_PAGEVIEW_SQL).get(day, day); }
+// Node 22 node:sqlite binds numbered ?NNN parameters by their full names.
+// D1's production bind(utcDay, kstDay) remains positional and is tested separately.
+function admit(db: DatabaseSync, day: string) { return db.prepare(ADMIT_PAGEVIEW_SQL).get({ '?1': day, '?2': day }); }
 test('global request admission counts duplicates and persists pause after cap',()=>{
  const db=setup();db.exec('UPDATE pageview_totals SET admission_limit=2');
  assert.equal(admit(db,'2026-10-23')?.blocked,0);const id=insert(db);
@@ -113,7 +115,7 @@ test('denied admission never executes cleanup or receipt batch',async()=>{
 test('parallel singleton admissions admit exactly limit and then preserve gap', async()=>{
  const dir=mkdtempSync(join(tmpdir(),'koretail-pageview-admissions-'));const path=join(dir,'counter.sqlite');
  const db=new DatabaseSync(path);db.exec(migration);db.exec('PRAGMA journal_mode=WAL; UPDATE pageview_totals SET enabled=1,admission_limit=50,daily_limit=1000');
- const code=`const {workerData,parentPort}=require('node:worker_threads');const {DatabaseSync}=require('node:sqlite');const db=new DatabaseSync(workerData.path);db.exec('PRAGMA busy_timeout=5000');const q=db.prepare(workerData.sql);let accepted=0;for(let i=0;i<30;i++){const row=q.get('2026-10-23','2026-10-23');if(row&&row.blocked===0)accepted++;}db.close();parentPort.postMessage(accepted);`;
+ const code=`const {workerData,parentPort}=require('node:worker_threads');const {DatabaseSync}=require('node:sqlite');const db=new DatabaseSync(workerData.path);db.exec('PRAGMA busy_timeout=5000');const q=db.prepare(workerData.sql);let accepted=0;for(let i=0;i<30;i++){const row=q.get({'?1':'2026-10-23','?2':'2026-10-23'});if(row&&row.blocked===0)accepted++;}db.close();parentPort.postMessage(accepted);`;
  try{
   const counts=await Promise.all(Array.from({length:4},()=>new Promise<number>((resolve,reject)=>{const w=new Worker(code,{eval:true,workerData:{path,sql:ADMIT_PAGEVIEW_SQL}});w.on('message',resolve);w.on('error',reject);w.on('exit',c=>{if(c!==0)reject(new Error('worker exit '+c));});})));
   assert.equal(counts.reduce((a,b)=>a+b,0),50);assert.equal(totals(db)?.incomplete,1);assert.equal(db.prepare('SELECT admission_count n FROM pageview_totals').get()?.n,51);
@@ -127,7 +129,7 @@ test('gap raced after admission prevents pending receipt from claiming complete 
 
 test('today recovers only on a fresh KST day with renewed UTC capacity; lifetime remains unknown',()=>{
  const db=setup();db.exec('UPDATE pageview_totals SET admission_limit=1');
- const reserve=(utc:string,kst:string)=>db.prepare(ADMIT_PAGEVIEW_SQL).get(utc,kst);
+ const reserve=(utc:string,kst:string)=>db.prepare(ADMIT_PAGEVIEW_SQL).get({ '?1': utc, '?2': kst });
  assert.equal(reserve('2026-10-23','2026-10-23')?.blocked,0);insert(db,at);
  assert.equal(reserve('2026-10-23','2026-10-23')?.blocked,1);
  assert.deepEqual(snapshotFromTotals(totals(db),at),{available:false,reason:'incomplete'});
