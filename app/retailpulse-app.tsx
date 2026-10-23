@@ -4,6 +4,7 @@ import './airport-history-polish.css';
 import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
 import {ConciseExplainer} from './concise-explainer';
+import { SiteViewCounter } from './site-view-counter';
 import {ChangeRate} from './change-rate';
 import './facility-guide.css';
 import { passengerCopy } from "../lib/passenger-copy";
@@ -568,6 +569,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             </select>
           </label>
         </div>
+        <SiteViewCounter lang={lang} />
       </header>
       </div>
 

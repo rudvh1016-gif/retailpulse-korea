@@ -43,6 +43,7 @@ function validMonth(value: string | null): string | null {
  * so `?date=bad&date=2026-09-01` is "today" here just as it is in the route.
  */
 export function canonicalSummaryUrl(url: URL, now = new Date()): string {
+  if (url.pathname === '/api/pageviews') return `${url.origin}${url.pathname}`;
   if (AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) {
     // Both routes read only the first month. Preserve even invalid/empty input:
     // unlike summary, these routes return 400 rather than defaulting it.
@@ -101,9 +102,10 @@ export function canonicalSummaryRequest(request: Request, url: URL): Request {
   // D1 read either: the route's own response header is the freshness contract.
   // Prepared month reads similarly use browser no-store, with an existing
   // shared TTL on READY and no-store on missing/error responses.
-  const dropped = (url.pathname === '/api/live/flights' || AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) ? ["authorization", "cache-control", "pragma"] : ["authorization"];
+  const dropped = (url.pathname === '/api/pageviews' || url.pathname === '/api/live/flights' || AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) ? ["authorization", "cache-control", "pragma"] : ["authorization"];
   if (canonical === url.href && !dropped.some((name) => request.headers.has(name))) return request;
   const headers = new Headers(request.headers);
   for (const name of dropped) headers.delete(name);
   return new Request(canonical, { method: request.method, headers });
 }
+

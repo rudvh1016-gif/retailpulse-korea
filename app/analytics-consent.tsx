@@ -37,10 +37,10 @@ function save(enabled: boolean) {
   window.dispatchEvent(new Event(CHANGE));
 }
 const copy = {
-  ko: ['선택적 이용 통계', 'Google Analytics로 방문과 페이지 조회·이용 기능을 기록해 서비스 개선에 사용합니다 기본으로 사용하고 유럽에서는 직접 선택해야 합니다 검색어·개인 입력·광고 추적은 제외하며 언제든 끌 수 있습니다', '기기 저장이 차단되어 이번 탭에서만 적용됩니다'],
-  en: ['Optional usage analytics', 'Google Analytics records visits, page views and feature use to improve the service It is on by default; in Europe it starts only when you turn it on No search terms, personal input or advertising tracking You can turn this off at any time', 'Storage is blocked This choice applies only in this tab'],
-  zh: ['可选使用统计', 'Google Analytics 记录访问、页面浏览和功能使用以改进服务 默认开启，欧洲需手动开启 不包含搜索词、个人输入或广告跟踪 可随时关闭', '存储被阻止 此选择仅适用于当前标签页'],
-  ja: ['任意の利用統計', 'Google Analytics で訪問・ページ閲覧と機能の利用を記録しサービス改善に使用します 初期設定はオンで、欧州では自分でオンにした場合のみ記録します 検索語・個人入力・広告追跡は含まずいつでも無効にできます', '保存がブロックされています このタブのみ有効です'],
+  ko: ['선택적 이용 통계', '자체 조회수 집계와 Google Analytics로 페이지 조회·이용 기능을 기록해 서비스 개선에 사용합니다 기본으로 사용하고 유럽에서는 직접 선택해야 합니다 검색어·개인 입력·광고 추적은 제외하며 언제든 끌 수 있습니다', '기기 저장이 차단되어 이번 탭에서만 적용됩니다'],
+  en: ['Optional usage analytics', 'Our own page-view counter and Google Analytics record page views and feature use to improve the service It is on by default; in Europe it starts only when you turn it on No search terms, personal input or advertising tracking You can turn this off at any time', 'Storage is blocked This choice applies only in this tab'],
+  zh: ['可选使用统计', '本站浏览量统计和 Google Analytics 记录页面浏览和功能使用以改进服务 默认开启，欧洲需手动开启 不包含搜索词、个人输入或广告跟踪 可随时关闭', '存储被阻止 此选择仅适用于当前标签页'],
+  ja: ['任意の利用統計', '独自の閲覧数集計と Google Analytics でページ閲覧と機能の利用を記録しサービス改善に使用します 初期設定はオンで、欧州では自分でオンにした場合のみ記録します 検索語・個人入力・広告追跡は含まずいつでも無効にできます', '保存がブロックされています このタブのみ有効です'],
 } as const;
 export default function AnalyticsConsent({ lang }: { lang: keyof typeof copy }) {
   const { ready, enabled, storageFailed: failed } = useAnalyticsConsent();
@@ -51,3 +51,4 @@ export default function AnalyticsConsent({ lang }: { lang: keyof typeof copy }) 
     {failed && <p role="status" className="truth-note">{text[2]}</p>}
   </section>;
 }
+
