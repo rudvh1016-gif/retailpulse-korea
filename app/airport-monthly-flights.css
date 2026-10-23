@@ -1,5 +1,6 @@
 @import './reading-tokens.css';
-.airport-month-flights {margin-block:24px;color:var(--ink);font:inherit;font-variant-numeric:tabular-nums;}
+/* Split the existing section gap around one rule; do not add a surrounding box. */
+.airport-month-flights {margin-block:var(--section-gap) 24px;padding-top:var(--section-gap);border-top:var(--section-rule-width) solid var(--section-rule-color);color:var(--ink);font:inherit;font-variant-numeric:tabular-nums;}
 .airport-month-flights h3 {font-size:var(--type-title);font-weight:var(--weight-strong);line-height:1.4;text-wrap:balance;}
 .airport-month-flights h3 small {font-weight:400;}
 .airport-month-flights label {display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
@@ -25,7 +26,10 @@
 .airport-month-airline-code {white-space:nowrap;}
 .airport-month-airline-name {min-width:0;overflow-wrap:anywhere;font-weight:var(--weight-regular);}
 .airport-month-flights :is(button,select,summary,a):focus-visible {outline:2px solid #56766b;outline-offset:3px;}
-.airport-country-changes {margin-block:16px;}
+.airport-country-changes {margin-block:var(--section-gap) 16px;padding-top:var(--section-gap);border-top:var(--section-rule-width) solid var(--section-rule-color);}
+/* Country ranking and the following zone table are different reading tasks.
+ * Reuse the ranking's 16px bottom margin; nested detail tables keep their rules. */
+.airport-country-changes + .airport-month-table {padding-top:8px;border-top:var(--section-rule-width) solid var(--section-rule-color);}
 .airport-country-toggle {display:block;min-height:44px;padding:8px 0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer;}
 .airport-country-toggle:focus-visible {outline:2px solid currentColor;outline-offset:3px;}
 .airport-country-changes h4,.airport-country-changes h5 {font:inherit;font-weight:var(--weight-strong);margin:0;}

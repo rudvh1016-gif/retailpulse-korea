@@ -15,7 +15,7 @@ const query={country:'JP',selectedMonth:'2026-09',actualDataMonths:['2026-08','2
 const row={code:'JP',label:'일본',points:[{month:'2026-08',departures:100},{month:'2026-09',departures:110}]};
 const html=(changes:Partial<Parameters<typeof CountryTrendCalendarContext>[0]>={})=>renderToStaticMarkup(createElement(CountryTrendCalendarContext,{row,events,asOf:query.asOf,...changes}));
 
-test('Japan and Korean summer breaks retain exact dates and applicability in optional details',()=>{
+test('Japan and Korean summer breaks retain exact dates and applicability in the default view',()=>{
  const {summary}=countryTrendCalendar(events,query);
  assert.equal(summary.length,4);
  const japan=summary.find(item=>item.country==='JP'&&item.kind==='school_break')!;
@@ -28,7 +28,7 @@ test('Japan and Korean summer breaks retain exact dates and applicability in opt
  assert.match(trendCalendarText(korea),/2026-08\(직전 월\).*초등학교 방학기간 참고.*개별 학교 예시.*한국 출발지 참고/);
  const visible=html().split('<details')[0];
  for(const text of ['한국 일정은 출발지 기준','증감 원인 단정 불가'])assert.ok(visible.includes(text),text);
- for(const text of ['일본 · <b>여름방학</b>','<b>추석 연휴</b>'])assert.ok(visible.includes(text),text);
+ for(const text of ['일본 · <b>여름방학</b>','한국 · <b>여름방학</b>','<b>추석 연휴</b>'])assert.ok(visible.includes(text),text);
  assert.match(html(),/<details class="focus-source" data-testid="monthly-calendar-reference"><summary style="min-height:44px/);
  assert.ok(html().includes('일정 근거'));
 });
@@ -166,7 +166,7 @@ test("production and preview pass the selected language to the calendar control"
  for(const file of ["app/airport-focus-production.tsx","app/airport-focus-preview.tsx"]){const source=readFileSync(file,"utf8");for(const call of source.match(/<CountryTrends\b[^>]*>/g)??[])assert.match(call,/lang=\{lang\}/,file);}
 });
 
-test('compact US rows show at most three events and keep all evidence in one closed list',()=>{
+test('compact rows expose every matched event and keep sources in one closed list',()=>{
  const rendered=html({row:{...row,code:'US'}});
  const [visible,evidence]=rendered.split('<details');
  assert.equal((rendered.match(/<details/g)??[]).length,1);
@@ -176,14 +176,16 @@ test('compact US rows show at most three events and keep all evidence in one clo
  assert.match(visible,/<b>여름방학<\/b> 2026-07-28–2026-08-19 · 학교별 상이 · 예시 · 직전 월/);
  assert.doesNotMatch(rendered,/2026-09-07–2026-09-07/);
  for(const name of ['노동절','추석 연휴'])assert.equal(visible.split(name).length-1,1,name);
- assert.doesNotMatch(visible,/광복절|<sup>/);
+ assert.match(visible,/한국 · <b>광복절<\/b> 2026-08-15 · 직전 월/);
+ assert.match(visible,/한국 · <b>광복절 대체공휴일<\/b> 2026-08-17 · 직전 월/);
+ assert.doesNotMatch(visible,/<sup>/);
  assert.match(evidence,/광복절 대체공휴일<\/b> 2026-08-17 · 직전 월/);
  assert.doesNotMatch(visible,/공식 원문|확인일|해당 기관·대상에만 적용|내리숲초등학교/);
  assert.match(evidence,/<ul>/);
  assert.match(evidence,/연방공무원 대상 · 해당 기관·대상에만 적용/);
  assert.match(evidence,/한국 일정은 한국인 여객 통계가 아닙니다/);
- assert.equal((visible.match(/<b>/g)??[]).length,3);
- for(const country of ['JP','CN','VN','US','FR']){const compact=html({row:{...row,code:country}}).split('<details')[0];assert.ok((compact.match(/<b>/g)??[]).length<=3,country);}
+ assert.equal((visible.match(/<b>/g)??[]).length,countryTrendCalendar(events,{...query,country:'US'}).details.length);
+ for(const country of ['JP','CN','VN','US','FR']){const compact=html({row:{...row,code:country}}).split('<details')[0];assert.equal((compact.match(/<b>/g)??[]).length,countryTrendCalendar(events,{...query,country}).details.length,country);}
  const result=countryTrendCalendar(events,{...query,country:'US'});
  assert.equal((evidence.match(/<li>/g)??[]).length,result.details.length);
  for(const item of result.details){assert.ok(evidence.includes(item.sourceURL));assert.ok(evidence.includes(item.verifiedAt));}
@@ -207,4 +209,19 @@ test('compact institutional labels retain their full reviewed scope only in evid
   assert.ok(evidence.includes(`${region} · 해당 기관·대상에만 적용`));
   if(region!==compact)assert.ok(!visible.includes(region));
  }
+});
+
+
+test('Japan screenshot regression: all selected and comparison-month holidays and both school examples stay visible',()=>{
+ const [visible,evidence]=html().split('<details');
+ for(const [country,name,dates] of [
+  ['일본','경로의 날','2026-09-21'],['일본','공휴일 사이 휴일','2026-09-22'],['일본','추분의 날','2026-09-23'],
+  ['일본','산의 날','2026-08-11'],['일본','여름방학','2026-07-21–2026-08-31'],
+  ['한국','추석 연휴','2026-09-24–2026-09-26'],['한국','여름방학','2026-07-28–2026-08-19'],
+  ['한국','광복절','2026-08-15'],['한국','광복절 대체공휴일','2026-08-17'],
+ ])assert.equal(visible.split(`${country} · <b>${name}</b> ${dates}`).length-1,1,`${country} ${name}`);
+ assert.equal((visible.match(/학교별 상이 · 예시/g)??[]).length,2);
+ assert.doesNotMatch(visible,/공식 원문|확인일/);
+ assert.match(evidence,/공식 원문/);
+ assert.match(evidence,/개별 학교 예시/);
 });

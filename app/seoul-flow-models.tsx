@@ -55,7 +55,7 @@ export function SeoulFlowModels({summary,area,lang,publication}:{summary:LiveSum
    <ModelImage name="living-population"/>
    <div className={styles.content}><h4>{t.living}</h4><dl className={styles.metrics}><div><dt>{t.living}</dt><dd>{value(living?.value)}{living?.value!=null&&<small>{t.estimate}</small>}</dd></div></dl>
     <p className={styles.basis}>{t.reference} · {reference(living?.referenceAt??null,lang,true)} · {living?sourceName[lang]:'—'}</p>
-    <p className={styles.basis}>{t.retrieved} · {reference(living?.retrievedAt??null,lang,true)}</p>{livingStale&&<p className={styles.note} data-testid="seoul-living-stale">{t.livingStale(livingStale)}</p>}<p className={styles.note}>{t.livingNote}</p>
+    <p className={styles.basis}>{t.retrieved} · {reference(living?.retrievedAt??null,lang,true)}</p>{livingStale&&<p className={styles.note} data-testid="seoul-living-stale">{t.livingStale(livingStale)}</p>}<p className={styles.note}>{{ko:'시점 인구 추정 · 하루 방문자 합산 불가',en:'Point-in-time estimate · not daily visitor totals',zh:'时点人口估计 · 不可合计为日访客',ja:'一時点の推定人口・日別訪問者数に合算不可'}[lang]}</p><details className="methodology-details"><summary>{{ko:'집계 기준 보기',en:'Counting methodology',zh:'查看统计口径',ja:'集計基準を見る'}[lang]}</summary><p className={styles.note}>{t.livingNote}</p></details>
    </div>
   </div>
   <div className={styles.row} data-flow="tourism">
@@ -64,7 +64,7 @@ export function SeoulFlowModels({summary,area,lang,publication}:{summary:LiveSum
     {/* OA-22378 이동인구: movements counted per arrival, so one person arriving twice counts twice (lib/seoul-flow-data.mjs); rounded because it is an expansion-weighted estimate. The column is etl_ymd, so the date is labelled as the data's reference date, not as the day people moved. */}
     {movement?.value!=null?<dl className={styles.metrics}><div><dt>{t.tourismMetric}</dt><dd>{whole.format(movement.value)}<small>{t.movementEstimate}</small></dd></div></dl>:movement&&<p className={styles.note}>{t.tourismMissing}</p>}
     <p className={styles.basis}>{t.tourismDate} · {reference(movement?.referenceDate??null,lang)} · {movement?sourceName[lang]:'—'}</p>
-    <p className={styles.basis}>{movement?.releaseMonth?`${t.release} · ${movement.releaseMonth}`:t.cadence} · {t.retrieved} · {reference(movement?.retrievedAt??null,lang,true)}</p><p className={styles.note}>{t.tourismNote}</p>
+    <p className={styles.basis}>{movement?.releaseMonth?`${t.release} · ${movement.releaseMonth}`:t.cadence} · {t.retrieved} · {reference(movement?.retrievedAt??null,lang,true)}</p><p className={styles.note}>{{ko:'중복 이동 포함 · 소수 비공개 값 제외',en:'Repeat movements included · suppressed small counts excluded',zh:'包含重复移动 · 不含未公开的小样本值',ja:'重複移動を含む・非公開の少数値を除く'}[lang]}</p><details className="methodology-details"><summary>{{ko:'집계 기준 보기',en:'Counting methodology',zh:'查看统计口径',ja:'集計基準を見る'}[lang]}</summary><p className={styles.note}>{t.tourismNote}</p></details>
    </div>
   </div>
   <p className={styles.note}>{t.model}</p>

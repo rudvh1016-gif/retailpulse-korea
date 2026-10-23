@@ -19,15 +19,15 @@ test('month headers use localized month labels without a year or split numeric s
 test('a full retained calendar month and a complete MTD use their actual cutoff',()=>{
  const previous=month('2026-09','2026-10-11',days(30));
  const current=month('2026-10','2026-10-11',days(10));
- assert.equal(airportMonthComparisonBasis(current,previous,'2026-09','ko'),'2026 · 9월 마감 일평균 / 10월 MTD 일평균 · 10/10까지');
- assert.equal(airportMonthPeriodLabel(previous,'2026-09','en'),'Sep full month mean/day');
+ assert.equal(airportMonthComparisonBasis(current,previous,'2026-09','ko'),'2026-09월 전체 수집분 일평균 / 2026-10월-10일 MTD 일평균');
+ assert.equal(airportMonthPeriodLabel(previous,'2026-09','en'),'2026-09 full-calendar collected mean/day');
 });
 
 test('missing dates stay visible and cannot be described as a complete month',()=>{
  const previous=month('2026-09','2026-10-11',days(30).filter(day=>day!==4));
  const current=month('2026-10','2026-10-11',[5,7,10]);
- assert.equal(airportMonthPeriodLabel(previous,'2026-09','ko'),'9월 일부 일평균 (29/30일)');
- assert.equal(airportMonthPeriodLabel(current,'2026-10','ko'),'10월 MTD 일평균 (3/10일) · 10/10까지');
+ assert.equal(airportMonthPeriodLabel(previous,'2026-09','ko'),'2026-09월 수집분 일평균 (29/30일)');
+ assert.equal(airportMonthPeriodLabel(current,'2026-10','ko'),'2026-10월 수집분 일평균 (3/10일)');
 });
 
 test('matching counts alone do not hide duplicated dates or an excluded day',()=>{
@@ -40,14 +40,14 @@ test('matching counts alone do not hide duplicated dates or an excluded day',()=
 });
 
 test('missing and first-of-month data are unavailable, not zero or complete',()=>{
- assert.equal(airportMonthPeriodLabel(undefined,'2026-09','ko'),'9월 자료 없음');
- assert.equal(airportMonthPeriodLabel(month('2026-10','2026-10-01',[]),'2026-10','ko'),'10월 자료 없음');
+ assert.equal(airportMonthPeriodLabel(undefined,'2026-09','ko'),'2026-09월 자료 없음');
+ assert.equal(airportMonthPeriodLabel(month('2026-10','2026-10-01',[]),'2026-10','ko'),'2026-10월 자료 없음');
 });
 
 test('year boundaries and leap month completion use the real calendar',()=>{
  const previous=month('2025-12','2026-01-03',days(31));
  const current=month('2026-01','2026-01-03',days(2));
- assert.equal(airportMonthComparisonBasis(current,previous,'2025-12','ko'),'2025 / 2026 · 12월 마감 일평균 / 1월 MTD 일평균 · 1/2까지');
- assert.equal(airportMonthPeriodLabel(month('2024-02','2024-03-01',days(29)),'2024-02','ko'),'2월 마감 일평균');
- assert.equal(airportMonthPeriodLabel(month('2024-02','2024-03-01',days(28)),'2024-02','ko'),'2월 일부 일평균 (28/29일)');
+ assert.equal(airportMonthComparisonBasis(current,previous,'2025-12','ko'),'2025-12월 전체 수집분 일평균 / 2026-01월-02일 MTD 일평균');
+ assert.equal(airportMonthPeriodLabel(month('2024-02','2024-03-01',days(29)),'2024-02','ko'),'2024-02월 전체 수집분 일평균');
+ assert.equal(airportMonthPeriodLabel(month('2024-02','2024-03-01',days(28)),'2024-02','ko'),'2024-02월 수집분 일평균 (28/29일)');
 });

@@ -11,7 +11,7 @@
 .records-note, .records-change, .records-chart p, .records-details { font-size: 12px; line-height: 1.65; color: var(--ink); }
 .records-note { margin: 10px 0; }
 .records-change { display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; margin-bottom: 4px; }
-.records-chart { margin: 25px 0 20px; max-width: 880px; }
+.records-chart { margin: var(--section-gap) 0 20px; padding-top: var(--section-gap); border-top: var(--section-rule-width) solid var(--section-rule-color); max-width: 880px; }
 .records-chart svg { display: block; width: 100%; height: auto; }
 .records-chart-dates { display: grid; font-size: 11px; font-variant-numeric: tabular-nums; }
 .records-chart-dates span { white-space: nowrap; width: max-content; }

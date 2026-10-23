@@ -1177,7 +1177,9 @@ export function FlightScopeNote({airport,lang}:{airport:LiveSummary["airport"];l
     counts.other?`${t('기타 표기','Other designation','其他标记','その他表記')} ${counts.other}${unit}`:null,
     counts.unassigned?`${t('탑승 위치 확인 중','Boarding location unknown','登机位置待确认','搭乗場所確認中')} ${counts.unassigned}${unit}`:null,
     counts.conflicting?`${t('터미널 표기 충돌','Conflicting terminal labels','航站楼标记冲突','ターミナル表記の不一致')} ${counts.conflicting}${unit}`:null].filter(Boolean);
-  return <p className="flight-scope-note">{parts.join(' · ')}<small>{t('같은 출발편을 한 번씩 셉니다. 탑승동은 공식 게이트 안내(101~132번)로 확인한 탑승 위치이며, 체크인 터미널과 다릅니다. 위치를 확인할 근거가 없는 편만 별도로 표시합니다.','Each departure is counted once. Concourse boarding is identified by the official gate map (101–132), not the check-in terminal. Unknown locations stay separate.','每个实际出发航班计一次。登机楼依据官方101–132号登机口识别，不代表值机航站楼；未知位置单独显示。','同じ出発便は1回集計。コンコースは公式の101–132番ゲートで確認した搭乗場所です。チェックイン場所とは異なり、不明な場所は別表示。')}{counts.capped&&t(' 조회 상한에 도달해 일부 기록일 수 있습니다.',' Query limit reached; records may be partial.',' 已达查询上限，可能不完整。',' 取得上限に達し、一部記録の可能性があります。')}</small></p>;
+  return <div className="flight-scope-note"><p>{parts.join(' · ')}{counts.capped&&t(' 조회 상한에 도달해 일부 기록일 수 있습니다.',' Query limit reached; records may be partial.',' 已达查询上限，可能不完整。',' 取得上限に達し、一部記録の可能性があります。')}</p>
+    <details className="methodology-details"><summary>{t('집계 기준 보기','Counting methodology','查看统计口径','集計基準を見る')}</summary><p>{t('같은 출발편을 한 번씩 셉니다. 탑승동은 공식 게이트 안내(101~132번)로 확인한 탑승 위치이며, 체크인 터미널과 다릅니다. 위치를 확인할 근거가 없는 편만 별도로 표시합니다.','Each departure is counted once. Concourse boarding is identified by the official gate map (101–132), not the check-in terminal. Unknown locations stay separate.','每个实际出发航班计一次。登机楼依据官方101–132号登机口识别，不代表值机航站楼；未知位置单独显示。','同じ出発便は1回集計。コンコースは公式の101–132番ゲートで確認した搭乗場所です。チェックイン場所とは異なり、不明な場所は別表示。')}</p></details>
+  </div>;
 }
 
 /**
@@ -1243,13 +1245,13 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   // Each calendar date receives equal space; missing values remain gaps.
   const slots = days.length;
   const slot = width / slots;
-  // Moderately thicker marks retain the compact pitch and full-day hit targets.
-  const barWidth = Math.min(3, slot * 0.48);
+  // Fill two thirds of each date slot; cap short series to avoid oversized bars.
+  const barWidth = Math.min(8, slot * 0.66);
   const maxDay = days.reduce((best, day) => Math.max(best, day.total ?? 0), 0);
   const showEachValue = days.length <= 5;
-  // Keep long daily strips compact instead of stretching thin marks apart.
-  // Short series retain room for their individual date/value labels.
-  const plotStyle = { width: days.length > 9 ? `${slots * 12}px` : undefined, maxWidth: "100%" };
+  // Long strips grow from 12px/date on phones to 22px/date on desktop,
+  // bounded by the card. Plot, ticks and full-date controls share this width.
+  const plotStyle = { width: days.length > 9 ? `min(100%, calc(${slots} * clamp(12px, 1.6vw, 22px)))` : undefined, maxWidth: "100%" };
 
   // The running total is still COMPUTED — the readout below prints the selected
   // day's cumulative figure — it is simply no longer DRAWN. The owner removed
@@ -1454,11 +1456,11 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       {showFlights && isAll && <FlightScopeNote airport={airport} lang={lang} />}
       {showFlights && flightChanges.length > 0 && <details className="airport-record-scope"><summary>{contextText(lang,'항공편 자료 범위','Flight coverage','航班资料范围','便の資料範囲')}</summary><p>{recordsOnly}</p></details>}
       <small>{[showPassengers && passengerCollected ? `${airportTodayText.expected[lang]} · ${passengerCollected}` : null, showFlights && flightsCollected ? `${airportTodayText.flights[lang]} · ${flightsCollected}` : null].filter(Boolean).join(" / ")}</small>
-      {showPassengers && (isAll || terminal === "T1") && <small className="passenger-scope-note">{contextText(lang,
+      {showPassengers && (isAll || terminal === "T1") && <details className="methodology-details passenger-scope-note"><summary>{contextText(lang,'집계 기준 보기','Counting methodology','查看统计口径','集計基準を見る')}</summary><p>{contextText(lang,
         "출국장 예상 승객은 출국장 기준입니다. T1에서 출국 수속 후 탑승동으로 이동하는 승객도 T1 범위이며, 탑승동 인원을 따로 더하지 않습니다.",
         "Passenger forecasts count departure halls. Passengers clearing departure at T1 before moving to the concourse are within T1; no separate concourse count is added.",
         "出境大厅预计旅客按出境大厅统计。在T1办理出境后前往登机楼的旅客属于T1范围，不另加登机楼人数。",
-        "予想出国客は出国場単位です。T1で出国手続き後にコンコースへ移動する旅客もT1の範囲で、別途加算しません。")}</small>}
+        "予想出国客は出国場単位です。T1で出国手続き後にコンコースへ移動する旅客もT1の範囲で、別途加算しません。")}</p></details>}
     </section>;
 }
 

@@ -39,7 +39,19 @@ test('glass is scoped, static, Safari-prefixed and has opaque accessibility fall
 });
 test('palette preserves data direction and all navigation geometry',()=>{
  const change=read('app/change-rate.css');
- assert.match(change,/data-direction=down\]\{color:#a12d3f\}/);assert.match(change,/data-direction=up\]\{color:#245579\}/);
+ assert.match(change,/data-direction=down\]\{color:#a12d3f\}/);assert.match(change,/data-direction=up\]\{color:#2459a6\}/);
  assert.match(navigation,/height:54px/);assert.match(navigation,/env\(safe-area-inset-bottom\)/);
  assert.match(navigation,/@media\(prefers-reduced-motion:reduce\)/);
+});
+
+test('increase text uses the brighter owner-selected navy with normal-text contrast on white',()=>{
+ const change=read('app/change-rate.css');
+ const colors=[...change.matchAll(/data-direction=up\]\{color:#([\da-f]{6})\}/g)].map(match=>match[1]);
+ assert.equal(colors.length,2,'rate and count specificity override both stay covered');
+ for(const color of colors){
+  assert.equal(color,'2459a6');
+  const channels=color.match(/../g).map(value=>parseInt(value,16));
+  assert.ok(contrast(channels,[255,255,255])>=4.5);
+ }
+ assert.doesNotMatch(change,/opacity\s*:\s*(?:0?\.|[0-9]+%)/,'do not fade direction text');
 });

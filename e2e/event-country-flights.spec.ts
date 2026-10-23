@@ -38,7 +38,7 @@ for(const state of ['missing','partial','zero','partial-flights'] as const)test(
  await fixture(page,state==='partial-flights'?{partial:true}:{baseline:state});await page.goto(`/ko?date=${day}`);
  const metric=page.locator('.staff-holiday-event .event-country-flights');await expect(metric).toHaveAttribute('data-country','TH');
  if(state==='missing'){await expect(metric).toContainText('16편');await expect(metric).toContainText('비교자료 없음');await expect(metric).not.toContainText('0%');}
- if(state==='partial'){await expect(metric).toContainText('포함일 2/30일');await expect(metric).toContainText('+11편');await expect(metric).toContainText('+220.0%');}
+ if(state==='partial'){await expect(metric).toContainText('2026-09월 수집분 일평균 (2/30일) 대비');await expect(metric).toContainText('+11편');await expect(metric).toContainText('+220.0%');}
  if(state==='zero'){await expect(metric).toContainText('+16편');await expect(metric).toContainText('증감률 계산 불가');await expect(metric).not.toContainText('0%');}
  if(state==='partial-flights'){await expect(metric).toContainText('일부 자료');await expect(metric).toContainText('비교 보류');await expect(metric).not.toContainText('16편');}
 });

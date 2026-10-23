@@ -31,7 +31,7 @@ test('incomplete month uses only included days, names the actual month and never
  const result=eventCountryFlights(eventFlights({baseline:flightBaseline({TH:10},2)}),'TH');
  assert.equal(result.mean,5);assert.equal(result.days,2);assert.equal(result.expectedDays,30);assert.equal(result.partial,true);assert.equal(result.delta,11);
  const html=renderToStaticMarkup(h(EventCountryFlights,{country:'TH',label:'태국',lang:'ko',context:eventFlights({baseline:flightBaseline({TH:10},2,'2026-08')})}));
- assert.match(html,/2026-08 포함일 2\/31일 일평균 대비/);assert.doesNotMatch(html,/전월/);
+ assert.match(html,/2026-08월 수집분 일평균 \(2\/31일\) 대비/);assert.doesNotMatch(html,/전월/);
  for(const dates of [[],['2026-09-01','2026-09-01'],['2026-08-01'],['2026-09-31'],['2026-11-01']]){
   const baseline=flightBaseline();baseline.includedDays=dates;assert.equal(eventCountryFlights(eventFlights({baseline}),'TH').mean,null);
  }

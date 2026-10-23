@@ -7,7 +7,7 @@ import type {EventFlightContext} from '../lib/event-country-flights';
 import {briefCountryName,briefHoliday,briefReturnText} from '../lib/brief-localization';
 import type {BriefHoliday} from '../lib/holiday-flight-brief';
 
-export interface StaffRouteChange {country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number}
+export interface StaffRouteChange {basis?:string;country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number}
 const locales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'} as const;
 const copy={
  ko:{routePending:'비교 가능한 노선 자료를 확인 중입니다.',routeBasis:'노선 국가 기준',details:'기준·일정 상세',financial:'금융기관',eventPending:'해당 날짜·다음 7일에 검증된 대표 휴일 연결이 없습니다.',source:'공식 출처 ↗',verified:'공식 일정 확인'},
@@ -27,6 +27,8 @@ function routeText(route:StaffRouteChange,lang:Lang,number:Intl.NumberFormat){
  return lang==='en'?`${name}-bound ${count} flights`:lang==='zh'?`飞往${name} ${count}班`:lang==='ja'?`${name}行き ${count}便`:`${name}행 ${count}편`;
 }
 function comparisonText(route:StaffRouteChange,day:string,lang:Lang,number:Intl.NumberFormat,compact:boolean){
+ const basis=route.basis;
+ if(basis)return lang==='en'?`vs ${basis}`:lang==='zh'?`较${basis}`:lang==='ja'?`${basis}比`:`${basis} 대비`;
  const month=compact?compactMonth(route.month,day,lang):route.month,mean=compact?'':number.format(route.mean);
  return lang==='en'?`vs ${month} daily average${compact?'':` ${mean} flights`}`:lang==='zh'?`较${month}日均${compact?'':`${mean}班`}`:lang==='ja'?`${month}の1日平均${compact?'':`${mean}便`}比`:`${month} 일평균${compact?'':` ${mean}편`} 대비`;
 }

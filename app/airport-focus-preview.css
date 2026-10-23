@@ -89,7 +89,9 @@
 /* Desktop reads today's figures beside the next-week / next-month preparation;
    phones retain the approved single reading column and unchanged glass menu. */
 @media(min-width:1000px){
- .focus-report{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);column-gap:36px;align-items:start}
+ /* The spanning future column must not distribute its height into today’s rows.
+    Only the final flexible row absorbs surplus, below the top-aligned basis. */
+ .focus-report{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(0,1fr);column-gap:36px;align-items:start}
  .focus-report-title{grid-column:1/-1;grid-row:1}
  .focus-today-title{grid-column:1;grid-row:2}
  .focus-report-lines{grid-column:1;grid-row:3;display:block}
@@ -174,3 +176,21 @@
 .focus-selected-country-changes .focus-event-details>summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 .event-country-flights p{margin:3px 0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .event-country-flights .staff-route-rate{display:inline-block;white-space:nowrap}
+
+/* Read each briefing topic as one unit: title, content, then a quiet boundary.
+   The existing source order is unchanged at mobile widths. No inner card surfaces. */
+.airport-focus-shell .focus-report .focus-report-title{margin-bottom:16px}
+.airport-focus-shell .focus-report .focus-figures-title{margin:0 0 5px}
+.airport-focus-shell .focus-report .focus-selected-country-stack{margin-top:12px;padding-top:12px;border-top:var(--section-rule-width,1px) solid var(--section-rule-color,#d5d9de)}
+.airport-focus-shell .focus-report .focus-selected-country-changes{margin-top:0}
+.airport-focus-shell .focus-report .focus-selected-country-changes + .focus-selected-country-changes{margin-top:12px;padding-top:12px;border-top:var(--section-rule-width,1px) solid var(--section-rule-color,#d5d9de)}
+.airport-focus-shell .focus-report .focus-selected-country-changes > h3,
+.airport-focus-shell .focus-report .focus-preparation-brief > div > h3{margin:0 0 10px}
+.airport-focus-shell .focus-report .focus-selected-country-changes > small{display:block;margin-top:8px;line-height:1.6}
+.airport-focus-shell .focus-report .focus-preparation-brief > div + div{border-top:var(--section-rule-width,1px) solid var(--section-rule-color,#d5d9de)}
+@media(min-width:1000px){
+ .airport-focus-shell .focus-report .focus-today-title{margin-bottom:12px}
+ .airport-focus-shell .focus-report .focus-figures-title{margin-bottom:10px}
+ .airport-focus-shell .focus-report .focus-report-lines > p:last-child{min-height:0;margin-bottom:0}
+ .airport-focus-shell .focus-report .focus-preparation-brief > div:first-child{margin-top:0;padding-top:0;border-top:0}
+}

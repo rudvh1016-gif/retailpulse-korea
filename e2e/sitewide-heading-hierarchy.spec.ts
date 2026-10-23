@@ -24,7 +24,7 @@ async function verifyHeadings(page:Page){
   const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT,{acceptNode:child=>child.textContent?.trim()&&!child.parentElement?.closest('[aria-hidden="true"]')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
   const textNode=walker.nextNode();
   const range=document.createRange();if(textNode)range.selectNodeContents(textNode);
-  return {question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  return {blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
    textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
@@ -37,7 +37,7 @@ async function verifyHeadings(page:Page){
  }));
  for(const row of rows){
   expect(row.text).toBeTruthy();
-  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem?16:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -50,7 +50,7 @@ async function verifyHeadings(page:Page){
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
   const palette={page:['rgb(84, 38, 50)','750'],section:['rgb(41, 39, 42)','650'],subsection:['rgb(81, 77, 80)','500']} as const;
-  const [color,weight]=palette[row.role as keyof typeof palette];
+  const [color,weight]=row.flowItem||row.blackMiddle?['rgb(17, 17, 17)','700']:palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
   expect(row.opacity).toBe('1');
@@ -70,11 +70,44 @@ async function verifyHeadings(page:Page){
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 
+async function verifyAirportFlowTitles(page:Page,enlarged=false){
+ const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');
+ const titles=flow.locator('.airport-flow-item-title');
+ await expect(titles).toHaveCount(6);await page.evaluate(()=>document.fonts.ready);
+ const rows=await titles.evaluateAll(nodes=>nodes.map(node=>{
+  const style=getComputedStyle(node),rect=node.getBoundingClientRect(),body=node.nextElementSibling?.getBoundingClientRect();
+  return {text:node.textContent?.trim(),tag:node.tagName,size:style.fontSize,weight:style.fontWeight,color:style.color,
+   family:style.fontFamily,lineHeight:style.lineHeight,spacing:style.letterSpacing,bottomMargin:style.marginBottom,
+   staticCjk:!!node.closest('.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]'),
+   x:rect.x,y:rect.y,width:rect.width,height:rect.height,bodyGap:body?body.top-rect.bottom:null,
+   overflow:node.scrollWidth-node.clientWidth};
+ }));
+ for(const row of rows){
+  expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);
+  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([enlarged?'32px':'16px',row.staticCjk?'600':'700','rgb(17, 17, 17)','10px']);
+  expect([row.family,row.lineHeight,row.spacing]).toEqual([rows[0].family,rows[0].lineHeight,rows[0].spacing]);
+  expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(9);expect(row.bodyGap!).toBeLessThanOrEqual(11);
+  expect(row.overflow).toBeLessThanOrEqual(1);
+ }
+ for(const title of await titles.all())await expect(title).toHaveAccessibleName((await title.innerText()).replace(/\s+/g,' ').trim());
+ const width=page.viewportSize()!.width;
+ if(width>700){
+  for(let i=0;i<3;i++){expect(rows[i].x).toBeCloseTo(rows[i+3].x,0);expect(rows[i].width).toBeCloseTo(rows[i+3].width,0);}
+  expect(rows[0].y).toBeCloseTo(rows[1].y,0);expect(rows[1].y).toBeCloseTo(rows[2].y,0);
+  expect(rows[3].y).toBeCloseTo(rows[4].y,0);expect(rows[4].y).toBeCloseTo(rows[5].y,0);
+ }else{
+  for(let i=1;i<6;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
+ }
+ await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
+ await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['시간·터미널','노선·휴일 준비','품목별 확인']);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+}
+
 async function verifyEnlargedHeadings(page:Page){
  const title=page.locator('[data-heading="page"]:visible').first(),text=await title.innerText();
  const observer=await page.evaluateHandle(()=>{
   const enlarged=new WeakSet<Element>();
-  const scale=()=>document.querySelectorAll<HTMLElement>('[data-heading]').forEach(node=>{
+  const scale=()=>document.querySelectorAll<HTMLElement>('[data-heading],.airport-flow-item-title').forEach(node=>{
    if(enlarged.has(node))return;
    const size=parseFloat(getComputedStyle(node).fontSize);
    node.style.setProperty('font-size',`${size*2}px`,'important');enlarged.add(node);
@@ -89,6 +122,7 @@ async function verifyEnlargedHeadings(page:Page){
   // Short localized titles may still fit at 200%; normal wrapping must be allowed,
   // not forced. The full title, accessibility, zero prefix and overflow checks apply.
   await verifyHeadings(page);
+  if(await page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]').count())await verifyAirportFlowTitles(page,true);
  }finally{await observer.evaluate(observer=>observer.disconnect());await observer.dispose();}
 }
 
@@ -99,7 +133,7 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
  await page.goto(`/ko${route?`/${route}`:''}?date=2026-10-19`,{waitUntil:'domcontentloaded'});
  if(route==='travel-records')await expect(page.getByTestId('travel-empty')).toBeVisible();
  else await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- await verifyHeadings(page);
+ await verifyHeadings(page);if(!route)await verifyAirportFlowTitles(page);
  if(route==='airport'){
   const pageTitle=page.locator('.airport-view .view-intro h1'),middle=page.locator('#airport-forecast-title');
   await expect(pageTitle).toHaveCSS('color','rgb(84, 38, 50)');await expect(pageTitle).toHaveCSS('font-weight','750');
@@ -111,12 +145,12 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
   await expect(page.locator('.focus-today-title')).toHaveAttribute('data-heading','subsection');
   for(const heading of await page.locator('.focus-selected-country-changes h3,.focus-preparation-brief h3').all())await expect(heading).toHaveAttribute('data-heading','subsection');
   const staff=page.locator('.staff-brief-grid > section > h3');
-  await expect(staff).toHaveText(['01 시간·터미널','02 노선·휴일 준비','03 품목별 확인']);
+  await expect(staff).toHaveText(['시간·터미널','노선·휴일 준비','품목별 확인']);
   await expect(staff.locator(':scope > .heading-marker')).toHaveCount(3);
   const parentSize=await page.locator('#airport-staff-briefing-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
   const bodySize=await page.locator('.staff-brief-grid p').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
-  for(const heading of await staff.all())expect(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(bodySize+3);
+  for(const heading of await staff.all())expect(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(bodySize);
   await expect(page.locator('.staff-brief-grid details').filter({has:page.getByText('패션·명품',{exact:true})})).toHaveAttribute('open','');
   const disclosure=page.locator('.staff-route-details');
   await expect(disclosure).not.toHaveAttribute('open','');
@@ -132,7 +166,7 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
 for(const lang of ['en','zh','ja'])for(const width of [320,390,768,1440])for(const route of ['','airport','airport-countries','airport-prepare','more'])test(`localized heading wrapping /${lang}/${route} at ${width}px`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await fixtures(page);
  await page.goto(`/${lang}${route?`/${route}`:''}?date=2026-10-19`,{waitUntil:'domcontentloaded'});await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- await verifyHeadings(page);await page.screenshot({path:info.outputPath(`heading-${route||'home'}-${lang}-${width}.png`),fullPage:true});
+ await verifyHeadings(page);if(!route)await verifyAirportFlowTitles(page);await page.screenshot({path:info.outputPath(`heading-${route||'home'}-${lang}-${width}.png`),fullPage:true});
  await verifyEnlargedHeadings(page);
 });
 

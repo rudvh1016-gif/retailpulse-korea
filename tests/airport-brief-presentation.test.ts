@@ -103,12 +103,12 @@ test('daily-average core stays concise with closed basis and directional count i
  for(const lang of ['ko','en','zh','ja'] as const)for(const total of [60000,61000,59000]){
   const html=renderToStaticMarkup(h(PassengerBriefComparison,{total,day:'2026-10-21',baseline:observed,lang}));
   const core=html.split('<details')[0],basis=html.split('<details')[1];
-  assert.doesNotMatch(core,/1,320,000|60,000|22|30/);
+  assert.doesNotMatch(core,/1,320,000/);assert.match(core,/60,000/);assert.match(core,/2026-09/);
   assert.match(core,/data-direction="(?:up|down|neutral)"/);
   assert.match(core,total===61000?/\+1,000/:total===59000?/▲ 1,000/:/0/);
   assert.match(basis,/^ class="focus-passenger-calculation">/);assert.match(basis,/1,320,000/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
-  if(lang==='ko')assert.match(core,/전월 수집분 일평균 대비/);
+  if(lang==='ko')assert.match(core,/2026-09월-22일 MTD 예보 일평균 60,000명 대비/);
  }
  const css=readFileSync('app/airport-focus-preview.css','utf8');
  assert.match(css,/focus-passenger-calculation>summary[^}]*min-height:44px/);
