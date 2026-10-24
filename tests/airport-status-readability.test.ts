@@ -33,6 +33,17 @@ test('country count and share remain exact and every unpositioned flight remains
  const html=renderToStaticMarkup(h(AirportZoneCountries,{map,lang:'ko',date}));
  assert.match(html,/data-country="JP" data-value="1" data-share="100"/);assert.match(html,/data-testid="country-unverified-details" data-side="UNVERIFIED" data-total="1"/);
  assert.match(html,/airport-flags\/JP.webp/);assert.match(html,/<strong[^>]*>1편<\/strong>/);assert.match(html,/<small[^>]*>100%<\/small>/);
+ for(const lang of ['ko','en','zh','ja'] as const){
+  const rendered=renderToStaticMarkup(h(AirportZoneCountries,{map,lang,date}));
+  const rows=[...rendered.matchAll(/<li[^>]*data-country="JP"[^>]*>([\s\S]*?)<\/li>/g)];
+  assert.equal(rows.length,2,'positioned and unpositioned routes both remain present');
+  for(const row of rows){
+   const text=row[1].replace(/<[^>]*>/g,'');
+   assert.match(text,/\s1(?:편| flights|班|便)\s+100%/,'copied and accessible text separates destination, count and share');
+  }
+  const heading=rendered.match(/<h5[^>]*>([\s\S]*?)<\/h5>/)?.[1].replace(/<[^>]*>/g,'');
+  assert.match(heading??'',/1(?:편| flights|班|便)\s+50%/,'zone total and share also retain a real separator');
+ }
  assert.equal(JSON.stringify(map),before);
 });
 test('Japanese planning summary strictly distinguishes present and absent flight context',()=>{

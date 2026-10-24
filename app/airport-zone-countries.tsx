@@ -35,8 +35,8 @@ export function AirportZoneCountries({map,lang,basis,date,isToday=false}:{map:De
     : item.country&&svgFlags.has(item.country)
     ? <img src={`/images/airport-flags/fallback/${item.country.toLowerCase()}.svg`} width="36" height="36" alt="" loading="lazy" decoding="async"/>
     : item.country?flagEmoji(item.country):'—'}</span>
-   <span className={styles.name}>{label}</span>
-   <span className={styles.value}><strong className={styles.count}>{item.flights}{unit}</strong><small className={styles.share}>{share}%</small></span>
+   <span className={styles.name}>{label}</span>{' '}
+   <span className={styles.value}><strong className={styles.count}>{item.flights}{unit}</strong>{' '}<small className={styles.share}>{share}%</small></span>
   </li>;
  };
  return <section id="airport-zone-countries" className="airport-zone-countries" data-testid="map-zone-countries">
@@ -49,7 +49,7 @@ export function AirportZoneCountries({map,lang,basis,date,isToday=false}:{map:De
    const known=zone.countries.filter(item=>item.country!==null);
    const remaining=known.slice(zone.leaders.length);
    return <div key={zone.side} data-side={zone.side} data-total={zone.total}>
-    <h5 className={styles.zoneHeading}>{mapCopy.side[zone.side][lang]} <span className={styles.zoneTotal}><strong>{zone.total}{unit}</strong><small>{flights.length?`${(zone.total/flights.length*100).toFixed(0)}%`:zoneShareCopy[lang].zero}</small></span></h5>
+    <h5 className={styles.zoneHeading}>{mapCopy.side[zone.side][lang]} <span className={styles.zoneTotal}><strong>{zone.total}{unit}</strong>{' '}<small>{flights.length?`${(zone.total/flights.length*100).toFixed(0)}%`:zoneShareCopy[lang].zero}</small></span></h5>
     {zone.total===0?<p className="prep-note">0{unit}</p>:<ul>{zone.leaders.map(item=>row(item,zone.total))}</ul>}
     {zone.unknown>0&&<ul>{row({country:null,flights:zone.unknown},zone.total)}</ul>}
     {remaining.length>0&&<details className={styles.moreCountries}><summary>{{ko:'국가 전체 보기',en:'All countries',zh:'全部国家',ja:'国を全て表示'}[lang]} <span data-disclosure-meta>({known.length})</span></summary><ul>{remaining.map(item=>row(item,zone.total))}</ul></details>}
