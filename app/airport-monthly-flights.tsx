@@ -4,6 +4,7 @@ import {useState} from 'react';
 import {usePreparedMonth} from './use-prepared-month';
 import type {Lang,Terminal} from './retailpulse-data';
 import {ChangeRate} from './change-rate';
+import {AirportMonthSourceSummary} from './airport-month-source-summary';
 import {AirportDestinationDailyChanges} from './airport-destination-daily-changes';
 import {MONTH_SCOPES,monthlyCategoryKeys,monthlyMetric,previousFlightMonth,type AirportFlightMonth,type AirportMonthlyRollups,type MonthCounts,type MonthScope} from '../lib/airport-monthly-flights';
 import {airportMonthComparisonBasis,airportMonthLabel} from '../lib/airport-month-labels';
@@ -71,6 +72,7 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
    <details><summary>{t(lang,'포함 날짜·제외 자료·출처','Included dates, exclusions and sources','计入日期、排除资料及来源','含めた日・除外資料・出典')}</summary>
    <p>{t(lang,'전월 평균이 0이거나 비교 자료가 없으면 변화율은 — 입니다.','Change is — when the previous mean is zero or data is unavailable.','上月均值为0或无比较资料时，变化率为—。','前月平均が0または比較資料がない場合、変化率は—です。')}</p>
     {period(previous,previousFlightMonth(month))}{period(current,month)}
+    <AirportMonthSourceSummary lang={lang} calculatedAt={response?.calculatedAt}/>
     {[previous,current].filter((value):value is AirportFlightMonth=>!!value).map(data=><div key={data.month}><p className="airport-month-coverage-summary"><strong>{data.month}</strong> · {t(lang,'누락·제외','Missing / excluded','缺失／排除','欠測・除外')} {data.excludedDays.length}{t(lang,'일',' days','天','日')} · {t(lang,'취소 제외','Cancellations excluded','取消排除','欠航除外')} {data.cancelled}</p></div>)}
      <details className="airport-month-source-details"><summary>{t(lang,'원 날짜 목록·출처 보기','Original dates and sources','原始日期及来源','元の日付一覧・出典')}</summary>
      {[previous,current].filter((value):value is AirportFlightMonth=>!!value).map(data=><div key={data.month}><p><strong>{data.month}</strong> · {t(lang,'포함','Included','计入','含めた日')}: {data.includedDays.join(', ')||'—'}</p><p>{t(lang,'제외 날짜','Excluded dates','排除日期','除外日')}: {data.excludedDays.map(item=>`${item.day} (${item.reason})`).join(', ')||'—'} · {t(lang,'취소 제외','Cancellations excluded','取消排除','欠航除外')}: {data.cancelled}</p><p>T1 {data.scopes.T1.total} · {t(lang,'탑승동','Concourse','卫星厅','搭乗棟')} {data.scopes.CONCOURSE.total} · T2 {data.scopes.T2.total} · {t(lang,'터미널 미정','Unconfirmed terminal','航站楼未确认','ターミナル未確認')} {data.scopes.UNKNOWN.total}</p></div>)}

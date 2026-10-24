@@ -1382,10 +1382,20 @@ test("the composition module has intentional spacing and compact rows from mobil
     await expect(composition.getByRole("heading", { name: "오늘 출발편 구성" })).toBeVisible();
     await expect(composition.locator(".gate-pillar").first()).toBeVisible();
 
+    const explainer = composition.locator(".airport-composition-explainer");
+    const explanationSummary = explainer.locator(":scope > summary");
+    const explanation = explainer.locator(":scope > p");
+    await expect(explanationSummary).toBeVisible();
+    await expect(explanationSummary).toHaveText("구성 자료 읽는 법");
+    await expect(explainer).not.toHaveAttribute("open", "");
+    await expect(explanation).toBeHidden();
+    await expect(explanation).not.toBeEmpty();
+    const explanationText = await explanation.textContent();
+
     const geometry = await composition.evaluate((element) => {
       const title = element.querySelector("h3")!.getBoundingClientRect();
       const scope = element.querySelector(".airport-composition-scope")!.getBoundingClientRect();
-      const intro = element.querySelector(".airport-composition-head > div > p:not(.airport-composition-scope)")!.getBoundingClientRect();
+      const summary = element.querySelector(".airport-composition-explainer > summary")!.getBoundingClientRect();
       const truth = element.querySelector(".airport-composition-head small")!.getBoundingClientRect();
       const head = element.querySelector(".airport-composition-head")!.getBoundingClientRect();
       const tabs = element.querySelector("[role=tablist]")!.getBoundingClientRect();
@@ -1395,8 +1405,9 @@ test("the composition module has intentional spacing and compact rows from mobil
       const row = element.querySelector(".gate-pillar")!.getBoundingClientRect();
       return {
         titleToScope: scope.top - title.bottom,
-        scopeToIntro: intro.top - scope.bottom,
-        introToTruth: truth.top - intro.bottom,
+        scopeToSummary: summary.top - scope.bottom,
+        summaryToTruth: truth.top - summary.bottom,
+        summaryHeight: summary.height,
         headToTabs: tabs.top - head.bottom,
         tabsToPanel: panel.top - tabs.bottom,
         headingToList: list.top - panelHeading.bottom,
@@ -1408,8 +1419,11 @@ test("the composition module has intentional spacing and compact rows from mobil
     });
     expect(geometry.titleToScope).toBeGreaterThanOrEqual(0);
     expect(geometry.titleToScope).toBeLessThanOrEqual(8);
-    expect(geometry.scopeToIntro).toBeLessThanOrEqual(12);
-    expect(geometry.introToTruth).toBeLessThanOrEqual(8);
+    expect(geometry.scopeToSummary).toBeGreaterThanOrEqual(0);
+    expect(geometry.scopeToSummary).toBeLessThanOrEqual(12);
+    expect(geometry.summaryToTruth).toBeGreaterThanOrEqual(0);
+    expect(geometry.summaryToTruth).toBeLessThanOrEqual(8);
+    expect(geometry.summaryHeight).toBeGreaterThanOrEqual(44);
     expect(geometry.headToTabs).toBeLessThanOrEqual(22);
     expect(geometry.tabsToPanel).toBeLessThan(28);
     expect(geometry.headingToList).toBeLessThan(120);
@@ -1418,6 +1432,22 @@ test("the composition module has intentional spacing and compact rows from mobil
     expect(geometry.rowWidth).toBeLessThanOrEqual(geometry.panelWidth / 3);
     expect(geometry.minHeight).toBe("0px");
     expect(geometry.overflow).toBeLessThanOrEqual(1);
+    await explanationSummary.click();
+    await expect(explainer).toHaveAttribute("open", "");
+    await expect(explanation).toBeVisible();
+    await expect(explanation).toHaveText(explanationText!);
+    expect(await composition.evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+    await explanationSummary.focus();
+    await page.keyboard.press("Enter");
+    await expect(explainer).not.toHaveAttribute("open", "");
+    await expect(explanation).toBeHidden();
+    await explanationSummary.click();
+    await expect(explanation).toBeVisible();
+    await explanationSummary.click();
+    await expect(explanation).toBeHidden();
+    await expect(explainer).not.toHaveAttribute("open", "");
+    await expect(explanation).toHaveText(explanationText!);
+
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }
 });

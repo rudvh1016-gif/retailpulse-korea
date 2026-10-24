@@ -20,7 +20,10 @@ for(const lang of ['ko','en','zh','ja'])test(`upcoming ${lang}: 320px, keyboard 
   await expect(event.locator('.focus-event-country img')).toHaveAttribute('alt','');
   const detail=event.locator('details'),toggle=detail.locator('summary');
   expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  if(lang==='ja')await expect(toggle).toHaveText('日程の詳細');
+  if(lang==='ja'){
+   const hasFlightReference=await detail.locator('.focus-planning-flight-note').count()>0;
+   await expect(toggle).toHaveText(hasFlightReference?'日程の詳細・選択日の便数参考':'日程の詳細');
+  }
   await expect(detail).not.toHaveAttribute('open','');await expect(detail.locator('.focus-holiday-gloss')).not.toBeVisible();
   await toggle.focus();await page.keyboard.press('Enter');await expect(detail).toHaveAttribute('open','');
   await expect(detail.locator('.focus-holiday-gloss')).toBeVisible();await expect(detail.locator('a')).toHaveAttribute('href',/^https:\/\//);

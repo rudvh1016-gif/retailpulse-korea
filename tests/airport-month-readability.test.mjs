@@ -26,7 +26,7 @@ test('scoped typography is charcoal and disclosures stay native with usable targ
  assert.equal(summary.color,'#222326');
  assert.doesNotMatch(source,/<h4[^>]*data-heading/);
  assert.match(source,/<h4 className="airport-month-zone-title">/);
- assert.equal(rule('.airport-month-flights .airport-month-zone-title')['font-size'],'24px');
+ assert.equal(rule('.airport-month-flights .airport-month-zone-title')['font-size'],'18px');
  assert.equal(rule('.airport-month-flights select,.airport-month-flights button,.airport-month-flights summary')['min-block-size'],'44px');
  assert.equal(rule('.airport-month-table th:not(:first-child),.airport-month-table td')['white-space'],'nowrap');
  assert.equal(rule('.airport-month-flights > .airport-month-table table,.airport-month-flights > details > .airport-month-table table')['font-size'],'16px');

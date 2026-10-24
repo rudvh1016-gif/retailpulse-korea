@@ -34,3 +34,14 @@ The initial Windows clone converted files to CRLF, causing source-regex and appr
 Review the draft PR before merge/deployment. Root manages deployment. The remote PR/commit and local bundle/patch are the recovery entry points; do not reuse previous cloud test claims.
 
 Native `details/summary` controls preserve keyboard interaction, 44px targets, visible focus, source evidence and missing-data states. React/UI guideline review introduced no new requests, dependencies, effects, collectors or mutable calculation state.
+
+## PR473 review follow-up
+
+- Updated the composition E2E selector to the visible summary instead of a paragraph moved into closed details. Kept every existing spacing upper bound; added non-overlap bounds, a 44px summary target, pointer open/close, keyboard Enter close, preserved text and opened-state overflow checks at the existing six viewport widths.
+- Updated event E2E expectations to explicitly require title → event date paragraph → selected-day flight comparison, and to require both the partial 2/30-day baseline and its 5-flight mean. Existing missing, zero, partial-flight and unrelated-country truth assertions remain.
+- Updated the Japanese planning summary expectation to the exact appropriate label with/without a selected-day flight reference. Added static rendering coverage for both states.
+- Separated country flight counts from secondary shares and made the unpositioned count explicit in both country and gate disclosures. Kept the country flags, all count/share expressions, ranks, denominators and lazy unpositioned rows unchanged.
+- Refined monthly zone table typography/alignment without changing row values. The section title uses compact 18px text, previous/current columns use 14/16px and changes retain 16px.
+- Added a short first-level source summary: the existing calculation timestamp formatted in Asia/Seoul plus a source link. Original ISO, full dates, reasons and version metadata remain inside the existing inner disclosure.
+
+Follow-up checks: typecheck and changed-file lint; 107 focused unit/static/render checks; build plus 51 built HTML checks; Playwright collection lists 78 cases across the three corrected E2E files. Browser execution was not attempted. Existing loopback/D1 limitations remain separate from this test correction. Final commit/CI links are in PR473.
