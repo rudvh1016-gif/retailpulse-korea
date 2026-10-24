@@ -159,6 +159,19 @@ jobs:
       - run: npm run build
       - name: Install official Chromium for the bounded route probe
         run: npx playwright install --with-deps chromium
+      - name: Render three content-preserving themes for owner review
+        if: github.head_ref == 'preview/content-preserving-themes-20261021'
+        run: npx playwright test --config playwright.content-theme.config.ts
+        env:
+          RPK_CONTENT_THEME_PREVIEW: "1"
+      - name: Save full-content theme comparisons
+        if: always() && github.head_ref == 'preview/content-preserving-themes-20261021'
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-preserving-theme-previews
+          path: content-theme-results/
+          retention-days: 7
+          if-no-files-found: error
       - name: Country-route interactions and exact search identity checks
         run: |
           npx playwright test --config playwright.country-tooltip.config.ts --project country-chromium
