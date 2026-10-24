@@ -77,3 +77,10 @@
 @media(forced-colors:active) {
  .airport-month-flights .airport-month-zone-title {color:CanvasText;}
 }
+
+/* Coverage is a short period/count summary; original records remain one level inside. */
+.airport-month-flights .airport-month-coverage-summary{font-size:13px;line-height:1.6;margin:4px 0}
+.airport-month-flights .airport-month-source-details{border-top:1px solid #e5e5e5;margin-top:8px}
+.airport-month-flights .airport-month-source-details>summary{font-size:13px;font-weight:600;min-height:44px;padding:11px 0;box-sizing:border-box;cursor:pointer;touch-action:manipulation}
+.airport-month-flights .airport-month-source-details>summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.airport-month-flights .airport-month-source-details p{font-size:12px;line-height:1.6;overflow-wrap:anywhere;max-width:72ch}

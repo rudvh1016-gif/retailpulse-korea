@@ -343,6 +343,7 @@ export function AirportArrivalSummary({ lang, terminal = "all", date = null }: {
       <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isPartial ? ` ${airportTodayText.partialBody[lang]}` : ""}</p>
       {timeline.length > 0
         ? <AirportFlowFigure
+          showModel={false}
           timeline={timeline}
           terminal={terminal}
           layers={isAll ? arrival?.passengerForecastTimelineByTerminal ?? null : null}
@@ -496,7 +497,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         <div>
           <h3 data-heading="subsection" id="airport-composition-title"><span className="heading-marker" aria-hidden="true"/>{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).title}</h3>
           <p className="airport-composition-scope">{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).scope}</p>
-          <p>{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).intro}</p>
+          <details className="airport-composition-explainer"><summary>{contextText(lang,"구성 자료 읽는 법","How to read the composition","如何阅读构成资料","構成資料の読み方")}</summary><p>{airportCompositionCopy(lang, summary.dayRelation, summary.serviceDateKst, scopeLabel).intro}</p></details>
           <small>{airportTodayText.compositionTruth[lang]}</small>
         </div>
       </div>

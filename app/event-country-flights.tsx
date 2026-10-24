@@ -26,8 +26,9 @@ export function EventCountryFlights({country,label,context,lang}:Props){
  const {text,number,metric,scope,unit,route}=values(country,label,context,lang);
  if(metric.originContext)return <div className="event-country-flights event-origin-context" data-country="KR"><p>{text.origin}</p></div>;
  return <div className="event-country-flights" data-country={metric.country} data-flight-day={context?.day} data-flight-scope={context?.scope}>
-  <p className="staff-route-metric">{text.selected} {context?.day||'—'} · {scope} · {route} {metric.count===null?(context?.status==='PARTIAL'?text.partial:context?.status==='LOADING'?text.loading:text.missing):<b>{number.format(metric.count)}{unit}</b>}</p>
-  <p className="event-flight-change">{metric.mean===null?<>{metric.month&&`${metric.month} · `}{context?.baselinePending?text.baselineLoading:text.comparison}</>:<>{airportMonthPeriodLabel(context?.baseline,metric.month!,lang)} {lang==='ko'?'대비':lang==='en'?'comparison':lang==='zh'?'相比':'比'} · {metric.delta===null?text.held:<><CountChange delta={metric.delta} format={number.format} unit={unit} lang={lang}/>{' '}<span className="staff-route-rate">(<ChangeRate value={metric.percent} lang={lang}/>)</span>{metric.mean===0&&<> · {text.zero}</>}</>}</>}</p>
+  <p className="event-flight-context">{text.selected} {context?.day||'—'} · {scope}</p>
+  <p className="staff-route-metric">{route} {metric.count===null?(context?.status==='PARTIAL'?text.partial:context?.status==='LOADING'?text.loading:text.missing):<b>{number.format(metric.count)}{unit}</b>}</p>
+  <p className="event-flight-change">{metric.mean===null?<>{metric.month&&`${metric.month} · `}{context?.baselinePending?text.baselineLoading:text.comparison}</>:<><span className="event-flight-baseline">{airportMonthPeriodLabel(context?.baseline,metric.month!,lang)} {number.format(metric.mean)}{unit} {lang==='ko'?'대비':lang==='en'?'comparison':lang==='zh'?'相比':'比'}</span>  {metric.delta===null?text.held:<><CountChange delta={metric.delta} format={number.format} unit={unit} lang={lang}/>{' '}<span className="staff-route-rate">(<ChangeRate value={metric.percent} lang={lang}/>)</span>{metric.mean===0&&<> · {text.zero}</>}</>}</>}</p>
  </div>;
 }
 export function EventCountryFlightBasis(props:Props){

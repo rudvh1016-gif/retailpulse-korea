@@ -689,7 +689,7 @@ function walk(dir: string, out: string[] = []): string[] {
     if (entry.name === "node_modules" || entry.name.startsWith(".")) continue;
     const path = join(dir, entry.name);
     if (entry.isDirectory()) walk(path, out);
-    else if (/\.(?:ts|tsx|mts|mjs|js|cjs|json|jsonc|sql|ya?ml)$/.test(entry.name)) out.push(path);
+    else if (/\.(?:ts|tsx|mts|mjs|js|cjs|json|jsonc|sql|ya?ml)$/.test(entry.name)) out.push(path.replaceAll("\\", "/"));
   }
   return out;
 }

@@ -14,12 +14,12 @@ const event:BriefHoliday={id:'TH-2026-10-23-bank',country:'TH',countryLabel:'태
 const render=(props:Partial<Parameters<typeof StaffRouteHoliday>[0]>={})=>renderToStaticMarkup(h(StaffRouteHoliday,{route,flights,event,day:'2026-10-22',lang:'ko',...props}));
 const plain=(html:string)=>html.replace(/<[^>]*>/g,'');
 
-test('event is immediately followed by its own country metrics, not the highest-delta Taiwan route',()=>{
+test('event dates precede its own country metrics without unrelated Taiwan data',()=>{
  const before=JSON.stringify({flights,event});
  const html=render({children:h('p',null,'Preserved school-calendar context')}),[visible,details]=html.split('<details');
- assert.match(visible,/<h4><span [^>]+><img [^>]+><\/span>태국 Chulalongkorn 국왕 추모일<\/h4><div class="event-country-flights" data-country="TH"/);
- for(const fact of ['선택일 2026-10-22','공항 전체','태국행','16편','2026-09월 전체 수집분 일평균 대비','▲ 2.5편','▲ 13%','10/23'])assert.ok(visible.includes(fact),fact);
- assert.doesNotMatch(visible,/대만|90편|18\.5|귀국 준비|공식 일정 확인|국적|특수금융기관/);
+ assert.match(visible,/<h4><span [^>]+><img [^>]+><\/span>태국 Chulalongkorn 국왕 추모일<\/h4><p><time[^>]+>10\/23<\/time>.*?<\/p><div class="event-country-flights" data-country="TH"/);
+ for(const fact of ['선택일 2026-10-22','공항 전체','태국행','16편','2026-09월 전체 수집분 일평균 18.5편 대비','▲ 2.5편','▲ 13%','10/23'])assert.ok(visible.includes(fact),fact);
+ assert.doesNotMatch(visible,/대만|90편|귀국 준비|공식 일정 확인|국적|특수금융기관/);
  assert.equal((html.match(/<details/g)??[]).length,1);assert.match(details,/^ class="staff-route-details">/);
  for(const fact of ['2026-09 18.5편','30일','금융기관·특수금융기관','귀국 준비','2026-10-21','https://example.test/th','노선 국가 기준','Preserved school-calendar context'])assert.ok(details.includes(fact),fact);
  assert.equal(JSON.stringify({flights,event}),before);

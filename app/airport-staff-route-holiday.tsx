@@ -53,8 +53,8 @@ export function StaffRouteHoliday({route,event,flights,day,lang,children}:{route
   {!event&&<>{route?<p className="staff-route-metric" data-country={route.country}><b>{routeText(route,lang,number)}</b> · {comparisonText(route,day,lang,number,true)} <span className="staff-route-rate"><ChangeRate value={route.percent} lang={lang}/></span></p>:<p>{text.routePending}</p>}</>}
   {event&&label?<div className="staff-holiday-event" data-country={event.country}>
    <h4>{/^[A-Z]{2}$/.test(event.country)&&<span aria-hidden="true" style={{display:'inline-block',verticalAlign:'-2px',marginRight:6}}><CountryFlag code={event.country} size={18}/></span>}{countryName(event.country,event.countryLabel,lang)} {label.name}</h4>
-   <EventCountryFlights country={event.country} label={event.countryLabel} context={context} lang={lang}/>
    <p><HolidayDates event={event}/>{scope&&<> · <span className="staff-holiday-scope">{scope}</span></>}</p>
+   <EventCountryFlights country={event.country} label={event.countryLabel} context={context} lang={lang}/>
   </div>:<p>{text.eventPending}</p>}
   <details className="staff-route-details">
    <summary>{text.details}</summary>

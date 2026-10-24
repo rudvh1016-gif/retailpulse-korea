@@ -19,7 +19,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: every represente
  const cards=html.split('<div class="focus-event-row focus-preparation-event"').slice(1);
  assert.ok(cards.length>=4);
  assert.match(html,/<div class="focus-selected-country-stack"><div class="focus-selected-country-changes"/);
- for(const card of cards){const eventCountry=card.match(/data-country="([A-Z]{2})"/)?.[1];assert.ok(eventCountry);assert.ok(card.includes(`<div class="event-country-flights" data-country="${eventCountry}"`));assert.match(card,/data-flight-day="2026-10-22"/);assert.match(card,/data-flight-scope="all"/);assert.ok(card.indexOf('event-country-flights')<card.indexOf('focus-event-dates'));assert.match(card,/<details class="focus-event-details">/);}
+ for(const card of cards){const eventCountry=card.match(/data-country="([A-Z]{2})"/)?.[1];assert.ok(eventCountry);assert.ok(card.includes(`<div class="event-country-flights" data-country="${eventCountry}"`));assert.match(card,/data-flight-day="2026-10-22"/);assert.match(card,/data-flight-scope="all"/);assert.ok(card.indexOf('focus-event-dates')<card.indexOf('event-country-flights'));if(/data-country="(?:VN|SG)"/.test(card)){assert.ok(card.indexOf('<details')<card.indexOf('event-country-flights'));assert.match(card,/focus-planning-flight-note/);}assert.match(card,/<details class="focus-event-details">/);}
  assert.match(html,/Thai fixture event/);assert.match(html,/Japan fixture event/);
  assert.doesNotMatch(html,/data-flight-day="2026-10-27"|data-flight-day="2026-11-05"/);
 });
