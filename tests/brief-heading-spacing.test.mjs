@@ -49,3 +49,21 @@ test('CI geometry checks cover the breakpoint, return topic, title gaps and righ
 });
 
 
+
+test('compact cards do not add bottom padding to the existing 26px topic boundary',()=>{
+ const css=postcss.parse(read('app/airport-focus-preview.css'));
+ const declarations=selector=>{
+  const result={};css.walkRules(rule=>{if(rule.selector===selector)for(const node of rule.nodes)if(node.type==='decl')result[node.prop]=node.value;});return result;
+ };
+ const card=declarations('.airport-focus-shell .focus-report :is(.focus-selected-country-changes,.focus-preparation-brief>div)');
+ const next=declarations('.airport-focus-shell .focus-report .focus-selected-country-changes + .focus-selected-country-changes');
+ // Include both thin rules: the last card's bottom edge and the next card's top edge.
+ const px=value=>parseFloat(value);
+ const gap=px(card['padding-bottom'])+px(card['border-bottom'])+px(next['margin-top'])+px(next['padding-top'])+1;
+ assert.ok(gap>=24&&gap<=28,`topic boundary is ${gap}px, including card padding and both rules`);
+ assert.equal(gap,26);
+ assert.equal(card['padding-top'],undefined,'the first topic must not add a top inset on top of its stack boundary');
+ assert.equal(card['padding-block'],undefined,'a padding-block shorthand must not reintroduce the bottom inset');
+ const titles=declarations('.airport-focus-shell .focus-report :is(.focus-selected-country-changes>h3,.focus-preparation-brief>div>h3)');
+ assert.equal(titles.margin,'0 0 10px','preserve the 9–14px heading/content range');
+});

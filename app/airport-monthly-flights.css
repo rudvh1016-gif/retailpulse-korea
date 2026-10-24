@@ -61,7 +61,7 @@
 
 
 /* A named comparison, not an unexplained table: white paper, type and thin rules. */
-.airport-month-flights .airport-month-zone-title {margin:8px 0 4px;font-size:24px;font-weight:var(--weight-strong);line-height:1.35;color:#222326;text-wrap:balance;}
+.airport-month-flights .airport-month-zone-title {margin:8px 0 4px;font-size:18px;font-weight:var(--weight-strong);line-height:1.35;color:#222326;text-wrap:balance;}
 .airport-month-flights > details > summary {font-size:18px;font-weight:var(--weight-strong);line-height:1.5;color:#222326;padding-block:8px;}
 .airport-month-flights > details[open] > summary {margin-bottom:8px;}
 .airport-month-flights > details > p {max-width:72ch;}
@@ -77,3 +77,20 @@
 @media(forced-colors:active) {
  .airport-month-flights .airport-month-zone-title {color:CanvasText;}
 }
+
+/* Coverage is a short period/count summary; original records remain one level inside. */
+.airport-month-flights .airport-month-coverage-summary{font-size:13px;line-height:1.6;margin:4px 0}
+.airport-month-flights .airport-month-source-details{border-top:1px solid #e5e5e5;margin-top:8px}
+.airport-month-flights .airport-month-source-details>summary{font-size:13px;font-weight:600;min-height:44px;padding:11px 0;box-sizing:border-box;cursor:pointer;touch-action:manipulation}
+.airport-month-flights .airport-month-source-details>summary:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.airport-month-flights .airport-month-source-details p{font-size:12px;line-height:1.6;overflow-wrap:anywhere;max-width:72ch}
+
+/* The four zone rows share aligned numeric columns and a quiet previous-period baseline. */
+.airport-month-flights [data-testid="airport-month-zones"] th{font-size:13px;line-height:1.5}
+.airport-month-flights [data-testid="airport-month-zones"] tbody th{font-weight:600;color:#111}
+.airport-month-flights [data-testid="airport-month-zones"] tbody td{font-variant-numeric:tabular-nums;line-height:1.5}
+.airport-month-flights [data-testid="airport-month-zones"] tbody td:nth-child(2){font-size:14px;font-weight:400;color:#555}
+.airport-month-flights [data-testid="airport-month-zones"] tbody td:nth-child(3){font-size:16px;font-weight:700;color:#111}
+.airport-month-flights [data-testid="airport-month-zones"] tbody td:last-child{font-size:16px;font-weight:600}
+.airport-month-flights .airport-month-source-summary{font-size:13px;line-height:1.6;margin:8px 0}
+.airport-month-flights .airport-month-source-summary a{display:inline-block;min-height:44px;align-content:center;text-underline-offset:3px}

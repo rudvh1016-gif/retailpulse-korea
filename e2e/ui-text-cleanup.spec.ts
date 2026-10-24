@@ -78,7 +78,23 @@ for(const width of [320,390,430,1280]) {
   expect(total).toBe(6);
   await expect(countries.locator('.airport-zone-country-grid h5').first()).toContainText('17%');
   await countryNote.locator('summary').click();
-  await expect(countryNote.locator('li')).toContainText('3편 · 100%');
+  const countryRow=countryNote.locator('li[data-country="JP"]');
+  await expect(countryNote.locator('li')).toHaveCount(1);
+  await expect(countryRow).toHaveAttribute('data-value','3');
+  await expect(countryRow).toHaveAttribute('data-share','100');
+  await expect(countryRow.locator(':scope > span').nth(1)).toHaveText('일본행');
+  await expect(countryRow.locator('strong')).toHaveText('3편');
+  await expect(countryRow.locator('small')).toHaveText('100%');
+  expect(await countryRow.textContent()).toMatch(/일본행\s+3편\s+100%/);
+  const alignment=await countryRow.evaluate(element=>{
+   const name=element.children[1].getBoundingClientRect();
+   const count=element.querySelector('strong')!.getBoundingClientRect();
+   const share=element.querySelector('small')!.getBoundingClientRect();
+   return {nameRight:name.right,countLeft:count.left,countRight:count.right,shareRight:share.right,countBottom:count.bottom,shareTop:share.top};
+  });
+  expect(alignment.nameRight).toBeLessThanOrEqual(alignment.countLeft+1);
+  expect(Math.abs(alignment.countRight-alignment.shareRight)).toBeLessThanOrEqual(1);
+  expect(alignment.shareTop).toBeGreaterThanOrEqual(alignment.countBottom);
   await countryNote.locator('summary').click();
   await countries.screenshot({path:`../ui-headings-evidence-20261006/country-headings-${width}.png`});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

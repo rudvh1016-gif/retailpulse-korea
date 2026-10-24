@@ -4,6 +4,7 @@ import {useState} from 'react';
 import {usePreparedMonth} from './use-prepared-month';
 import type {Lang,Terminal} from './retailpulse-data';
 import {ChangeRate} from './change-rate';
+import {AirportMonthSourceSummary} from './airport-month-source-summary';
 import {AirportDestinationDailyChanges} from './airport-destination-daily-changes';
 import {MONTH_SCOPES,monthlyCategoryKeys,monthlyMetric,previousFlightMonth,type AirportFlightMonth,type AirportMonthlyRollups,type MonthCounts,type MonthScope} from '../lib/airport-monthly-flights';
 import {airportMonthComparisonBasis,airportMonthLabel} from '../lib/airport-month-labels';
@@ -71,10 +72,14 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
    <details><summary>{t(lang,'포함 날짜·제외 자료·출처','Included dates, exclusions and sources','计入日期、排除资料及来源','含めた日・除外資料・出典')}</summary>
    <p>{t(lang,'전월 평균이 0이거나 비교 자료가 없으면 변화율은 — 입니다.','Change is — when the previous mean is zero or data is unavailable.','上月均值为0或无比较资料时，变化率为—。','前月平均が0または比較資料がない場合、変化率は—です。')}</p>
     {period(previous,previousFlightMonth(month))}{period(current,month)}
-    {[previous,current].filter((value):value is AirportFlightMonth=>!!value).map(data=><div key={data.month}><p><strong>{data.month}</strong> · {t(lang,'포함','Included','计入','含めた日')}: {data.includedDays.join(', ')||'—'}</p><p>{t(lang,'제외 날짜','Excluded dates','排除日期','除外日')}: {data.excludedDays.map(item=>`${item.day} (${item.reason})`).join(', ')||'—'} · {t(lang,'취소 제외','Cancellations excluded','取消排除','欠航除外')}: {data.cancelled}</p><p>T1 {data.scopes.T1.total} · {t(lang,'탑승동','Concourse','卫星厅','搭乗棟')} {data.scopes.CONCOURSE.total} · T2 {data.scopes.T2.total} · {t(lang,'터미널 미정','Unconfirmed terminal','航站楼未确认','ターミナル未確認')} {data.scopes.UNKNOWN.total}</p></div>)}
+    <AirportMonthSourceSummary lang={lang} calculatedAt={response?.calculatedAt}/>
+    {[previous,current].filter((value):value is AirportFlightMonth=>!!value).map(data=><div key={data.month}><p className="airport-month-coverage-summary"><strong>{data.month}</strong> · {t(lang,'누락·제외','Missing / excluded','缺失／排除','欠測・除外')} {data.excludedDays.length}{t(lang,'일',' days','天','日')} · {t(lang,'취소 제외','Cancellations excluded','取消排除','欠航除外')} {data.cancelled}</p></div>)}
+     <details className="airport-month-source-details"><summary>{t(lang,'원 날짜 목록·출처 보기','Original dates and sources','原始日期及来源','元の日付一覧・出典')}</summary>
+     {[previous,current].filter((value):value is AirportFlightMonth=>!!value).map(data=><div key={data.month}><p><strong>{data.month}</strong> · {t(lang,'포함','Included','计入','含めた日')}: {data.includedDays.join(', ')||'—'}</p><p>{t(lang,'제외 날짜','Excluded dates','排除日期','除外日')}: {data.excludedDays.map(item=>`${item.day} (${item.reason})`).join(', ')||'—'} · {t(lang,'취소 제외','Cancellations excluded','取消排除','欠航除外')}: {data.cancelled}</p><p>T1 {data.scopes.T1.total} · {t(lang,'탑승동','Concourse','卫星厅','搭乗棟')} {data.scopes.CONCOURSE.total} · T2 {data.scopes.T2.total} · {t(lang,'터미널 미정','Unconfirmed terminal','航站楼未确认','ターミナル未確認')} {data.scopes.UNKNOWN.total}</p></div>)}
     <p>{t(lang,'인천공항 출국 항공편 저장 기록을 같은 현재 게이트 표로 재분류했습니다. 편수는 사람 수·대기시간이 아니며 완전한 실제 운항 실적을 뜻하지 않습니다. 오늘과 원본·완료 근거가 없는 날짜는 제외했습니다. 목적지 국가와 항공사 등록 국가는 서로 다른 기준이며 승객 국적이 아닙니다.','Retained Incheon departure records are reclassified with the same current gate table. Flight counts are neither people nor waits, and do not certify complete actual operations. Today and dates without raw records or scan completion evidence are excluded. Destination countries and airline registration countries are distinct; neither is passenger nationality.','仁川出境航班保存记录按同一当前登机口表重新分类。班次不是人数或等候时间，也不保证完整实际运营。排除今天及无原始记录或完成依据的日期。目的地与航空公司注册国不同，均非乘客国籍。','仁川の保存出発便記録を同じ現在のゲート表で再分類しました。便数は人数や待ち時間ではなく、完全な実運航実績の証明でもありません。当日と原本・完了根拠のない日を除外します。目的地と航空会社登録国は別基準で、旅客の国籍ではありません。')}</p>
     <p>{response?.data?.sidesVersion} · {response?.data?.destinationsVersion} · {t(lang,'집계 기준일','Prepared cutoff','汇总基准日','集計基準日')}: {response?.data?.asOf} KST · {response?.calculatedAt}</p>
     <a href={`/${lang}/more#collection-status`}>{t(lang,'출처·수집 상태','Sources and collection status','来源与采集状态','出典・収集状況')}</a>
+    </details>
    </details>
   </>}
  </section>;

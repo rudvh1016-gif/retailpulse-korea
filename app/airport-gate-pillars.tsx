@@ -81,7 +81,7 @@ export default function AirportGatePillars({ lang, terminal, date }: { lang: Lan
           })}</div></> : <p>{mapCopy.empty[lang]}</p>}
       </>}
       {unverified.length > 0 && <details className={`prep-evidence ${compactStyles.disclosure}`} data-testid="gate-unverified-details" onToggle={event => setUnverifiedOpen(event.currentTarget.open)}>
-        <summary>※ {mapCopy.side.UNVERIFIED[lang]} <span data-disclosure-meta>{unverified.length}{unit}</span><span className={compactStyles.toggle} aria-hidden="true"/></summary>
+        <summary>※ {mapCopy.side.UNVERIFIED[lang]} <strong className={styles.unverifiedCount}>{unverified.length}{unit}</strong><span className={compactStyles.toggle} aria-hidden="true"/></summary>
         {unverifiedOpen && <ul>{unverified.map(flight => <li key={`${flight.day}:${flight.id}`}>{flight.flightNumber} · {flight.building} · {flight.gate ?? copy.unknown[lang]} · {flight.scheduledAt.slice(11,16)} KST</li>)}</ul>}
       </details>}
       <details className={styles.list} open={open} onToggle={event => setOpen(event.currentTarget.open)} data-testid="gate-all-list"><summary>{copy.all[lang]} <span data-disclosure-meta>({gates.length})</span></summary>

@@ -232,3 +232,23 @@
 @media(min-width:1000px){
  .airport-focus-shell .focus-report .focus-core-metric .focus-metric-total{font-size:28px}
 }
+
+/* A single compact reading rhythm for today's changes and future planning. */
+.airport-focus-shell .focus-report :is(.focus-selected-country-changes,.focus-preparation-brief>div){min-width:0;background:#fff;padding-bottom:0;border-bottom:1px solid #e5e5e5}
+.airport-focus-shell .focus-report :is(.focus-selected-country-changes>h3,.focus-preparation-brief>div>h3){color:#111;font-size:18px;font-weight:700;line-height:1.4;margin:0 0 10px}
+.airport-focus-shell .focus-report :is(.focus-selected-country-changes,.focus-preparation-brief) .heading-marker{display:none}
+.airport-focus-shell .focus-report .focus-preparation-event{padding-block:8px;min-width:0}
+.airport-focus-shell .focus-report .focus-preparation-event+.focus-preparation-event{margin-top:0;border-top:1px solid #e5e5e5}
+.airport-focus-shell .focus-report .focus-preparation-event h4{font-size:14px;font-weight:700;line-height:1.5;color:#111;margin:0 0 4px;overflow-wrap:anywhere}
+.airport-focus-shell .focus-report .focus-event-dates{font-size:13px;font-weight:400;color:#555;margin-block:4px 8px}
+.airport-focus-shell .focus-report .event-country-flights .event-flight-context{font-size:12px;color:#555;margin-top:8px}
+.airport-focus-shell .focus-report .event-country-flights .staff-route-metric{font-size:14px;line-height:1.5}
+.airport-focus-shell .focus-report .event-country-flights .staff-route-metric b{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.airport-focus-shell .focus-report .event-country-flights .event-flight-change{font-size:16px;line-height:1.5}
+.airport-focus-shell .focus-report .event-flight-baseline{display:block;font-size:12px;color:#555}
+.airport-focus-shell .focus-report .focus-country-month-trend{display:block;font-size:13px;line-height:1.5;margin-top:6px}
+.airport-focus-shell .focus-report .focus-event-details :is(p,small){font-size:12px;line-height:1.6}
+.airport-focus-shell .focus-report .focus-event-details>summary{min-height:44px;padding:11px 0;box-sizing:border-box;touch-action:manipulation}
+@media(min-width:1000px){.airport-focus-shell .focus-report .focus-preparation-brief .event-country-flights .staff-route-metric b{font-size:26px}}
+@media(forced-colors:active){.airport-focus-shell .focus-report :is(.focus-selected-country-changes>h3,.focus-preparation-brief>div>h3,.focus-preparation-event h4){color:CanvasText}}
+.airport-focus-shell .focus-report .heading-marker{display:none}
