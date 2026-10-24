@@ -10,12 +10,17 @@ import {eventFlights} from './helpers/event-flight-fixture';
 import {departureMap} from '../lib/airport-departure-map';
 register(new URL('./helpers/static-css-loader.mjs',import.meta.url));
 const {AirportZoneCountries}=await import('../app/airport-zone-countries');
-test('monthly source summary uses KST, preserves the original timestamp and has a short local source link',()=>{
+test('monthly source summary names preparation time in every locale and preserves KST/raw timestamp evidence',()=>{
  for(const lang of ['ko','en','zh','ja'] as const){
+  const label={ko:'집계 시각',en:'Prepared at',zh:'汇总时间',ja:'集計日時'}[lang];
+  const missing={ko:'집계 시각 없음',en:'Preparation time unavailable',zh:'暂无汇总时间',ja:'集計日時なし'}[lang];
   const html=renderToStaticMarkup(h(AirportMonthSourceSummary,{lang,calculatedAt:'2026-10-23T20:05:00Z'}));
+  assert.ok(html.includes(`<span>${label} </span>`));
+  assert.doesNotMatch(html,/확인 시각|Checked|核实时间|確認日時/);
   assert.match(html,/dateTime="2026-10-23T20:05:00Z"/);assert.match(html,/2026/);assert.match(html,/05:05 KST/);assert.ok(html.includes(`/${lang}/more#collection-status`));
   const visible=html.replace(/<[^>]*>/g,'');assert.doesNotMatch(visible,/T20:05:00Z/);
-  assert.doesNotMatch(renderToStaticMarkup(h(AirportMonthSourceSummary,{lang,calculatedAt:'invalid'})),/<time|Invalid Date/);
+  const invalid=renderToStaticMarkup(h(AirportMonthSourceSummary,{lang,calculatedAt:'invalid'}));
+  assert.ok(invalid.includes(missing));assert.doesNotMatch(invalid,/<time|Invalid Date/);
  }
  const source=readFileSync('app/airport-monthly-flights.tsx','utf8');
  assert.ok(source.indexOf('<AirportMonthSourceSummary')<source.indexOf('<details className="airport-month-source-details">'));
