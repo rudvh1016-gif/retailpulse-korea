@@ -234,8 +234,8 @@
 }
 
 /* A single compact reading rhythm for today's changes and future planning. */
-.airport-focus-shell .focus-report :is(.focus-selected-country-changes,.focus-preparation-brief>div){min-width:0;background:#fff;padding-block:12px;border-bottom:1px solid #e5e5e5}
-.airport-focus-shell .focus-report :is(.focus-selected-country-changes>h3,.focus-preparation-brief>div>h3){color:#111;font-size:18px;font-weight:700;line-height:1.4;margin:0 0 8px}
+.airport-focus-shell .focus-report :is(.focus-selected-country-changes,.focus-preparation-brief>div){min-width:0;background:#fff;padding-bottom:0;border-bottom:1px solid #e5e5e5}
+.airport-focus-shell .focus-report :is(.focus-selected-country-changes>h3,.focus-preparation-brief>div>h3){color:#111;font-size:18px;font-weight:700;line-height:1.4;margin:0 0 10px}
 .airport-focus-shell .focus-report :is(.focus-selected-country-changes,.focus-preparation-brief) .heading-marker{display:none}
 .airport-focus-shell .focus-report .focus-preparation-event{padding-block:8px;min-width:0}
 .airport-focus-shell .focus-report .focus-preparation-event+.focus-preparation-event{margin-top:0;border-top:1px solid #e5e5e5}
