@@ -267,3 +267,10 @@
 
 /* A single preparation topic must not retain the former second topic's reserved note height. */
 .airport-focus-shell .focus-report .focus-preparation-brief>div:last-of-type>small{min-height:0}
+
+/* Keep native calendar evidence touch/focus targets stationary while toggling. */
+html:has(.focus-calendar-context details[open],.focus-calendar-context details:focus-within){scroll-behavior:auto}
+@media(max-width:820px){
+ html:has(.focus-calendar-context){scroll-padding-bottom:calc(90px + var(--safe-area-bottom))}
+ .focus-calendar-context summary{scroll-margin-block:16px}
+}
