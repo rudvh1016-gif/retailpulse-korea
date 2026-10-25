@@ -5,10 +5,10 @@ import type {Lang} from './retailpulse-data';
 import type {FocusTrend} from './airport-focus-data';
 
 const copy={
- ko:{outside:'검토된 방학 자료는 비교 월 밖입니다.',missing:'검증된 방학 자료가 없습니다. 방학이 없다는 뜻은 아닙니다.',varies:'지역·학교별 상이'},
- en:{outside:'Reviewed school breaks fall outside the comparison months.',missing:'No reviewed school-break data is available. This does not mean there are no breaks.',varies:'Dates vary by region and school'},
- zh:{outside:'已核实的学校假期不在比较月份内。',missing:'暂无已核实的学校假期资料，并不表示没有假期。',varies:'各地区和学校日期不同'},
- ja:{outside:'確認済みの学校休暇は比較月の対象外です。',missing:'確認済みの学校休暇資料がありません。休暇がないことを意味しません。',varies:'地域・学校によって異なります'},
+ ko:{outside:'방학 자료: 비교 기간 밖',missing:'방학 자료: 미확인',outsideNote:'비교 월과 겹치는 검토 일정만 표시합니다.',missingNote:'방학이 없다는 뜻은 아닙니다.',varies:'지역·학교별 상이'},
+ en:{outside:'School-break data: outside comparison period',missing:'School-break data: unverified',outsideNote:'Only reviewed dates overlapping the comparison months are shown.',missingNote:'This does not mean there are no breaks.',varies:'Dates vary by region and school'},
+ zh:{outside:'学校假期资料：比较期间以外',missing:'学校假期资料：未确认',outsideNote:'仅显示与比较月份重叠的已核实日程。',missingNote:'并不表示没有假期。',varies:'各地区和学校日期不同'},
+ ja:{outside:'学校休暇資料：比較期間外',missing:'学校休暇資料：未確認',outsideNote:'比較月と重なる確認済みの日程のみ表示します。',missingNote:'休暇がないことを意味しません。',varies:'地域・学校によって異なります'},
 };
 export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:FocusTrend;events:readonly CalendarEvent[];asOf:string;lang?:Lang}){
  const last=row.points.at(-1);
@@ -30,7 +30,6 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
  </>;
  return <div className="focus-calendar-context">
   <p className="focus-source">일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준</p>
-  {availability!=='MATCHED'&&<p className="focus-source" data-school-break-status={availability}>{text[availability==='OUTSIDE_PERIOD'?'outside':'missing']}</p>}
   {(['route','origin'] as const).map(role=><div key={role} data-calendar-role={role}>
    {groups.filter(group=>group.role===role).map(group=>{
     const item=group.items[0],name=eventName(item);
@@ -45,6 +44,7 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
    })}
   </div>)}
   <details className="focus-source" data-testid="monthly-calendar-reference"><summary style={{minHeight:44,boxSizing:'border-box',padding:'12px 0',cursor:'pointer'}}>{{ko:'일정 근거',en:'Comparison-period calendar · official sources',zh:'比较期间日程 · 官方依据',ja:'比較期間の日程・公式根拠'}[lang]}</summary>
+   {availability!=='MATCHED'&&<><p data-school-break-status={availability}>{text[availability==='OUTSIDE_PERIOD'?'outside':'missing']}</p><p data-school-break-limit>{text[availability==='OUTSIDE_PERIOD'?'outsideNote':'missingNote']}</p></>}
    <p>한국 일정은 한국인 여객 통계가 아닙니다. 방학은 지역·학교별로 다릅니다.</p>
    <ul>{groups.map(group=>{const item=group.items[0];return <li key={group.key}>
     {calendarCountryName(item.country)} · <b>{eventName(item)}</b>{' '}

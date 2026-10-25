@@ -85,21 +85,32 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test.descr
   return route.fulfill({json:{status:'READY',month,previousMonth,current:{ROUTE_COUNTRY_PASSENGERS:stats(month)},previous:{ROUTE_COUNTRY_PASSENGERS:stats(previousMonth)}}});
  });
  const context=(country:string)=>page.locator(`.focus-trend-context[data-country="${country}"] .focus-calendar-context`);
+ const checkFoldedStatus=async(country:string,status:'NO_REVIEWED_DATA'|'OUTSIDE_PERIOD')=>{
+  const area=context(country),evidence=area.getByTestId('monthly-calendar-reference'),note=evidence.locator('[data-school-break-status]');
+  const expected=status==='NO_REVIEWED_DATA'?({ko:'방학 자료: 미확인',en:'School-break data: unverified',zh:'学校假期资料：未确认',ja:'学校休暇資料：未確認'} as Record<string,string>)[lang]:({ko:'방학 자료: 비교 기간 밖',en:'School-break data: outside comparison period',zh:'学校假期资料：比较期间以外',ja:'学校休暇資料：比較期間外'} as Record<string,string>)[lang];
+  await expect(area.locator(':scope > [data-school-break-status]')).toHaveCount(0);
+  await expect(evidence).not.toHaveAttribute('open','');await expect(note).toBeHidden();
+  await evidence.locator('summary').focus();await page.keyboard.press('Enter');
+  await expect(note).toHaveAttribute('data-school-break-status',status);await expect(note).toHaveText(expected);await expect(note).toBeVisible();
+  await expect(evidence.locator('[data-school-break-limit]')).toBeVisible();
+  await page.keyboard.press('Space');await expect(evidence).not.toHaveAttribute('open','');await expect(note).toBeHidden();
+ };
+
  await page.goto(`/${lang}/airport-countries`,{waitUntil:'domcontentloaded'});
- const cn=context('CN'),jp=context('JP'),vn=context('VN');await cn.scrollIntoViewIfNeeded();
+ const cn=context('CN'),jp=context('JP');await cn.scrollIntoViewIfNeeded();
  await expect(cn.locator('[data-vacation-group="CN"]')).toHaveCount(1);
  const members=cn.locator('.focus-vacation-period');await expect(members).toHaveCount(2);
  await expect(members.nth(0)).toContainText('2026-07-01–2026-08-31');await expect(members.nth(0)).toContainText('상하이 초·중등학교');
  await expect(members.nth(1)).toContainText('2026-07-08–2026-08-31');await expect(members.nth(1)).toContainText('베이징 의무교육 학교');
  await expect(jp.locator('[data-calendar-role="route"]')).toContainText('2026-07-21–2026-08-31');
  await expect(jp.locator('[data-calendar-role="origin"]')).toContainText('2026-07-28–2026-08-19');
- await expect(vn.locator('[data-school-break-status="NO_REVIEWED_DATA"]')).toBeVisible();
+ await checkFoldedStatus('VN','NO_REVIEWED_DATA');
  const sources=cn.getByTestId('monthly-calendar-reference');await sources.locator('summary').focus();await page.keyboard.press('Enter');
  for(const item of calendar.events.filter(item=>item.country==='CN'&&item.kind==='school_break'))await expect(sources.locator(`a[href="${item.sourceURL}"]`)).toHaveCount(1);
  await page.keyboard.press('Space');await expect(sources).not.toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  selected='2026-10';await page.reload();await context('JP').scrollIntoViewIfNeeded();
- await expect(context('JP').locator('[data-school-break-status="OUTSIDE_PERIOD"]')).toBeVisible();
+ await checkFoldedStatus('JP','OUTSIDE_PERIOD');
  await expect(context('JP')).not.toContainText('2026-07-21');await expect(context('CN').locator('[data-vacation-group="CN"]')).toHaveCount(0);
  selected='2026-04';await page.reload();const us=context('US');await us.scrollIntoViewIfNeeded();
  await expect(us.locator('[data-calendar-role="route"]')).toContainText('2026-04-02–2026-04-10');

@@ -303,7 +303,14 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: coverage states 
  for(const event of events.filter(item=>item.country==='CN'&&item.kind==='school_break')){assert.ok(cn.includes(event.sourceURL));assert.ok(cn.includes(event.start));assert.ok(cn.includes(event.region!));}
  const vn=html({lang,row:{...row,code:'VN'}});assert.match(vn,/data-school-break-status="NO_REVIEWED_DATA"/);
  const text=vn.match(/data-school-break-status="NO_REVIEWED_DATA">([^<]+)/)?.[1]??'';
- assert.ok(text.includes({ko:'방학이 없다는 뜻은 아닙니다',en:'does not mean there are no breaks',zh:'并不表示没有假期',ja:'休暇がないことを意味しません'}[lang]));
+ assert.equal(text,{ko:'방학 자료: 미확인',en:'School-break data: unverified',zh:'学校假期资料：未确认',ja:'学校休暇資料：未確認'}[lang]);
+ const [visible,evidence]=vn.split('<details');
+ assert.doesNotMatch(visible,/data-school-break-status|data-school-break-limit/);
+ assert.match(evidence,/^ class="focus-source" data-testid="monthly-calendar-reference">/);
+ assert.ok(evidence.includes({ko:'방학이 없다는 뜻은 아닙니다',en:'does not mean there are no breaks',zh:'并不表示没有假期',ja:'休暇がないことを意味しません'}[lang]));
+ const outside=html({lang,row:{...row,points:[{month:'2026-09',departures:100},{month:'2026-10',departures:110}]}});
+ assert.doesNotMatch(outside.split('<details')[0],/data-school-break-status|data-school-break-limit/);
+ assert.ok(outside.includes({ko:'방학 자료: 비교 기간 밖',en:'School-break data: outside comparison period',zh:'学校假期资料：比较期间以外',ja:'学校休暇資料：比較期間外'}[lang]));
 });
 
 test('Korean reviewed winter examples and public holidays remain independent of destination grouping',()=>{
@@ -313,4 +320,12 @@ test('Korean reviewed winter examples and public holidays remain independent of 
  const outside={...q,selectedMonth:'2026-10',actualDataMonths:['2026-09','2026-10']};
  assert.equal(trendVacationAvailability(events,outside,countryTrendCalendar(events,outside).details),'OUTSIDE_PERIOD');
  assert.ok(countryTrendCalendar(events,outside).details.some(item=>item.kind==='public_holiday'&&item.country==='KR'));
+});
+
+test('empty matched periods keep the calendar context absent instead of creating coverage-only boxes',()=>{
+ const noPeriod={...row,points:[{month:'2026-05',departures:100},{month:'2026-06',departures:110}]};
+ for(const country of ['JP','CN','US','VN','FR']){
+  const outsideOnly=events.filter(item=>item.country===country&&item.kind==='school_break');
+  for(const source of [[],outsideOnly])assert.equal(html({row:{...noPeriod,code:country},events:source}),'',`${country}: no matched event means no coverage-only UI`);
+ }
 });
