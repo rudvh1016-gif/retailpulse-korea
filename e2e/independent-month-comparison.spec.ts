@@ -24,7 +24,9 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,1440])test(`
  await expect(block.locator('thead th').nth(1)).toContainText('31');await expect(block.locator('thead th').nth(2)).toContainText('30');
  await selected.selectOption('2026-03');await expect(first.locator('td').last()).toContainText('0%');
  await selected.selectOption('2026-09');await expect(first.locator('.route-month-total').last()).toHaveText('3,300');
- missing=true;await page.clock.fastForward(300001);await expect(first.locator('.route-month-total').last()).toHaveText('?');
+ await page.bringToFront();expect(await page.evaluate(()=>document.visibilityState)).toBe('visible');
+ missing=true;const refreshed=page.waitForResponse(response=>{const url=new URL(response.url());return url.pathname==='/api/live/airport-passenger-comparison'&&url.searchParams.get('selected')==='2026-09'&&url.searchParams.get('baseline')==='2026-03';});
+ await page.clock.fastForward(300001);const refreshedResponse=await refreshed;await refreshedResponse.finished();expect((await refreshedResponse.json()).selected).toBeNull();await expect(first.locator('.route-month-total').last()).toHaveText('?');
  await expect(selected).toHaveValue('2026-09');await expect(selected.locator('option[value="2026-09"]')).toBeDisabled();
  expect(requests).toContain('2026-09|2026-03');
  const basis=block.locator('.concise-explainer');await expect(basis).not.toHaveAttribute('open','');await basis.locator('summary').click();await expect(basis).toHaveAttribute('open','');await expect(basis).toContainText('2026-03');await basis.locator('summary').click();await expect(basis).not.toHaveAttribute('open','');
@@ -48,7 +50,9 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,1440])test(`
  await expect(selected).toBeEnabled();await expect(selected).toHaveValue('2027-01');await expect(selected.locator('option:not(:disabled)')).toHaveText(['2026-03','2026-09','2026-12']);
  await baseline.selectOption('2026-03');await expect(baseline).toBeEnabled();await selected.selectOption('2026-09');
  const values=block.locator('tbody tr').first().locator('.route-month-total');await expect(values).toHaveText(['3,101','3,300']);
- failed=true;await page.clock.fastForward(300001);await expect(block.locator('[role="status"]').first()).toBeVisible();
+ await page.bringToFront();expect(await page.evaluate(()=>document.visibilityState)).toBe('visible');
+ failed=true;const refreshed=page.waitForResponse(response=>{const url=new URL(response.url());return url.pathname==='/api/live/airport-passenger-comparison'&&url.searchParams.get('selected')==='2026-09'&&url.searchParams.get('baseline')==='2026-03';});
+ await page.clock.fastForward(300001);const refreshedResponse=await refreshed;await refreshedResponse.finished();expect((await refreshedResponse.json()).status).toBe('UNAVAILABLE');await expect(block.locator('[role="status"]').filter({hasText:({ko:'갱신 실패',en:'Refresh failed',zh:'刷新失败',ja:'更新失敗'} as Record<string,string>)[lang]})).toBeVisible();
  await expect(values).toHaveText(['3,101','3,300']);await expect(selected).toHaveValue('2026-09');await expect(baseline).toHaveValue('2026-03');
  await expect(block.locator('thead th').nth(1)).toContainText('2026-03');await expect(block.locator('thead th').nth(2)).toContainText('2026-09');
 });

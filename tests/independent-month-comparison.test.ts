@@ -36,3 +36,12 @@ test('rounding people/day never changes fractional comparison arithmetic',()=>{
  assert.equal(result.baselineMean,3101/31);assert.equal(result.percent,(110-3101/31)/(3101/31)*100);
  assert.equal(new Intl.NumberFormat('en',{maximumFractionDigits:0}).format(result.baselineMean!), '100');
 });
+
+test('response latency cannot postpone the first five-minute polling refresh',async()=>{
+ let now=0,calls=0;let finish!:(value:string)=>void;
+ const cache=createStoredReadCache(()=>{calls++;return new Promise<string>(resolve=>{finish=resolve;});},()=>now,300_000);
+ const first=cache.read('09|03');now=250;finish('first');await first;
+ now=299_999;assert.equal((await cache.read('09|03')).value,'first');assert.equal(calls,1);
+ now=300_000;const boundary=cache.read('09|03');assert.equal(calls,2,'first polling tick fetches even though the initial response completed later');
+ now=300_500;finish('updated');assert.equal((await boundary).value,'updated');
+});
