@@ -53,8 +53,8 @@ export async function readAirportMonthlyStats(db: Pick<D1Database, "prepare">, m
   const current:Partial<Record<AirportStatsOperationId,AirportStatsMonth>>={},previous:Partial<Record<AirportStatsOperationId,AirportStatsMonth>>={};
   for(const rows of results){
     const latest=rows[0];if(!latest)continue;
-    const value=decodeAirportStatsMonth(latest);if(value)current[value.operationId]=value;
-    const prior=rows.find(row=>row.month===previousMonthOf(latest.month)),before=prior&&decodeAirportStatsMonth(prior);if(before)previous[before.operationId]=before;
+    const value=decodeAirportStatsMonth(latest);if(!value)throw Error('AIRPORT_MONTHLY_STATS_PAYLOAD_INVALID');current[value.operationId]=value;
+    const prior=rows.find(row=>row.month===previousMonthOf(latest.month)),before=prior&&decodeAirportStatsMonth(prior);if(prior&&!before)throw Error('AIRPORT_MONTHLY_STATS_PAYLOAD_INVALID');if(before)previous[before.operationId]=before;
   }
   const primary=current.ROUTE_COUNTRY_PASSENGERS??current.TIME_BAND_PASSENGERS;
   const prior=primary&&previous[primary.operationId];
@@ -74,7 +74,7 @@ export async function readAirportPassengerComparison(db:Pick<D1Database,'prepare
  const [result,available]=await Promise.all([
   db.prepare(`SELECT operation_id AS operationId,month,payload,retrieved_at AS retrievedAt FROM airport_monthly_stats
     WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month IN (?,?) ORDER BY month LIMIT 2`).bind(selectedMonth,baselineMonth).all<StoredAirportMonth>(),
-  db.prepare(`SELECT month FROM airport_monthly_stats WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month>=? AND month<=? ORDER BY month LIMIT 12`).bind(selectedMonth.slice(0,4)+'-01',selectedMonth.slice(0,4)+'-12').all<{month:string}>()
+  db.prepare(`SELECT month FROM airport_monthly_stats WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month>=? AND month<=? ORDER BY month LIMIT 12`).bind('2026-01','2026-12').all<{month:string}>()
  ]);
  if(result.success===false||available.success===false)throw Error('AIRPORT_MONTHLY_STATS_READ_FAILED');
  const exact=(month:string)=>{const row=result.results?.find(row=>row.month===month);if(!row)return null;const value=decodeAirportStatsMonth(row);if(!value)throw Error('AIRPORT_MONTHLY_STATS_PAYLOAD_INVALID');return value;};

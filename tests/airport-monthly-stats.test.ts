@@ -200,3 +200,27 @@ test('known partial provider response preserves last-good; absent totalCount sta
  const result=await collectAirportMonthlyStats(env,NOW,{fetchImpl:provider(()=>({status:200,body:header('00','NORMAL SERVICE.',{items:{item:countries(2)},totalCount:999,numOfRows:10,pageNo:1})})).fetchImpl});
  assert.equal(result.status,'ERROR');assert.deepEqual(sql.prepare("SELECT payload FROM airport_monthly_stats WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month='2026-09'").get(),before);
 });
+
+test('corrupt latest or predecessor fails the whole read and preserves the same-key last-good',async()=>{
+ const {sql,db}=database();const insert=sql.prepare('INSERT INTO airport_monthly_stats (operation_id,month,payload,source_hash,retrieved_at) VALUES (?,?,?,?,?)');
+ const payload=JSON.stringify({rows:[{label:'Japan',region:null,arrivals:null,departures:3100,total:null,aggregate:false,startHour:null,endHour:null}]});
+ for(const operation of ['ROUTE_COUNTRY_PASSENGERS','TIME_BAND_PASSENGERS'])for(const month of ['2026-08','2026-09'])insert.run(operation,month,payload,month,'2026-10-25T00:00:00Z');
+ const {createStoredReadCache}=await import('../lib/stored-read-cache');let now=0;
+ const cache=createStoredReadCache(()=>readAirportMonthlyStats(db,'2026-10'),()=>now,300);
+ const good=await cache.read('2026-10');assert.equal(good.failed,false);
+ sql.prepare("UPDATE airport_monthly_stats SET payload='broken' WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month='2026-09'").run();
+ await assert.rejects(readAirportMonthlyStats(db,'2026-10'),/PAYLOAD_INVALID/);now=301;
+ const stale=await cache.read('2026-10');assert.equal(stale.failed,true);assert.deepEqual(stale.value,good.value);
+ sql.prepare("UPDATE airport_monthly_stats SET payload=? WHERE month='2026-09'").run(payload);
+ sql.prepare("UPDATE airport_monthly_stats SET payload='broken' WHERE operation_id='TIME_BAND_PASSENGERS' AND month='2026-08'").run();
+ await assert.rejects(readAirportMonthlyStats(db,'2026-10'),/PAYLOAD_INVALID/);
+});
+test('2026 stored catalog survives a 2027 latest selection without mixing pair payloads',async()=>{
+ const {sql,db}=database();const insert=sql.prepare('INSERT INTO airport_monthly_stats (operation_id,month,payload,source_hash,retrieved_at) VALUES (?,?,?,?,?)');
+ const payload=JSON.stringify({rows:[{label:'Japan',region:null,arrivals:null,departures:1,total:null,aggregate:false,startHour:null,endHour:null}]});
+ for(const month of ['2026-03','2026-09','2026-12','2027-01'])insert.run('ROUTE_COUNTRY_PASSENGERS',month,payload,month,'2027-02-01T00:00:00Z');
+ const {readAirportPassengerComparison}=await import('../lib/airport-monthly-stats-read');
+ const result=await readAirportPassengerComparison(db,'2027-01','2026-12');
+ assert.deepEqual(result.availableMonths,['2026-03','2026-09','2026-12']);assert.equal(result.selected?.month,'2027-01');assert.equal(result.baseline?.month,'2026-12');
+ const chosen=await readAirportPassengerComparison(db,'2026-09','2026-03');assert.equal(chosen.selected?.month,'2026-09');assert.equal(chosen.baseline?.month,'2026-03');
+});

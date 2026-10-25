@@ -9,7 +9,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`exac
  let missing=false;const requests:string[]=[];
  await page.route('**/api/live/airport-passenger-comparison*',route=>{
   const q=new URL(route.request().url()).searchParams,selectedMonth=q.get('selected')!,baselineMonth=q.get('baseline')!;requests.push(selectedMonth+'|'+baselineMonth);
-  const get=(month:string)=>missing&&month==='2026-09'?null:data(month,month==='2026-09'?3300:3100);
+  const get=(month:string)=>missing&&month==='2026-09'?null:data(month,month==='2026-09'?3300:3101);
   return route.fulfill({json:{status:missing?'PARTIAL':'READY',selectedMonth,baselineMonth,selected:get(selectedMonth),baseline:get(baselineMonth),availableMonths:missing?['2026-03','2026-08']:['2026-03','2026-08','2026-09']}});
  });
  await page.clock.install();await page.goto(`/${lang}/airport-countries?date=2026-10-10`);
@@ -17,7 +17,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`exac
  const baseline=block.locator('[data-month-selection="baseline"]'),selected=block.locator('[data-month-selection="selected"]');
  await expect(baseline).toBeEnabled();await baseline.focus();await expect(baseline).toBeFocused();await expect(baseline).toHaveCSS('min-height','44px');await expect(selected.locator('option:not(:disabled)')).toHaveText(['2026-03','2026-08','2026-09']);
  await baseline.selectOption('2026-03');await expect(baseline).toHaveValue('2026-03');await expect(selected).toHaveValue('2026-09');
- const first=block.locator('tbody tr').first();await expect(first.locator('.route-month-total')).toHaveText(['3,100','3,300']);await expect(first.locator('td').last()).toContainText('10%');
+ const first=block.locator('tbody tr').first();await expect(first.locator('.route-month-total')).toHaveText(['3,101','3,300']);await expect(first.locator('td').last()).toContainText('10%');await expect(first.locator('td .route-month-mean')).toHaveText([/100$/,/110$/]);
  await expect(block.locator('thead th').nth(1)).toContainText('31');await expect(block.locator('thead th').nth(2)).toContainText('30');
  await selected.selectOption('2026-03');await expect(first.locator('td').last()).toContainText('0%');
  await selected.selectOption('2026-09');await expect(first.locator('.route-month-total').last()).toHaveText('3,300');
@@ -34,4 +34,18 @@ for(const [lang,empty] of [['ko','저장된 2026 자료 없음'],['en','No store
  await page.goto(`/${lang}/airport-countries`);const block=page.getByTestId('airport-route-passengers');await block.scrollIntoViewIfNeeded();
  for(const control of await block.locator('select').all()){await expect(control).toBeDisabled();await expect(control).toHaveText(empty);}
  await expect(block.locator('select')).toHaveCount(2);await expect(block.locator('table')).toHaveCount(0);
+});
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`2027 rollover retains 2026 catalog and pair last-good ${lang} ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.clock.install();let failed=false;
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:failed?{status:'UNAVAILABLE',month:null,current:{},previous:{}}:{status:'READY',month:'2027-01',previousMonth:'2026-12',current:{ROUTE_COUNTRY_PASSENGERS:data('2027-01',3400)},previous:{ROUTE_COUNTRY_PASSENGERS:data('2026-12',3200)}}}));
+ await page.route('**/api/live/airport-passenger-comparison*',route=>{const q=new URL(route.request().url()).searchParams,selectedMonth=q.get('selected')!,baselineMonth=q.get('baseline')!;return route.fulfill({json:failed?{status:'UNAVAILABLE',selectedMonth,baselineMonth,selected:null,baseline:null,availableMonths:[]}:{status:'READY',selectedMonth,baselineMonth,selected:data(selectedMonth,3300),baseline:data(baselineMonth,3101),availableMonths:['2026-03','2026-09','2026-12']}});});
+ await page.goto(`/${lang}/airport-countries`);const block=page.getByTestId('airport-route-passengers');await block.scrollIntoViewIfNeeded();
+ const selected=block.locator('[data-month-selection="selected"]'),baseline=block.locator('[data-month-selection="baseline"]');
+ await expect(selected).toBeEnabled();await expect(selected).toHaveValue('2027-01');await expect(selected.locator('option:not(:disabled)')).toHaveText(['2026-03','2026-09','2026-12']);
+ await baseline.selectOption('2026-03');await expect(baseline).toBeEnabled();await selected.selectOption('2026-09');
+ const values=block.locator('tbody tr').first().locator('.route-month-total');await expect(values).toHaveText(['3,101','3,300']);
+ failed=true;await page.clock.fastForward(300001);await expect(block.locator('[role="status"]').first()).toBeVisible();
+ await expect(values).toHaveText(['3,101','3,300']);await expect(selected).toHaveValue('2026-09');await expect(baseline).toHaveValue('2026-03');
+ await expect(block.locator('thead th').nth(1)).toContainText('2026-03');await expect(block.locator('thead th').nth(2)).toContainText('2026-09');
 });

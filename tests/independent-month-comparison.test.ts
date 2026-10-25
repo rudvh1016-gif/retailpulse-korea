@@ -30,3 +30,9 @@ test('bounded cache rejects excess concurrent distinct keys without duplicate lo
  let finish!:(value:string)=>void,calls=0;const cache=createStoredReadCache(()=>{calls++;return new Promise<string>(resolve=>{finish=resolve;});},()=>0,300,1);
  const first=cache.read('03|09');await assert.rejects(cache.read('01|09'));assert.equal(cache.size(),1);assert.equal(calls,1);finish('ok');await first;
 });
+
+test('rounding people/day never changes fractional comparison arithmetic',()=>{
+ const result=compareRoutePassengerMonths(month('2026-09',3300),month('2026-03',3101))[0];
+ assert.equal(result.baselineMean,3101/31);assert.equal(result.percent,(110-3101/31)/(3101/31)*100);
+ assert.equal(new Intl.NumberFormat('en',{maximumFractionDigits:0}).format(result.baselineMean!), '100');
+});
