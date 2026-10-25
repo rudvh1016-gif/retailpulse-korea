@@ -75,10 +75,10 @@ test('calendar absent and failed storage remain honest and noindex',async()=>{
 type MonthlyRead=Awaited<ReturnType<typeof readAirportMonthlyStats>>;
 const empty:MonthlyRead={month:null,previousMonth:null,current:{},previous:{},rowsRead:0};
 for(const [name,read,cache] of [
- ['READY',{...empty,month:'2026-09'},'public, max-age=300, s-maxage=3600'],
+ ['READY',{...empty,month:'2026-09'},'public, max-age=300, s-maxage=300'],
  ['MISSING',empty,'no-store'],
 ] as const){
- test(`monthly passengers ${name} is noindex with the original cache`,async()=>{
+ test(`monthly passengers ${name} is noindex with the bounded refresh cache`,async()=>{
   let reads=0;
   const response=await airportPassengerStatsResponse(new Request(`${origin}${endpoints[1]}?month=2026-10`),async month=>{reads++;assert.equal(month,'2026-10');return read;});
   assert.equal(reads,1);
@@ -118,5 +118,5 @@ test('the two public reads remain bounded and provider-free',()=>{
   assert.doesNotMatch(source,/\bfetch\s*\(|refreshOfficialCalendars\s*\(|collectAirport/);
  }
  assert.match(readFileSync('lib/official-calendar-runtime.ts','utf8'),/FROM official_calendar_current ORDER BY country LIMIT 3/);
- assert.match(readFileSync('lib/airport-monthly-stats-read.ts','utf8'),/ORDER BY month DESC, operation_id LIMIT 4/);
+ assert.match(readFileSync('lib/airport-monthly-stats-read.ts','utf8'),/WHERE operation_id=\? AND month<=\? ORDER BY month DESC LIMIT 2/);
 });

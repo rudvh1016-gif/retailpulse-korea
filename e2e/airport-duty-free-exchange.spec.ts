@@ -169,8 +169,14 @@ test('daytime missing stored data gets three short rechecks then the ordinary ca
  let reads=0;const missing={...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observation:null,lastAttemptStatus:'NEVER'}))};
  await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:missing});});
  const providerRequests:string[]=[];page.on('request',r=>{if(/shilladfs|ssgdfs|hddfs/.test(r.url()))providerRequests.push(r.url());});
- await page.goto('/ko/airport');await expect.poll(()=>reads).toBe(1);await expect(page.getByTestId('airport-duty-free-exchange')).toHaveAttribute('data-collection-status','NEVER');
- for(const [delay,count] of [[30_100,2],[60_100,3],[120_100,4]]){await page.clock.runFor(delay);await expect.poll(()=>reads).toBe(count);}
+ const storedReply=()=>page.waitForResponse(response=>new URL(response.url()).pathname==='/api/live/duty-free-exchange');
+ const initialReply=storedReply();await page.goto('/ko/airport');await (await initialReply).finished();await expect.poll(()=>reads).toBe(1);await expect(page.getByTestId('airport-duty-free-exchange')).toHaveAttribute('data-collection-status','NEVER');
+ for(const [delay,count] of [[30_100,2],[60_100,3],[120_100,4]]){
+  const reply=storedReply();await page.clock.runFor(delay);await (await reply).finished();
+  // A request counter increments before fetch/json/finally completes. Drain the
+  // delivered response before advancing across its request timeout/retry timers.
+  await page.evaluate(()=>Promise.resolve());await expect.poll(()=>reads).toBe(count);
+ }
  await page.clock.runFor(180_000);expect(reads).toBe(4);expect(providerRequests).toEqual([]);
  await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:autoSnapshot});});
  await page.clock.runFor(15*60_000);await expect(page.getByTestId('airport-duty-free-exchange')).toHaveAttribute('data-state','VERIFIED_TODAY');

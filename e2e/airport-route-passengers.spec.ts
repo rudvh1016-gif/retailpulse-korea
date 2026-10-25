@@ -42,6 +42,6 @@ test('no published month says so instead of showing zeros',async({page})=>{
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:{status:'MISSING',requestedMonth:'2026-10',month:null,previousMonth:null,current:{},previous:{}}}));
  await page.goto('/ko/airport-countries');
  const block=page.getByTestId('airport-route-passengers');
- await expect(block).toContainText('공개된 공식 여객 통계가 아직 없습니다');
+ await expect(block).toContainText('저장된 공식 여객 자료가 없습니다');
  await expect(block.locator('table')).toHaveCount(0);
 });

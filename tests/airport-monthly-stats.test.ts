@@ -169,6 +169,58 @@ test("the public read returns the newest stored month at or before the request a
   const none = await readAirportMonthlyStats(db, "2026-05");
   assert.equal(none.month, null);
   // Month-first primary key: the read is a key range, never a table scan.
-  const plan = sql.prepare("EXPLAIN QUERY PLAN SELECT operation_id, month, payload, retrieved_at FROM airport_monthly_stats WHERE month <= ? ORDER BY month DESC, operation_id LIMIT 4").all("2026-10") as { detail: string }[];
+  const plan = sql.prepare("EXPLAIN QUERY PLAN SELECT operation_id, month, payload, retrieved_at FROM airport_monthly_stats WHERE operation_id=? AND month<=? ORDER BY month DESC LIMIT 2").all("ROUTE_COUNTRY_PASSENGERS","2026-10") as { detail: string }[];
   assert.ok(plan.every((row) => !/^SCAN airport_monthly_stats\b/.test(row.detail) || /USING/.test(row.detail)), JSON.stringify(plan));
+});
+
+// Exact comparison reads only two payloads; metadata contains actual stored months.
+test('independent exact months never fall back and operations retain their own latest month',async()=>{
+ const {sql,db}=database();
+ const insert=sql.prepare('INSERT INTO airport_monthly_stats (operation_id,month,payload,source_hash,retrieved_at) VALUES (?,?,?,?,?)');
+ const payload=JSON.stringify({rows:[{label:'Japan',region:null,arrivals:1,departures:3100,total:null,aggregate:false,startHour:null,endHour:null}]});
+ for(const value of ['2026-01','2026-03','2026-08','2026-09'])insert.run('ROUTE_COUNTRY_PASSENGERS',value,payload,value,'2026-10-25T00:00:00Z');
+ for(const value of ['2026-07','2026-08'])insert.run('TIME_BAND_PASSENGERS',value,payload,value,'2026-10-25T00:00:00Z');
+ const {readAirportPassengerComparison}=await import('../lib/airport-monthly-stats-read');
+ const comparison=await readAirportPassengerComparison(db,'2026-09','2026-03');
+ assert.equal(comparison.selected?.month,'2026-09');assert.equal(comparison.baseline?.month,'2026-03');
+ assert.deepEqual(comparison.availableMonths,['2026-01','2026-03','2026-08','2026-09']);
+ const missing=await readAirportPassengerComparison(db,'2026-10','2026-03');assert.equal(missing.selected,null);assert.equal(missing.baseline?.month,'2026-03');
+ const same=await readAirportPassengerComparison(db,'2026-03','2026-03');assert.deepEqual(same.selected,same.baseline);
+ const latest=await readAirportMonthlyStats(db,'2026-10');assert.equal(latest.current.ROUTE_COUNTRY_PASSENGERS?.month,'2026-09');assert.equal(latest.current.TIME_BAND_PASSENGERS?.month,'2026-08');assert.equal(latest.previous.TIME_BAND_PASSENGERS?.month,'2026-07');
+ sql.prepare("UPDATE airport_monthly_stats SET payload='broken' WHERE month='2026-03'").run();await assert.rejects(readAirportPassengerComparison(db,'2026-09','2026-03'));
+});
+test('November daily plan checks October without increasing the bounded backfill budget',()=>{
+ assert.deepEqual(planAirportStatsMonths(new Date('2026-11-01T21:07:00Z'),new Set()),['202610','202609','202608','202607']);
+});
+test('known partial provider response preserves last-good; absent totalCount stays accepted',async()=>{
+ const {sql,db}=database();const env:CollectorEnv={DB:db,DATA_GO_KR_SERVICE_KEY:KEY};
+ await collectAirportMonthlyStats(env,NOW,{fetchImpl:provider(operation=>({status:200,body:okBody(operation==='country'?countries():bands())})).fetchImpl});
+ const before=sql.prepare("SELECT payload FROM airport_monthly_stats WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month='2026-09'").get();
+ assert.ok(before);
+ const result=await collectAirportMonthlyStats(env,NOW,{fetchImpl:provider(()=>({status:200,body:header('00','NORMAL SERVICE.',{items:{item:countries(2)},totalCount:999,numOfRows:10,pageNo:1})})).fetchImpl});
+ assert.equal(result.status,'ERROR');assert.deepEqual(sql.prepare("SELECT payload FROM airport_monthly_stats WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month='2026-09'").get(),before);
+});
+
+test('corrupt latest or predecessor fails the whole read and preserves the same-key last-good',async()=>{
+ const {sql,db}=database();const insert=sql.prepare('INSERT INTO airport_monthly_stats (operation_id,month,payload,source_hash,retrieved_at) VALUES (?,?,?,?,?)');
+ const payload=JSON.stringify({rows:[{label:'Japan',region:null,arrivals:null,departures:3100,total:null,aggregate:false,startHour:null,endHour:null}]});
+ for(const operation of ['ROUTE_COUNTRY_PASSENGERS','TIME_BAND_PASSENGERS'])for(const month of ['2026-08','2026-09'])insert.run(operation,month,payload,month,'2026-10-25T00:00:00Z');
+ const {createStoredReadCache}=await import('../lib/stored-read-cache');let now=0;
+ const cache=createStoredReadCache(()=>readAirportMonthlyStats(db,'2026-10'),()=>now,300);
+ const good=await cache.read('2026-10');assert.equal(good.failed,false);
+ sql.prepare("UPDATE airport_monthly_stats SET payload='broken' WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month='2026-09'").run();
+ await assert.rejects(readAirportMonthlyStats(db,'2026-10'),/PAYLOAD_INVALID/);now=301;
+ const stale=await cache.read('2026-10');assert.equal(stale.failed,true);assert.deepEqual(stale.value,good.value);
+ sql.prepare("UPDATE airport_monthly_stats SET payload=? WHERE month='2026-09'").run(payload);
+ sql.prepare("UPDATE airport_monthly_stats SET payload='broken' WHERE operation_id='TIME_BAND_PASSENGERS' AND month='2026-08'").run();
+ await assert.rejects(readAirportMonthlyStats(db,'2026-10'),/PAYLOAD_INVALID/);
+});
+test('2026 stored catalog survives a 2027 latest selection without mixing pair payloads',async()=>{
+ const {sql,db}=database();const insert=sql.prepare('INSERT INTO airport_monthly_stats (operation_id,month,payload,source_hash,retrieved_at) VALUES (?,?,?,?,?)');
+ const payload=JSON.stringify({rows:[{label:'Japan',region:null,arrivals:null,departures:1,total:null,aggregate:false,startHour:null,endHour:null}]});
+ for(const month of ['2026-03','2026-09','2026-12','2027-01'])insert.run('ROUTE_COUNTRY_PASSENGERS',month,payload,month,'2027-02-01T00:00:00Z');
+ const {readAirportPassengerComparison}=await import('../lib/airport-monthly-stats-read');
+ const result=await readAirportPassengerComparison(db,'2027-01','2026-12');
+ assert.deepEqual(result.availableMonths,['2026-03','2026-09','2026-12']);assert.equal(result.selected?.month,'2027-01');assert.equal(result.baseline?.month,'2026-12');
+ const chosen=await readAirportPassengerComparison(db,'2026-09','2026-03');assert.equal(chosen.selected?.month,'2026-09');assert.equal(chosen.baseline?.month,'2026-03');
 });

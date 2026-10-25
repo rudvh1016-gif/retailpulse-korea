@@ -1,32 +1,32 @@
 'use client';
 import {useEffect,useState} from 'react';
+import {createStoredReadCache} from '../lib/stored-read-cache';
 import type {Lang} from './retailpulse-data';
 import type {AirportStatsMonth,AirportStatsOperationId} from '../lib/airport-monthly-stats-read';
 export interface AirportPassengerStatsReply {status:string;month:string|null;previousMonth:string|null;current:Partial<Record<AirportStatsOperationId,AirportStatsMonth>>;previous:Partial<Record<AirportStatsOperationId,AirportStatsMonth>>}
-/** One read per month for the whole page: the monthly table and the hourly figure share it.
- * A failed read is forgotten so the next mount asks again. */
-const reads=new Map<string,Promise<AirportPassengerStatsReply>>();
-function readMonth(month:string):Promise<AirportPassengerStatsReply>{
- const known=reads.get(month);
- if(known)return known;
+export interface AirportPassengerComparisonReply {status:string;selectedMonth:string;baselineMonth:string;selected:AirportStatsMonth|null;baseline:AirportStatsMonth|null;availableMonths:string[]}
+async function storedJson(url:string){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15_000);
- const read=fetch(`/api/live/airport-passenger-stats?month=${encodeURIComponent(month)}`,{signal:controller.signal})
-  .then(response=>response.ok?response.json() as Promise<AirportPassengerStatsReply>:Promise.reject(new Error(String(response.status))))
-  .finally(()=>clearTimeout(timeout));
- read.catch(()=>reads.delete(month));
- reads.set(month,read);
- return read;
+ try{const response=await fetch(url,{signal:controller.signal});if(!response.ok)throw Error('STORED_READ_FAILED');const result=await response.json();if(result.status==='UNAVAILABLE'||!result.status)throw Error('STORED_READ_UNAVAILABLE');return result;}finally{clearTimeout(timeout);}
 }
-export function useAirportPassengerStats(month:string|null){
- const [state,setState]=useState<{month:string;reply:AirportPassengerStatsReply|null;failed:boolean}|null>(null);
+const monthReads=createStoredReadCache<AirportPassengerStatsReply>(month=>storedJson('/api/live/airport-passenger-stats?month='+encodeURIComponent(month)));
+const comparisonReads=createStoredReadCache<AirportPassengerComparisonReply>(async key=>{
+ const [selected,baseline]=key.split('|');const result=await storedJson('/api/live/airport-passenger-comparison?selected='+encodeURIComponent(selected)+'&baseline='+encodeURIComponent(baseline)) as AirportPassengerComparisonReply;
+ if(result.selectedMonth!==selected||result.baselineMonth!==baseline||result.selected&&result.selected.month!==selected||result.baseline&&result.baseline.month!==baseline)throw Error('STORED_SELECTION_MISMATCH');return result;
+});
+function useStoredRead<T>(key:string|null,cache:ReturnType<typeof createStoredReadCache<T>>){
+ const [state,setState]=useState<{key:string;reply:T|null;failed:boolean}|null>(null);
  useEffect(()=>{
-  if(!month)return;
-  let active=true;
-  readMonth(month).then(reply=>{if(active)setState({month,reply,failed:false});},()=>{if(active)setState(previous=>({month,reply:previous?.month===month?previous.reply:null,failed:true}));});
-  return()=>{active=false;};
- },[month]);
- return {reply:state?.month===month?state.reply:null,failed:state?.month===month&&state.failed};
+  if(!key)return;let active=true;
+  const refresh=()=>{if(document.visibilityState==='hidden')return;cache.read(key).then(({value,failed})=>{if(active)setState({key,reply:value,failed});},()=>{if(active)setState(previous=>({key,reply:previous?.key===key?previous.reply:null,failed:true}));});};
+  refresh();const timer=setInterval(refresh,300_000);window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);
+  return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);};
+ },[key,cache]);
+ return {reply:state?.key===key?state.reply:null,failed:state?.key===key&&state.failed};
 }
+/** Shared stored reads expire after five minutes; focus/visibility rechecks never call providers. */
+export function useAirportPassengerStats(month:string|null){return useStoredRead(month,monthReads);}
+export function useAirportPassengerComparison(selected:string|null,baseline:string|null){return useStoredRead(selected&&baseline?selected+'|'+baseline:null,comparisonReads);}
 export interface FlowReference {month:string;label:string;short:string;note:string;hours:Array<{startHour:number;endHour:number;value:number}>}
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
 /** 15095070 monthly departures per provider hour, as a daily mean over that month's days. */

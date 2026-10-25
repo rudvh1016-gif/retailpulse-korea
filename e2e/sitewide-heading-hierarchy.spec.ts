@@ -17,8 +17,10 @@ async function verifyHeadings(page:Page){
  const headings=page.locator('[data-heading]:visible');
  await expect(headings.first()).toBeVisible();
  await page.evaluate(()=>document.fonts.ready);
+ await expect(async()=>{
  const rows=await headings.evaluateAll(nodes=>nodes.map(node=>{
   const style=getComputedStyle(node),bounds=node.getBoundingClientRect();
+  const font={weight:style.fontWeight,size:style.fontSize,family:style.fontFamily};
   const marker=node.querySelector(':scope > .heading-marker');
   const markerStyle=marker?getComputedStyle(marker):null;
   const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT,{acceptNode:child=>child.textContent?.trim()&&!child.parentElement?.closest('[aria-hidden="true"]')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
@@ -26,7 +28,7 @@ async function verifyHeadings(page:Page){
   const range=document.createRange();if(textNode)range.selectNodeContents(textNode);
   const approvedBand=node.matches('.airport-focus-shell .focus-report h3.focus-brief-band,.glance-insights[aria-labelledby="airport-staff-briefing-title"] h3.airport-flow-item-title');
   const icon=node.querySelector(':scope > svg.ui-line-icon');
-  return {approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  return {connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
    textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
@@ -34,10 +36,12 @@ async function verifyHeadings(page:Page){
    markerCount:node.querySelectorAll(':scope > .heading-marker').length,
    markerWidth:marker?.getBoundingClientRect().width,markerHeight:marker?.getBoundingClientRect().height,
    markerDisplay:markerStyle?.display,color:style.color,weight:style.fontWeight,opacity:style.opacity,
-   staticCjk:!!node.closest('.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]'),fontReady:document.fonts.check(`${style.fontWeight} ${style.fontSize} ${style.fontFamily}`,node.textContent||''),
+   staticCjk:!!node.closest('.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]'),fontReady:node.isConnected&&!!font.weight&&!!font.size&&!!font.family&&document.fonts.check(`${font.weight} ${font.size} ${font.family}`,node.textContent||''),
    pseudo:['::before','::after'].map(pseudo=>({content:getComputedStyle(node,pseudo).content,display:getComputedStyle(node,pseudo).display}))};
  }));
+ expect(rows.length).toBeGreaterThan(0);
  for(const row of rows){
+  expect(row.connected,'heading remains connected during style snapshot').toBe(true);expect(row.fontDefined,'actual heading font is defined').toBe(true);
   expect(row.text).toBeTruthy();
   expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem||row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
@@ -63,6 +67,7 @@ async function verifyHeadings(page:Page){
   expect(row.right,`right edge: ${row.text}`).toBeLessThanOrEqual(page.viewportSize()!.width+1);
   expect(row.overflow,`wrapped heading: ${row.text}`).toBeLessThanOrEqual(1);
  }
+ }).toPass({timeout:8000,intervals:[100,250,500]});
  // Lazy map/calendar headings can enter before an existing nth locator. Retry
  // the whole current list, not an old name against its newly shifted neighbour.
  await expect(async()=>{
@@ -72,7 +77,8 @@ async function verifyHeadings(page:Page){
   }
  }).toPass({timeout:8000,intervals:[100,250,500]});
  await expect(page.locator('button > .heading-marker,summary > .heading-marker,nav .heading-marker')).toHaveCount(0);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ const viewport=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,routeOverflow:[...document.querySelectorAll('.airport-route-passengers *')].flatMap(node=>{const box=node.getBoundingClientRect();return box.width>0&&(box.right>innerWidth+1||box.left< -1)?[{tag:node.tagName,className:node.className,left:box.left,right:box.right,text:node.textContent?.trim().slice(0,48)}]:[];}).slice(0,8)}));
+ expect(viewport.scrollWidth<=viewport.width+1,JSON.stringify(viewport)).toBe(true);
 }
 
 async function verifyAirportFlowTitles(page:Page,enlarged=false){

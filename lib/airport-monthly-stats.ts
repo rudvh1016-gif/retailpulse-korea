@@ -149,7 +149,7 @@ async function collectOperation(
       outcome.noData.push(dashedMonth(month));
       continue;
     }
-    const parsed = result.parsed as { shape?: string; status: string; rows: ParsedRow[]; contract: { status: string; unknownFieldNames: string[]; missingDocumentedFieldNames: string[]; issues: string[] } } | null;
+    const parsed = result.parsed as { shape?: string; status: string; complete?:boolean|null; rows: ParsedRow[]; contract: { status: string; unknownFieldNames: string[]; missingDocumentedFieldNames: string[]; issues: string[] } } | null;
     if (classification.kind !== "OK" || !parsed || parsed.shape !== "MONTHLY_STATS" || parsed.status !== "VALID") {
       outcome.failures.push(`${tag}${classification.issue ? ` issue=${classification.issue}` : ""}${result.retryExhausted ? " retryExhausted" : ""}`);
       continue;
@@ -166,7 +166,8 @@ async function collectOperation(
       continue;
     }
     const rows = storedRows(parsed.rows);
-    const sourceHash = await sha256({ operationId, month: dashedMonth(month), rows });
+    const completeness=parsed.complete===true?"COMPLETE":"TOTAL_NOT_PROVIDED";
+    const sourceHash = await sha256({ operationId, month: dashedMonth(month), rows,completeness });
     const key = `${operationId}:${dashedMonth(month)}`;
     if (hashes.get(key) === sourceHash) {
       outcome.unchanged += 1;
@@ -178,7 +179,7 @@ async function collectOperation(
           ON CONFLICT(month, operation_id) DO UPDATE SET
             payload = excluded.payload, source_hash = excluded.source_hash, retrieved_at = excluded.retrieved_at
           WHERE airport_monthly_stats.source_hash <> excluded.source_hash`)
-        .bind(operationId, dashedMonth(month), JSON.stringify({ schemaVersion: AIRPORT_STATS_SCHEMA_VERSION, rows }), sourceHash, now.toISOString())
+        .bind(operationId, dashedMonth(month), JSON.stringify({ schemaVersion: AIRPORT_STATS_SCHEMA_VERSION, rows,completeness }), sourceHash, now.toISOString())
         .run();
     }
     hashes.set(key, sourceHash);
