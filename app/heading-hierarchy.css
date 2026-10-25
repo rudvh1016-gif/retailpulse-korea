@@ -69,9 +69,12 @@
 @media(forced-colors:active){:root body :is(.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3)[data-heading="subsection"]{color:CanvasText!important}}
 
 /* Briefing hierarchy: parent > day group > numeric topic. Keep every flow peer at the same subsection level. */
-:root body .focus-report-title > h2[data-heading="section"] {font-size:clamp(28px,3vw,32px)!important}
-:root body .focus-report :is(.focus-today-title,.focus-selected-country-changes > h3,.focus-preparation-brief > div > h3)[data-heading="subsection"] {font-size:clamp(22px,2.2vw,24px)!important}
+:root body .focus-report-title > h2[data-heading="section"] {font-size:22px!important}
+:root body .focus-report :is(.focus-today-title,.focus-selected-country-changes > h3,.focus-preparation-brief > div > h3)[data-heading="subsection"] {font-size:16px!important}
 :root body .focus-report .focus-figures-title[data-heading="subsection"] {font-size:18px!important}
 
 
 
+
+/* Quiet topic titles keep the existing numeric scale. */
+:root body .focus-report h3.focus-brief-band[data-heading="subsection"]{font-size:16px!important;font-weight:600!important}

@@ -43,15 +43,15 @@ async function verifyHeadings(page:Page){
  for(const row of rows){
   expect(row.connected,'heading remains connected during style snapshot').toBe(true);expect(row.fontDefined,'actual heading font is defined').toBe(true);
   expect(row.text).toBeTruthy();
-  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem||row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
   expect(row.markerDisplay,`no heading-prefix marker: ${row.text}`).toBe('none');
   expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);
   if(row.approvedBand){
-   expect([row.paddingStart,row.paddingEnd,row.border,row.background]).toEqual([8,8,'1px','rgb(255, 255, 255)']);
-   expect(row.iconCount).toBe(1);expect(row.iconHidden).toBe('true');
+   expect([row.paddingStart,row.paddingEnd,row.border,row.background]).toEqual([0,0,'0px','rgba(0, 0, 0, 0)']);
+   expect(row.iconCount).toBe(0);
   }else expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
   for(const pseudo of row.pseudo){expect(pseudo.content).toBe('none');expect(pseudo.display).toBe('none');}
   // Removing a prefix must not require centered/right-aligned titles to move.
@@ -59,7 +59,7 @@ async function verifyHeadings(page:Page){
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
   const palette={page:['rgb(34, 35, 38)','750'],section:['rgb(34, 35, 38)','700'],subsection:['rgb(34, 35, 38)','600']} as const;
-  const [color,weight]=row.flowItem||row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
+  const [color,weight]=row.approvedBand?['rgb(34, 35, 38)','600']:row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
   expect(row.opacity).toBe('1');
@@ -95,7 +95,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  }));
  for(const row of rows){
   expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);
-  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([enlarged?'36px':'18px',row.staticCjk?'600':'700','rgb(34, 35, 38)','10px']);
+  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([enlarged?'32px':'16px','600','rgb(34, 35, 38)','10px']);
   expect([row.family,row.lineHeight,row.spacing]).toEqual([rows[0].family,rows[0].lineHeight,rows[0].spacing]);
   expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(9);expect(row.bodyGap!).toBeLessThanOrEqual(11);
   expect(row.overflow).toBeLessThanOrEqual(1);

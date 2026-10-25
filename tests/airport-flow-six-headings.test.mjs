@@ -14,7 +14,7 @@ test('all six airport-flow titles use one opt-in charcoal heading style, not the
  assert.equal((bottom.match(/<h3 data-heading="subsection" className="airport-flow-item-title">/g)||[]).length,3);
  assert.doesNotMatch(bottom,/>0[123] (?:시간|노선|품목)/);
  const title=rule(`:root body ${scope} .airport-flow-item-title`),values=declarations(title);
- assert.deepEqual([values['font-family'],values['font-size'],values['font-weight'],values.color,values['line-height'],values.margin],['var(--font-ui)','18px','700','#222326','1.4','0 0 10px']);
+ assert.deepEqual([values['font-family'],values['font-size'],values['font-weight'],values.color,values['line-height'],values.margin],['var(--font-ui)','16px','600','#222326','1.4','0 0 10px']);
  for(const prop of ['font-size','font-weight','color','line-height'])assert.equal(title.nodes.find(node=>node.prop===prop).important,true);
  assert.equal(values['white-space'],'normal');assert.equal(values['overflow-wrap'],'anywhere');
  assert.match(read('app/globals.css'),/--ink: #111111;/);
@@ -31,8 +31,8 @@ test('the same three columns and vertical mobile reading order connect all six i
  assert.ok(readingOrder.every((position,index)=>position>0&&(!index||position>readingOrder[index-1])));
  assert.match(read('app/airport-glance-preview.css'),/@media\(max-width:700px\)\{\.glance-insights\{grid-template-columns:1fr/);
  assert.match(read('app/airport-staff-briefing.css'),/@media\(max-width:700px\)\{\.staff-brief-grid\{grid-template-columns:1fr/);
- for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>{if(decl.prop==='background'){assert.equal(decl.parent.selector,`:root body ${scope} .airport-flow-item-title`);assert.equal(decl.value,'#fff');}else assert.doesNotMatch(decl.prop,/^(?:box-shadow|order)$/);});
- assert.equal((read('app/airport-glance-preview.tsx').match(/<UiLineIcon /g)||[]).length,3);
- assert.equal((read('app/airport-staff-briefing.tsx').match(/<UiLineIcon /g)||[]).length,3);
+ for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>{if(decl.prop==='background'){assert.equal(decl.parent.selector,`:root body ${scope} .airport-flow-item-title`);assert.equal(decl.value,'transparent');}else assert.doesNotMatch(decl.prop,/^(?:box-shadow|order)$/);});
+ assert.equal((read('app/airport-glance-preview.tsx').match(/<UiLineIcon /g)||[]).length,0);
+ assert.equal((read('app/airport-staff-briefing.tsx').match(/<UiLineIcon /g)||[]).length,0);
 });
 
