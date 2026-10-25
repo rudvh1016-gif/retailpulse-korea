@@ -31,6 +31,8 @@ test('the same three columns and vertical mobile reading order connect all six i
  assert.ok(readingOrder.every((position,index)=>position>0&&(!index||position>readingOrder[index-1])));
  assert.match(read('app/airport-glance-preview.css'),/@media\(max-width:700px\)\{\.glance-insights\{grid-template-columns:1fr/);
  assert.match(read('app/airport-staff-briefing.css'),/@media\(max-width:700px\)\{\.staff-brief-grid\{grid-template-columns:1fr/);
- for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>assert.doesNotMatch(decl.prop,/^(?:background|box-shadow|order)$/));
+ for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>{if(decl.prop==='background'){assert.equal(decl.parent.selector,`:root body ${scope} .airport-flow-item-title`);assert.equal(decl.value,'#fff');}else assert.doesNotMatch(decl.prop,/^(?:box-shadow|order)$/);});
+ assert.equal((read('app/airport-glance-preview.tsx').match(/<UiLineIcon /g)||[]).length,3);
+ assert.equal((read('app/airport-staff-briefing.tsx').match(/<UiLineIcon /g)||[]).length,3);
 });
 

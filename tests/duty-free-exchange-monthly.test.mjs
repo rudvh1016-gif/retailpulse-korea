@@ -51,7 +51,7 @@ test('monthly cache bounded to midnight, normalized path and safe methods only',
 });
 test('chart preserves current FX behavior and uses thin gap-aware lines, keyboard/month readouts',()=>{
  const ui=readFileSync(new URL('../app/duty-free-monthly-trend.tsx',import.meta.url),'utf8');
- assert.match(ui,/환율 6개월 · 확보한 날짜 평균/);assert.match(ui,/strokeWidth="1.25"/);assert.match(ui,/previous\?\.averageKrwPerUsd!==null/);
+ assert.match(ui,/최근 6개월 환율 그래프 보기/);assert.match(ui,/확보한 날짜 평균/);assert.match(ui,/strokeWidth="1.25"/);assert.match(ui,/previous\?\.averageKrwPerUsd!==null/);
  for(const token of ['observedDays','calendarDays','onPointerEnter','onFocus','onClick','ArrowRight','ArrowLeft','aria-expanded','aria-controls','aria-live'])assert.ok(ui.includes(token),token);
  assert.doesNotMatch(ui,/setInterval|localStorage|gsap/);
 });
