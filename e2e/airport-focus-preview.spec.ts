@@ -75,12 +75,17 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  const bodyToken=await upcomingBody.evaluate(node=>getComputedStyle(node).getPropertyValue('--type-body').trim());
  expect(bodyToken).toBe(width<=820?'13px':'14px');
  await expect(upcomingBody).toHaveCSS('font-size',bodyToken);
- const firstUpcoming=upcoming.first();
- await expect(firstUpcoming.locator('h4')).toContainText('필리핀:');
- await expect(firstUpcoming.locator('time')).toHaveCount(2);
- await expect(firstUpcoming.locator('time').first()).toHaveAttribute('datetime','2026-11-01');
- await expect(firstUpcoming.locator('time').last()).toHaveAttribute('datetime','2026-11-02');
- const detail=firstUpcoming.locator('.focus-event-details');
+ for(const list of await page.locator('.focus-preparation-events').all()){
+  const starts=await list.locator(':scope > .focus-preparation-event').evaluateAll(events=>events.map(event=>event.querySelector('time')!.getAttribute('datetime')!));
+  expect(starts).toEqual([...starts].sort());
+ }
+ const philippinesUpcoming=upcomingBody.locator(':scope > .focus-preparation-event[data-country="PH"]');
+ await expect(philippinesUpcoming).toHaveCount(1);
+ await expect(philippinesUpcoming.locator('h4')).toContainText('필리핀:');
+ await expect(philippinesUpcoming.locator('time')).toHaveCount(2);
+ await expect(philippinesUpcoming.locator('time').first()).toHaveAttribute('datetime','2026-11-01');
+ await expect(philippinesUpcoming.locator('time').last()).toHaveAttribute('datetime','2026-11-02');
+ const detail=philippinesUpcoming.locator('.focus-event-details');
  await expect(detail).not.toHaveAttribute('open','');
  await expect(detail.locator('.focus-holiday-gloss')).not.toBeVisible();
  await detail.locator('summary').click();

@@ -8,7 +8,11 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${la
  test.setTimeout(90000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  const extras=[{...event('JP','2026-10-21'),end:'2026-10-26'},{...event('CN','2026-10-23'),end:'2026-10-26'},event('JP','2026-10-27'),event('CN','2026-10-29'),event('JP','2026-11-15'),event('CN','2026-11-03')];
  await page.route('**/api/**',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
- await page.route('**/api/live/summary*',route=>route.fulfill({json:{...summary,todayKst:'2026-10-25',serviceDateKst:'2026-10-25',generatedAt:'2026-10-25T01:00:00Z'}}));
+ await page.clock.setFixedTime(new Date('2026-10-25T01:00:00Z'));
+ await page.route('**/api/live/summary*',route=>{
+  const serviceDate=new URL(route.request().url()).searchParams.get('date')??'2026-10-25';
+  return route.fulfill({json:{...summary,todayKst:'2026-10-25',serviceDateKst:serviceDate,generatedAt:'2026-10-25T01:00:00Z',airport:{...summary.airport,serviceDateKst:serviceDate}}});
+ });
  await page.route('**/api/live/flights*',route=>route.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
  await page.route('**/api/airport/calendar*',route=>route.fulfill({json:{status:'PARTIAL',events:[...calendar.events,...extras].reverse(),calendarReplacementScopes:[],sources:[],checkedAt:null}}));
