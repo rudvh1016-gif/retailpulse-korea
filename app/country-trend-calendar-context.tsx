@@ -1,6 +1,6 @@
 import {CountryFlag} from './airport-country-flag';
 import type {CalendarEvent} from '../lib/calendar-context.mjs';
-import {calendarCountryName,countryTrendCalendar,groupTrendCalendarItems,trendVacationAvailability} from '../lib/country-trend-calendar';
+import {calendarCountryName,countryTrendCalendar,trendCalendarCountryGroups,trendVacationAvailability} from '../lib/country-trend-calendar';
 import type {Lang} from './retailpulse-data';
 import type {FocusTrend} from './airport-focus-data';
 
@@ -17,7 +17,7 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
  const {details}=countryTrendCalendar(events,query);
  if(!details.length)return null;
  // Dates are primary comparison context, not optional evidence. Never rank-cut them.
- const groups=groupTrendCalendarItems(details),availability=trendVacationAvailability(events,query,details),text=copy[lang];
+ const countryGroups=trendCalendarCountryGroups(details),groups=countryGroups.flatMap(section=>section.groups),availability=trendVacationAvailability(events,query,details),text=copy[lang];
  const eventName=(item:typeof details[number])=>item.title.slice(calendarCountryName(item.country).length+1).replace(/^공휴일 · /,'');
  const dates=(item:typeof details[number])=><>{item.start}{item.start!==item.end?`–${item.end}`:''}</>;
  const flag=(country:string)=><span aria-hidden="true" style={{display:'inline-flex',verticalAlign:'-2px'}}><CountryFlag code={country} size={16}/></span>;
@@ -30,7 +30,9 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
  </>;
  return <div className="focus-calendar-context">
   <p className="focus-source">일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준</p>
-  {groups.map(group=>{
+  {countryGroups.map(section=><section className="focus-calendar-country" data-calendar-country={section.country} key={section.country}>
+   <h4>{flag(section.country)} {section.country==='KR'?({ko:'대한민국',en:'South Korea',zh:'韩国',ja:'韓国'} as const)[lang]:new Intl.DisplayNames([lang],{type:'region'}).of(section.country)??section.country}</h4>
+   {section.groups.map(group=>{
     const item=group.items[0],name=eventName(item);
     if(group.items.length>1)return <p className="focus-source focus-vacation-group" data-calendar-role={group.role} data-calendar-start={item.start} data-vacation-group={group.country} key={group.key}>
      {flag(item.country)} {calendarCountryName(item.country)} · <b>{name}</b> · {text.varies}
@@ -41,6 +43,7 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
      {flag(item.country)} {calendarCountryName(item.country)} · <b>{name}</b> {dates(item)}{scope?` · ${scope}`:''}{item.relation==='previous'?' · 직전 월':''}
     </p>;
    })}
+  </section>)}
   <details className="focus-source" data-testid="monthly-calendar-reference"><summary style={{minHeight:44,boxSizing:'border-box',padding:'12px 0',cursor:'pointer'}}>{{ko:'일정 근거',en:'Comparison-period calendar · official sources',zh:'比较期间日程 · 官方依据',ja:'比較期間の日程・公式根拠'}[lang]}</summary>
    {availability!=='MATCHED'&&<><p data-school-break-status={availability}>{text[availability==='OUTSIDE_PERIOD'?'outside':'missing']}</p><p data-school-break-limit>{text[availability==='OUTSIDE_PERIOD'?'outsideNote':'missingNote']}</p></>}
    <p>한국 일정은 한국인 여객 통계가 아닙니다. 방학은 지역·학교별로 다릅니다.</p>

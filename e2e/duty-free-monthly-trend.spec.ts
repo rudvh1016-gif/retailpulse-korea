@@ -44,7 +44,7 @@ for(const width of [360,1280])test(`FX archive supplement disclosure, full chart
  await page.route('**/api/live/duty-free-exchange/monthly',r=>r.fulfill({json:response}));
  await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');
  await strip.locator('.duty-free-rate-sources > summary').click();
- await strip.getByRole('button',{name:'환율 6개월 · 확보한 날짜 평균'}).click();
+ await strip.getByRole('button',{name:/최근 6개월 환율 그래프 보기/}).click();
  const chart=strip.locator('.duty-free-monthly-chart');await expect(chart.locator('circle')).toHaveCount(6);
  await expect(chart.locator('li').first()).toContainText('8/31');
  await expect(chart.locator('li').nth(1)).toContainText('2/30');

@@ -65,7 +65,7 @@ test('a mounted strip expires across KST midnight and focus cannot revive yester
  await page.goto('/ko/airport');
  const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
  await page.clock.runFor(10051);await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');await expect(strip.locator('summary')).toContainText('오늘 환율 확인 중');
- await strip.locator('summary').click();await strip.getByRole('button',{name:'어제 환율',exact:true}).click();await expect(strip.locator('time[datetime="2026-10-08T14:59:00Z"]')).toHaveCount(1);
+ await strip.locator('summary').click();await expect(strip.locator('[data-rate-day="previous"]')).toBeVisible();await expect(strip.locator('time[datetime="2026-10-08T14:59:00Z"]')).toHaveCount(1);
  await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');
 });
 
@@ -75,7 +75,7 @@ test('KST rollover expires yesterday even while the stored API request is pendin
  await page.route('**/api/live/duty-free-exchange',r=>{if(++reads===1)return r.fulfill({json:{...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observation:{...source.observation,verifiedAt:'2026-10-08T12:00:00Z'}}))}});pending=r;});
  await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
  await page.clock.runFor(10051);await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');await expect(strip.locator('summary')).toContainText('오늘 환율 확인 중');
- await strip.locator('summary').click();await strip.getByRole('button',{name:'어제 환율',exact:true}).click();await expect(strip.locator('time[datetime="2026-10-08T12:00:00Z"]')).toHaveCount(1);
+ await strip.locator('summary').click();await expect(strip.locator('[data-rate-day="previous"]')).toBeVisible();await expect(strip.locator('time[datetime="2026-10-08T12:00:00Z"]')).toHaveCount(1);
  await pending?.abort().catch(()=>{});
 });
 test('unverified future observations are withheld and history selection keeps today’s header',async({page})=>{
@@ -97,7 +97,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`failed collection preserv
  await page.setViewportSize({width:390,height:844});await page.clock.setFixedTime(new Date('2026-10-08T03:00:00Z'));await fixtures(page);
  const older={...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,lastAttemptStatus:'BLOCKED',lastAttemptAt:'2026-10-08T02:30:00Z',errorCode:'HTTP_406',observation:{...source.observation,serviceDateKst:'2026-10-07',verifiedAt:'2026-10-07T02:00:00Z'}}))};
  await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:older}));await page.goto(`/${lang}/airport`);
- const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');await expect(strip).toContainText({ko:'새 환율을 가져오지 못했어요',en:'We couldn’t collect the latest rate',zh:'未能获取最新汇率',ja:'最新のレートを取得できませんでした'}[lang]);await expect(strip.locator('summary')).not.toContainText('1,343');await strip.locator('summary').click();await strip.getByRole('button',{name:{ko:'어제 환율',en:'Yesterday’s rate',zh:'昨日汇率',ja:'昨日のレート'}[lang],exact:true}).click();
+ const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');await expect(strip).toContainText({ko:'새 환율을 가져오지 못했어요',en:'We couldn’t collect the latest rate',zh:'未能获取最新汇率',ja:'最新のレートを取得できませんでした'}[lang]);await expect(strip.locator('summary')).not.toContainText('1,343');await strip.locator('summary').click();await expect(strip.locator('[data-rate-day="previous"]')).toBeVisible();
  await expect(strip.locator('time[datetime="2026-10-07T02:00:00Z"]')).toHaveCount(1);expect(await tofuCharacters(strip)).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
@@ -129,13 +129,13 @@ test('verified today survives reload during API outage, while stale cached days 
  await strip.locator('summary').click();await expect(strip.locator('[role=status]')).toBeVisible();
  await page.clock.setFixedTime(new Date('2026-10-09T03:00:00Z'));await page.reload();await expect(strip).toHaveAttribute('data-state','TODAY_PENDING');await expect(strip.locator('summary')).not.toContainText('1,343');
 });
-test('tomorrow is available only behind its button with an explicit source date, and promotes at midnight',async({page})=>{
+test('tomorrow is immediately visible inside the rate panel only with an explicit source date, and promotes at midnight',async({page})=>{
  await page.clock.install({time:new Date('2026-10-08T14:59:50Z')});await page.clock.pauseAt(new Date('2026-10-08T14:59:50Z'));await fixtures(page);
  const future={...autoSnapshot.sources[0].observation,serviceDateKst:'2026-10-09',krwPerUnit:1338,verifiedAt:'2026-10-08T14:00:00Z',dateEvidence:'EXPLICIT_SOURCE_DATE'};
  await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:{...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observations:[future]}))}}));
  await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await expect(strip.locator('summary')).not.toContainText('1,338');
- await strip.locator('summary').focus();await page.keyboard.press('Enter');await strip.getByRole('button',{name:'내일 환율',exact:true}).focus();await page.keyboard.press('Enter');
- await expect(strip.getByTestId('duty-free-selected-day')).toContainText('2026-10-09');await expect(strip.getByTestId('duty-free-selected-day')).toContainText('1,338.00');
+ await strip.locator('summary').focus();await page.keyboard.press('Enter');await expect(strip.locator('[data-rate-day="next"]')).toBeVisible();
+ await expect(strip.locator('[data-rate-day="next"]')).toContainText('2026-10-09');await expect(strip.locator('[data-rate-day="next"]')).toContainText('1,338.00');
  await page.clock.runFor(10051);await expect(strip.locator('summary')).toContainText('1,338.00');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
 });
 test('midnight stored reads are bounded at twelve, and recover on an existing scheduled read',async({page})=>{
@@ -151,7 +151,7 @@ test('midnight stored reads are bounded at twelve, and recover on an existing sc
  await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await expect.poll(()=>reads).toBe(1);await expect(page.locator('html')).toHaveAttribute('data-rate-reads-completed','1');
  for(let i=0;i<11;i++){await page.clock.runFor(60_100);await expect.poll(()=>reads).toBe(i+2);await expect(page.locator('html')).toHaveAttribute('data-rate-reads-completed',String(i+2));}
  await page.clock.runFor(3*60_000);expect(reads).toBe(12);
- await strip.locator('summary').click();await strip.getByRole('button',{name:'내일 환율',exact:true}).click();await expect(strip.getByTestId('duty-free-selected-day')).toContainText('확인된 환율 없음');
+ await strip.locator('summary').click();await expect(strip.locator('[data-rate-day="next"]')).toBeVisible();await expect(strip.locator('[data-rate-day="next"]')).toContainText('확인된 환율 없음');
  await page.route('**/api/live/duty-free-exchange',r=>{reads++;return r.fulfill({json:{...autoSnapshot,sources:autoSnapshot.sources.map(source=>({...source,observation:{...source.observation,serviceDateKst:'2026-10-09',verifiedAt:'2026-10-08T15:10:00Z'}}))}});});
  await page.clock.runFor(12*60_000+100);await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');expect(reads).toBe(13);
 });

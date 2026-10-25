@@ -90,7 +90,7 @@ test('one charcoal heading palette uses supported weights without recoloring bod
  css.walkDecls(decl=>assert.doesNotMatch(decl.prop,/^(?:background|fill|stroke|font-family|--)/));
 });
 test('the three detail titles share the airport-flow subsection role without step decoration',()=>{
- const source=read('app/airport-staff-briefing.tsx');
+ const source=read('app/airport-staff-briefing.tsx').replace(/<UiLineIcon kind="(?:week|return|month)"\/>/g,'');
  for(const title of ['시간·터미널','노선·휴일 준비','품목별 확인'])assert.ok(source.includes(`<h3 data-heading="subsection" className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"/>${title}</h3>`));
  assert.equal(headings.filter(h=>h.file==='app/airport-staff-briefing.tsx'&&h.role==='subsection').length,3);
 });

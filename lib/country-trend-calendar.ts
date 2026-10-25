@@ -78,3 +78,10 @@ export function trendVacationAvailability(events:readonly CalendarEvent[],query:
  const available=[...events,...schools.filter(event=>event.country==='KR'&&event.kind==='school_break'&&event.scope!=='national')].some(event=>event.country===query.country&&event.kind==='school_break'&&isExactDate(event.start)&&matchCalendarContext([event],{country:query.country,selectedMonth:event.start.slice(0,7),actualDataMonths:[event.start.slice(0,7)],asOf:query.asOf,includeOriginContext:true,kind:'school_break'}).details.length>0);
  return available?'OUTSIDE_PERIOD':'NO_REVIEWED_DATA';
 }
+
+/** Country sections apply only to the chart's calendar reference, never to planning lists. */
+export function trendCalendarCountryGroups(items:readonly TrendCalendarItem[]){
+ const groups=groupTrendCalendarItems(items);
+ const countries=[...new Set(groups.map(group=>group.country))].sort((a,b)=>a==='KR'?-1:b==='KR'?1:calendarCountryName(a).localeCompare(calendarCountryName(b),'ko'));
+ return countries.map(country=>({country,groups:groups.filter(group=>group.country===country)}));
+}

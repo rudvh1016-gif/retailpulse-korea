@@ -41,3 +41,11 @@
 }
 @media(forced-colors:active){:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{color:CanvasText!important}}
 
+
+/* The six flow topics share the same compact charcoal title band. */
+:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{display:flex!important;align-items:center;gap:7px;box-sizing:border-box;min-height:34px;padding:6px 8px;border:1px solid #34383d;background:#fff}
+.airport-flow-item-title>.ui-line-icon{flex:none;width:18px;height:18px;color:#34383d}
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>p,.glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>strong{font-size:16px;line-height:1.5}
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>small,.glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>small{font-size:12px;line-height:1.6;color:#586571}
+@media(max-width:700px){.glance-insights[aria-labelledby="airport-staff-briefing-title"]>a,.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section{padding-bottom:12px;border-bottom:1px solid #dce2e7}}
+.airport-flow-item-title>.heading-marker{display:none}

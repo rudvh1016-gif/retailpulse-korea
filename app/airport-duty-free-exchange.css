@@ -52,3 +52,15 @@
 .duty-free-archive>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;touch-action:manipulation}
 .duty-free-archive>summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .duty-free-archive a{display:inline-flex;align-items:center;min-height:44px;touch-action:manipulation;overflow-wrap:anywhere;max-width:100%}
+
+/* Dated rates are readable without a second click; evidence keeps its real date. */
+.duty-free-adjacent-days{margin:8px 0;border-top:1px solid var(--line)}
+.duty-free-day-rate{padding:8px 0;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.duty-free-rate-detail .duty-free-day-value{margin:0;display:flex;flex-wrap:wrap;gap:2px 5px;color:var(--ink)}
+.duty-free-day-value strong{font-weight:650}.duty-free-day-unit{font-weight:400}
+.duty-free-rate-detail .duty-free-day-basis,.duty-free-rate-detail .duty-free-day-limit{font-size:11px;line-height:1.5;margin:3px 0 0}
+.duty-free-monthly-toggle{width:100%;display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #34383d;background:#fff;color:#222326;text-decoration:none;line-height:1.4}
+.duty-free-monthly-toggle>.ui-line-icon{flex:none;width:18px;height:18px;color:#34383d}
+.duty-free-monthly-title{min-width:0;font-weight:650}.duty-free-monthly-title small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
+.duty-free-monthly-state{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:4px;font-size:11px;white-space:nowrap}
+.duty-free-monthly-toggle:hover{border-color:#111}.duty-free-monthly-toggle[aria-expanded=true]{border-color:#34383d}
