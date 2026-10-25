@@ -2,7 +2,7 @@ import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 const row=(departures:number)=>({label:'Japan',region:null,arrivals:null,departures,total:null,aggregate:false,startHour:null,endHour:null});
 const data=(month:string,total:number)=>({operationId:'ROUTE_COUNTRY_PASSENGERS',month,rows:[row(total)],retrievedAt:'2026-10-25T00:00:00Z',completeness:'TOTAL_NOT_PROVIDED'});
-for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`exact stored month comparison ${lang} ${width}`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,1440])test(`exact stored month comparison ${lang} ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});
  await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,todayKst:'2026-10-10',serviceDateKst:'2026-10-10'}));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:{status:'READY',month:'2026-09',previousMonth:'2026-08',current:{ROUTE_COUNTRY_PASSENGERS:data('2026-09',3300)},previous:{ROUTE_COUNTRY_PASSENGERS:data('2026-08',3100)}}}));
@@ -17,6 +17,9 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`exac
  const baseline=block.locator('[data-month-selection="baseline"]'),selected=block.locator('[data-month-selection="selected"]');
  await expect(baseline).toBeEnabled();await baseline.focus();await expect(baseline).toBeFocused();await expect(baseline).toHaveCSS('min-height','44px');await expect(selected.locator('option:not(:disabled)')).toHaveText(['2026-03','2026-08','2026-09']);
  await baseline.selectOption('2026-03');await expect(baseline).toHaveValue('2026-03');await expect(selected).toHaveValue('2026-09');
+ await expect(block.locator('thead th').last()).toHaveCSS('white-space','normal');
+ const bounds=await block.locator('select,thead th,tbody tr:first-child td,.route-month-controls label').evaluateAll(nodes=>nodes.map(node=>{const box=node.getBoundingClientRect();return {left:box.left,right:box.right,overflow:node.scrollWidth-node.clientWidth};}));
+ for(const box of bounds){expect(box.left).toBeGreaterThanOrEqual(-1);expect(box.right).toBeLessThanOrEqual(width+1);expect(box.overflow).toBeLessThanOrEqual(1);}
  const first=block.locator('tbody tr').first();await expect(first.locator('.route-month-total')).toHaveText(['3,101','3,300']);await expect(first.locator('td').last()).toContainText('10%');await expect(first.locator('td .route-month-mean')).toHaveText([/100$/,/110$/]);
  await expect(block.locator('thead th').nth(1)).toContainText('31');await expect(block.locator('thead th').nth(2)).toContainText('30');
  await selected.selectOption('2026-03');await expect(first.locator('td').last()).toContainText('0%');
@@ -35,7 +38,7 @@ for(const [lang,empty] of [['ko','저장된 2026 자료 없음'],['en','No store
  for(const control of await block.locator('select').all()){await expect(control).toBeDisabled();await expect(control).toHaveText(empty);}
  await expect(block.locator('select')).toHaveCount(2);await expect(block.locator('table')).toHaveCount(0);
 });
-for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`2027 rollover retains 2026 catalog and pair last-good ${lang} ${width}`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,1440])test(`2027 rollover retains 2026 catalog and pair last-good ${lang} ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});await page.clock.install();let failed=false;
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:failed?{status:'UNAVAILABLE',month:null,current:{},previous:{}}:{status:'READY',month:'2027-01',previousMonth:'2026-12',current:{ROUTE_COUNTRY_PASSENGERS:data('2027-01',3400)},previous:{ROUTE_COUNTRY_PASSENGERS:data('2026-12',3200)}}}));
