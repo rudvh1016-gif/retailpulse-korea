@@ -1,3 +1,4 @@
+import {sortCalendarEvents} from './calendar-display-order';
 import holidays from '../data/airport-focus-preview/holidays.json';
 import snapshot from '../data/airport-focus-preview/calendar-context.json';
 import {isExactDate,isExactMonth,type CalendarEvent} from './calendar-context.mjs';
@@ -39,7 +40,7 @@ export function preparationEvents(asOf:string,calendarEvents?:CalendarEvent[],sc
  // the same stable event ID (for example a newly published Korean annual list).
  const refreshed=preserved.map(event=>{const newer=additional.find(row=>row.id===event.id&&row.verifiedAt>event.verifiedAt);return newer?{...event,verifiedAt:newer.verifiedAt,sourceURL:newer.sourceURL,verificationMethod:newer.verificationMethod}:event;});
  const all=[...refreshed,...additional];
- return all.filter((event,index)=>all.findIndex(other=>other.id===event.id||other.country===event.country&&other.countryLabel===event.countryLabel&&other.start===event.start&&other.end===event.end&&other.name===event.name&&other.scope===event.scope)===index).sort((a,b)=>a.start.localeCompare(b.start)||a.countryLabel.localeCompare(b.countryLabel,'ko')||a.name.localeCompare(b.name,'ko'));
+ return sortCalendarEvents(all.filter((event,index)=>all.findIndex(other=>other.id===event.id||other.country===event.country&&other.countryLabel===event.countryLabel&&other.start===event.start&&other.end===event.end&&other.name===event.name&&other.scope===event.scope)===index));
 }
 export function shiftPreparationMonth(month:string,offset:number):string {
  if(!isExactMonth(month))throw new RangeError('Expected YYYY-MM');
@@ -54,7 +55,7 @@ export function preparationMonthDays(month:string):(string|null)[]{
 }
 export function preparationEventsInMonth(events:PreparationEvent[],month:string){
  const last=preparationMonthDays(month).filter((date):date is string=>date!==null).at(-1)!;
- return events.filter(event=>event.start<=last&&event.end>=`${month}-01`);
+ return sortCalendarEvents(events.filter(event=>event.start<=last&&event.end>=`${month}-01`));
 }
-export const preparationEventsOn=(events:PreparationEvent[],date:string)=>events.filter(event=>event.start<=date&&event.end>=date);
+export const preparationEventsOn=(events:PreparationEvent[],date:string)=>sortCalendarEvents(events.filter(event=>event.start<=date&&event.end>=date));
 export const preparationFlagCode=(event:PreparationEvent)=>event.countryLabel==='괌'?'GU':event.countryLabel==='사이판'?'MP':event.country;

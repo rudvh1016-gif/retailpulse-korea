@@ -1,3 +1,4 @@
+import {sortCalendarEvents} from './calendar-display-order';
 import reviewed from '../data/korean-school-vacations.json';
 import {isExactDate,isExactMonth,matchCalendarContext,type CalendarEvent} from './calendar-context.mjs';
 
@@ -20,5 +21,5 @@ export function koreanSchoolVacations(query:KoreanVacationQuery,events:readonly 
  if(!isExactMonth(month)||!actualDataMonths?.every(isExactMonth))return [];
  const schools=events.filter(event=>event.country==='KR'&&event.kind==='school_break'&&event.scope!=='national');
  const matches=matchCalendarContext(schools,{country:query.country??'KR',selectedMonth:month,actualDataMonths,asOf:query.asOf,includeOriginContext:true,includePreviousMonth:day===undefined,kind:'school_break'}).details;
- return (day?matches.filter(item=>item.start<=day&&item.end>=day):matches).map(item=>({...item,name:schools.find(event=>event.id===item.eventId)!.name}));
+ return sortCalendarEvents((day?matches.filter(item=>item.start<=day&&item.end>=day):matches).map(item=>({...item,name:schools.find(event=>event.id===item.eventId)!.name})));
 }

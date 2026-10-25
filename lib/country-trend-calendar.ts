@@ -1,3 +1,4 @@
+import {compareCalendarOrder,sortCalendarEvents} from './calendar-display-order';
 import reviewedSchools from '../data/korean-school-vacations.json';
 import {matchCalendarContext,isExactDate,type CalendarContext,type CalendarEvent,type CalendarQuery} from './calendar-context.mjs';
 
@@ -57,18 +58,18 @@ export function countryTrendCalendar(events:readonly CalendarEvent[],query:Omit<
   const first=items[0],school=items.find(item=>item.kind==='school_break'),holiday=items.find(item=>item.kind==='public_holiday');
   summary.push(...[...new Set([first,school,holiday,...items].filter((item):item is TrendCalendarItem=>Boolean(item)))].slice(0,2));
  }
- return {summary,details};
+ return {summary:sortCalendarEvents(summary),details:sortCalendarEvents(details)};
 }
 
 /** Presentation groups only: never replace regional intervals with a country-wide range. */
 export function groupTrendCalendarItems(items:readonly TrendCalendarItem[]){
  const groups:Array<{key:string;country:string;role:TrendCalendarItem['role'];kind:TrendCalendarItem['kind'];title:string;items:TrendCalendarItem[]}>=[];
- for(const item of items){
+ for(const item of sortCalendarEvents(items)){
   const key=item.kind==='school_break'?JSON.stringify([item.role,item.country,item.kind,item.title]):JSON.stringify([item.role,item.country,item.eventId]);
   const group=groups.find(group=>group.key===key);
   if(group)group.items.push(item);else groups.push({key,country:item.country,role:item.role,kind:item.kind,title:item.title,items:[item]});
  }
- return groups;
+ return groups.sort((a,b)=>compareCalendarOrder(a.items[0],b.items[0]));
 }
 
 /** Distinguish reviewed evidence outside the chart period from absent reviewed evidence. */
