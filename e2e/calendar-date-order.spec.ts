@@ -46,17 +46,16 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${la
  const today=page.locator('.focus-selected-country-changes[aria-label]');
  await expect(today.locator('.focus-preparation-event')).toHaveCount(2);
  const todayStarts=await today.locator('.focus-preparation-event').evaluateAll(rows=>rows.map(row=>row.querySelector('time')!.getAttribute('datetime')!));expect(todayStarts).toEqual([...todayStarts].sort());
- const lists=page.locator('.focus-preparation-brief .focus-preparation-events');await expect(lists).toHaveCount(2);
+ const lists=page.locator('.focus-preparation-brief .focus-preparation-events');await expect(lists).toHaveCount(1);
  for(const list of await lists.all()){
   await expect(list.locator('.focus-preparation-event')).toHaveCount(2);
   const starts=await list.locator('.focus-preparation-event').evaluateAll(rows=>rows.map(row=>row.querySelector('time')!.getAttribute('datetime')!));expect(starts).toEqual([...starts].sort());
   for(const detail of await list.locator('details').all())await expect(detail).not.toHaveAttribute('open','');
  }
- // The same route-volume-selected monthly lead keeps its own statistics even after display ordering changes.
- await expect(lists.nth(1).locator('.focus-country-month-trend')).toHaveCount(1);
- await expect(lists.nth(1).locator('[data-country="JP"] .focus-country-month-trend')).toBeVisible();
+ await expect(page.locator('.focus-preparation-brief [data-line-icon=month]')).toHaveCount(0);
  await page.goto(`/${lang}/airport-prepare?date=2026-10-25`);
  const upcoming=page.locator('.focus-holiday-list > li');await expect(upcoming.first()).toBeVisible();
+ await expect(page.locator('.focus-holiday-list > li[data-calendar-start="2026-11-15"]')).toHaveCount(1);
  const dates=await upcoming.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-calendar-start')!));expect(dates).toEqual([...dates].sort());
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 });

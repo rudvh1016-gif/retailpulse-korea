@@ -46,7 +46,7 @@ test('screenshot middle headings and equivalent sitewide subsections use the exi
  assert.equal(parent?.role,'section');
  const today=focus.find(h=>h.node.getText(h.tree).includes('focus-today-title'));
  assert.equal(today?.role,'subsection');assert.match(today.node.getText(today.tree),/오늘 확인/);
- for(const expression of ['{title}','{t("다음 주"','{t("다음 달"'])assert.ok(focus.some(h=>h.role==='subsection'&&h.node.getText(h.tree).includes(expression)),expression);
+ for(const expression of ['{title}','{t("다음 주"'])assert.ok(focus.some(h=>h.role==='subsection'&&h.node.getText(h.tree).includes(expression)),expression);
  // Airport, preparation and Seoul content share the role without text/locale matching.
  for(const file of ['airport-live-signals','airport-tax-refund-guide','business-compare','tourism-desk','seoul-flow-models'])assert.ok(headings.some(h=>h.file===`app/${file}.tsx`&&h.role==='subsection'),file);
 });

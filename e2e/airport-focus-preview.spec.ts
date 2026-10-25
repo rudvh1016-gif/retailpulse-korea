@@ -54,9 +54,10 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-staff-links a')).toHaveAttribute('href','/ko/airport-news');
  await expect(page.locator('.focus-report')).toContainText('552.9편');
  await expect(page.locator('.focus-preparation-brief')).toContainText('10/26–11/1');
- await expect(page.locator('.focus-preparation-brief')).toContainText('11/1–11/30');
+ await expect(page.locator('.focus-preparation-brief')).not.toContainText('11/1–11/30');
+ await expect(page.locator('.focus-preparation-brief > div')).toHaveCount(1);
  const upcoming=page.locator('.focus-preparation-events > .focus-preparation-event');
- await expect(upcoming).toHaveCount(4);
+ await expect(upcoming).toHaveCount(2);
  for(const event of await upcoming.all()){
   await expect(event.locator('h4')).toBeVisible();
   for(const date of await event.locator('time').all())await expect(date).toBeVisible();

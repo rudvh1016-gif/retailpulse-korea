@@ -16,7 +16,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:{mode:'duty-free-exchange',collectionMode:'AUTOMATED',generatedAt:at,todayKst:date,sources:[{vendor:'shilla',observation:current,observations:[rate('2026-10-18',1432.87),current,rate('2026-10-20',1456.12)],lastAttemptAt:at,lastAttemptStatus:'SUCCESS',errorCode:null,nextAttemptAt:null}]}}));
  let monthlyReads=0;await page.route('**/api/live/duty-free-exchange/monthly',r=>{monthlyReads++;return r.fulfill({json:{vendor:'shilla',currency:'USD',scope:'INTERNET_SHOP',sourceUrl:dutyFreeSources.shilla,asOfDateKst:date,generatedAt:at,months:['05','06','07','08','09','10'].map((month,index)=>({month:`2026-${month}`,averageKrwPerUsd:index===5?1400.67:null,observedDays:index===5?1:0,calendarDays:[31,30,31,31,30,31][index],inProgress:index===5}))}});});
  await page.goto(`/${lang}?date=${date}`);
- const bands=page.locator('.focus-report h3.focus-brief-band');await expect(bands).toHaveCount(5);
+ const bands=page.locator('.focus-report h3.focus-brief-band');await expect(bands).toHaveCount(4);
+ await expect(page.locator('.focus-preparation-brief [data-line-icon="month"]')).toHaveCount(0);
  for(const band of await bands.all()){
   await expect(band).toHaveCSS('background-color','rgb(255, 255, 255)');await expect(band).toHaveCSS('border-top-color','rgb(52, 56, 61)');await expect(band).toHaveCSS('border-top-width','1px');
   await expect(band.locator('svg.ui-line-icon')).toHaveAttribute('stroke-width','1.5');await expect(band.locator('svg.ui-line-icon')).toHaveAttribute('aria-hidden','true');

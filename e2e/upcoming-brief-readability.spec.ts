@@ -13,8 +13,9 @@ for(const lang of ['ko','en','zh','ja'])test(`upcoming ${lang}: 320px, keyboard 
  await page.goto(`/${lang}?date=2026-10-19`,{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const brief=page.locator('.focus-preparation-brief');
- await expect(brief.locator('h3')).toHaveCount(2);
- const events=brief.locator('.focus-preparation-event');await expect(events).toHaveCount(4);
+ await expect(brief.locator('h3')).toHaveCount(1);
+ await expect(brief.locator('[data-line-icon=month]')).toHaveCount(0);
+ const events=brief.locator('.focus-preparation-event');await expect(events).toHaveCount(2);
  for(const event of await events.all()){
   await expect(event.locator('h4')).toBeVisible();await expect(event.locator('time').first()).toBeVisible();
   await expect(event.locator('.focus-event-country img')).toHaveAttribute('alt','');

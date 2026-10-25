@@ -65,7 +65,13 @@ test('all localized country contexts render Korea-first country sections with ch
   if(groups.some(group=>group.role==='origin'))assert.match(html,/한국 출발지 참고/);
  }
 });
-test('brief display sorting is after representative selection and leaves monthly lead and route-flight joins intact',()=>{
+test('brief display sorting is after representative selection and preserves representative selection and route-flight joins',()=>{
  const source=readFileSync(new URL('../app/airport-focus-preview.tsx',import.meta.url),'utf8');
- for(const code of ['const lead=months[0]','sortCalendarEvents(events).map(event=>','sortCalendarEvents(ending).map(event=>','sortCalendarEvents(currentEvents).map(event=>','flights={flights}','flights={context.eventFlights}'])assert.ok(source.includes(code),code);
+ for(const code of ['sortCalendarEvents(events).map(event=>','sortCalendarEvents(ending).map(event=>','sortCalendarEvents(currentEvents).map(event=>','flights={flights}','flights={context.eventFlights}'])assert.ok(source.includes(code),code);
+});
+test('home removes only next-month presentation while full month preparation data stays available',()=>{
+ const source=readFileSync(new URL('../app/airport-focus-preview.tsx',import.meta.url),'utf8'),brief=source.slice(source.indexOf('function PreparationBrief('),source.indexOf('function SelectedCountryChanges('));
+ assert.doesNotMatch(brief,/monthStart|monthEnd|Next month|다음 달/);assert.match(brief,/Next week/);
+ const all=preparationEvents('2026-10-25',events);assert.ok(preparationEventsInMonth(all,'2026-11').length>0);
+ assert.ok(preparationEventsInMonth(all,'2026-11').some(item=>item.country==='JP'&&item.start==='2026-11-03'));
 });
