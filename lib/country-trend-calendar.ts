@@ -1,5 +1,5 @@
 import reviewedSchools from '../data/korean-school-vacations.json';
-import {matchCalendarContext,type CalendarContext,type CalendarEvent,type CalendarQuery} from './calendar-context.mjs';
+import {matchCalendarContext,isExactDate,type CalendarContext,type CalendarEvent,type CalendarQuery} from './calendar-context.mjs';
 
 const countries=new Intl.DisplayNames(['ko'],{type:'region'});
 export const calendarCountryName=(country:string)=>country==='KR'?'한국':countries.of(country)??country;
@@ -58,4 +58,22 @@ export function countryTrendCalendar(events:readonly CalendarEvent[],query:Omit<
   summary.push(...[...new Set([first,school,holiday,...items].filter((item):item is TrendCalendarItem=>Boolean(item)))].slice(0,2));
  }
  return {summary,details};
+}
+
+/** Presentation groups only: never replace regional intervals with a country-wide range. */
+export function groupTrendCalendarItems(items:readonly TrendCalendarItem[]){
+ const groups:Array<{key:string;country:string;role:TrendCalendarItem['role'];kind:TrendCalendarItem['kind'];title:string;items:TrendCalendarItem[]}>=[];
+ for(const item of items){
+  const key=item.kind==='school_break'?JSON.stringify([item.role,item.country,item.kind,item.title]):JSON.stringify([item.role,item.country,item.eventId]);
+  const group=groups.find(group=>group.key===key);
+  if(group)group.items.push(item);else groups.push({key,country:item.country,role:item.role,kind:item.kind,title:item.title,items:[item]});
+ }
+ return groups;
+}
+
+/** Distinguish reviewed evidence outside the chart period from absent reviewed evidence. */
+export function trendVacationAvailability(events:readonly CalendarEvent[],query:Omit<CalendarQuery,'includeOriginContext'|'includePreviousMonth'>,matched:readonly TrendCalendarItem[],schools:readonly CalendarEvent[]=reviewedSchools.events as CalendarEvent[]){
+ if(matched.some(item=>item.country===query.country&&item.kind==='school_break'))return 'MATCHED';
+ const available=[...events,...schools.filter(event=>event.country==='KR'&&event.kind==='school_break'&&event.scope!=='national')].some(event=>event.country===query.country&&event.kind==='school_break'&&isExactDate(event.start)&&matchCalendarContext([event],{country:query.country,selectedMonth:event.start.slice(0,7),actualDataMonths:[event.start.slice(0,7)],asOf:query.asOf,includeOriginContext:true,kind:'school_break'}).details.length>0);
+ return available?'OUTSIDE_PERIOD':'NO_REVIEWED_DATA';
 }

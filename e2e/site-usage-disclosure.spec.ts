@@ -47,17 +47,18 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  await expect(context.locator(':scope > p')).toHaveText('일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준');
  await expect(details).not.toHaveAttribute('open','');
  await expect(context.locator('[data-calendar-role]').first()).toBeVisible();
- // This fixture's four verified matches stay visible; only source evidence folds.
- await expect(context.locator('[data-calendar-role] b')).toHaveCount(4);
+ // Four verified records remain; two regional summer breaks share one country/season heading.
+ await expect(context.locator('[data-calendar-role] b')).toHaveCount(3);
  for(const [role,text] of [
   ['route','중국 · 중추절 2026-09-25–2026-09-27'],
-  ['route','중국 · 여름방학 2026-07-01–2026-08-31'],
-  ['route','중국 · 여름방학 2026-07-08–2026-08-31'],
   ['origin','한국 · 여름방학 2026-07-28–2026-08-19'],
  ])await expect(context.locator(`[data-calendar-role="${role}"] > p`).filter({hasText:text})).toBeVisible();
- await expect(details.locator('ul')).toBeHidden();
+ const summer=context.locator('[data-vacation-group="CN"]');
+ await expect(summer).toHaveCount(1);await expect(summer.locator('b')).toHaveText('여름방학');
+ await expect(summer.locator('.focus-vacation-period')).toHaveText(['2026-07-01–2026-08-31 · 상하이 초·중등학교 · 직전 월','2026-07-08–2026-08-31 · 베이징 의무교육 학교 · 직전 월']);
+ await expect(details.locator(':scope > ul')).toBeHidden();
  await toggle.focus();await page.keyboard.press('Enter');
- await expect(details.locator('ul')).toBeVisible();
+ await expect(details.locator(':scope > ul')).toBeVisible();
  await expect(context.locator('[data-calendar-role="route"]')).toContainText('중국');await expect(context.locator('[data-calendar-role="route"]')).toContainText('2026-09-25');
  await expect(details.locator('a').first()).toHaveAttribute('href',/^https:\/\//);
  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -66,4 +67,44 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await toggle.focus();await page.keyboard.press('Space');await expect(details).not.toHaveAttribute('open','');
  await expect(context.locator(':scope > p')).toBeVisible();
+});
+
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test.describe(`${lang} ${width} vacation coverage`,()=>{
+ test.use({hasTouch:width===320,isMobile:width===320});
+ test(`${lang} ${width}: grouped regional vacations follow actual comparison months without country omissions`,async({page})=>{
+ test.setTimeout(90000);
+ await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
+ let selected='2026-09';
+ const earlier=(month:string)=>{const date=new Date(`${month}-01T00:00:00Z`);date.setUTCMonth(date.getUTCMonth()-1);return date.toISOString().slice(0,7);};
+ const stats=(month:string)=>({operationId:'ROUTE_COUNTRY_PASSENGERS',month,rows:['일본','중국','베트남','미국','대만','태국'].map((label,index)=>({label,region:null,departures:1000-index*100,arrivals:900,total:1900-index*100,aggregate:false,startHour:null,endHour:null})),retrievedAt:'2026-10-24T01:00:00Z'});
+ await page.route('**/api/**',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:{...summary,todayKst:'2026-10-25',serviceDateKst:'2026-10-25',generatedAt:'2026-10-25T01:00:00Z'}}));
+ await page.route('**/api/airport/calendar*',route=>route.fulfill({json:{status:'PARTIAL',events:calendar.events,calendarReplacementScopes:[],sources:[],checkedAt:null}}));
+ await page.route('**/api/live/airport-passenger-stats*',route=>{
+  const requested=new URL(route.request().url()).searchParams.get('month')??selected,month=requested>selected?selected:requested,previousMonth=earlier(month);
+  return route.fulfill({json:{status:'READY',month,previousMonth,current:{ROUTE_COUNTRY_PASSENGERS:stats(month)},previous:{ROUTE_COUNTRY_PASSENGERS:stats(previousMonth)}}});
+ });
+ const context=(country:string)=>page.locator(`.focus-trend-context[data-country="${country}"] .focus-calendar-context`);
+ await page.goto(`/${lang}/airport-countries`,{waitUntil:'domcontentloaded'});
+ const cn=context('CN'),jp=context('JP'),vn=context('VN');await cn.scrollIntoViewIfNeeded();
+ await expect(cn.locator('[data-vacation-group="CN"]')).toHaveCount(1);
+ const members=cn.locator('.focus-vacation-period');await expect(members).toHaveCount(2);
+ await expect(members.nth(0)).toContainText('2026-07-01–2026-08-31');await expect(members.nth(0)).toContainText('상하이 초·중등학교');
+ await expect(members.nth(1)).toContainText('2026-07-08–2026-08-31');await expect(members.nth(1)).toContainText('베이징 의무교육 학교');
+ await expect(jp.locator('[data-calendar-role="route"]')).toContainText('2026-07-21–2026-08-31');
+ await expect(jp.locator('[data-calendar-role="origin"]')).toContainText('2026-07-28–2026-08-19');
+ await expect(vn.locator('[data-school-break-status="NO_REVIEWED_DATA"]')).toBeVisible();
+ const sources=cn.getByTestId('monthly-calendar-reference');await sources.locator('summary').focus();await page.keyboard.press('Enter');
+ for(const item of calendar.events.filter(item=>item.country==='CN'&&item.kind==='school_break'))await expect(sources.locator(`a[href="${item.sourceURL}"]`)).toHaveCount(1);
+ await page.keyboard.press('Space');await expect(sources).not.toHaveAttribute('open','');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ selected='2026-10';await page.reload();await context('JP').scrollIntoViewIfNeeded();
+ await expect(context('JP').locator('[data-school-break-status="OUTSIDE_PERIOD"]')).toBeVisible();
+ await expect(context('JP')).not.toContainText('2026-07-21');await expect(context('CN').locator('[data-vacation-group="CN"]')).toHaveCount(0);
+ selected='2026-04';await page.reload();const us=context('US');await us.scrollIntoViewIfNeeded();
+ await expect(us.locator('[data-calendar-role="route"]')).toContainText('2026-04-02–2026-04-10');
+ await us.getByTestId('monthly-calendar-reference').locator('summary').click();
+ await expect(us).toContainText('뉴욕시 공립학교 3K–12학년 대상 · 사립학교 등 제외');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
 });
