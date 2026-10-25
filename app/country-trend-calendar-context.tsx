@@ -30,19 +30,17 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
  </>;
  return <div className="focus-calendar-context">
   <p className="focus-source">일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준</p>
-  {(['route','origin'] as const).map(role=><div key={role} data-calendar-role={role}>
-   {groups.filter(group=>group.role===role).map(group=>{
+  {groups.map(group=>{
     const item=group.items[0],name=eventName(item);
-    if(group.items.length>1)return <p className="focus-source focus-vacation-group" data-vacation-group={group.country} key={group.key}>
+    if(group.items.length>1)return <p className="focus-source focus-vacation-group" data-calendar-role={group.role} data-calendar-start={item.start} data-vacation-group={group.country} key={group.key}>
      {flag(item.country)} {calendarCountryName(item.country)} · <b>{name}</b> · {text.varies}
      {group.items.map(member=><span className="focus-vacation-period" key={member.eventId} data-event-id={member.eventId}>{dates(member)} · {member.region}{member.relation==='previous'?' · 직전 월':''}</span>)}
     </p>;
     const scope=item.kind==='school_break'?'학교별 상이 · 예시':item.scope==='national'?'':item.region?.includes('연방공무원')?'연방공무원':item.region?.includes('금융기관')?'금융기관':item.region;
-    return <p className="focus-source" key={group.key}>
+    return <p className="focus-source" data-calendar-role={group.role} data-calendar-start={item.start} key={group.key}>
      {flag(item.country)} {calendarCountryName(item.country)} · <b>{name}</b> {dates(item)}{scope?` · ${scope}`:''}{item.relation==='previous'?' · 직전 월':''}
     </p>;
    })}
-  </div>)}
   <details className="focus-source" data-testid="monthly-calendar-reference"><summary style={{minHeight:44,boxSizing:'border-box',padding:'12px 0',cursor:'pointer'}}>{{ko:'일정 근거',en:'Comparison-period calendar · official sources',zh:'比较期间日程 · 官方依据',ja:'比較期間の日程・公式根拠'}[lang]}</summary>
    {availability!=='MATCHED'&&<><p data-school-break-status={availability}>{text[availability==='OUTSIDE_PERIOD'?'outside':'missing']}</p><p data-school-break-limit>{text[availability==='OUTSIDE_PERIOD'?'outsideNote':'missingNote']}</p></>}
    <p>한국 일정은 한국인 여객 통계가 아닙니다. 방학은 지역·학교별로 다릅니다.</p>
