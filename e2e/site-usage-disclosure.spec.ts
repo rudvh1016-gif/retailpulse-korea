@@ -1,9 +1,22 @@
-import {test,expect} from '@playwright/test';
+import {test,expect,type Locator} from '@playwright/test';
 import calendar from '../data/airport-focus-preview/calendar-context.json' with {type:'json'};
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
+// Visibility alone does not mean the touch target clears a fixed bottom menu.
+// Scroll as a user can, then prove the actual target is unobstructed before native tap.
+async function tapClearSummary(toggle:Locator){
+ await toggle.evaluate(node=>node.scrollIntoView({block:'center',behavior:'instant'}));
+ await expect.poll(()=>toggle.evaluate(node=>{
+  const box=node.getBoundingClientRect(),x=box.left+box.width/2,y=box.top+box.height/2;
+  const hit=document.elementFromPoint(x,y),nav=document.querySelector('nav.bottom-nav.glass-nav');
+  const navTop=nav&&getComputedStyle(nav).display!=='none'?nav.getBoundingClientRect().top:innerHeight;
+  return box.top>=0&&box.bottom<navTop&&!!hit&&(hit===node||node.contains(hit));
+ }),{message:'native summary tap target is inside viewport, above fixed navigation and unobstructed'}).toBe(true);
+ await toggle.tap();
+}
+
 test.use({hasTouch:true,isMobile:true});
 for(const lang of ['ko','en','zh','ja'])test(`${lang}: More optional explanations open and close natively while limits remain visible`,async({page})=>{
  await page.setViewportSize({width:390,height:844});
@@ -28,8 +41,16 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: More optional explanation
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 
-for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective calendar is optional, with the qualification always visible`,async({page})=>{
- await page.setViewportSize({width:320,height:844});
+for(const lang of ['ko','en','zh','ja'])for(const motion of ['reduce','no-preference'] as const)test(`${lang} ${motion}: monthly retrospective calendar is optional, with the qualification always visible`,async({page})=>{
+ await page.setViewportSize({width:320,height:844});await page.emulateMedia({reducedMotion:motion});
+ // Complete read fixtures: no late live/local API result may reflow the target.
+ await page.route('**/api/**',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/airport-passenger-comparison*',route=>{
+  const query=new URL(route.request().url()).searchParams,selectedMonth=query.get('selected')!,baselineMonth=query.get('baseline')!;
+  const stored=[passengerStats.current.ROUTE_COUNTRY_PASSENGERS,passengerStats.previous.ROUTE_COUNTRY_PASSENGERS];
+  const selected=stored.find(item=>item.month===selectedMonth)??null,baseline=stored.find(item=>item.month===baselineMonth)??null;
+  return route.fulfill({json:{status:selected&&baseline?'READY':'PARTIAL',selectedMonth,baselineMonth,selected,baseline,availableMonths:stored.map(item=>item.month)}});
+ });
  await page.clock.setFixedTime(new Date(summary.generatedAt));
  const calendarEvents=calendar.events.filter(event=>event.verifiedAt<=summary.todayKst);
  expect(new Date(Date.parse(summary.generatedAt)+9*60*60*1000).toISOString().slice(0,10)).toBe(summary.todayKst);
@@ -66,8 +87,8 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('중국');await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('2026-09-25');
  await expect(details.locator('a').first()).toHaveAttribute('href',/^https:\/\//);
  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
- await toggle.tap();await expect(details).not.toHaveAttribute('open','');
- await toggle.tap();await expect(details).toHaveAttribute('open','');
+ await tapClearSummary(toggle);await expect(details).not.toHaveAttribute('open','');
+ await tapClearSummary(toggle);await expect(details).toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await toggle.focus();await page.keyboard.press('Space');await expect(details).not.toHaveAttribute('open','');
  await expect(qualification).toBeVisible();
