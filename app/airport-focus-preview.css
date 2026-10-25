@@ -256,3 +256,13 @@
 /* A country/season heading owns separate regional dates; no invented aggregate span. */
 .focus-calendar-context .focus-vacation-period{display:block;margin-top:3px;line-height:1.6;overflow-wrap:anywhere}
 .focus-calendar-context .focus-vacation-group{min-width:0}
+
+/* Native calendar evidence toggles must not animate the document underneath a
+   pending touch/focus target. Keep smooth anchor navigation elsewhere. */
+html:has(.focus-calendar-context details[open],.focus-calendar-context details:focus-within){scroll-behavior:auto}
+@media(max-width:820px){
+ /* The sticky header already reserves the top. Reserve the fixed 74px mobile
+    menu plus 16px clearance and the device inset at the opposite edge. */
+ html:has(.focus-calendar-context){scroll-padding-bottom:calc(90px + var(--safe-area-bottom))}
+ .focus-calendar-context summary{scroll-margin-block:16px}
+}

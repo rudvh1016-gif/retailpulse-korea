@@ -83,12 +83,19 @@ for(const lang of ['ko','en','zh','ja'])for(const motion of ['reduce','no-prefer
  await expect(details.locator(':scope > ul')).toBeHidden();
  await toggle.focus();await page.keyboard.press('Enter');
  await expect(details.locator(':scope > ul')).toBeVisible();
+ await expect(page.locator('html')).toHaveCSS('scroll-behavior','auto');
+ expect(await page.locator('html').evaluate(node=>parseFloat(getComputedStyle(node).scrollPaddingBottom))).toBeGreaterThanOrEqual(90);
+ await expect(toggle).toHaveCSS('scroll-margin-block-start','16px');
  await expect(qualification).toBeVisible();
  await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('중국');await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('2026-09-25');
  await expect(details.locator('a').first()).toHaveAttribute('href',/^https:\/\//);
  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await tapClearSummary(toggle);await expect(details).not.toHaveAttribute('open','');
+ await expect(page.locator('html')).toHaveCSS('scroll-behavior','auto');
  await tapClearSummary(toggle);await expect(details).toHaveAttribute('open','');
+ // Repeat using untouched Playwright native auto-scroll, with no helper recenter.
+ await toggle.tap();await expect(details).not.toHaveAttribute('open','');
+ await toggle.tap();await expect(details).toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await toggle.focus();await page.keyboard.press('Space');await expect(details).not.toHaveAttribute('open','');
  await expect(qualification).toBeVisible();
