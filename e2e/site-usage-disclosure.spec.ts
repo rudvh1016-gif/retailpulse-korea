@@ -43,8 +43,11 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  await page.goto(`/${lang}/airport-countries?date=2026-10-19`);
  const context=page.locator('.focus-trend-context[data-country="CN"] .focus-calendar-context');
  const details=context.getByTestId('monthly-calendar-reference'),toggle=details.locator('summary');
+ const qualification=context.getByText('일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준',{exact:true});
  await expect(toggle).toHaveText(({ko:'일정 근거',en:'Comparison-period calendar · official sources',zh:'比较期间日程 · 官方依据',ja:'比較期間の日程・公式根拠'} as Record<string,string>)[lang]);
- await expect(context.locator(':scope > p')).toHaveText('일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준');
+ await expect(qualification).toHaveCount(1);
+ await expect(qualification).toHaveText('일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준');
+ await expect(qualification).toBeVisible();
  await expect(details).not.toHaveAttribute('open','');
  await expect(context.locator('[data-calendar-role]').first()).toBeVisible();
  // Four verified records remain; two regional summer breaks share one country/season heading.
@@ -59,6 +62,7 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  await expect(details.locator(':scope > ul')).toBeHidden();
  await toggle.focus();await page.keyboard.press('Enter');
  await expect(details.locator(':scope > ul')).toBeVisible();
+ await expect(qualification).toBeVisible();
  await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('중국');await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('2026-09-25');
  await expect(details.locator('a').first()).toHaveAttribute('href',/^https:\/\//);
  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -66,7 +70,7 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  await toggle.tap();await expect(details).toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await toggle.focus();await page.keyboard.press('Space');await expect(details).not.toHaveAttribute('open','');
- await expect(context.locator(':scope > p')).toBeVisible();
+ await expect(qualification).toBeVisible();
 });
 
 for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test.describe(`${lang} ${width} vacation coverage`,()=>{
