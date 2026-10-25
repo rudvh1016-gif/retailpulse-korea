@@ -14,7 +14,7 @@ export async function airportPassengerStatsResponse(request:Request,readStats:(m
   const read=await readStats(month);
   const status=read.month?'READY':'MISSING';
   return Response.json({status,requestedMonth:month,month:read.month,previousMonth:read.previousMonth,current:read.current,previous:read.previous},
-   {headers:{'cache-control':status==='READY'?'public, max-age=300, s-maxage=3600':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+   {headers:{'cache-control':status==='READY'?'public, max-age=300, s-maxage=300':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
  }catch{return Response.json({status:'UNAVAILABLE',requestedMonth:month,month:null,previousMonth:null,current:{},previous:{}},{headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});}
 }
 export async function GET(request:Request){

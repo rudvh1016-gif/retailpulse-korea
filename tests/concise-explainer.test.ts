@@ -20,7 +20,8 @@ test('country explanation keeps original limitations, source link and state hand
  const detail=source.match(/<ConciseExplainer[\s\S]*?<\/ConciseExplainer>/)?.[0]??'';
  for(const phrase of ['비행기가 향한 나라(노선) 기준','터미널별로 나누지 않습니다','항공편 일평균과 단위·범위가 달라','Grouped by the country each flight flies to','按航班飞往的国家（航线）统计','便の向かう国（路線）基準'])assert.ok(detail.includes(phrase));
  const outside=source.replace(detail,'');
- for(const phrase of ['https://www.data.go.kr/data/15095071/openapi.do','reply.month!==month','role="status"','없는 값은 0으로 표시하지 않습니다'])assert.ok(outside.includes(phrase));
+ for(const phrase of ['https://www.data.go.kr/data/15095071/openapi.do','reply.month!==month','role="status"','누락을 0으로 표시하지 않습니다'])assert.ok(outside.includes(phrase));
+ for(const phrase of ['Missing data is never zero.','缺失不表示0。','欠測を0と表示しません。'])assert.ok(outside.includes(phrase));
 });
 test('shared metric explanations retain all four fields and localized summaries',()=>{
  const source=readFileSync('app/retailpulse-app.tsx','utf8');

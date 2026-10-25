@@ -26,6 +26,7 @@ export interface AirportStatsMonth {
   month: string;
   rows: AirportStatsRow[];
   retrievedAt: string;
+  completeness?: "COMPLETE" | "TOTAL_NOT_PROVIDED";
 }
 
 function previousMonthOf(month: string): string {
@@ -42,25 +43,40 @@ export async function readAirportMonthlyStats(db: Pick<D1Database, "prepare">, m
   previous: Partial<Record<AirportStatsOperationId, AirportStatsMonth>>;
   rowsRead: number;
 }> {
-  // Primary-key range: at most two months per operation, newest first.
-  const result = await db.prepare(`SELECT operation_id AS operationId, month, payload, retrieved_at AS retrievedAt
-      FROM airport_monthly_stats WHERE month <= ? ORDER BY month DESC, operation_id LIMIT 4`)
-    .bind(month)
-    .all<{ operationId: AirportStatsOperationId; month: string; payload: string; retrievedAt: string }>();
-  if (result.success === false) throw new Error("AIRPORT_MONTHLY_STATS_READ_FAILED");
-  const rows = result.results ?? [];
-  const months = [...new Set(rows.map((row) => row.month))].sort().reverse();
-  const pick = (target: string | undefined) => Object.fromEntries(rows.filter((row) => row.month === target).flatMap((row) => {
-    try {
-      const payload = JSON.parse(row.payload) as { rows?: AirportStatsRow[] };
-      return Array.isArray(payload.rows) ? [[row.operationId, { operationId: row.operationId, month: row.month, rows: payload.rows, retrievedAt: row.retrievedAt }]] : [];
-    } catch {
-      return [];
-    }
-  })) as Partial<Record<AirportStatsOperationId, AirportStatsMonth>>;
-  const current = months[0];
-  // The previous month only when it is the calendar month right before, so a gap is never compared across.
-  const expectedPrevious = current ? previousMonthOf(current) : undefined;
-  const previous = months[1] === expectedPrevious ? months[1] : undefined;
-  return { month: current ?? null, previousMonth: previous ?? null, current: pick(current), previous: pick(previous), rowsRead: rows.length };
+  // Each operation selects its own newest month, so a newly published route
+  // table never hides the last-good time-band table (or vice versa).
+  const results=await Promise.all((["ROUTE_COUNTRY_PASSENGERS","TIME_BAND_PASSENGERS"] as const).map(async operation=>{
+    const result=await db.prepare(`SELECT operation_id AS operationId, month, payload, retrieved_at AS retrievedAt
+      FROM airport_monthly_stats WHERE operation_id=? AND month<=? ORDER BY month DESC LIMIT 2`).bind(operation,month).all<StoredAirportMonth>();
+    if(result.success===false)throw Error('AIRPORT_MONTHLY_STATS_READ_FAILED');return result.results??[];
+  }));
+  const current:Partial<Record<AirportStatsOperationId,AirportStatsMonth>>={},previous:Partial<Record<AirportStatsOperationId,AirportStatsMonth>>={};
+  for(const rows of results){
+    const latest=rows[0];if(!latest)continue;
+    const value=decodeAirportStatsMonth(latest);if(value)current[value.operationId]=value;
+    const prior=rows.find(row=>row.month===previousMonthOf(latest.month)),before=prior&&decodeAirportStatsMonth(prior);if(before)previous[before.operationId]=before;
+  }
+  const primary=current.ROUTE_COUNTRY_PASSENGERS??current.TIME_BAND_PASSENGERS;
+  const prior=primary&&previous[primary.operationId];
+  return {month:primary?.month??null,previousMonth:prior?.month??null,current,previous,rowsRead:results.reduce((total,rows)=>total+rows.length,0)};
+}
+
+export interface StoredAirportMonth {operationId:AirportStatsOperationId;month:string;payload:string;retrievedAt:string}
+export function decodeAirportStatsMonth(row:StoredAirportMonth):AirportStatsMonth|null{
+ try{const payload=JSON.parse(row.payload) as {rows?:AirportStatsRow[];completeness?:string};
+  if(!Array.isArray(payload.rows)||!payload.rows.every(item=>typeof item.label==='string'&&[item.arrivals,item.departures,item.total].every(value=>value===null||typeof value==='number'&&Number.isFinite(value)&&value>=0)))return null;
+  return {operationId:row.operationId,month:row.month,rows:payload.rows,retrievedAt:row.retrievedAt,completeness:payload.completeness==='COMPLETE'?'COMPLETE':'TOTAL_NOT_PROVIDED'};
+ }catch{return null;}
+}
+
+/** Two exact route months plus bounded metadata; never provider reads or fallback months. */
+export async function readAirportPassengerComparison(db:Pick<D1Database,'prepare'>,selectedMonth:string,baselineMonth:string){
+ const [result,available]=await Promise.all([
+  db.prepare(`SELECT operation_id AS operationId,month,payload,retrieved_at AS retrievedAt FROM airport_monthly_stats
+    WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month IN (?,?) ORDER BY month LIMIT 2`).bind(selectedMonth,baselineMonth).all<StoredAirportMonth>(),
+  db.prepare(`SELECT month FROM airport_monthly_stats WHERE operation_id='ROUTE_COUNTRY_PASSENGERS' AND month>=? AND month<=? ORDER BY month LIMIT 12`).bind(selectedMonth.slice(0,4)+'-01',selectedMonth.slice(0,4)+'-12').all<{month:string}>()
+ ]);
+ if(result.success===false||available.success===false)throw Error('AIRPORT_MONTHLY_STATS_READ_FAILED');
+ const exact=(month:string)=>{const row=result.results?.find(row=>row.month===month);if(!row)return null;const value=decodeAirportStatsMonth(row);if(!value)throw Error('AIRPORT_MONTHLY_STATS_PAYLOAD_INVALID');return value;};
+ return {selectedMonth,baselineMonth,selected:exact(selectedMonth),baseline:exact(baselineMonth),availableMonths:(available.results??[]).map(row=>row.month)};
 }
