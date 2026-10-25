@@ -1120,6 +1120,20 @@
       "notes": "결의 28/2026/QH16 제2조에 따른 근로자 유급휴일. 2026년은 11월 24일 하루이며 주변 날짜를 연결하지 않습니다.",
       "meaning_ko": "베트남 문화 발전을 기념하는 법정 유급휴일입니다.",
       "meaningSourceURL": "https://xaydungchinhsach.chinhphu.vn/toan-van-nghi-quyet-so-28-2026-qh16-ve-phat-trien-van-hoa-viet-nam-119260508142130402.htm"
+    },
+    {
+      "id": "TW-2026-12-25-constitution-government",
+      "country": "TW",
+      "region": "대만 정부 행정기관 공무원 · 12/26~27은 주말",
+      "scope": "institutional",
+      "name": "행헌기념일",
+      "kind": "public_holiday",
+      "start": "2026-12-25",
+      "end": "2026-12-25",
+      "status": "verified",
+      "sourceURL": "https://www.dgpa.gov.tw/information?pid=12574&uid=41",
+      "verifiedAt": "2026-10-25",
+      "notes": "법정 기념일 12/25만 표시합니다. 정부 행정기관 달력의 12/25~27 연휴 중 12/26~27은 주말이며 별도 공휴일로 추가하지 않습니다. 학교·민간기업에는 별도 규정과 달력이 적용됩니다."
     }
   ],
   "snapshotCompletedThrough": "2026-10-19"

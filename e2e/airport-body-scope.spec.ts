@@ -69,7 +69,8 @@ for(const width of [320,390,430,1280])test(`one zone summary survives closed sou
  await expect(map.getByTestId('map-counts')).toContainText('중앙 1편');
  await map.getByTestId('map-destinations').locator('summary').click();
  await expect(map.getByTestId('map-groups')).toBeVisible();
- await expect(map.getByTestId('map-flights')).toBeVisible();
+ await expect(map.getByTestId('map-flights')).toHaveCount(0);
+ await expect(map.getByTestId('map-official-coordinates')).toBeVisible();
  await page.screenshot({path:info.outputPath(`airport-details-open-${width}.png`)});
  await summary.focus();await page.keyboard.press('Space');
  await expect(details).not.toHaveAttribute('open','');

@@ -26,7 +26,9 @@ async function verifyHeadings(page:Page){
   const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT,{acceptNode:child=>child.textContent?.trim()&&!child.parentElement?.closest('[aria-hidden="true"]')?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT});
   const textNode=walker.nextNode();
   const range=document.createRange();if(textNode)range.selectNodeContents(textNode);
-  return {connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  const approvedBand=node.matches('.airport-focus-shell .focus-report h3.focus-brief-band,.glance-insights[aria-labelledby="airport-staff-briefing-title"] h3.airport-flow-item-title');
+  const icon=node.querySelector(':scope > svg.ui-line-icon');
+  return {connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
    textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
@@ -47,7 +49,10 @@ async function verifyHeadings(page:Page){
   expect(row.markerCount).toBe(1);
   expect(row.markerDisplay,`no heading-prefix marker: ${row.text}`).toBe('none');
   expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);
-  expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
+  if(row.approvedBand){
+   expect([row.paddingStart,row.paddingEnd,row.border,row.background]).toEqual([8,8,'1px','rgb(255, 255, 255)']);
+   expect(row.iconCount).toBe(1);expect(row.iconHidden).toBe('true');
+  }else expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
   for(const pseudo of row.pseudo){expect(pseudo.content).toBe('none');expect(pseudo.display).toBe('none');}
   // Removing a prefix must not require centered/right-aligned titles to move.
   if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);

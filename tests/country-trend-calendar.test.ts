@@ -233,8 +233,8 @@ test('calendar flags use local images on Windows while preserving compact rows',
   const contexts=countryTrendCalendar(events,{...query,country}).details;
   if(contexts.some(item=>item.country===country))assert.ok(rendered.includes('/images/airport-flags/'+path),country);
   assert.ok(rendered.includes('/images/airport-flags/fallback/kr.svg'),country);
-  assert.equal((rendered.match(/<img /g)??[]).length,groupTrendCalendarItems(contexts).length);
-  assert.equal((rendered.match(/width="16" height="16" alt=""/g)??[]).length,groupTrendCalendarItems(contexts).length);
+  assert.equal((rendered.match(/<img /g)??[]).length,groupTrendCalendarItems(contexts).length+new Set(contexts.map(item=>item.country)).size);
+  assert.equal((rendered.match(/width="16" height="16" alt=""/g)??[]).length,groupTrendCalendarItems(contexts).length+new Set(contexts.map(item=>item.country)).size);
   assert.doesNotMatch(rendered,/[\u{1F1E6}-\u{1F1FF}]/u);
  }
 });

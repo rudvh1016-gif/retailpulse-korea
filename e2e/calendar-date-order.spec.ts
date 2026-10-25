@@ -24,10 +24,15 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${la
  await page.goto(`/${lang}/airport-countries?date=2026-09-19`);
  const contexts=page.locator('.focus-calendar-context');await expect(contexts.first()).toBeVisible();
  for(const context of await contexts.all()){
-  const items=context.locator(':scope > [data-calendar-role]');
+  const countries=context.locator(':scope > [data-calendar-country]');
+  expect(await countries.count()).toBeGreaterThan(0);
+  const codes=await countries.evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-calendar-country')));if(codes.includes('KR'))expect(codes[0]).toBe('KR');
+  for(const section of await countries.all()){
+  const items=section.locator(':scope > [data-calendar-role]');expect(await items.count()).toBeGreaterThan(0);
   const dates=await items.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-calendar-start')!));
   expect(dates).toEqual([...dates].sort());
   const tops=await items.evaluateAll(rows=>rows.map(row=>row.getBoundingClientRect().top));expect(tops).toEqual([...tops].sort((a,b)=>a-b));
+  }
   for(const group of await context.locator('[data-vacation-group]').all()){
    const starts=await group.locator('.focus-vacation-period').evaluateAll(rows=>rows.map(row=>row.textContent!.match(/\d{4}-\d{2}-\d{2}/)![0]));expect(starts).toEqual([...starts].sort());
   }
@@ -41,17 +46,16 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${la
  const today=page.locator('.focus-selected-country-changes[aria-label]');
  await expect(today.locator('.focus-preparation-event')).toHaveCount(2);
  const todayStarts=await today.locator('.focus-preparation-event').evaluateAll(rows=>rows.map(row=>row.querySelector('time')!.getAttribute('datetime')!));expect(todayStarts).toEqual([...todayStarts].sort());
- const lists=page.locator('.focus-preparation-brief .focus-preparation-events');await expect(lists).toHaveCount(2);
+ const lists=page.locator('.focus-preparation-brief .focus-preparation-events');await expect(lists).toHaveCount(1);
  for(const list of await lists.all()){
   await expect(list.locator('.focus-preparation-event')).toHaveCount(2);
   const starts=await list.locator('.focus-preparation-event').evaluateAll(rows=>rows.map(row=>row.querySelector('time')!.getAttribute('datetime')!));expect(starts).toEqual([...starts].sort());
   for(const detail of await list.locator('details').all())await expect(detail).not.toHaveAttribute('open','');
  }
- // The same route-volume-selected monthly lead keeps its own statistics even after display ordering changes.
- await expect(lists.nth(1).locator('.focus-country-month-trend')).toHaveCount(1);
- await expect(lists.nth(1).locator('[data-country="JP"] .focus-country-month-trend')).toBeVisible();
+ await expect(page.locator('.focus-preparation-brief [data-line-icon=month]')).toHaveCount(0);
  await page.goto(`/${lang}/airport-prepare?date=2026-10-25`);
  const upcoming=page.locator('.focus-holiday-list > li');await expect(upcoming.first()).toBeVisible();
+ await expect(page.locator('.focus-holiday-list > li[data-calendar-start="2026-11-15"]')).toHaveCount(1);
  const dates=await upcoming.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-calendar-start')!));expect(dates).toEqual([...dates].sort());
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
 });

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {sortCalendarEvents} from '../lib/calendar-display-order';
-import {countryTrendCalendar,groupTrendCalendarItems} from '../lib/country-trend-calendar';
+import {countryTrendCalendar,groupTrendCalendarItems,trendCalendarCountryGroups} from '../lib/country-trend-calendar';
 import {preparationEvents,preparationEventsInMonth,preparationEventsOn} from '../lib/preparation-calendar';
 import {planningHolidays} from '../lib/holiday-flight-brief';
 import seed from '../data/airport-focus-preview/calendar-context.json';
@@ -48,7 +48,7 @@ import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {readFileSync} from 'node:fs';
 import {CountryTrendCalendarContext} from '../app/country-trend-calendar-context';
-test('all localized country contexts render one chronological list with preserved item roles and keep sources folded',()=>{
+test('all localized country contexts render Korea-first country sections with chronological items and preserved roles and keep sources folded',()=>{
  for(const lang of ['ko','en','zh','ja'] as const)for(const country of ['JP','CN','VN','US','KR'])for(const month of ['2026-04','2026-08','2026-09']){
   const previous=new Date(`${month}-01T00:00:00Z`);previous.setUTCMonth(previous.getUTCMonth()-1);
   const row={code:country,label:country,points:[{month:previous.toISOString().slice(0,7),departures:100},{month,departures:110}]};
@@ -57,12 +57,21 @@ test('all localized country contexts render one chronological list with preserve
   assert.doesNotMatch(html,/<details[^>]*\bopen(?:\s|=|>)/);
   const groups=groupTrendCalendarItems(countryTrendCalendar(events,{country,selectedMonth:month,actualDataMonths:row.points.map(point=>point.month),asOf:'2026-10-25'}).details);
   const rendered=[...html.matchAll(/<p[^>]+data-calendar-role="(route|origin)" data-calendar-start="([^"]+)"/g)].map(match=>({role:match[1],start:match[2]}));
-  assert.deepEqual(rendered,groups.map(group=>({role:group.role,start:group.items[0].start})),lang+' '+country+' '+month);
-  assert.deepEqual(rendered.map(item=>item.start),rendered.map(item=>item.start).sort());
+  const sections=trendCalendarCountryGroups(countryTrendCalendar(events,{country,selectedMonth:month,actualDataMonths:row.points.map(point=>point.month),asOf:'2026-10-25'}).details);
+  assert.deepEqual(rendered,sections.flatMap(section=>section.groups.map(group=>({role:group.role,start:group.items[0].start}))),lang+' '+country+' '+month);
+  const codes=[...html.matchAll(/data-calendar-country="([A-Z]{2})"/g)].map(match=>match[1]);assert.deepEqual(codes,sections.map(section=>section.country));
+  if(codes.includes('KR'))assert.equal(codes[0],'KR');
+  for(const section of sections){const starts=section.groups.map(group=>group.items[0].start);assert.deepEqual(starts,[...starts].sort());}
   if(groups.some(group=>group.role==='origin'))assert.match(html,/한국 출발지 참고/);
  }
 });
-test('brief display sorting is after representative selection and leaves monthly lead and route-flight joins intact',()=>{
+test('brief display sorting is after representative selection and preserves representative selection and route-flight joins',()=>{
  const source=readFileSync(new URL('../app/airport-focus-preview.tsx',import.meta.url),'utf8');
- for(const code of ['const lead=months[0]','sortCalendarEvents(events).map(event=>','sortCalendarEvents(ending).map(event=>','sortCalendarEvents(currentEvents).map(event=>','flights={flights}','flights={context.eventFlights}'])assert.ok(source.includes(code),code);
+ for(const code of ['sortCalendarEvents(events).map(event=>','sortCalendarEvents(ending).map(event=>','sortCalendarEvents(currentEvents).map(event=>','flights={flights}','flights={context.eventFlights}'])assert.ok(source.includes(code),code);
+});
+test('home removes only next-month presentation while full month preparation data stays available',()=>{
+ const source=readFileSync(new URL('../app/airport-focus-preview.tsx',import.meta.url),'utf8'),brief=source.slice(source.indexOf('function PreparationBrief('),source.indexOf('function SelectedCountryChanges('));
+ assert.doesNotMatch(brief,/monthStart|monthEnd|Next month|다음 달/);assert.match(brief,/Next week/);
+ const all=preparationEvents('2026-10-25',events);assert.ok(preparationEventsInMonth(all,'2026-11').length>0);
+ assert.ok(preparationEventsInMonth(all,'2026-11').some(item=>item.country==='JP'&&item.start==='2026-11-03'));
 });

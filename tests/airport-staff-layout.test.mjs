@@ -4,7 +4,9 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const glance=read('../app/airport-glance-preview.tsx');
-const briefing=read('../app/airport-staff-briefing.tsx');
+const rawBriefing=read('../app/airport-staff-briefing.tsx');
+const briefing=rawBriefing.replace(/<UiLineIcon kind="(?:week|return|month)"\/>/g,'');
+assert.equal((rawBriefing.match(/<UiLineIcon /g)||[]).length,3);
 const styles=read('../app/airport-staff-briefing.css');
 const routeHoliday=read('../app/airport-staff-route-holiday.tsx');
 

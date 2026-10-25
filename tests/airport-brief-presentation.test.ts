@@ -29,8 +29,8 @@ test('each planning country owns its flag, preserved date/source and optional co
  assert.match(japan,/data-country="JP"/);assert.match(japan,/<img[^>]+width="24" height="24" alt=""/);assert.ok(japan.indexOf('<img')<japan.indexOf('일본:'));
  assert.match(japan,/11\/03<small class="focus-event-weekday">\(화요일\)/);assert.equal((japan.match(/<time /g)||[]).length,1);assert.match(japan,/문화의 날 설명/);assert.match(japan,/https:\/\/example.test\/jp/);assert.match(japan,/9월 일본 노선/);assert.doesNotMatch(us,/9월 일본 노선/);
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
- assert.match(source,/monthly&&event.id===lead\?\.id&&<small className="focus-country-month-trend">\{monthlyTrend\}/);
- assert.match(source,/describe\(months,true\)/);assert.doesNotMatch(source,/<p>\{describe\(months[^}]*\)}<\/p><small>/);
+ assert.match(source,/sortCalendarEvents\(events\)\.map\(event=><PreparationEvent lang=\{lang\} key=\{event.id\} event=\{event\} flights=\{flights\} planning\/>/);
+ assert.match(source,/describe\(weeks\)/);assert.doesNotMatch(source,/describe\(months|kind="month"\/>/);assert.doesNotMatch(source,/<p>\{describe\(months[^}]*\)}<\/p><small>/);
 });
 test('number-first briefing removes the surface while retaining provenance and arithmetic labels',()=>{
  const css=readFileSync('app/airport-focus-preview.css','utf8');
@@ -93,7 +93,7 @@ test('upcoming summaries keep dates and trends visible while preserving evidence
  }
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
  assert.match(source,/휴일 종료 기준 · 귀국객 예측 아님/);
- assert.match(source,/\$\{reply\?\.month\} \$\{lead.countryLabel\} 노선 출발 여객, 전월비/);
+ assert.match(source,/className="focus-planning-basis"/);assert.match(source,/short\(weekStart\).*short\(weekEnd\)/);assert.doesNotMatch(source,/monthlyTrend|const months=/);
  assert.doesNotMatch(source,/<p>\{describe\(/);
 });
 
