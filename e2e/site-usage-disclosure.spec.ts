@@ -52,14 +52,14 @@ for(const lang of ['ko','en','zh','ja'])test(`${lang}: monthly retrospective cal
  for(const [role,text] of [
   ['route','중국 · 중추절 2026-09-25–2026-09-27'],
   ['origin','한국 · 여름방학 2026-07-28–2026-08-19'],
- ])await expect(context.locator(`[data-calendar-role="${role}"] > p`).filter({hasText:text})).toBeVisible();
+ ])await expect(context.locator(`[data-calendar-role="${role}"]`).filter({hasText:text})).toBeVisible();
  const summer=context.locator('[data-vacation-group="CN"]');
  await expect(summer).toHaveCount(1);await expect(summer.locator('b')).toHaveText('여름방학');
  await expect(summer.locator('.focus-vacation-period')).toHaveText(['2026-07-01–2026-08-31 · 상하이 초·중등학교 · 직전 월','2026-07-08–2026-08-31 · 베이징 의무교육 학교 · 직전 월']);
  await expect(details.locator(':scope > ul')).toBeHidden();
  await toggle.focus();await page.keyboard.press('Enter');
  await expect(details.locator(':scope > ul')).toBeVisible();
- await expect(context.locator('[data-calendar-role="route"]')).toContainText('중국');await expect(context.locator('[data-calendar-role="route"]')).toContainText('2026-09-25');
+ await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('중국');await expect(context.locator('[data-calendar-role="route"][data-calendar-start="2026-09-25"]')).toContainText('2026-09-25');
  await expect(details.locator('a').first()).toHaveAttribute('href',/^https:\/\//);
  expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await toggle.tap();await expect(details).not.toHaveAttribute('open','');
@@ -102,8 +102,8 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test.descr
  const members=cn.locator('.focus-vacation-period');await expect(members).toHaveCount(2);
  await expect(members.nth(0)).toContainText('2026-07-01–2026-08-31');await expect(members.nth(0)).toContainText('상하이 초·중등학교');
  await expect(members.nth(1)).toContainText('2026-07-08–2026-08-31');await expect(members.nth(1)).toContainText('베이징 의무교육 학교');
- await expect(jp.locator('[data-calendar-role="route"]')).toContainText('2026-07-21–2026-08-31');
- await expect(jp.locator('[data-calendar-role="origin"]')).toContainText('2026-07-28–2026-08-19');
+ await expect(jp.locator('[data-calendar-role="route"][data-calendar-start="2026-07-21"]')).toContainText('2026-07-21–2026-08-31');
+ await expect(jp.locator('[data-calendar-role="origin"][data-calendar-start="2026-07-28"]')).toContainText('2026-07-28–2026-08-19');
  await checkFoldedStatus('VN','NO_REVIEWED_DATA');
  const sources=cn.getByTestId('monthly-calendar-reference');await sources.locator('summary').focus();await page.keyboard.press('Enter');
  for(const item of calendar.events.filter(item=>item.country==='CN'&&item.kind==='school_break'))await expect(sources.locator(`a[href="${item.sourceURL}"]`)).toHaveCount(1);
@@ -113,7 +113,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test.descr
  await checkFoldedStatus('JP','OUTSIDE_PERIOD');
  await expect(context('JP')).not.toContainText('2026-07-21');await expect(context('CN').locator('[data-vacation-group="CN"]')).toHaveCount(0);
  selected='2026-04';await page.reload();const us=context('US');await us.scrollIntoViewIfNeeded();
- await expect(us.locator('[data-calendar-role="route"]')).toContainText('2026-04-02–2026-04-10');
+ await expect(us.locator('[data-calendar-role="route"][data-calendar-start="2026-04-02"]')).toContainText('2026-04-02–2026-04-10');
  await us.getByTestId('monthly-calendar-reference').locator('summary').click();
  await expect(us).toContainText('뉴욕시 공립학교 3K–12학년 대상 · 사립학교 등 제외');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

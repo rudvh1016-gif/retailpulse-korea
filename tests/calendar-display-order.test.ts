@@ -12,7 +12,7 @@ test('date, Korean country name, event name and stable identity order is indepen
  const items=[{id:'z',country:'JP',name:'B',start:'2026-08-01'},{id:'a',country:'JP',name:'A',start:'2026-08-01'},{id:'c',country:'CN',name:'A',start:'2026-08-01'},{id:'k',country:'KR',name:'A',start:'2026-07-01'}];
  for(let i=0;i<30;i++){const input=Object.freeze(shuffled(items,i)),before=JSON.stringify(input);assert.deepEqual(sortCalendarEvents(input).map(item=>item.id),['k','a','z','c']);assert.equal(JSON.stringify(input),before);}
 });
-test('regional China groups use earliest real start and all regions are date ordered; Korean origin remains separate in rendering',()=>{
+test('regional China groups use earliest real start and all regions are date ordered; Korean origin roles remain preserved',()=>{
  const query={country:'CN',selectedMonth:'2026-09',actualDataMonths:['2026-08','2026-09'],asOf:'2026-10-25'};
  const expected=groupTrendCalendarItems(countryTrendCalendar(events,query).details);
  for(let i=0;i<20;i++){
@@ -48,7 +48,7 @@ import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {readFileSync} from 'node:fs';
 import {CountryTrendCalendarContext} from '../app/country-trend-calendar-context';
-test('all localized country contexts render chronological role sections and keep sources folded',()=>{
+test('all localized country contexts render one chronological list with preserved item roles and keep sources folded',()=>{
  for(const lang of ['ko','en','zh','ja'] as const)for(const country of ['JP','CN','VN','US','KR'])for(const month of ['2026-04','2026-08','2026-09']){
   const previous=new Date(`${month}-01T00:00:00Z`);previous.setUTCMonth(previous.getUTCMonth()-1);
   const row={code:country,label:country,points:[{month:previous.toISOString().slice(0,7),departures:100},{month,departures:110}]};
@@ -56,11 +56,10 @@ test('all localized country contexts render chronological role sections and keep
   if(!html)continue;
   assert.doesNotMatch(html,/<details[^>]*\bopen(?:\s|=|>)/);
   const groups=groupTrendCalendarItems(countryTrendCalendar(events,{country,selectedMonth:month,actualDataMonths:row.points.map(point=>point.month),asOf:'2026-10-25'}).details);
-  for(const role of ['route','origin']){
-   const section=html.split(`data-calendar-role="${role}">`)[1]?.split('</div>')[0]??'';
-   let cursor=0;
-   for(const group of groups.filter(group=>group.role===role))for(const item of group.items){const position=section.indexOf(item.start,cursor);assert.ok(position>=cursor,`${lang} ${country} ${month} ${item.start}`);cursor=position+item.start.length;}
-  }
+  const rendered=[...html.matchAll(/<p[^>]+data-calendar-role="(route|origin)" data-calendar-start="([^"]+)"/g)].map(match=>({role:match[1],start:match[2]}));
+  assert.deepEqual(rendered,groups.map(group=>({role:group.role,start:group.items[0].start})),lang+' '+country+' '+month);
+  assert.deepEqual(rendered.map(item=>item.start),rendered.map(item=>item.start).sort());
+  if(groups.some(group=>group.role==='origin'))assert.match(html,/한국 출발지 참고/);
  }
 });
 test('brief display sorting is after representative selection and leaves monthly lead and route-flight joins intact',()=>{

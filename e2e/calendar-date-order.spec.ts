@@ -19,9 +19,14 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${la
  });
  await page.goto(`/${lang}/airport-countries?date=2026-09-19`);
  const contexts=page.locator('.focus-calendar-context');await expect(contexts.first()).toBeVisible();
- for(const role of await contexts.locator('[data-calendar-role]').all()){
-  const dates=await role.locator(':scope > p').evaluateAll(rows=>rows.flatMap(row=>row.querySelector('.focus-vacation-period')?[...row.querySelectorAll('.focus-vacation-period')].map(node=>node.textContent!.match(/\d{4}-\d{2}-\d{2}/)![0]):[row.textContent!.match(/\d{4}-\d{2}-\d{2}/)![0]]));
+ for(const context of await contexts.all()){
+  const items=context.locator(':scope > [data-calendar-role]');
+  const dates=await items.evaluateAll(rows=>rows.map(row=>row.getAttribute('data-calendar-start')!));
   expect(dates).toEqual([...dates].sort());
+  const tops=await items.evaluateAll(rows=>rows.map(row=>row.getBoundingClientRect().top));expect(tops).toEqual([...tops].sort((a,b)=>a-b));
+  for(const group of await context.locator('[data-vacation-group]').all()){
+   const starts=await group.locator('.focus-vacation-period').evaluateAll(rows=>rows.map(row=>row.textContent!.match(/\d{4}-\d{2}-\d{2}/)![0]));expect(starts).toEqual([...starts].sort());
+  }
  }
  const china=page.locator('.focus-trend-context[data-country="CN"]');
  await expect(china.locator('.focus-vacation-period')).toHaveCount(2);
