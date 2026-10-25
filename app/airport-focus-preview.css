@@ -252,3 +252,7 @@
 @media(min-width:1000px){.airport-focus-shell .focus-report .focus-preparation-brief .event-country-flights .staff-route-metric b{font-size:26px}}
 @media(forced-colors:active){.airport-focus-shell .focus-report :is(.focus-selected-country-changes>h3,.focus-preparation-brief>div>h3,.focus-preparation-event h4){color:CanvasText}}
 .airport-focus-shell .focus-report .heading-marker{display:none}
+
+/* A country/season heading owns separate regional dates; no invented aggregate span. */
+.focus-calendar-context .focus-vacation-period{display:block;margin-top:3px;line-height:1.6;overflow-wrap:anywhere}
+.focus-calendar-context .focus-vacation-group{min-width:0}

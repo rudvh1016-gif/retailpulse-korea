@@ -7,7 +7,7 @@ import seed from '../data/airport-focus-preview/calendar-context.json';
 import schools from '../data/korean-school-vacations.json';
 import annual from '../data/official-calendar/priority-country-multiyear.json';
 import type {CalendarEvent} from '../lib/calendar-context.mjs';
-import {calendarEventTitle,countryTrendCalendar,trendCalendarText} from '../lib/country-trend-calendar';
+import {calendarEventTitle,countryTrendCalendar,trendCalendarText,groupTrendCalendarItems,trendVacationAvailability} from '../lib/country-trend-calendar';
 import {CountryFlag} from '../app/airport-country-flag';
 import {CountryTrendCalendarContext} from '../app/country-trend-calendar-context';
 
@@ -186,7 +186,7 @@ test('compact rows expose every matched event and keep sources in one closed lis
  assert.match(evidence,/연방공무원 대상 · 해당 기관·대상에만 적용/);
  assert.match(evidence,/한국 일정은 한국인 여객 통계가 아닙니다/);
  assert.equal((visible.match(/<b>/g)??[]).length,countryTrendCalendar(events,{...query,country:'US'}).details.length);
- for(const country of ['JP','CN','VN','US','FR']){const compact=html({row:{...row,code:country}}).split('<details')[0];assert.equal((compact.match(/<b>/g)??[]).length,countryTrendCalendar(events,{...query,country}).details.length,country);}
+ for(const country of ['JP','CN','VN','US','FR']){const compact=html({row:{...row,code:country}}).split('<details')[0];assert.equal((compact.match(/<b>/g)??[]).length,groupTrendCalendarItems(countryTrendCalendar(events,{...query,country}).details).length,country);}
  const result=countryTrendCalendar(events,{...query,country:'US'});
  assert.equal((evidence.match(/<li>/g)??[]).length,result.details.length);
  for(const item of result.details){assert.ok(evidence.includes(item.sourceURL));assert.ok(evidence.includes(item.verifiedAt));}
@@ -233,8 +233,8 @@ test('calendar flags use local images on Windows while preserving compact rows',
   const contexts=countryTrendCalendar(events,{...query,country}).details;
   if(contexts.some(item=>item.country===country))assert.ok(rendered.includes('/images/airport-flags/'+path),country);
   assert.ok(rendered.includes('/images/airport-flags/fallback/kr.svg'),country);
-  assert.equal((rendered.match(/<img /g)??[]).length,contexts.length);
-  assert.equal((rendered.match(/width="16" height="16" alt=""/g)??[]).length,contexts.length);
+  assert.equal((rendered.match(/<img /g)??[]).length,groupTrendCalendarItems(contexts).length);
+  assert.equal((rendered.match(/width="16" height="16" alt=""/g)??[]).length,groupTrendCalendarItems(contexts).length);
   assert.doesNotMatch(rendered,/[\u{1F1E6}-\u{1F1FF}]/u);
  }
 });
@@ -247,5 +247,85 @@ test('shared country flags keep existing size and never invent unknown assets',(
  for(const code of ['ZZ','OTHER','']){
   const unknown=renderToStaticMarkup(createElement(CountryFlag,{code,size:16}));
   assert.doesNotMatch(unknown,/<img|src=/);
+ }
+});
+
+test('one China summer heading preserves both local schools, dates, months and official sources',()=>{
+ const result=countryTrendCalendar(events,{...query,country:'CN',selectedMonth:'2026-08',actualDataMonths:['2026-07','2026-08']});
+ const before=JSON.stringify(result.details),groups=groupTrendCalendarItems(result.details);
+ const china=groups.filter(group=>group.country==='CN'&&group.kind==='school_break');
+ assert.equal(china.length,1);assert.equal(china[0].items.length,2);
+ assert.deepEqual(china[0].items.map(item=>[item.region,item.start,item.end]),[['상하이 초·중등학교','2026-07-01','2026-08-31'],['베이징 의무교육 학교','2026-07-08','2026-08-31']]);
+ assert.ok(china[0].items.every(item=>item.months.length===2));assert.equal(JSON.stringify(result.details),before);
+ const rendered=html({row:{...row,code:'CN',points:[{month:'2026-07',departures:100},{month:'2026-08',departures:110}]}});
+ const [visible,evidence]=rendered.split('<details');
+ assert.equal((visible.match(/data-vacation-group="CN"/g)??[]).length,1);
+ assert.equal((visible.match(/중국 · <b>여름방학<\/b>/g)??[]).length,1);
+ for(const item of china[0].items){assert.ok(visible.includes(item.region!));assert.ok(visible.includes(`${item.start}–${item.end}`));assert.ok(evidence.includes(item.sourceURL));assert.ok(evidence.includes(item.verifiedAt));}
+ assert.ok(visible.includes('한국 · <b>여름방학</b>'));assert.ok(evidence.includes('개별 학교 예시'));
+ assert.ok(!china[0].items.some(item=>item.scope==='national'));
+});
+
+test('same dates deduplicate only identical evidence; distinct regions, schools, sources and seasons survive grouping',()=>{
+ const original=events.find(event=>event.country==='JP'&&event.kind==='school_break')!;
+ const variants=[original,{...original,id:'duplicate-id'}, {...original,id:'other-school',region:'別の学校',scope:'institutional' as const}, {...original,id:'other-source',sourceURL:'https://example.test/another-reviewed-source'}];
+ const details=countryTrendCalendar(variants,query,[]).details;
+ const groups=groupTrendCalendarItems(details);assert.equal(details.length,3);assert.equal(groups.length,1);assert.equal(groups[0].items.length,3);
+ assert.deepEqual(new Set(groups.flatMap(group=>group.items.map(item=>item.eventId))),new Set(details.map(item=>item.eventId)));
+ const summer=details[0];const distinct=groupTrendCalendarItems([summer,{...summer,eventId:'spring',title:'일본 봄방학',name:'봄방학'}]);assert.equal(distinct.length,2);
+});
+
+test('Japan is preserved for actual July/August and August/September comparisons, never pulled into October',()=>{
+ for(const [month,actual] of [['2026-07',['2026-07']],['2026-08',['2026-07','2026-08']],['2026-09',['2026-08','2026-09']]] as const){
+  const q={...query,selectedMonth:month,actualDataMonths:actual};const result=countryTrendCalendar(events,q);
+  assert.equal(trendVacationAvailability(events,q,result.details),'MATCHED');assert.ok(result.details.some(item=>item.country==='JP'&&item.kind==='school_break'),month);
+ }
+ const october={...query,selectedMonth:'2026-10',actualDataMonths:['2026-09','2026-10']};
+ const result=countryTrendCalendar(events,october);assert.equal(trendVacationAvailability(events,october,result.details),'OUTSIDE_PERIOD');
+ const rendered=html({row:{...row,points:[{month:'2026-09',departures:100},{month:'2026-10',departures:110}]}});
+ assert.match(rendered,/data-school-break-status="OUTSIDE_PERIOD"/);assert.doesNotMatch(rendered,/2026-07-21|2026-08-31/);
+ const noAdjacent={...query,actualDataMonths:['2026-09']};assert.equal(trendVacationAvailability(events,noAdjacent,countryTrendCalendar(events,noAdjacent).details),'OUTSIDE_PERIOD');
+});
+
+test('US spring is shown only for matching actual periods; missing countries and unverified rows never mean no vacations',()=>{
+ const usa={...query,country:'US',selectedMonth:'2026-04',actualDataMonths:['2026-04']};const spring=countryTrendCalendar(events,usa);
+ assert.equal(trendVacationAvailability(events,usa,spring.details),'MATCHED');assert.ok(spring.details.some(item=>item.start==='2026-04-02'&&item.end==='2026-04-10'));
+ for(const country of ['VN','TH','FR']){
+  const q={...query,country};assert.equal(trendVacationAvailability(events,q,countryTrendCalendar(events,q).details),'NO_REVIEWED_DATA');
+  const rendered=html({row:{...row,code:country}});assert.match(rendered,/data-school-break-status="NO_REVIEWED_DATA"/);assert.match(rendered,/방학이 없다는 뜻은 아닙니다/);
+ }
+ for(const status of ['unverified','expired','superseded'] as const){const unverified=events.map(item=>item.kind==='school_break'?{...item,status}:item);assert.equal(trendVacationAvailability(unverified,query,countryTrendCalendar(unverified,query).details),'NO_REVIEWED_DATA');}
+ assert.equal(trendVacationAvailability([],query,[]),'NO_REVIEWED_DATA');
+});
+
+for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: coverage states are localized and grouped evidence remains complete`,()=>{
+ const cn=html({lang,row:{...row,code:'CN'}});assert.equal((cn.split('<details')[0].match(/data-vacation-group="CN"/g)??[]).length,1);
+ for(const event of events.filter(item=>item.country==='CN'&&item.kind==='school_break')){assert.ok(cn.includes(event.sourceURL));assert.ok(cn.includes(event.start));assert.ok(cn.includes(event.region!));}
+ const vn=html({lang,row:{...row,code:'VN'}});assert.match(vn,/data-school-break-status="NO_REVIEWED_DATA"/);
+ const text=vn.match(/data-school-break-status="NO_REVIEWED_DATA">([^<]+)/)?.[1]??'';
+ assert.equal(text,{ko:'방학 자료: 미확인',en:'School-break data: unverified',zh:'学校假期资料：未确认',ja:'学校休暇資料：未確認'}[lang]);
+ const [visible,evidence]=vn.split('<details');
+ assert.doesNotMatch(visible,/data-school-break-status|data-school-break-limit/);
+ assert.match(evidence,/^ class="focus-source" data-testid="monthly-calendar-reference">/);
+ assert.ok(evidence.includes({ko:'방학이 없다는 뜻은 아닙니다',en:'does not mean there are no breaks',zh:'并不表示没有假期',ja:'休暇がないことを意味しません'}[lang]));
+ const outside=html({lang,row:{...row,points:[{month:'2026-09',departures:100},{month:'2026-10',departures:110}]}});
+ assert.doesNotMatch(outside.split('<details')[0],/data-school-break-status|data-school-break-limit/);
+ assert.ok(outside.includes({ko:'방학 자료: 비교 기간 밖',en:'School-break data: outside comparison period',zh:'学校假期资料：比较期间以外',ja:'学校休暇資料：比較期間外'}[lang]));
+});
+
+test('Korean reviewed winter examples and public holidays remain independent of destination grouping',()=>{
+ const q={...query,country:'KR',selectedMonth:'2027-01',actualDataMonths:['2027-01'],asOf:'2026-10-25'};
+ const result=countryTrendCalendar(events,q);assert.equal(trendVacationAvailability(events,q,result.details),'MATCHED');
+ assert.ok(result.details.some(item=>item.kind==='school_break'&&item.start==='2027-01-01'&&item.end==='2027-02-28'));
+ const outside={...q,selectedMonth:'2026-10',actualDataMonths:['2026-09','2026-10']};
+ assert.equal(trendVacationAvailability(events,outside,countryTrendCalendar(events,outside).details),'OUTSIDE_PERIOD');
+ assert.ok(countryTrendCalendar(events,outside).details.some(item=>item.kind==='public_holiday'&&item.country==='KR'));
+});
+
+test('empty matched periods keep the calendar context absent instead of creating coverage-only boxes',()=>{
+ const noPeriod={...row,points:[{month:'2026-05',departures:100},{month:'2026-06',departures:110}]};
+ for(const country of ['JP','CN','US','VN','FR']){
+  const outsideOnly=events.filter(item=>item.country===country&&item.kind==='school_break');
+  for(const source of [[],outsideOnly])assert.equal(html({row:{...noPeriod,code:country},events:source}),'',`${country}: no matched event means no coverage-only UI`);
  }
 });
