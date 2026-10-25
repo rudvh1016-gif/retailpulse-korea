@@ -30,7 +30,9 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,1440])test(`
  missing=true;const refreshed=page.waitForResponse(response=>{const url=new URL(response.url());return url.pathname==='/api/live/airport-passenger-comparison'&&url.searchParams.get('selected')==='2026-09'&&url.searchParams.get('baseline')==='2026-03';});
  const beforeRefresh=await page.evaluate(()=>Date.now());
  await page.clock.fastForward(300001);expect((await page.evaluate(()=>Date.now()))-beforeRefresh,'the cache clock advances with the polling timer').toBeGreaterThanOrEqual(300001);const refreshedResponse=await refreshed;await refreshedResponse.finished();expect((await refreshedResponse.json()).selected).toBeNull();await expect(first.locator('.route-month-total').last()).toHaveText('?');
- await expect(selected).toHaveValue('2026-09');await expect(selected.locator('option[value="2026-09"]')).toBeDisabled();
+ await expect(selected).toHaveValue('2026-09');const unavailable=selected.locator('option[value="2026-09"]');
+ await expect(unavailable).toHaveAttribute('disabled','');await expect(unavailable).toHaveJSProperty('disabled',true);
+ await expect(selected).toBeEnabled();await expect(selected.locator('option:not(:disabled)')).toHaveText(['2026-03','2026-08']);
  expect(requests).toContain('2026-09|2026-03');
  const basis=block.locator('.concise-explainer');await expect(basis).not.toHaveAttribute('open','');await basis.locator('summary').click();await expect(basis).toHaveAttribute('open','');await expect(basis).toContainText('2026-03');await basis.locator('summary').click();await expect(basis).not.toHaveAttribute('open','');
  await expect(block.locator('a[href="https://www.data.go.kr/data/15095071/openapi.do"]')).toBeVisible();
