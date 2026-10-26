@@ -48,9 +48,12 @@
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>small,.glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>small{font-size:12px;font-weight:400;line-height:1.6;color:#586571}
 .airport-flow-item-title>.heading-marker{display:none}
 
-/* Within the six overview topics, only their h3 titles carry emphasis.
+/* Within the six overview topics, h3 titles carry content emphasis.
+   Native disclosure labels retain the separate control hierarchy.
    Time, counts, route names and holiday names remain ordinary content. */
-.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(p,h4,summary,a){font-size:14px;font-weight:400;line-height:1.5}
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(p,h4,a){font-size:14px;font-weight:400;line-height:1.5}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid small{font-size:12px;font-weight:400;line-height:1.6}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>strong :is(b,strong,span),
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(b,strong,span,time){font-size:inherit;font-weight:400!important}
+
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid summary{font-size:14px;line-height:1.5}

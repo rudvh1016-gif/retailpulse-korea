@@ -38,7 +38,7 @@ test('the same three columns and vertical mobile reading order connect all six i
 
 
 test('only the six opt-in topics lower content and nested emphasis below their titles',()=>{
- const content=declarations(rule(scope+' .staff-brief-grid :is(p,h4,summary,a)'));
+ const content=declarations(rule(scope+' .staff-brief-grid :is(p,h4,a)'));
  assert.deepEqual([content['font-size'],content['font-weight']],['14px','400']);
  const metric=declarations(rule(scope+' .staff-brief-grid>section>p,'+scope+'>a>strong'));
  assert.deepEqual([metric['font-size'],metric['font-weight']],['14px','400']);
@@ -47,4 +47,11 @@ test('only the six opt-in topics lower content and nested emphasis below their t
  const emphasis=css.nodes.find(node=>node.type==='rule'&&node.selector.includes(scope+' .staff-brief-grid :is(b,strong,span,time)'));
  assert.equal(declarations(emphasis)['font-weight'],'400');assert.ok(emphasis.nodes.find(node=>node.prop==='font-weight').important);
  for(const selector of emphasis.selector.split(',\n'))assert.ok(selector.startsWith(scope));
+});
+
+test('disclosure controls keep their own medium-weight hierarchy, not the ordinary content rule',()=>{
+ const control=declarations(rule(scope+' .staff-brief-grid summary'));
+ assert.equal(control['font-size'],'14px');assert.equal(control['font-weight'],undefined);
+ assert.match(read('app/disclosure-hierarchy.css'),/:root body details > summary,[^]*?font-weight:600!important/);
+ assert.doesNotMatch(read('app/airport-staff-briefing.css'),/:is\(p,h4,summary,a\)/);
 });
