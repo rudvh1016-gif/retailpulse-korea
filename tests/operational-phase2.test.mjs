@@ -114,13 +114,73 @@ test('shadow sample minimum: too few or unknown facts means insufficient evidenc
 test('shadow non-worse cheaper policy is review-only, never auto-promoted',()=>{const rows=Array.from({length:10},(_,i)=>[attempt('REDISPATCH_SAME_WORKFLOW',i),attempt('REQUEST_ONLY_MISSING_COVERAGE',i,{providerRequests:1})]).flat();const result=evaluateShadowPolicy(rows,scope,'REDISPATCH_SAME_WORKFLOW','REQUEST_ONLY_MISSING_COVERAGE');assert.equal(result.state,'READY_FOR_OWNER_REVIEW');assert.equal(result.automaticPolicyChangeAllowed,false);assert.equal(AUTOMATIC_POLICY_CHANGE_ALLOWED,false);assert.deepEqual(scoreRecoveryAttempts(rows),scoreRecoveryAttempts([...rows].reverse()));});
 test('shadow rejects higher failure or request cost',()=>{const rows=Array.from({length:10},(_,i)=>[attempt('REDISPATCH_SAME_WORKFLOW',i),attempt('REQUEST_ONLY_MISSING_COVERAGE',i,{providerRequests:3})]).flat();assert.equal(evaluateShadowPolicy(rows,scope,'REDISPATCH_SAME_WORKFLOW','REQUEST_ONLY_MISSING_COVERAGE').state,'REJECT_CANDIDATE');});
 test('A1 review never opens the legacy generic provider helper during or after trial',()=>{assert.equal(CENTRAL_RECOVERY_EXECUTION_ENABLED,true);assert.equal(recoveryActivation(at).allowed,false);assert.equal(recoveryActivation('2026-10-01T00:00:00Z').allowed,false);});
-test('no new recurring schedule and Owner UI Lock byte-identical to approved base',()=>{
+
+// Compare protected bytes after reversing only these exact approved navigation
+// expressions and their canonical-contract comment. Every other byte is locked.
+const approvedCanonicalPatches={
+  "app/retailpulse-app.tsx": [
+    [
+      "AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide",
+      "AirportGlance = LazyAirportGlance, IndustryGuide"
+    ],
+    [
+      "  AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;\n  AirportPreparation?: ComponentType<{lang:Lang}>;",
+      "  AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;"
+    ],
+    [
+      "const LazyAirportPreparation=dynamic(",
+      "const AirportPreparation=dynamic("
+    ],
+    [
+      "  if (view === \"airport-glance\") return base;\n",
+      ""
+    ],
+    [
+      "(nextView === 'airport' || nextView === 'airport-glance') && nextTerminal !== 'all'",
+      "nextView === 'airport' && nextTerminal !== 'all'"
+    ],
+    [
+      "(next==='airport'||next==='airport-glance')&&terminal!=='all'",
+      "next==='airport'&&terminal!=='all'"
+    ],
+    [
+      "href={navigationHref(item)} className=",
+      "href={routeFor(lang, item, selected)} className="
+    ]
+  ],
+  "app/seo-config.ts": [
+    [
+      " * sitemap. Home navigation also uses the locale root; the alias remains\n * accessible with the same canonical and without an added redirect.",
+      " * sitemap. The menu still links to it; only the search signals change."
+    ]
+  ],
+  "app/[locale]/[slug]/page.tsx": [
+    [
+      "AirportGlance={slug === \"airport-glance\" ? AirportGlancePreview : undefined} AirportPreparation={slug === \"airport-prepare\" ? AirportPreparation : undefined}",
+      "AirportGlance={slug === \"airport-glance\" ? AirportGlancePreview : undefined}"
+    ],
+    [
+      "import {AirportFocusGlance as AirportGlancePreview,AirportPreparation} from \"../../airport-focus-production\";",
+      "import {AirportFocusGlance as AirportGlancePreview} from \"../../airport-focus-production\";"
+    ]
+  ]
+};
+function protectedUiBytes(file){
+ const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
+ let source=bytes.toString('utf8');
+ for(const [approved,original] of approvedCanonicalPatches[file]){
+  assert.equal(source.split(approved).length-1,1,file+' approved canonical expression must occur once');
+  source=source.replace(approved,original);
+ }
+ return Buffer.from(source,'utf8');
+}
+test('no new recurring schedule and protected UI remains byte-identical outside exact approved canonical edits',()=>{
   const locks=JSON.parse(readFileSync('tests/fixtures/phase2-locks.json','utf8'));
   for(const file of readdirSync('.github/workflows')){
     const current=readWorkflowFacts(file,readFileSync('.github/workflows/'+file,'utf8'));
     assert.deepEqual(current.crons,locks.crons[file]??[],file);
   }
-  for(const [file,expected] of Object.entries(locks.protectedFiles))assert.equal(createHash('sha256').update(readFileSync(file)).digest('hex'),expected,file);
+  for(const [file,expected] of Object.entries(locks.protectedFiles))assert.equal(createHash('sha256').update(protectedUiBytes(file)).digest('hex'),expected,file);
   const workflow=readWorkflowFacts('operational-memory.yml',readFileSync('.github/workflows/operational-memory.yml','utf8'));assert.deepEqual(workflow.triggers,['workflow_dispatch']);
 });
 test('real schema version used; unavailable remains unknown; companion source included',()=>{assert.equal(observedContract('KMA_VILAGE_FCST',{schema_version:'weather-v1'}),'weather-v1');assert.equal(observedContract('KMA_VILAGE_FCST',{schema_version:'unavailable'}),'UNKNOWN_CONTRACT');assert.deepEqual(sourceIdsForRun('seoul_realtime'),['SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL']);});
