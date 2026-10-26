@@ -126,7 +126,8 @@ export function pageDescription(locale: SeoLocale, slug?: SeoSlug, tourismArea: 
  * Slugs that serve the same page as the locale home. Since PR #357 the home
  * renders the airport glance, so /{lang}/airport-glance names /{lang} as its
  * canonical, shares the home's hreflang cluster and is left out of the
- * sitemap. The menu still links to it; only the search signals change.
+ * sitemap. Home navigation also uses the locale root; the alias remains
+ * accessible with the same canonical and without an added redirect.
  */
 export const homeEquivalentSlugs: readonly SeoSlug[] = ["airport-glance"];
 export function canonicalSlug(slug?: SeoSlug): SeoSlug | undefined {

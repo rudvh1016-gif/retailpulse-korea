@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
+import {ArrivalReviewedOverview} from './arrival-reviewed-overview';
 import {arrivalManualReviewLabel,arrivalReviewSentence} from '../lib/arrival-review-date';
 import {evaluateArrival,updateArrivalAnswer,arrivalCheckSummary,arrivalCheckExplanation,type ArrivalCountry,type ArrivalCheck} from '../lib/arrival-allowance-guidance';
 import snapshot from '../data/airport-focus-preview/arrival-allowances.json';
@@ -39,6 +40,7 @@ export default function ArrivalAllowancesPreview({scrollOnMount=false}:{scrollOn
  return <section className="arrival-allowances" id="arrival-allowances" lang="ko" aria-labelledby="arrival-allowances-title">
   <div className="focus-section-heading"><div><h2 data-heading="section" id="arrival-allowances-title"><span className="heading-marker" aria-hidden="true"/>도착국 반입 면세한도</h2><p>구매 한도가 아닌, 도착지 입국 시 적용되는 기준입니다.</p></div></div>
   <label className="arrival-filter">도착 국가·지역<select aria-label="도착 국가·지역" value={countryId} onChange={event=>{setCountryId(event.target.value);setAnswers({});}}><option value="">선택하세요</option>{data.countries.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+  {!country&&<ArrivalReviewedOverview countries={data.countries}/>}
   {country&&<>
    {country.id==='JP'&&checks?.japan?.changedAt&&<p className="focus-source" role="status">[공지] 일본 세관 현행 안내 수치 업데이트: {japanChangeText(checks.japan)}. 확인 {checks.japan.changedAt.slice(0,10)} · 시행일은 원문에서 별도 확인하세요.</p>}
    <p className="arrival-scope">{country.scope}</p><small className="focus-source arrival-review-date">{arrivalManualReviewLabel(country)}<span className="arrival-check-status" role={check?.state==='REVIEW_REQUIRED'?'status':undefined}> · {arrivalCheckSummary(check)}</span></small>

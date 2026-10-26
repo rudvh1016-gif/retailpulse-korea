@@ -348,6 +348,7 @@ const htmlLang: Record<Lang, string> = { ko: "ko", en: "en", zh: "zh-CN", ja: "j
 
 function routeFor(lang: Lang, view: View, area: AreaId) {
   const base = `/${lang}`;
+  if (view === "airport-glance") return base;
   if (view === "today") return `${base}/${area}`;
   if (view === "tourism-desk") return `${base}/tourism-desk/${area}`;
   return `${base}/${view}`;
@@ -484,7 +485,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if (serviceDate && nextView!=='where-to' && nextView!=='consumption') params.set('date',serviceDate);
     if (nextView === 'consumption' || nextView === 'forecast') {params.set('area',nextArea);const month=new URLSearchParams(window.location.search).get('month');if(month)params.set('month',month);}
     if(nextView==='airport'&&nextConcourse)params.set('building','CONCOURSE');
-    else if (nextView === 'airport' && nextTerminal !== 'all') params.set('terminal',nextTerminal);
+    else if ((nextView === 'airport' || nextView === 'airport-glance') && nextTerminal !== 'all') params.set('terminal',nextTerminal);
     const paramsText = params.toString(); // not .size: older Safari/Chrome lack URLSearchParams.size
     const nextPath = (preserveHome ? `/${nextLang}` : routeFor(nextLang, nextView, nextArea)) + (paramsText ? `?${paramsText}` : '');
     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
@@ -495,7 +496,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if(serviceDate&&next!=='where-to'&&next!=='consumption')params.set('date',serviceDate);
     if(next==='consumption'||next==='forecast')params.set('area',selected);
     if(next==='airport'&&concourse)params.set('building','CONCOURSE');
-    else if(next==='airport'&&terminal!=='all')params.set('terminal',terminal);
+    else if((next==='airport'||next==='airport-glance')&&terminal!=='all')params.set('terminal',terminal);
     return routeFor(lang,next,selected)+(params.toString()?`?${params}`:'');
   }
 
@@ -551,7 +552,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "airport-countries", "airport-prepare", "more"] as View[]).map((item) => (
-            <a key={item} href={routeFor(lang, item, selected)} className={view === item || (item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} aria-current={view === item ? "page" : item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
+            <a key={item} href={navigationHref(item)} className={view === item || (item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} aria-current={view === item ? "page" : item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
           ))}
         </nav>
         <div className="header-meta">
