@@ -64,8 +64,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  }
  await expect(page.locator('.focus-report-lines p').first()).toHaveCSS('font-size','16px');
  await expect(page.locator('.focus-people-metric > .focus-metric-label')).toHaveText('예상 인원 · 단순합계');
- await expect(page.locator('.focus-today-title')).toHaveCSS('padding-bottom','6px');
- await expect(page.locator('.focus-today-title')).toHaveCSS('border-bottom-width','1px');
+ await expect(page.locator('.focus-today-title')).toHaveCSS('padding-bottom','0px');
+ await expect(page.locator('.focus-today-title')).toHaveCSS('border-bottom-width','0px');
  const metricBoxes=await page.locator('.focus-core-metric').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,scroll:node.scrollWidth,width:node.clientWidth};}));
  expect(metricBoxes).toHaveLength(2);
  for(const box of metricBoxes)expect(box.scroll).toBeLessThanOrEqual(box.width+1);
@@ -100,7 +100,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(detail.getByRole('link',{name:'공식 일정 ↗'})).toBeVisible();
  await detail.locator('summary').click();
  await expect(detail).not.toHaveAttribute('open','');
- await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size',width<=700?'28px':'32px');
+ await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size','22px');
  await expect(page.locator('.focus-preparation-brief>div>small').first()).toHaveCSS('font-size','12px');
  expect(await page.getByTestId('glance-key-growth').evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('#focus-holidays')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
  await page.locator('#focus-holidays').scrollIntoViewIfNeeded();
