@@ -257,11 +257,9 @@
 .focus-calendar-context .focus-vacation-period{display:block;margin-top:3px;line-height:1.6;overflow-wrap:anywhere}
 .focus-calendar-context .focus-vacation-group{min-width:0}
 
-/* Approved topic-only bands: existing columns, figures and body rhythm stay intact. */
-.airport-focus-shell .focus-report h3.focus-brief-band{display:flex;align-items:center;gap:7px;box-sizing:border-box;min-height:34px;padding:6px 8px;border:1px solid #34383d;background:#fff;color:#222326;line-height:1.35}
-.airport-focus-shell .focus-report h3.focus-brief-band>.ui-line-icon{flex:none;width:18px;height:18px;color:#34383d}
+/* Quiet topic titles: whitespace carries the grouping. */
+.airport-focus-shell .focus-report h3.focus-brief-band{display:flex;align-items:baseline;gap:7px;box-sizing:border-box;min-height:0;padding:0;border:0;background:transparent;color:#222326;line-height:1.4}
 .airport-focus-shell .focus-report h3.focus-brief-band>small{margin-left:auto;min-width:0;font-weight:400}
-@media(forced-colors:active){.airport-focus-shell .focus-report h3.focus-brief-band{border-color:CanvasText;color:CanvasText}.airport-focus-shell .focus-report h3.focus-brief-band>.ui-line-icon{color:CanvasText}}
 .focus-calendar-country{border-top:1px solid #dce2e7;margin-top:8px;padding-top:6px}
 .focus-calendar-country>h4{display:flex;align-items:center;gap:6px;color:#222326;font-size:13px;font-weight:700;margin:0 0 5px;line-height:1.5}
 
@@ -274,3 +272,7 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  html:has(.focus-calendar-context){scroll-padding-bottom:calc(90px + var(--safe-area-bottom))}
  .focus-calendar-context summary{scroll-margin-block:16px}
 }
+
+.airport-focus-shell .monthly-airport-scope{font-size:13px;color:#222326;font-weight:600;line-height:1.5;margin:6px 0;overflow-wrap:anywhere}
+
+.monthly-airport-scope>p{margin:0;font:inherit}.monthly-airport-scope>small{display:block;margin-top:3px;font-size:12px;font-weight:400;line-height:1.5;color:#586571}

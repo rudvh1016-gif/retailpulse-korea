@@ -33,6 +33,5 @@
 .airport-focus-operating .airport-composition-explainer p{font-size:13px;line-height:1.6;max-width:72ch}
 .airport-focus-operating .airport-mtd-compare dd>.airport-glance-change{font-size:16px}
 
-.airport-model-band{display:flex;align-items:center;gap:7px;min-height:34px;box-sizing:border-box;padding:6px 8px;border:1px solid #34383d;background:#fff;color:#222326;font-size:14px;font-weight:700;line-height:1.4}
-.airport-model-band>.ui-line-icon{width:18px;height:18px;flex:none;color:#34383d}
+.airport-model-band{display:flex;align-items:center;gap:7px;min-height:0;box-sizing:border-box;padding:0;border:0;background:transparent;color:#222326;font-size:14px;font-weight:600;line-height:1.4}
 .airport-concept-model>.airport-gate-region-register{margin-top:8px}

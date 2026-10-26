@@ -1,4 +1,5 @@
 'use client';
+import {MonthlyAirportScope} from './monthly-airport-scope';
 import {type ComponentProps,type ReactNode} from 'react';
 import dynamic from 'next/dynamic';
 import AirportGlance from './airport-glance-preview';
@@ -47,7 +48,7 @@ export function AirportFocusStatus(props:ComponentProps<typeof AirportViewCompon
 function CountryContents({lang,date}:{lang:Lang;date:string|null}){
  const copy=airportFocusCopy(lang);
  const today=useLiveSummary(date)?.todayKst??'',month=(date||today).slice(0,7);
- return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{copy.countries}</h1><p className="focus-lead">{copy.countriesHelp}</p>{month&&<><CountryBriefing month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full lang={lang}/></div></div>;
+ return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{({ko:'T1 + T2 국가별 흐름',en:'T1 + T2 Route-country trends',zh:'T1 + T2 航线国家趋势',ja:'T1 + T2 路線国別の推移'})[lang]}</h1><MonthlyAirportScope lang={lang}/><p className="focus-lead">{copy.countriesHelp}</p>{month&&<><CountryBriefing month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full lang={lang}/></div></div>;
 }
 export function AirportCountryFlow({lang,date}:{lang:Lang;date:string|null}){return <FocusLiveData date={date}><CountryContents lang={lang} date={date}/></FocusLiveData>;}
 export function AirportPreparation({lang}:{lang:Lang}){const copy=airportFocusCopy(lang);return <FocusLiveData><div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{copy.prepare}</h1><p className="focus-lead">{copy.prepareHelp}</p><PreparationArrivalLink/><HolidayList full/><ArrivalAllowances/><a className="focus-related" href={`/${lang}/airport-news`}>{copy.newsMore}</a></div></div></FocusLiveData>;}

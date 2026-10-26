@@ -22,14 +22,20 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  await expect(figuresTitle).toHaveText(({ko:'출국객·항공편',en:'Passengers and flights',zh:'出境旅客与航班',ja:'出国者・便数'} as Record<string,string>)[lang]);
  await expect(figuresTitle).toHaveAttribute('data-heading','subsection');
  await expect(figuresTitle).toHaveCSS('font-size','18px');
- await expect(report.locator('.focus-today-title')).toHaveCSS('font-size',`${Math.min(24,Math.max(22,width*.022))}px`);
- const parentSize=await report.locator('.focus-report-title > h2').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
- expect(parentSize).toBeGreaterThanOrEqual(28);expect(parentSize).toBeLessThanOrEqual(32);
+ await expect(report.locator('.focus-today-title')).toHaveCSS('font-size','16px');
+ const parent=report.locator('.focus-report-title > h2');
+ await expect(parent).toHaveCSS('font-size','22px');await expect(parent).toHaveAttribute('data-heading','section');
+ const parentSize=await parent.evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
+ expect(parentSize).toBeGreaterThan(await figuresTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
+ const keyNumber=report.locator('.focus-passenger-total');await expect(keyNumber).toHaveCSS('font-size',width>=1000?'28px':'24px');
+ expect(await keyNumber.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(parentSize);
  const topics=stack.locator(':scope > .focus-selected-country-changes');await expect(topics).toHaveCount(2);
  await page.evaluate(()=>document.fonts.ready);
  for(const heading of await report.locator('h3[data-heading="subsection"]').all()){
   await expect(heading).toHaveCSS('color','rgb(34, 35, 38)');
-  await expect(heading).toHaveCSS('font-weight',lang==='ja'||lang==='zh'?'600':'700');
+  const quiet=await heading.evaluate(element=>element.classList.contains('focus-brief-band'));
+  await expect(heading).toHaveCSS('font-weight',quiet||lang==='ja'||lang==='zh'?'600':'700');
+  if(quiet){await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('border-top-width','0px');await expect(heading.locator('.ui-line-icon')).toHaveCount(0);}
  }
  // Supporting dates remain subordinate rather than inheriting title weight/color.
  await expect(report.locator('.focus-today-title > small')).toHaveCSS('font-weight','400');

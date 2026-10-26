@@ -48,7 +48,7 @@ for(const width of [360,390,430,1440])test(`airport production composition ${wid
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`production-home-${width}.png`)});
  await nav.getByRole('link',{name:'국가별 흐름',exact:true}).click();await expect(page).toHaveURL(/airport-countries/);
- await expect(page.getByRole('heading',{name:'국가별 흐름',exact:true})).toBeVisible();await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
+ await expect(page.getByRole('heading',{name:'T1 + T2 국가별 흐름',exact:true})).toBeVisible();await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
  await expectPriorityCountryTables(page);await page.screenshot({path:info.outputPath(`production-countries-${width}.png`)});
  await nav.getByRole('link',{name:'미리 준비',exact:true}).click();await expect(page).toHaveURL(/airport-prepare/);
  await page.getByRole('link',{name:'도착국 반입 면세한도 확인하기',exact:false}).first().click();await expect(page.locator('#arrival-allowances')).toBeInViewport();await page.screenshot({path:info.outputPath(`production-preparation-${width}.png`)});

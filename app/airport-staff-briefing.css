@@ -25,7 +25,7 @@
 /* One six-item airport-flow group: same heading and column rhythm, no step numbers.
    Scope the override to this named group; values and source copy keep their roles. */
 :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{
- font-family:var(--font-ui);font-size:18px!important;font-weight:700!important;color:#222326!important;
+ font-family:var(--font-ui);font-size:16px!important;font-weight:600!important;color:#222326!important;
  line-height:1.4!important;letter-spacing:-.025em;margin:0 0 10px;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:start
 }
 :root body :is(.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]) .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{font-weight:600!important}
@@ -42,10 +42,8 @@
 @media(forced-colors:active){:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{color:CanvasText!important}}
 
 
-/* The six flow topics share the same compact charcoal title band. */
-:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{display:flex!important;align-items:center;gap:7px;box-sizing:border-box;min-height:34px;padding:6px 8px;border:1px solid #34383d;background:#fff}
-.airport-flow-item-title>.ui-line-icon{flex:none;width:18px;height:18px;color:#34383d}
+/* Quiet peer headings retain the existing three-column/mobile rhythm. */
+:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{display:block!important;box-sizing:border-box;min-height:0;padding:0;border:0;background:transparent}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>p,.glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>strong{font-size:16px;line-height:1.5}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>small,.glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>small{font-size:12px;line-height:1.6;color:#586571}
-@media(max-width:700px){.glance-insights[aria-labelledby="airport-staff-briefing-title"]>a,.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section{padding-bottom:12px;border-bottom:1px solid #dce2e7}}
 .airport-flow-item-title>.heading-marker{display:none}

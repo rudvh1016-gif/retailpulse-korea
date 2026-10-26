@@ -99,7 +99,7 @@ test('hierarchy is opt-in, wrapping-safe, and leaves navigation/theme/body token
  assert.match(read('app/layout.tsx'),/import "\.\/heading-hierarchy.css"/);
  for(const role of ['page','section','subsection'])assert.ok(css.includes(`[data-heading="${role}"]`));
  assert.match(css,/overflow-wrap:anywhere/);assert.match(css,/white-space:normal/);
- assert.match(css,/font-size:clamp\(28px,3vw,32px\)/);assert.match(css,/font-size:clamp\(22px,2.2vw,24px\)/);assert.match(css,/font-size:18px/);
+ assert.match(css,/font-size:22px/);assert.match(css,/font-size:16px/);assert.match(css,/font-size:18px/);
  assert.match(css,/forced-colors:active/);
  assert.doesNotMatch(css,/--type-body:|\.glass-nav\s*\{|\.bottom-nav\s*\{|body\s*\{/);
 });
@@ -107,7 +107,7 @@ test('hierarchy is opt-in, wrapping-safe, and leaves navigation/theme/body token
 
 test('the full home question and destination link have separate rows with only narrow-title scaling',()=>{
  const css=read('app/heading-hierarchy.css'),focus=read('app/airport-focus-preview.css'),source=read('app/airport-focus-trends.tsx');
- assert.match(source,/이어지는 흐름일까'\}<\/h2>\{onMore&&<button className="focus-trend-more"/);
+ assert.match(source,/이어지는 흐름일까'\}<\/h2>\{!full&&<MonthlyAirportScope lang=\{lang\}\/>\}\{onMore&&<button className="focus-trend-more"/);
  assert.match(focus,/\.focus-trend-heading\{display:block\}/);assert.match(focus,/\.focus-trend-heading \.focus-trend-more\{[^}]*min-height:44px/);
  assert.match(css,/@media\(max-width:380px\)\{:root body \.focus-trend-question\[data-heading\]\{font-size:1\.125rem!important\}\}/);
  assert.match(css,/@media\(max-width:340px\)\{:root body \.focus-trend-question\[data-heading\]\{font-size:1\.0625rem!important\}\}/);

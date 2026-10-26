@@ -1,5 +1,4 @@
 'use client';
-import {UiLineIcon} from './ui-line-icon';
 import { useContext } from 'react';
 import type { Lang } from './retailpulse-data';
 import type { DepartureMap } from '../lib/airport-departure-map';
@@ -29,7 +28,7 @@ export function AirportConceptModel({ map, lang, evidence,compactEvidence=false 
   const share = (side: 'EAST' | 'WEST' | 'CENTER' | 'UNVERIFIED') => shares[side] === null ? text.zero : `${shares[side].toFixed(0)}%`;
   const zoneNote=<p className="prep-note" data-testid="model-zone-note">{{ko:'동·서·중앙 구역 이름: 인천공항공사 위치 안내 기준 · 비율: 항공편 기준',en:'East / west / centre names: Incheon Airport location guidance · shares: flights',zh:'东／西／中央名称：仁川机场公社位置说明 · 比例：航班',ja:'東・西・中央の名称：仁川空港公社の位置案内 · 割合：便数'}[lang]}</p>;
   return <figure className="airport-concept-model" data-testid="airport-concept-model" data-denominator={denominator}>
-    <figcaption className="airport-model-band" data-testid="airport-map-model-scope" data-terminal={scope}><UiLineIcon kind="week"/>{airportModelScope(scope,lang)} · {windowText(map.window, lang)}</figcaption>
+    <figcaption className="airport-model-band" data-testid="airport-map-model-scope" data-terminal={scope}>{airportModelScope(scope,lang)} · {windowText(map.window, lang)}</figcaption>
     {!compactEvidence&&evidence && <p className="prep-note" data-testid="model-source-evidence">{evidence}</p>}
     <AirportSceneModel scope={scope} lang={lang} className="airport-concept-picture" showBasis={false}>
     {buildings.map(building => {

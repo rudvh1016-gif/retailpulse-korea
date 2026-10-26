@@ -16,7 +16,11 @@ test('English wrapper copy has no Korean and retains the model truth boundary',(
 
 test('wrapper connects localized copy without altering locale-aware links',()=>{
   const source=readFileSync(new URL('../app/airport-focus-production.tsx',import.meta.url),'utf8');
-  for(const key of Object.keys(airportFocusCopy('en'))) assert.ok(source.includes(`{copy.${key}}`),key);
+  for(const key of Object.keys(airportFocusCopy('en')).filter(key=>key!=='countries')) assert.ok(source.includes(`{copy.${key}}`),key);
+  // The country page alone has an explicitly scoped four-language title;
+  // navigation and the remaining copy retain their original localized wiring.
+  for(const title of ['T1 + T2 국가별 흐름','T1 + T2 Route-country trends','T1 + T2 航线国家趋势','T1 + T2 路線国別の推移']) assert.ok(source.includes(title),title);
+  assert.match(source,/<h1 data-heading="page">[^]*?\[lang\]\}<\/h1><MonthlyAirportScope lang=\{lang\}\/>/);
   assert.ok(source.includes('artworkNote={copy.model}'));
   assert.ok(source.includes('href={`/${lang}/airport-news`}'));
   assert.ok(source.includes('airportFocusCopy(props.lang)'));

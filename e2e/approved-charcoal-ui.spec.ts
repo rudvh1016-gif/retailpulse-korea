@@ -21,13 +21,13 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  const bands=page.locator('.focus-report h3.focus-brief-band');await expect(bands).toHaveCount(4);
  await expect(page.locator('.focus-preparation-brief [data-line-icon="month"]')).toHaveCount(0);
  for(const band of await bands.all()){
-  await expect(band).toHaveCSS('background-color','rgb(255, 255, 255)');await expect(band).toHaveCSS('border-top-color','rgb(52, 56, 61)');await expect(band).toHaveCSS('border-top-width','1px');
-  await expect(band.locator('svg.ui-line-icon')).toHaveAttribute('stroke-width','1.5');await expect(band.locator('svg.ui-line-icon')).toHaveAttribute('aria-hidden','true');
+  await expect(band).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(band).toHaveCSS('border-top-width','0px');await expect(band).toHaveCSS('padding-left','0px');await expect(band).toHaveCSS('font-size','16px');await expect(band).toHaveCSS('font-weight','600');
+  await expect(band.locator('svg.ui-line-icon')).toHaveCount(0);
  }
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width===320?'24px':'28px');
  for(const sentence of await page.locator('.focus-selected-country-changes:not([aria-label])>p').all())expect((await sentence.innerText()).trim()).not.toMatch(/\.$/);
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');await expect(flow.locator('.airport-flow-item-title')).toHaveCount(6);
- for(const heading of await flow.locator('.airport-flow-item-title').all()){await expect(heading.locator('.ui-line-icon')).toHaveCount(1);await expect(heading).toHaveCSS('font-size','18px');}
+ for(const heading of await flow.locator('.airport-flow-item-title').all()){await expect(heading.locator('.ui-line-icon')).toHaveCount(0);await expect(heading).toHaveCSS('font-size','16px');}
  const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await strip.locator('.duty-free-rate-sources>summary').click();
  for(const [day,value]of [['previous','1,432.87'],['next','1,456.12']]){const row=strip.locator(`[data-rate-day="${day}"]`);await expect(row).toBeVisible();await expect(row).toContainText(value);await expect(row.locator('button')).toHaveCount(0);}
  const toggle=strip.locator('.duty-free-monthly-toggle');await expect(toggle).toHaveAttribute('aria-expanded','false');expect(monthlyReads).toBe(0);expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -35,6 +35,13 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','false');await expect(strip.locator('.duty-free-monthly-chart')).toHaveCount(0);await expect(toggle).toBeFocused();
  await page.keyboard.press('Enter');await expect(strip.locator('.duty-free-monthly-chart')).toBeVisible();expect(monthlyReads).toBe(1);
  expect(await strip.locator('.duty-free-rate-detail').evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+ await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
+ const scope=page.getByTestId('monthly-airport-scope');await expect(scope).toHaveCount(1);await expect(scope.locator('p')).toContainText('T1 + T2');await expect(scope.locator('small')).toBeVisible();
+ expect(await scope.evaluate(node=>node.previousElementSibling?.tagName)).toBe('H2');
+ await page.goto(`/${lang}/airport-countries?date=${date}`);await expect(page.getByTestId('monthly-airport-scope')).toHaveCount(1);
+ const countryTitle=page.locator('.focus-detail>h1');await expect(countryTitle).toHaveText(({ko:'T1 + T2 국가별 흐름',en:'T1 + T2 Route-country trends',zh:'T1 + T2 航线国家趋势',ja:'T1 + T2 路線国別の推移'} as const)[lang]);
+ const countryScope=page.getByTestId('monthly-airport-scope');await expect(countryScope.locator('small')).toBeVisible();expect(await countryScope.evaluate(node=>node.previousElementSibling?.tagName)).toBe('H1');
+ expect(await countryTitle.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.goto(`/${lang}/airport?date=${date}`);const model=page.getByTestId('airport-concept-model');await expect(model).toBeVisible();
  await expect(page.getByTestId('departure-map').getByTestId('map-flights')).toHaveCount(0);
  const register=model.getByTestId('gate-region-register');await expect(register).not.toHaveAttribute('open','');await expect(model.getByTestId('model-source-evidence')).toBeHidden();await register.locator(':scope > summary').focus();await page.keyboard.press('Enter');await expect(model.getByTestId('model-source-evidence')).toBeVisible();await expect(register.getByRole('link',{name:/./}).last()).toHaveAttribute('href','https://www.airport.kr/geomap/ap_ko/view.do');await page.keyboard.press('Space');await expect(register).not.toHaveAttribute('open','');
