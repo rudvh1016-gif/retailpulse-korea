@@ -14,10 +14,16 @@ const copy={
 
 export default function UpdateNotice({lang}:{lang:string}){
  const preview=usePathname()?.endsWith('/airport-focus-preview')??false;
+ const releaseItems=[
+  {title:'공항한눈에는 그대로',body:'오늘의 예상 인원·출발편·대기와 앞으로 1·3·6시간의 흐름을 먼저 확인하세요.',path:'한눈에 → 공항한눈에',view:'home',link:'오늘 공항 확인'},
+  {title:'두 기간의 항공편 비교',body:'시간대·요일·터미널·연휴를 시작일과 종료일로 직접 비교하세요. 하루 평균과 실제 포함일수를 함께 표시합니다.',path:'한눈에 → 언제 몰렸나요?',view:'rhythm',link:'기간 비교 보기'},
+  {title:'국가별 여객과 항공편',body:'공식 월 출국 여객과 항공편을 탭으로 구분했습니다. 항공편은 공항 전체 기간 비교와 터미널별 월 집계를 선택할 수 있습니다.',path:'국가별 흐름 → 국가별 항공편',view:'flights',link:'국가별 항공편 보기'},
+  {title:'처음이라면 더보기',body:'판매사원·영업관리자·고객 안내 직원의 활용 방법과 + 신장, △ 역신장 표시를 짧게 정리했습니다.',path:'더보기 → 누가, 어떻게 쓰면 좋을까요?',view:'more',link:'이용 방법 보기'},
+ ];
  const previewItems=[{title:'공항 한눈에',body:'주목할 공항 흐름에서 핵심 지표와 시간·터미널, 노선·휴일 준비, 품목별 기준을 함께 확인하세요.',path:'공항 한눈에 → 오늘 수치·준비 일정',view:'home',link:'공항 한눈에 보기'},{title:'국가별 흐름',body:'국가별 전월 비교와 최근 6개월 추이를 한곳에서 확인하세요.',path:'국가별 흐름 → 월 비교·6개월 추이',view:'countries',link:'국가별 흐름 보기'},{title:'미리 준비',body:'오늘·다음 주·다음 달의 주요 휴일과 휴일 종료 후 출발편 확인 시점을 안내해요. 일본·미국 공휴일은 자동 확인 대상이며, 그 외 일정은 검토 자료입니다.',path:'미리 준비 → 국가별 주요 휴일',view:'prepare',link:'주요 휴일 보기'},{title:'도착국 면세 안내',body:'패션·명품, 화장품·향수, 주류·담배 기준을 구분해 확인하세요. 공식 출처와 확인 상태를 함께 표시해요. 자동 수치 갱신 대상은 일본 일부 항목이며, 나머지는 검토가 필요해요.',path:'미리 준비 → 도착국 반입 면세한도',view:'prepare&section=arrival#arrival-allowances',link:'반입 면세한도 보기'}];
  const locale=lang.startsWith('zh')?'zh':lang==='en'?'en':lang==='ja'?'ja':'ko',c=copy[locale];
  const focusNotice=preview||locale==='ko';
- const focusHref=(view:string)=>preview?`/${locale}/airport-focus-preview?view=${view}`:view==='home'?`/${locale}`:view==='countries'?`/${locale}/airport-countries`:view.includes('section=arrival')?`/${locale}/airport-prepare#arrival-allowances`:`/${locale}/airport-prepare`;
+ const focusHref=(view:string)=>view==='rhythm'?'/ko?insight=rhythm':view==='flights'?'/ko/airport-countries?mode=flights':view==='more'?'/ko/more#site-usage-title':preview?`/${locale}/airport-focus-preview?view=${view}`:view==='home'?`/${locale}`:view==='countries'?`/${locale}/airport-countries`:view.includes('section=arrival')?`/${locale}/airport-prepare#arrival-allowances`:`/${locale}/airport-prepare`;
  const dialog=useRef<HTMLDialogElement>(null),dismiss=useRef<(week:boolean)=>void>(()=>{});
  useLayoutEffect(()=>{
   const node=dialog.current;if(!node)return;
@@ -57,10 +63,10 @@ export default function UpdateNotice({lang}:{lang:string}){
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
  }}>
   <div className="update-notice-top"><span className="update-notice-new">NEW</span></div>
-  <h2 data-heading="section" id="update-notice-title" tabIndex={-1}><span className="heading-marker" aria-hidden="true"/>{UPDATE_NOTICE_TITLE}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-21T00:00:00+09:00">2026년 10월 21일 00:00 KST</time></small>}
+  <h2 data-heading="section" id="update-notice-title" tabIndex={-1}><span className="heading-marker" aria-hidden="true"/>{UPDATE_NOTICE_TITLE}</h2>{focusNotice&&<small className="update-notice-date">업데이트 기준 <time dateTime="2026-10-27">2026년 10월 27일</time></small>}
   <div className="update-notice-items">
    {focusNotice&&<ReferenceChangeNotices dialog={dialog} calendarHref={focusHref('prepare')} allowanceHref={focusHref('prepare&section=arrival#arrival-allowances')} onNavigate={()=>dismiss.current(false)}/>}
-   {focusNotice?previewItems.map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
+   {focusNotice?(preview?previewItems:releaseItems).map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
    <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-hourly-comparison`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>
    <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport-countries#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
   </>}

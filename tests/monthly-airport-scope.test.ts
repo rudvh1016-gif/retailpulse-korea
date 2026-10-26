@@ -9,7 +9,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(lang+': airport-wide scope
 });
 test('scope follows the requested headings once, never each country chart or terminal statistics',()=>{
  const production=readFileSync('app/airport-focus-production.tsx','utf8'),trends=readFileSync('app/airport-focus-trends.tsx','utf8');
- assert.match(production,/T1 \+ T2 국가별 흐름/);assert.match(production,/<\/h1><MonthlyAirportScope lang=\{lang\}\/>/);
+ assert.match(production,/T1 \+ T2 국가별 흐름/);assert.match(production,/<\/h1>\}<MonthlyAirportScope lang=\{lang\}\/>/);
  assert.match(trends,/<\/h2>\{!full&&<MonthlyAirportScope lang=\{lang\}\/>\}/);
  assert.equal((trends.match(/<MonthlyAirportScope /g)||[]).length,1);
  assert.doesNotMatch(readFileSync('app/airport-route-country-passengers.tsx','utf8'),/MonthlyAirportScope/);

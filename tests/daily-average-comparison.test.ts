@@ -12,13 +12,13 @@ test('count appears once with direction, honest basis, rate and four locales',()
   assert.equal((html.match(/505/g)||[]).length,1);assert.match(html,/\+505/);assert.match(html,/\+1%/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
   const down=visible(renderToStaticMarkup(h(DailyAverageComparison,{basis:'2026-09',mean:50,delta:-.6,percent:-1.3,lang})));
-  assert.match(down,/▲ 0.6/);assert.match(down,/▲ 1%/);assert.doesNotMatch(down,/-0.6/);
+  assert.match(down,/△ 0.6/);assert.match(down,/△ 1%/);assert.doesNotMatch(down,/-0.6/);
  }
 });
 test('zero and subresolution preserve direction and zero denominator withholds percentage',()=>{
  const render=(delta:number,percent:number|null)=>visible(renderToStaticMarkup(h(DailyAverageComparison,{basis:'2026-09',mean:0,delta,percent,lang:'ko'})));
  assert.match(render(0,0),/0편\/일 차이 없음 \(0%\)/);
- assert.match(render(.01,null),/\+&lt;0.1편\/일 증가/);assert.match(render(-.01,null),/▲ &lt;0.1편\/일 감소/);
+ assert.match(render(.01,null),/\+&lt;0.1편\/일 증가/);assert.match(render(-.01,null),/△ &lt;0.1편\/일 감소/);
  assert.match(render(1,null),/증감률 계산 불가/);assert.doesNotMatch(render(1,null),/\(.*%\)/);
 });
 test('passenger sample retains baseline value, collected-day evidence and no duplicated delta',()=>{
@@ -36,7 +36,7 @@ test('passenger sample retains baseline value, collected-day evidence and no dup
 
 test('person means and deltas round once while flight means stay fractional',()=>{
  for(const lang of ['ko','en','zh','ja'] as const){
-  for(const [delta,expected] of [[.49,'+0'],[.5,'+1'],[-.49,'▲ 0'],[-.5,'▲ 1']] as const){
+  for(const [delta,expected] of [[.49,'+0'],[.5,'+1'],[-.49,'△ 0'],[-.5,'△ 1']] as const){
    const html=visible(renderToStaticMarkup(h(DailyAverageComparison,{basis:'2026-09',mean:463.7,delta,percent:delta,lang,unit:'people'})));
    assert.match(html,/464/);assert.ok(html.includes(expected));assert.doesNotMatch(html,/463[.,]7|&lt;0/);
   }

@@ -21,7 +21,7 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
  await expect(brief).not.toContainText(lang==='en'?'Next month':lang==='zh'?'下月':'다음 달');
  await expect(brief.locator('.focus-preparation-brief > div')).toHaveCount(1);
  const comparison=brief.locator('.focus-passenger-comparison');
- for(const value of ['120,000','7,597','▲ 6%','2,640,000','22','30','8'])await expect(comparison).toContainText(value);
+ for(const value of ['120,000','7,597','△ 6%','2,640,000','22','30','8'])await expect(comparison).toContainText(value);
  await expect(comparison).toContainText(lang==='ko'?'월전체 평균 아님':lang==='en'?'Not a full-month average':'非全月平均值');
  const calculation=comparison.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
  await expect(calculation).not.toHaveAttribute('open','');

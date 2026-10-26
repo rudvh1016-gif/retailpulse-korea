@@ -163,11 +163,11 @@ test("subway comparison priority is D-7, then recent seven-day average, then D-1
   assert.equal(d1?.text, "명동역 4호선 하차 흐름 · 전일 대비 +4%");
 });
 
-test("tourism brief uses the same increase, filled-triangle decrease and exact-zero format", () => {
-  for (const lang of ['ko','en','zh','ja']) for (const [value,display] of [[-86,'▲ 9%'],[86,'+9%'],[0,'0%']]) {
+test("tourism brief uses the same increase, hollow-triangle decrease and exact-zero format", () => {
+  for (const lang of ['ko','en','zh','ja']) for (const [value,display] of [[-86,'△ 9%'],[86,'+9%'],[0,'0%']]) {
     const input=full();input.subway.trend.sameWeekdayLastWeek.changeTenthsPercent=value;
     const line=buildTourismDeskBrief(input,lang,'명동').find(({key})=>key==='subway');
-    assert.ok(line.text.includes(display));assert.doesNotMatch(line.text,/[△▼]/);
+    assert.ok(line.text.includes(display));assert.doesNotMatch(line.text,/[▲▼]/);
     assert.equal(input.subway.trend.sameWeekdayLastWeek.changeTenthsPercent,value);
   }
 });

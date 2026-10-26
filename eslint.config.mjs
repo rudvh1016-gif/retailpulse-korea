@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "public/airport-period/**", // Generated, source checked in lib/airport-period
+
   ]),
 ]);
 

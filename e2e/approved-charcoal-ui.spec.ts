@@ -49,8 +49,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  const scope=page.getByTestId('monthly-airport-scope');await expect(scope).toHaveCount(1);await expect(scope.locator('p')).toContainText('T1 + T2');await expect(scope.locator('small')).toBeVisible();
  expect(await scope.evaluate(node=>node.previousElementSibling?.tagName)).toBe('H2');
  await page.goto(`/${lang}/airport-countries?date=${date}`);await expect(page.getByTestId('monthly-airport-scope')).toHaveCount(1);
- const countryTitle=page.locator('.focus-detail>h1');await expect(countryTitle).toHaveText(({ko:'T1 + T2 국가별 흐름',en:'T1 + T2 Route-country trends',zh:'T1 + T2 航线国家趋势',ja:'T1 + T2 路線国別の推移'} as const)[lang]);
- const countryScope=page.getByTestId('monthly-airport-scope');await expect(countryScope.locator('small')).toBeVisible();expect(await countryScope.evaluate(node=>node.previousElementSibling?.tagName)).toBe('H1');
+ const countryTitle=page.locator(lang==='ko'?'.airport-country-insights>h1':'.focus-detail>h1');await expect(countryTitle).toHaveText(({ko:'국가별 흐름',en:'T1 + T2 Route-country trends',zh:'T1 + T2 航线国家趋势',ja:'T1 + T2 路線国別の推移'} as const)[lang]);
+ const countryScope=page.getByTestId('monthly-airport-scope');await expect(countryScope.locator('small')).toBeVisible();if(lang==='ko')await expect(page.locator('.airport-country-insights>.country-tabs')).toBeVisible();else expect(await countryScope.evaluate(node=>node.previousElementSibling?.tagName)).toBe('H1');
  expect(await countryTitle.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.goto(`/${lang}/airport?date=${date}`);const model=page.getByTestId('airport-concept-model');await expect(model).toBeVisible();
  await expect(page.getByTestId('departure-map').getByTestId('map-flights')).toHaveCount(0);

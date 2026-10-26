@@ -36,8 +36,8 @@ test('a larger flight-count increase outranks a larger percentage on a small bas
 });
 test('daily change text keeps the page convention and a direction below the printed precision',()=>{
  const format=new Intl.NumberFormat('ko',{maximumFractionDigits:1}).format;
- assert.equal(dailyChangeText(2.1,format),'+2.1');assert.equal(dailyChangeText(-0.3,format),'▲ 0.3');assert.equal(dailyChangeText(0,format),'0');
- assert.equal(dailyChangeText(0.04,format),'+<0.1');assert.equal(dailyChangeText(-0.04,format),'▲ <0.1');assert.equal(dailyChangeText(12,format),'+12');
+ assert.equal(dailyChangeText(2.1,format),'+2.1');assert.equal(dailyChangeText(-0.3,format),'△ 0.3');assert.equal(dailyChangeText(0,format),'0');
+ assert.equal(dailyChangeText(0.04,format),'+<0.1');assert.equal(dailyChangeText(-0.04,format),'△ <0.1');assert.equal(dailyChangeText(12,format),'+12');
  assert.equal(sameDailyChange(2.14,2.06),true);assert.equal(sameDailyChange(2.14,2.26),false);
 });
 
