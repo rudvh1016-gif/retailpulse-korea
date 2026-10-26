@@ -78,8 +78,24 @@ test('week hiding lasts exactly seven days across reload and another tab',async(
  const other=await context.newPage();await other.goto('/ko');await expect(other.getByRole('dialog')).not.toBeVisible();await other.close();
  await page.clock.fastForward(NOTICE_WEEK_MS-1);await expect(page.getByRole('dialog')).not.toBeVisible();await page.clock.fastForward(1);await expect(page.getByRole('dialog')).toBeVisible();
 });
-for(const [link,id]of [['반입 면세한도 보기','arrival-allowances']])test(`shortcut closes and lands on the real section: ${id}`,async({page})=>{
- await page.goto('/ko');await page.getByRole('dialog').getByRole('link',{name:link}).click();await expect(page).toHaveURL(new RegExp('#'+id+'$'));await expect(page.getByRole('dialog')).not.toBeVisible();
+for(const [link,path,target]of [
+ ['오늘 공항 확인','/ko','#airport-insight-overview'],
+ ['기간 비교 보기','/ko?insight=rhythm','#airport-insight-analysis'],
+ ['국가별 항공편 보기','/ko/airport-countries?mode=flights','#country-flow-flights'],
+ ['이용 방법 보기','/ko/more#site-usage-title','#site-usage-title'],
+])test(`release shortcut closes and opens its actual destination: ${link}`,async({page})=>{
+ await page.goto('/ko');
+ const shortcut=page.getByRole('dialog').getByRole('link',{name:link});
+ await expect(shortcut).toHaveAttribute('href',path);
+ await shortcut.click();
+ await expect(page).toHaveURL(new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$'));
+ await expect(page.getByRole('dialog')).not.toBeVisible();
+ await expect(page.locator(target)).toBeVisible();
+ if(path.includes('#'))await expect(page.locator(target)).toBeInViewport();
+});
+
+for(const [link,id]of [['반입 면세한도 보기','arrival-allowances']])test(`preview shortcut closes and lands on the retained section: ${id}`,async({page})=>{
+ await page.goto('/ko/airport-focus-preview');await page.getByRole('dialog').getByRole('link',{name:link}).click();await expect(page).toHaveURL(new RegExp('#'+id+'$'));await expect(page.getByRole('dialog')).not.toBeVisible();
  const target=page.locator('#'+id);await expect(target).toBeInViewport();await expect.poll(async()=>target.evaluate(e=>{const y=e.getBoundingClientRect().top;return y>=0&&y<innerHeight;})).toBe(true);
 });
 test('blocked storage still permits close without errors or new permissions',async({page})=>{
