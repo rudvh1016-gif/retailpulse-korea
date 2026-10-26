@@ -10,3 +10,12 @@
 .arrival-review-date{display:block;margin:8px 0}.arrival-condition-guidance p{margin:8px 0;overflow-wrap:anywhere}.arrival-guidance-link{display:block;width:fit-content;min-height:44px;padding:9px 0;font-size:12px;color:#28445f}.arrival-source summary:focus-visible,.arrival-category summary:focus-visible,.arrival-guidance-link:focus-visible{outline:2px solid #28445f;outline-offset:3px}
 
 .arrival-procedures>p{margin:12px 0;font-size:13px}.arrival-procedures h4{font-size:13px;font-weight:600;margin:12px 0 6px}.arrival-procedures ul{padding-left:18px;font-size:12px;color:#58636f}.arrival-procedures li{margin:6px 0}
+
+.arrival-reviewed-overview{margin:12px 0 16px;min-width:0}
+.arrival-reviewed-overview>p,.arrival-reviewed-overview li>p{font-size:12px;line-height:1.6;margin:4px 0;font-weight:400;overflow-wrap:anywhere}
+.arrival-reviewed-overview>ul{list-style:none;padding:0;margin:8px 0}
+.arrival-reviewed-overview li{padding:8px 0;border-bottom:1px solid #e3e7eb;min-width:0}
+.arrival-reviewed-overview h4{font-size:13px;font-weight:600;margin:0 0 4px}
+.arrival-reviewed-overview small{display:block;font-size:12px;line-height:1.6;color:#536172;overflow-wrap:anywhere}
+.arrival-reviewed-overview a{display:flex;align-items:center;width:fit-content;max-width:100%;min-height:44px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.arrival-reviewed-overview a:focus-visible{outline:2px solid #28445f;outline-offset:3px}

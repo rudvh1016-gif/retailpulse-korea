@@ -11,7 +11,7 @@ for(const width of [390,1440])test(`default start preserves dated direct routes 
  await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');
  const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');
  // Seoul remains reachable through More; selected dates survive the extra navigation step.
- await nav.locator('a[href="/ko/more'+(width<1000?'?date=2026-10-01':'')+'"]').click();
+ await nav.locator('a[href="/ko/more?date=2026-10-01"]').click();
  await expect(page).toHaveURL(/\/ko\/more\?date=2026-10-01/);
  const hongdaeLink=page.locator('.more-section-links a[href="/ko/hongdae"]');
  await hongdaeLink.click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-10-01/);

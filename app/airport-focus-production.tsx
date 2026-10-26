@@ -19,7 +19,7 @@ import {useLiveSummary} from './live-summary';
 import {useOfficialCalendar} from './official-calendar-client';
 import type {Lang} from './retailpulse-data';
 import {airportFocusCopy} from './airport-focus-copy';
-const ArrivalAllowances=dynamic(()=>import('./arrival-allowances-preview'));
+import ArrivalAllowances from './arrival-allowances-preview';
 const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국'],['HK','홍콩'],['SG','싱가포르'],['PH','필리핀'],['MY','말레이시아'],['AU','호주'],['CA','캐나다']] as const;
 function FocusLiveData({date,children,home=false}:{date?:string|null;children:ReactNode;home?:boolean}){
  const officialCalendar=useOfficialCalendar();

@@ -3,7 +3,7 @@ import { preload } from "react-dom";
 import { notFound,permanentRedirect } from "next/navigation";
 import RetailPulseApp from "../../retailpulse-app";
 import { AirportFocusStatus as AirportView } from "../../airport-focus-production";
-import {AirportFocusGlance as AirportGlancePreview} from "../../airport-focus-production";
+import {AirportFocusGlance as AirportGlancePreview,AirportPreparation} from "../../airport-focus-production";
 import { IndustryGuide } from "../../industry-guide";
 import { BusinessPrep } from "../../business-prep";
 import { AreaCurrentBrief, DateNavigator, TodaySignals } from "../../live-signals";
@@ -47,7 +47,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
   // Only the pages whose question this answers pay for the read.
   const todayAnswer = isArea || slug === "airport" ? await loadTodayAnswer() : null;
   return <>
-    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? "area" : "home"} todayAnswer={todayAnswer} AirportView={slug === "airport" ? AirportView : undefined} AirportGlance={slug === "airport-glance" ? AirportGlancePreview : undefined} IndustryGuide={slug === "business" ? IndustryGuide : undefined} BusinessPrep={slug === "business" ? BusinessPrep : undefined} TodaySignals={isArea ? TodaySignals : undefined} DateNavigator={slug === "business" ? DateNavigator : undefined} AreaCurrentBrief={slug === "business" ? AreaCurrentBrief : undefined} WhereToView={slug === "where-to" ? WhereToView : undefined} ConsumptionView={slug === "consumption" ? ConsumptionView : undefined} />
+    <RetailPulseApp initialLang={locale as SeoLocale} initialView={view} initialArea={area} initialRoute initialScope={isArea ? "area" : "home"} todayAnswer={todayAnswer} AirportView={slug === "airport" ? AirportView : undefined} AirportGlance={slug === "airport-glance" ? AirportGlancePreview : undefined} AirportPreparation={slug === "airport-prepare" ? AirportPreparation : undefined} IndustryGuide={slug === "business" ? IndustryGuide : undefined} BusinessPrep={slug === "business" ? BusinessPrep : undefined} TodaySignals={isArea ? TodaySignals : undefined} DateNavigator={slug === "business" ? DateNavigator : undefined} AreaCurrentBrief={slug === "business" ? AreaCurrentBrief : undefined} WhereToView={slug === "where-to" ? WhereToView : undefined} ConsumptionView={slug === "consumption" ? ConsumptionView : undefined} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale, slug as SeoSlug)) }} />
   </>;
 }

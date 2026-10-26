@@ -290,7 +290,7 @@ for(const attempt of [1,2,3])test(`notice destinations cold load 390 attempt ${a
    await expect(page).toHaveURL(/#arrival-allowances$/);
    await page.evaluate(()=>document.fonts.ready);
    const assertAnchor=async()=>{
-    await expect.poll(()=>page.locator(target).evaluate(node=>{const top=node.getBoundingClientRect().top+scrollY;const margin=parseFloat(getComputedStyle(node).scrollMarginTop)||0;const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);return Math.abs(scrollY-Math.min(Math.max(0,top-margin),max));})).toBeLessThan(3);
+    await expect.poll(()=>page.locator(target).evaluate(node=>{const top=node.getBoundingClientRect().top+scrollY;const margin=parseFloat(getComputedStyle(node).scrollMarginTop)||0;const padding=parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)||0;const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);return Math.abs(scrollY-Math.min(Math.max(0,top-margin-padding),max));})).toBeLessThan(3);
     const geometry=await page.locator(target).evaluate(node=>({headingTop:node.querySelector('h2')!.getBoundingClientRect().top,headingBottom:node.querySelector('h2')!.getBoundingClientRect().bottom,navTop:document.querySelector('.focus-mobile-navigation .bottom-nav')!.getBoundingClientRect().top}));
     expect(geometry.headingTop).toBeGreaterThanOrEqual(0);expect(geometry.headingBottom).toBeLessThan(geometry.navTop);
    };

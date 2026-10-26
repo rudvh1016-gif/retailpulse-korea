@@ -39,12 +39,12 @@ for(const [label,width,nav] of [['mobile',390,'.bottom-nav'],['desktop',1280,'.t
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.waitForTimeout(1000);
  expect(requested).toEqual([]);
- const glance=page.locator(`${nav} a[href="/ko/airport-glance"]`);
+ const glance=page.locator(`${nav} a[href="/ko"]`);
  await glance.hover();
  await expect.poll(()=>requested.length,{message:'reaching for the airport glance starts its load before the click'}).toBeGreaterThan(0);
  await glance.click();
  await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
- await expect(page).toHaveURL(/\/ko\/airport-glance$/);
+ await expect(page).toHaveURL(/\/ko$/);
  expect(errors).toEqual([]);
 });
 
