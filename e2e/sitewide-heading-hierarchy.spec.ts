@@ -160,8 +160,14 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
   await expect(staff.locator(':scope > .heading-marker')).toHaveCount(3);
   const parentSize=await page.locator('#airport-staff-briefing-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
-  const bodySize=await page.locator('.staff-brief-grid p').first().evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
-  for(const heading of await staff.all())expect(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(bodySize);
+  const body=page.locator('.staff-brief-grid p').first();
+  await expect(body).toHaveCSS('font-size','16px');await expect(body).toHaveCSS('font-weight','400');
+  // Approved quiet hierarchy distinguishes these peers by weight and spacing,
+  // rather than enlarging every title above the existing numeric/body values.
+  for(const heading of await staff.all()){
+   await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('font-weight','600');
+   expect(await heading.evaluate(e=>Number(getComputedStyle(e).fontWeight))).toBeGreaterThan(await body.evaluate(e=>Number(getComputedStyle(e).fontWeight)));
+  }
   await expect(page.locator('.staff-brief-grid details').filter({has:page.getByText('패션·명품',{exact:true})})).toHaveAttribute('open','');
   const disclosure=page.locator('.staff-route-details');
   await expect(disclosure).not.toHaveAttribute('open','');
