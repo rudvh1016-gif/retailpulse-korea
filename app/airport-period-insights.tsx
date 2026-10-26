@@ -26,7 +26,7 @@ function PeriodFrame({view,date}:{view:View;date?:string|null}){
    if(e.source!==frame.current?.contentWindow||e.origin!==location.origin||!e.data)return;
    if(e.data.type==='koretail-insights-ready')send();
    if(e.data.type==='koretail-insights-height'&&Number.isFinite(e.data.height)&&frame.current)frame.current.style.height=Math.max(300,Math.min(20000,e.data.height+4))+'px';
-   if(e.data.type==='koretail-insights-state'&&validRanges(e.data.ranges)){const url=new URL(location.href);keys.forEach(k=>url.searchParams.set(k,e.data.ranges[k]));history.replaceState(null,'',url);}
+   if(e.data.type==='koretail-insights-state'&&e.data.view===current.current.view&&validRanges(e.data.ranges)){const url=new URL(location.href);keys.forEach(k=>url.searchParams.set(k,e.data.ranges[k]));history.replaceState(null,'',url);}
    if(e.data.type==='koretail-open-country-flights'&&validRanges(e.data.ranges)){const q=new URLSearchParams({mode:'flights',...e.data.ranges});if(date)q.set('date',date);location.assign('/ko/airport-countries?'+q);}
   };
   window.addEventListener('message',receive);send();return()=>window.removeEventListener('message',receive);

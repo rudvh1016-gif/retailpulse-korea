@@ -69,7 +69,7 @@ export function SiteUsageGuide({ lang }: { lang: Lang }) {
     <details data-testid="usage-examples"><summary style={disclosureStyle}>{examples}</summary>
       <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
     </details>
-    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{t.methodTitle}</h3><details data-testid="usage-method"><summary style={disclosureStyle}>{{ko:'집계 기준 보기',en:'Counting methodology',zh:'查看统计口径',ja:'集計基準を見る'}[lang]}</summary><ReadingParagraphs text={t.method}/></details><p>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</p><p>{passengerCopy.noSum[lang]}</p>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{t.methodTitle}</h3><details data-testid="usage-method"><summary style={disclosureStyle}>{{ko:'집계 기준 보기',en:'Counting methodology',zh:'查看统计口径',ja:'集計基準を見る'}[lang]}</summary><ReadingParagraphs text={t.method}/></details><p>{lang==='ko'?'한눈에의 예상 인원은 출국장 예고와 별도 환승 예고의 단순 합계입니다. 출국장 예고에는 내·외국인 구분이 없습니다.':<>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</>}</p><p>{passengerCopy.noSum[lang]}</p>
     <details data-testid="usage-updates"><summary style={disclosureStyle}>{t.updateTitle}</summary>
       <ReadingParagraphs text={t.updates}/>
     </details>
