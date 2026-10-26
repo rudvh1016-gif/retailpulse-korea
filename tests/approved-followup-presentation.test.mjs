@@ -18,3 +18,10 @@ test('desktop return group spans below both columns while mobile retains the exi
  assert.match(source,/focus-return-events/);assert.match(css,/@media\(min-width:1000px\)\{[^]*?focus-return-context\{grid-column:1\/-1;grid-row:6/);
  assert.match(css,/focus-return-events\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);assert.match(css,/:only-child\{grid-column:1\/-1\}/);
 });
+
+test('desktop return peers override the older adjacent-card margin and the home marker never orphans above a wrapped title',()=>{
+ const focus=read('app/airport-focus-preview.css'),heading=read('app/heading-hierarchy.css');
+ assert.match(focus,/\.focus-report \.focus-return-context \.focus-return-events>\.focus-preparation-event\{margin-top:0\}/);
+ assert.match(heading,/display:inline-block!important;flex:none;width:\.35em/);
+ assert.match(heading,/\.glance-heading h1\[data-heading="page"\]\{display:flex;flex-direction:row;align-items:baseline\}/);
+});

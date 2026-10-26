@@ -284,6 +284,6 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-selected-country-stack>.focus-selected-country-changes:not(.focus-return-context){grid-column:1;grid-row:4;margin-top:12px;padding-top:12px;border-top:1px solid #d5d9de}
  .airport-focus-shell .focus-report .focus-return-context{grid-column:1/-1;grid-row:6;margin-top:16px;padding-top:12px;border-top:1px solid #d5d9de}
  .airport-focus-shell .focus-return-events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;min-width:0}
- .airport-focus-shell .focus-return-events>.focus-preparation-event{margin-top:0}
+ .airport-focus-shell .focus-report .focus-return-context .focus-return-events>.focus-preparation-event{margin-top:0}
  .airport-focus-shell .focus-return-events>.focus-preparation-event:only-child{grid-column:1/-1}
 }
