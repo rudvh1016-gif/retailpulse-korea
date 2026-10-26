@@ -59,7 +59,7 @@ async function verifyHeadings(page:Page){
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
   const palette={page:['rgb(34, 35, 38)','750'],section:['rgb(34, 35, 38)','700'],subsection:['rgb(34, 35, 38)','600']} as const;
-  const [color,weight]=row.approvedBand?['rgb(34, 35, 38)','600']:row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
+  const [color,weight]=row.flowItem?['rgb(34, 35, 38)','700']:row.approvedBand?['rgb(34, 35, 38)','600']:row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
   expect(row.opacity).toBe('1');
@@ -95,7 +95,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  }));
  for(const row of rows){
   expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);
-  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([enlarged?'32px':'16px','600','rgb(34, 35, 38)','10px']);
+  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([enlarged?'32px':'16px',row.staticCjk?'600':'700','rgb(34, 35, 38)','10px']);
   expect([row.family,row.lineHeight,row.spacing]).toEqual([rows[0].family,rows[0].lineHeight,rows[0].spacing]);
   expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(9);expect(row.bodyGap!).toBeLessThanOrEqual(11);
   expect(row.overflow).toBeLessThanOrEqual(1);
@@ -161,11 +161,11 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
   const parentSize=await page.locator('#airport-staff-briefing-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
   const body=page.locator('.staff-brief-grid p').first();
-  await expect(body).toHaveCSS('font-size','16px');await expect(body).toHaveCSS('font-weight','400');
-  // Approved quiet hierarchy distinguishes these peers by weight and spacing,
+  await expect(body).toHaveCSS('font-size','14px');await expect(body).toHaveCSS('font-weight','400');
+  // The approved hierarchy distinguishes these peers by size, weight and spacing,
   // rather than enlarging every title above the existing numeric/body values.
   for(const heading of await staff.all()){
-   await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('font-weight','600');
+   await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('font-weight','700');
    expect(await heading.evaluate(e=>Number(getComputedStyle(e).fontWeight))).toBeGreaterThan(await body.evaluate(e=>Number(getComputedStyle(e).fontWeight)));
   }
   await expect(page.locator('.staff-brief-grid details').filter({has:page.getByText('패션·명품',{exact:true})})).toHaveAttribute('open','');

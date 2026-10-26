@@ -27,7 +27,17 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width===320?'24px':'28px');
  for(const sentence of await page.locator('.focus-selected-country-changes:not([aria-label])>p').all())expect((await sentence.innerText()).trim()).not.toMatch(/\.$/);
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');await expect(flow.locator('.airport-flow-item-title')).toHaveCount(6);
- for(const heading of await flow.locator('.airport-flow-item-title').all()){await expect(heading.locator('.ui-line-icon')).toHaveCount(0);await expect(heading).toHaveCSS('font-size','16px');}
+ for(const heading of await flow.locator('.airport-flow-item-title').all()){await expect(heading.locator('.ui-line-icon')).toHaveCount(0);await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('font-weight',lang==='zh'||lang==='ja'?'600':'700');}
+ for(const metric of await flow.locator(':scope > a > strong').all()){await expect(metric).toHaveCSS('font-size','14px');await expect(metric).toHaveCSS('font-weight','400');}
+ const content=flow.locator('.staff-brief-grid');
+ for(const node of await content.locator('p:visible,h4:visible').all()){await expect(node).toHaveCSS('font-size','14px');await expect(node).toHaveCSS('font-weight','400');}
+ for(const node of await flow.locator(':scope > a > small,.staff-brief-grid small:visible').all()){await expect(node).toHaveCSS('font-size','12px');await expect(node).toHaveCSS('font-weight','400');}
+ const routeDetails=content.locator('.staff-route-details');await expect(routeDetails).not.toHaveAttribute('open','');await routeDetails.locator('summary').focus();await page.keyboard.press('Enter');await expect(routeDetails).toHaveAttribute('open','');
+ for(const node of await flow.locator(':scope > a > strong b,:scope > a > strong span,.staff-brief-grid b:visible,.staff-brief-grid strong:visible').all())await expect(node).toHaveCSS('font-weight','400');
+ for(const control of await content.locator('summary:visible').all()){await expect(control).toHaveCSS('font-size','14px');await expect(control).toHaveCSS('font-weight','600');}
+ expect((await routeDetails.locator('summary').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ for(const paragraph of await routeDetails.locator('p:visible').all()){await expect(paragraph).toHaveCSS('font-size','14px');await expect(paragraph).toHaveCSS('font-weight','400');}
+ await routeDetails.locator('summary').focus();await page.keyboard.press('Space');await expect(routeDetails).not.toHaveAttribute('open','');
  const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await strip.locator('.duty-free-rate-sources>summary').click();
  for(const [day,value]of [['previous','1,432.87'],['next','1,456.12']]){const row=strip.locator(`[data-rate-day="${day}"]`);await expect(row).toBeVisible();await expect(row).toContainText(value);await expect(row.locator('button')).toHaveCount(0);}
  const toggle=strip.locator('.duty-free-monthly-toggle');await expect(toggle).toHaveAttribute('aria-expanded','false');expect(monthlyReads).toBe(0);expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);

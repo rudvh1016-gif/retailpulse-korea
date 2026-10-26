@@ -18,7 +18,7 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  const briefing=flow.locator('.airport-staff-briefing');await expect(page.locator('.airport-staff-briefing')).toHaveCount(1);await expect(briefing).toContainText('출발 예정편');
  await expect(briefing.locator('.staff-brief-grid>section')).toHaveCount(3);
  const holiday=briefing.locator('.staff-holiday-event');await expect(holiday).toBeVisible();
- await expect(holiday.locator('h4')).toHaveCSS('font-weight','700');
+ await expect(holiday.locator('h4')).toHaveCSS('font-weight','400');
  await expect(holiday.locator('p').first()).toHaveCSS('font-weight','400');
  await expect(holiday.locator('h4')).not.toContainText('금융기관');
 

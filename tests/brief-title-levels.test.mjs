@@ -22,7 +22,7 @@ test('title gaps stay modest and apply to mobile as well as desktop',()=>{
  assert.ok(!css.includes('.focus-figures-title{margin-bottom:10px}'));
  // The six airport-flow peers retain their own uniform scale, independent of briefing nesting.
  const flow=read('airport-staff-briefing.css');
- assert.match(flow,/font-size:16px!important;font-weight:600!important;color:#222326!important/);
+ assert.match(flow,/font-size:16px!important;font-weight:700!important;color:#222326!important/);
  assert.match(flow,/margin:0 0 10px/);
 });
 
