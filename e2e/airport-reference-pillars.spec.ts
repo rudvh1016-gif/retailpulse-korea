@@ -11,28 +11,23 @@ async function open(page:import('@playwright/test').Page,lang='ko',rows=flights,
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',serviceDateKst:date,basis:'COLLECTED_FLIGHT_RECORDS',retrievedAt:stamp,truncated:false,flights:rows}}));
  await page.goto(`/${lang}/airport`);
 }
-for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,1280])test(`horizontal bars use current estimates, separate denominators and equal widths for ties ${lang} ${width}`,async({page},info)=>{
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of[360,390,430,1280])test(`removed passenger estimate stays absent while real terminal gate counts survive ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await open(page,lang);
- const reference=page.getByTestId('airport-top-reference');await expect(reference).toHaveAttribute('data-state','READY');await expect(reference.getByTestId('airport-reference-pillars')).toHaveCount(2);
- const map=page.getByTestId('gate-pillar-model').locator('a[href="https://www.airport.kr/geomap/ap_ko/view.do"]');
- await expect(map).toHaveText({ko:'인천공항공사 공식 지도 보기 ↗',en:'View the official Incheon Airport map ↗',zh:'查看仁川机场公社官方地图 ↗',ja:'仁川空港公社の公式マップを見る ↗'}[lang]);
- await expect(map).toHaveAttribute('target','_blank');await expect(map).toHaveAttribute('rel','noopener noreferrer');expect((await map.boundingBox())!.height).toBeGreaterThanOrEqual(44);
- await map.focus();await expect(map).toBeFocused();
- const t1=reference.getByTestId('top-reference-T1');const t2=reference.getByTestId('top-reference-T2');
- await expect(t1.locator('[data-zone=CONCOURSE]')).toContainText('2');
- const e=t1.locator('[data-zone=EAST]'),w=t1.locator('[data-zone=WEST]');expect(await e.getAttribute('data-raw-value')).toEqual(await w.getAttribute('data-raw-value'));expect(await e.getAttribute('data-width-percent')).toEqual(await w.getAttribute('data-width-percent'));
- const cells=await reference.locator('.reference-pillar-list>li').all();for(const cell of cells){const raw=Number(await cell.getAttribute('data-raw-value'));const maximum=Number(await cell.locator('xpath=ancestor::figure[1]').getAttribute('data-scale-max'));const track=await cell.locator('.reference-pillar-space').boundingBox();const bar=await cell.locator('.reference-pillar').boundingBox();expect(Math.abs(bar!.width-track!.width*raw/maximum)).toBeLessThan(1);expect(bar!.height).toBeLessThanOrEqual(10);}
- expect(await t1.getByTestId('airport-reference-pillars').getAttribute('data-scale-max')).toEqual(await t2.getByTestId('airport-reference-pillars').getAttribute('data-scale-max'));
- await t1.locator('summary').focus();await page.keyboard.press('Enter');await expect(t1.locator('details')).toHaveAttribute('open');await expect(t1).toContainText('35,500');
- expect(await tofuCharacters(reference)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
- if(lang==='ko'){await t1.locator('summary').press('Space');await expect(t1.locator('details')).not.toHaveAttribute('open');await reference.screenshot({path:info.outputPath(`reference-pillars-${width}.png`)});}
+ const reference=page.getByTestId('airport-top-reference');await expect(reference).toHaveCount(0);await expect(page.getByTestId('airport-reference-pillars')).toHaveCount(0);
+ const model=page.getByTestId('airport-concept-model');await expect(model).toBeVisible();await expect(model).toHaveAttribute('data-denominator','10');
+ for(const [building,count] of [['T1','5'],['T2','3'],['CONCOURSE','2']])await expect(model.locator(`.airport-concept-counts[data-building="${building}"]`)).toHaveAttribute('data-denominator',count);
+ for(const side of ['EAST','WEST'])await expect(model.locator(`.airport-concept-counts[data-building=T1] [data-side=${side}] strong`).first()).toContainText('2');
+ await expect(page.getByTestId('map-zone-countries')).toBeVisible();await expect(page.locator('.airport-forecast')).toBeVisible();
+ expect(await tofuCharacters(model)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
+ if(lang==='ko')await model.screenshot({path:info.outputPath(`real-gates-no-estimate-${width}.png`)});
 });
-test('an unverified gate or unknown building withholds estimates, while original forecasts survive',async({page})=>{
- await open(page,'en',[...flights,{...flights[7],physicalFlightId:'UNCONFIRMED',gate:''}]);const ref=page.getByTestId('airport-top-reference');
- await expect(ref.getByTestId('top-reference-T2-unavailable')).toHaveAttribute('data-reason','UNVERIFIED_LOCATION');await expect(ref.getByTestId('top-reference-T1')).toBeVisible();await expect(ref.getByTestId('top-reference-T2')).toHaveCount(0);await expect(page.locator('.airport-forecast')).toBeVisible();
+
+test('unverified locations keep real source limits and original forecasts without passenger estimates',async({page})=>{
+ await open(page,'en',[...flights,{...flights[7],physicalFlightId:'UNCONFIRMED',gate:''}]);await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+ await expect(page.locator('.airport-forecast')).toBeVisible();await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator','11');
  await page.unroute('**/api/live/summary*');await page.unroute('**/api/live/flights*');await open(page,'en',[...flights,{...flights[7],physicalFlightId:'UNKNOWN',terminal:'',gate:''}]);
- await expect(ref.getByTestId('airport-reference-pillars')).toHaveCount(0);await expect(ref).toHaveAttribute('data-state','UNAVAILABLE');
+ await expect(page.getByTestId('airport-reference-pillars')).toHaveCount(0);await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator','11');
 });
-test('a real zero forecast renders zero labels with no fabricated minimum-height pillars',async({page})=>{
- await open(page,'en',flights,true);const ref=page.getByTestId('airport-top-reference');await expect(ref).toHaveAttribute('data-state','READY');await expect(ref.locator('.reference-pillar')).toHaveCount(0);await expect(ref.locator('.reference-pillar-value')).toHaveText(Array(7).fill('0 people'));
+test('real zero forecasts never restore the removed estimate or alter physical flight counts',async({page})=>{
+ await open(page,'en',flights,true);await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);await expect(page.locator('.reference-pillar')).toHaveCount(0);await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator','10');
 });

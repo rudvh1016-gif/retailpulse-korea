@@ -17,7 +17,6 @@ import {AirportMonthlyFlights,useAirportMonthRequest} from './airport-monthly-fl
 import { useFlights } from './flights-client';
 import type { Lang } from './retailpulse-data';
 import type { LiveSummary } from './live-signals';
-import type { AirportSidesBlock as SidesBlock } from '../lib/airport-sides-summary';
 import { shiftKstDay } from '../lib/kst';
 import {
   buildingsOf, customWindow, departureMap, minuteOfDay, presetWindow,
@@ -28,8 +27,6 @@ import type { DestinationGroup } from '../lib/airport-destinations';
 import { AirportConceptModel } from './airport-concept-model';
 import { AirportSceneModel } from './airport-scene-model';
 import { AirportZoneCountries } from './airport-zone-countries';
-import { AirportTopReference } from './airport-top-reference';
-import { topReferences } from '../lib/airport-top-reference';
 import { zoneShareCopy } from '../lib/airport-zone-share-copy';
 import { airportModelScope } from '../lib/airport-model-scope';
 import { airportFlightEvidence } from '../lib/airport-flight-evidence';
@@ -141,11 +138,6 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
     ? departureMap({ date, nextDate, terminal, buildingScope, window: span, rows: current.payload.flights, nextRows: next?.status === 'OK' && (next.payload.flights.length > 0 || next.payload.retrievedAt) ? next.payload.flights : null })
     : null, [current, next, date, nextDate, terminal, buildingScope, span.startMin, span.endMin]); // eslint-disable-line react-hooks/exhaustive-deps
   const wholeDayMap=useMemo(()=>current?.status==='OK'?departureMap({date,nextDate,terminal,buildingScope,window:{startMin:0,endMin:1440},rows:current.payload.flights}):null,[current,date,nextDate,terminal,buildingScope]);
-  const wholeDaySelected = preset === 'DAY' && span.startMin === 0 && span.endMin === 1440;
-  const reference = useMemo(() => referenceSummary && current?.status === 'OK' ? topReferences({ summary: referenceSummary,
-    sides: (referenceSummary.airport as LiveSummary['airport'] & { sides?: SidesBlock }).sides,
-    date, nowIso, scope: buildingScope ?? terminal, wholeDaySelected, source: current.payload }) : null,
-  [referenceSummary, current, date, nowIso, buildingScope, terminal, wholeDaySelected]);
 
   // The architectural illustration is data-free. Keep it available while counts
   // are withheld; do not show zone counts, shares or official coordinates here.
@@ -179,9 +171,8 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   };
   const hours = Array.from({ length: 25 }, (_, hour) => hour);
   const presets: WindowPreset[] = today ? ['DAY', 'NEXT1', 'NEXT3', 'NEXT6', 'CUSTOM'] : ['DAY', 'CUSTOM'];
-  const topReference = referenceSummary && <>{routePassengers}<AirportTopReference lang={lang} date={date} scope={buildingScope ?? terminal} wholeDay={wholeDaySelected} entries={reference}
-    onWholeDay={() => { setPreset('DAY'); setSelected(null); }}
-    onT1Day={() => { setPreset('DAY'); setBuildingSelection({ context: scopeContext, scope: 'T1' }); setSelected(null); setFilter(null); }}/></>
+  // The removed zone-passenger estimate chart never replaces real gate/flight data.
+  const topReference = routePassengers;
 
   // One visible owner of the model's time window. The old lower section no
   // longer contains another terminal selector or a hidden copy of these controls.
