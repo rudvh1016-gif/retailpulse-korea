@@ -91,7 +91,7 @@
 @media(min-width:1000px){
  /* The spanning future column must not distribute its height into today’s rows.
     Only the final flexible row absorbs surplus, below the top-aligned basis. */
- .focus-report{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(0,1fr);column-gap:36px;align-items:start}
+ .focus-report{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(0,1fr) auto;column-gap:36px;align-items:start}
  .focus-report-title{grid-column:1/-1;grid-row:1}
  .focus-today-title{grid-column:1;grid-row:2}
  .focus-report-lines{grid-column:1;grid-row:3;display:block}
@@ -276,3 +276,14 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 .airport-focus-shell .monthly-airport-scope{font-size:13px;color:#222326;font-weight:600;line-height:1.5;margin:6px 0;overflow-wrap:anywhere}
 
 .monthly-airport-scope>p{margin:0;font:inherit}.monthly-airport-scope>small{display:block;margin-top:3px;font-size:12px;font-weight:400;line-height:1.5;color:#586571}
+
+/* Return planning follows both columns as a full-width desktop row. DOM order
+   stays today -> changes -> return planning -> next week on narrow screens. */
+@media(min-width:1000px){
+ .airport-focus-shell .focus-report .focus-selected-country-stack{display:contents}
+ .airport-focus-shell .focus-selected-country-stack>.focus-selected-country-changes:not(.focus-return-context){grid-column:1;grid-row:4;margin-top:12px;padding-top:12px;border-top:1px solid #d5d9de}
+ .airport-focus-shell .focus-report .focus-return-context{grid-column:1/-1;grid-row:6;margin-top:16px;padding-top:12px;border-top:1px solid #d5d9de}
+ .airport-focus-shell .focus-return-events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;min-width:0}
+ .airport-focus-shell .focus-report .focus-return-context .focus-return-events>.focus-preparation-event{margin-top:0}
+ .airport-focus-shell .focus-return-events>.focus-preparation-event:only-child{grid-column:1/-1}
+}

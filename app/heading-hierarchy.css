@@ -78,3 +78,15 @@
 
 /* Quiet topic titles keep the existing numeric scale. */
 :root body .focus-report h3.focus-brief-band[data-heading="subsection"]{font-size:16px!important;font-weight:600!important}
+
+/* Requested small dots identify airport content titles only. The marker is
+   decorative and never appears on data, disclosure controls or navigation. */
+:root body .airport-focus-shell :is(h1,h2)[data-heading]>.heading-marker,
+:root body .airport-focus-shell .focus-report h3:is(.focus-brief-band,.focus-figures-title)[data-heading]>.heading-marker,
+:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title>.heading-marker{display:inline-block!important;flex:none;width:.35em;margin-inline-end:.4em;font-size:.75em;line-height:1;vertical-align:baseline}
+:root body .airport-focus-shell :is(h1,h2)[data-heading]>.heading-marker::before,
+:root body .airport-focus-shell .focus-report h3:is(.focus-brief-band,.focus-figures-title)[data-heading]>.heading-marker::before,
+:root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title>.heading-marker::before{content:'·'}
+
+/* Keep the dot with the first title line, including enlarged unbroken CJK text. */
+:root body .airport-focus-shell .glance-heading h1[data-heading="page"]{display:flex;flex-direction:row;align-items:baseline}

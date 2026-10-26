@@ -57,7 +57,13 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
   const scrollY=await page.evaluate(()=>window.scrollY);
   heights.push(right.height);leftTops.push([title.y,numbers.y,changeTitle.y,returnTitle.y].map(y=>y+scrollY));
   const topicGap=returnTitle.y-changeEnd.y-changeEnd.height;
-  expect(topicGap).toBeGreaterThanOrEqual(24);expect(topicGap).toBeLessThanOrEqual(28);
+  if(width<1000){expect(topicGap).toBeGreaterThanOrEqual(24);expect(topicGap).toBeLessThanOrEqual(28);}
+  else{
+   const returnBox=(await report.locator('.focus-return-context').boundingBox())!;
+   expect(returnBox.y).toBeGreaterThanOrEqual(right.y+right.height);expect(returnBox.width).toBeGreaterThan(numbers.width+right.width);
+   const cards=await report.locator('.focus-return-events>.focus-preparation-event').all();
+   if(cards.length>1){const [a,b]=await Promise.all(cards.slice(0,2).map(card=>card.boundingBox()));expect(a!.y).toBeCloseTo(b!.y,0);expect(b!.x).toBeGreaterThanOrEqual(a!.x+a!.width);}
+  }
   for(const topic of [figures,...await topics.all(),...await future.locator(':scope > div').all()]){
    const h=topic.locator(':scope > h3'),content=topic.locator(':scope > h3 + *');
    const hb=(await h.boundingBox())!,cb=(await content.boundingBox())!;
@@ -82,7 +88,26 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  }
  expect(heights[0]).toBeGreaterThan(heights[1]);
  // A taller right column must not redistribute whitespace inside the left one.
- for(let i=0;i<leftTops[0].length;i++)expect(Math.abs(leftTops[0][i]-leftTops[1][i])).toBeLessThanOrEqual(1);
+ for(let i=0;i<(width>=1000?3:leftTops[0].length);i++)expect(Math.abs(leftTops[0][i]-leftTops[1][i])).toBeLessThanOrEqual(1);
 });
 
 
+
+for(const width of [390,1440])for(const count of [0,1,2])test(`return planning keeps ${count} countries without overlap at ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await page.clock.setFixedTime(new Date('2026-10-19T02:00:00Z'));
+ await page.route('**/api/**',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));await page.route('**/api/live/summary*',r=>r.fulfill({json:{...summary,todayKst:'2026-10-19',generatedAt:'2026-10-19T02:00:00Z'}}));
+ for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
+ await page.route('**/api/airport/calendar*',r=>r.fulfill({json:{status:'PARTIAL',events:['TH','PH'].slice(0,count).map(country=>({id:'return-layout-'+country,country,name:'Synthetic return holiday '+country,kind:'public_holiday',status:'verified',scope:'national',start:'2026-10-19',end:'2026-10-19',verifiedAt:'2026-10-01',sourceURL:'https://example.test/return-layout'})),calendarReplacementScopes:[],sources:[],checkedAt:null}}));
+ await page.goto('/ko?date=2026-10-19');const group=page.locator('.focus-return-context');await expect(group).toHaveCount(count?1:0);if(!count)return;
+ const cards=group.locator('.focus-return-events>.focus-preparation-event');await expect(cards).toHaveCount(count);
+ for(const card of await cards.all()){
+  await expect(card.locator('h4')).toBeVisible();await expect(card.locator('time').first()).toHaveAttribute('datetime','2026-10-19');
+  const details=card.locator('.focus-event-details');await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');await expect(details.getByRole('link')).toHaveAttribute('href','https://example.test/return-layout');
+  await details.locator('summary').focus();await page.keyboard.press('Space');await expect(details).not.toHaveAttribute('open','');
+ }
+ const boxes=await cards.evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().toJSON()));
+ if(count===2){if(width>=1000){expect(boxes[0].y).toBeCloseTo(boxes[1].y,0);expect(boxes[1].x).toBeGreaterThanOrEqual(boxes[0].right);}else expect(boxes[1].y).toBeGreaterThanOrEqual(boxes[0].bottom);}
+ const future=(await page.locator('.focus-preparation-brief').boundingBox())!,bounds=(await group.boundingBox())!;
+ if(width>=1000)expect(bounds.y).toBeGreaterThanOrEqual(future.y+future.height);else expect(future.y).toBeGreaterThanOrEqual(bounds.y+bounds.height);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

@@ -46,8 +46,9 @@ for(const width of [360,1280])test(`FX archive supplement disclosure, full chart
  await strip.locator('.duty-free-rate-sources > summary').click();
  await strip.getByRole('button',{name:/최근 6개월 환율 그래프 보기/}).click();
  const chart=strip.locator('.duty-free-monthly-chart');await expect(chart.locator('circle')).toHaveCount(6);
- await expect(chart.locator('li').first()).toContainText('8/31');
- await expect(chart.locator('li').nth(1)).toContainText('2/30');
+ await expect(chart.locator('li').first()).toContainText('31일 중 8일 자료');
+ await expect(chart.locator('li').nth(1)).toContainText('30일 중 2일 자료');
+ await expect(chart.locator('li').nth(1)).toContainText('전월 확보일 평균 대비');await expect(chart.locator('li').nth(1)).toContainText('부분 날짜 비교');
  await expect(chart.locator('li').last()).toContainText(response.months[5].averageKrwPerUsd.toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2}));
  const evidence=strip.locator('.duty-free-archive'),summary=evidence.locator('summary');
  await summary.focus();await page.keyboard.press('Enter');await expect(evidence).toHaveAttribute('open','');
@@ -58,4 +59,18 @@ for(const width of [360,1280])test(`FX archive supplement disclosure, full chart
  for(const target of [summary,link])expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await link.focus();await expect(link).toBeFocused();
  expect(await strip.locator('.duty-free-rate-detail').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+});
+
+for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,1280])test(`stored-day FX comparison and plain coverage ${lang} ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});await page.clock.setFixedTime(new Date(at));
+ await page.route('**/api/**',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
+ await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:{mode:'duty-free-exchange',collectionMode:'AUTOMATED',generatedAt:at,todayKst:asOf,sources:[{vendor:'shilla',observation,lastAttemptAt:at,lastAttemptStatus:'SUCCESS',errorCode:null,nextAttemptAt:null}]}}));
+ const response={...monthly,months:monthly.months.map((row,index)=>index===0?{...row,averageKrwPerUsd:1000,observedDays:31}:index===1?{...row,averageKrwPerUsd:1100,observedDays:2}:row)};
+ await page.route('**/api/live/duty-free-exchange/monthly',r=>r.fulfill({json:response}));await page.goto(`/${lang}/airport`);
+ const strip=page.getByTestId('airport-duty-free-exchange');await strip.locator('.duty-free-rate-sources>summary').click();const toggle=strip.locator('.duty-free-monthly-toggle');await toggle.focus();await page.keyboard.press('Enter');
+ const june=strip.locator('.duty-free-month-list>li').nth(1);await expect(june).toContainText('1,100.00');await expect(june).toContainText('+10%');
+ await expect(june).toContainText(({ko:'30일 중 2일 자료',en:'Data for 2 of 30 days',zh:'30天中有2天资料',ja:'30日のうち2日分の資料'} as const)[lang]);
+ await expect(june).toContainText(({ko:'부분 날짜 비교',en:'Partial-day coverage',zh:'部分日期比较',ja:'一部の日付で比較'} as const)[lang]);
+ await expect(strip.locator('.duty-free-month-list>li').nth(2)).not.toContainText('0%');await expect(strip.locator('.duty-free-month-list>li').last()).toContainText(({ko:'진행월',en:'Month in progress',zh:'进行中的月份',ja:'進行中の月'} as const)[lang]);
+ await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','false');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

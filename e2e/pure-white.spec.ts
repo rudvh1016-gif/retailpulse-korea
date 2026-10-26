@@ -198,7 +198,8 @@ for (const width of [390, 1440]) {
     }
     // The shared page-wide helper deliberately skips legacy hero descendants.
     // This approved-white model slot needs a direct, non-exempted paint check.
-    const adjacent = page.locator(".focus-country-jump + .airport-top-reference");
+    await expect(page.getByTestId("airport-top-reference")).toHaveCount(0);
+    const adjacent = page.locator(".focus-country-jump + *");
     await expect(adjacent).toHaveCount(1);
     const surroundingPaint = await jump.evaluate(node => [node.parentElement, node.nextElementSibling].map(start => {
       for (let current = start; current; current = current.parentElement) {
