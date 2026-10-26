@@ -32,7 +32,18 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
         ...(isStagingDeployment ? [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }] : []),
       ],
-    }];
+    }, ...["/airport-period/frame.html", "/airport-period/frame", "/airport-period/frame/"].map(source => ({
+      // This public chart document is embedded by our own Korean analysis tabs.
+      // Keep DENY on every application page and reject external framing here too.
+      source,
+      headers: [
+        { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests" },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        { key: "X-Robots-Tag", value: "noindex, nofollow" },
+      ],
+    // vinext applies the first matching value for each header, so exact document
+    // policies precede the unchanged catch-all policy in the returned array.
+    }))].reverse();
   },
 };
 
