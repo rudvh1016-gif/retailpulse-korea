@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic';
 // The glance routes pass the glance in from their server pages (see RetailPulseProps).
 const loadAirportGlance=()=>import('./airport-focus-production').then(module=>({default:module.AirportFocusGlance}));
 const AirportCountryFlow=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportCountryFlow));
-const AirportPreparation=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportPreparation));
+const LazyAirportPreparation=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportPreparation));
 const LazyAirportGlance=dynamic(loadAirportGlance);
 const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
@@ -313,6 +313,7 @@ type RetailPulseProps = {
    * so hydration does not wait on a lazy chunk and discard the server HTML.
    */
   AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;
+  AirportPreparation?: ComponentType<{lang:Lang}>;
   /**
    * The industry guide, passed the same way by the business route's server
    * page; elsewhere the business screen loads it with its other code.
@@ -354,7 +355,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief, WhereToView = OnDemandWhereToView, ConsumptionView = OnDemandConsumptionView }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief, WhereToView = OnDemandWhereToView, ConsumptionView = OnDemandConsumptionView }: RetailPulseProps = {}) {
   const bottomNavigationRef = useBottomNavigationViewport();
   // Airport routes already carry the airport code; only the on-demand copy needs preparing.
   const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;

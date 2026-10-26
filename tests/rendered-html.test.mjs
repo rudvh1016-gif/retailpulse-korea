@@ -16,6 +16,19 @@ async function renderPath(path, documentLanguage = "ko") {
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
+test('preparation reviewed sources render in the visible initial document outside streamed hidden containers',async()=>{
+  const response=await renderPath('/ko/airport-prepare');assert.equal(response.status,200);
+  const html=await response.text(),target=html.indexOf('data-testid="arrival-reviewed-overview"');assert.ok(target>0);
+  const stack=[],voids=new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+  for(const match of html.slice(0,target).matchAll(/<\/?([a-z][\w-]*)\b[^>]*>/gi)){
+    const name=match[1].toLowerCase(),tag=match[0];
+    if(tag.startsWith('</')){const index=stack.findLastIndex(item=>item.name===name);if(index>=0)stack.splice(index);}
+    else if(!voids.has(name)&&!tag.endsWith('/>'))stack.push({name,tag});
+  }
+  assert.equal(stack.filter(item=>/\shidden(?:\s|[=>])|display:\s*none|visibility:\s*hidden/.test(item.tag)).length,0,'guide must be visible without scripts that reveal streamed containers');
+  assert.ok(stack.some(item=>item.tag.includes('id="arrival-allowances"')));
+});
+
 test("Naver verification is rendered once in the head for every language when configured", async () => {
   // Run with the same NAVER_SITE_VERIFICATION value used for the build.
   // The default CI build also verifies that an absent value emits no empty tag.

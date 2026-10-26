@@ -120,6 +120,18 @@ test('A1 review never opens the legacy generic provider helper during or after t
 const approvedCanonicalPatches={
   "app/retailpulse-app.tsx": [
     [
+      "AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide",
+      "AirportGlance = LazyAirportGlance, IndustryGuide"
+    ],
+    [
+      "  AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;\n  AirportPreparation?: ComponentType<{lang:Lang}>;",
+      "  AirportGlance?: ComponentType<ComponentProps<typeof AirportGlanceComponent>>;"
+    ],
+    [
+      "const LazyAirportPreparation=dynamic(",
+      "const AirportPreparation=dynamic("
+    ],
+    [
       "  if (view === \"airport-glance\") return base;\n",
       ""
     ],
@@ -140,6 +152,16 @@ const approvedCanonicalPatches={
     [
       " * sitemap. Home navigation also uses the locale root; the alias remains\n * accessible with the same canonical and without an added redirect.",
       " * sitemap. The menu still links to it; only the search signals change."
+    ]
+  ],
+  "app/[locale]/[slug]/page.tsx": [
+    [
+      "AirportGlance={slug === \"airport-glance\" ? AirportGlancePreview : undefined} AirportPreparation={slug === \"airport-prepare\" ? AirportPreparation : undefined}",
+      "AirportGlance={slug === \"airport-glance\" ? AirportGlancePreview : undefined}"
+    ],
+    [
+      "import {AirportFocusGlance as AirportGlancePreview,AirportPreparation} from \"../../airport-focus-production\";",
+      "import {AirportFocusGlance as AirportGlancePreview} from \"../../airport-focus-production\";"
     ]
   ]
 };
