@@ -17,8 +17,8 @@ const sideLabels={EAST:'동편',CENTER:'중앙',WEST:'서편',UNVERIFIED:'위치
 const sculptedFlags=new Set(['CN','JP','US','VN']);
 const svgFlags=new Set('AE AT AU BN CA CH CZ DE DK ES ET FI FR GB GE GU HK HU ID IN IT KG KH KR KZ LA LK MM MN MO MP MX MY NL NP NZ PH PL PT QA SG TH TM TR TW UZ'.split(' '));
 function Flag({country}:{country:string}){const src=sculptedFlags.has(country)?`/images/airport-flags/${country}.webp`:svgFlags.has(country)?`/images/airport-flags/fallback/${country.toLowerCase()}.svg`:null;return src?<img src={src} width="22" height="22" alt=""/>:<span className="cfp-flag-code" aria-hidden="true">{country}</span>;}
-const formatters=[new Intl.NumberFormat('ko-KR',{maximumFractionDigits:1}),new Intl.NumberFormat('ko-KR',{maximumFractionDigits:2})];
-const fmt=(value:number|null|undefined)=>value===null||value===undefined||!Number.isFinite(value)?'—':formatters[value!==0&&Math.abs(value)<.1?1:0].format(value);
+const wholeNumber=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
+const fmt=(value:number|null|undefined)=>value===null||value===undefined||!Number.isFinite(value)?'—':wholeNumber.format(Math.sign(value)*Math.round(Math.abs(value)));
 const monthLabel=(value:string)=>`${Number(value.slice(5))}월`;
 const scopeLabel=(value:MonthScope)=>scopes.find(([key])=>key===value)?.[1]??value;
 function periodLabel(month:AirportFlightMonth|undefined){if(!month)return '자료 없음';const included=month.includedDays,short=(day:string)=>`${Number(day.slice(5,7))}.${Number(day.slice(8))}`;return included.length?`${short(included[0])}–${short(included.at(-1)!)} · ${included.length}일 포함`:'포함 날짜 없음';}
@@ -27,17 +27,17 @@ function countryName(country:string,names:Intl.DisplayNames){if(country==='KR')r
 export function formatFlightChangeRate(value:number|null|undefined){
  if(value==null||!Number.isFinite(value))return '—';
  if(value===0)return '0%';
- const magnitude=Math.abs(value)<.05?'<0.1':new Intl.NumberFormat('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1}).format(Math.abs(value));
- return `${value>0?'+':'△'}${magnitude}%`;
+ const magnitude=Math.round(Math.abs(value));
+ return `${value>0?'+':'△'}${magnitude?fmt(magnitude)+'%':'1% 미만'}`;
 }
 function FlightChangeRate({value}:{value:number|null}){
  const valid=value!==null&&Number.isFinite(value),direction=!valid||value===0?'neutral':value>0?'up':'down';
- const magnitude=valid&&value!==0?(Math.abs(value)<.05?'0.1% 미만':new Intl.NumberFormat('ko-KR',{minimumFractionDigits:1,maximumFractionDigits:1}).format(Math.abs(value))+'%'):'';
+ const magnitude=valid&&value!==0?(Math.round(Math.abs(value))===0?'1% 미만':fmt(Math.abs(value))+'%'):'';
  const spoken=!valid?'증감률 자료 없음':value===0?'증감률 0%, 변동 없음':`${magnitude} ${value>0?'증가':'감소'}`;
  return <span className="change-rate cfp-rate" data-direction={direction} role="img" aria-label={spoken}>{formatFlightChangeRate(value)}</span>;
 }
 
-function FlightCountChange({delta}:{delta:number|null;format?:unknown;lang?:Lang}){return <span className="change-rate" data-direction={delta===null||delta===0?'neutral':delta>0?'up':'down'}>{delta===null?'—':(delta>0?'+':delta<0?'△':'')+fmt(Math.abs(delta))}</span>;}
+function FlightCountChange({delta}:{delta:number|null;format?:unknown;lang?:Lang}){return <span className="change-rate" data-direction={delta===null||delta===0?'neutral':delta>0?'up':'down'}>{delta===null?'—':(delta>0?'+':delta<0?'△':'')+(delta!==0&&Math.round(Math.abs(delta))===0?'1 미만':fmt(Math.abs(delta)))}</span>;}
 export function orderCountryFlights(rows:CountryRow[],sort:Sort){return [...rows].sort((a,b)=>{
  const tie=(b.current??-1)-(a.current??-1)||a.country.localeCompare(b.country);
  if(sort==='increase')return (b.delta??-Infinity)-(a.delta??-Infinity)||tie;

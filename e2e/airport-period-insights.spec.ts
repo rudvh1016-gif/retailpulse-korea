@@ -12,7 +12,9 @@ async function records(page:Page){
 }
 for(const width of [360,390,430,1440])test(`airport period comparison preserves the glance and supports two ranges ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await records(page);
- let historyRequests=0;page.on('request',r=>{if(r.url().includes('/api/live/airport-days'))historyRequests++;});
+ // The existing country-trend widgets also read this endpoint in the parent.
+ // Count only additional requests from the new analysis document.
+ let historyRequests=0;page.on('request',r=>{if(r.url().includes('/api/live/airport-days')&&r.frame().parentFrame())historyRequests++;});
  await page.goto('/ko?date=2026-10-19');
  await expect(page.getByRole('heading',{name:'인천공항 한눈에',exact:true})).toBeVisible();
  await expect(page.locator('#airport-insight-overview .focus-report')).toBeVisible();
