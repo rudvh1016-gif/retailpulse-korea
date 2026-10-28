@@ -1,6 +1,5 @@
 'use client';
 import {AirportRouteCountryPassengers} from './airport-route-country-passengers';
-import Link from 'next/link';
 import './airport-reading.css';
 import { contextText } from './operational-context';
 
@@ -203,7 +202,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       </details>
       {topReference}
       <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly} showCountryRanking={lang!=='ko'}/>
-      {lang==='ko'&&<p><Link href={`/ko/airport-countries?mode=zones&date=${encodeURIComponent(date)}&building=${encodeURIComponent(buildingScope??terminal)}`}>국가별 출발 구역 보기 ↗</Link></p>}
+      {lang==='ko'&&<p><a href={`/ko/airport-countries?mode=zones&date=${encodeURIComponent(date)}&building=${encodeURIComponent(buildingScope??terminal)}`}>국가별 출발 구역 보기 ↗</a></p>}
       {lang!=='ko'&&map.nextDay!=='MISSING'&&<AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/>}
     </div>,modelTarget);
   }

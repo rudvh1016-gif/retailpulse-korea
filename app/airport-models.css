@@ -416,6 +416,7 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .app .airport-view > #airport-data-flow > button:focus-visible,
 .app .airport-view > .airport-context-nav > button:focus-visible { outline:2px solid #345b7b; outline-offset:-2px; }
 @media(max-width:600px){
+ .app .airport-view > #airport-data-flow { min-height:44px; }
  .app .airport-view > #airport-data-flow > button { font-size:12px; }
  .app .airport-view > .airport-context-nav > button { flex:1 0 76px; font-size:12px; }
 }
