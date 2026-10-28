@@ -1,0 +1,48 @@
+/* Original preview CSS: Story-inspired airy, light-weight spotlight sections.
+   Existing imagery/content stays intact; no demo assets or hidden-on-load animation. */
+html[data-content-theme="story"] .app .site-header{background:#fff;border-bottom:1px solid #dedede;box-shadow:none;backdrop-filter:none}
+html[data-content-theme="story"] .app .topbar{min-height:80px;max-width:1200px;margin-inline:auto}
+html[data-content-theme="story"] .app .brand{font-weight:400;letter-spacing:.03em}
+html[data-content-theme="story"] .app main{max-width:1200px;margin-inline:auto}
+html[data-content-theme="story"] .app .airport-focus-shell{max-width:1200px}
+html[data-content-theme="story"] .app .glance-heading{padding-block:46px 30px;text-align:left}
+html[data-content-theme="story"] .app :is(.glance-heading h1,.focus-detail>h1){font-size:48px;line-height:1.2;font-weight:300;letter-spacing:-.045em}
+html[data-content-theme="story"] .app .focus-detail>h1{padding-top:30px}
+html[data-content-theme="story"] .app .focus-report{background:#fff;border:0;border-top:1px solid #d2d2d2;border-bottom:1px solid #d2d2d2;border-radius:0;box-shadow:none;padding:28px 0;margin-block:20px 32px}
+html[data-content-theme="story"] .app :is(.focus-section-heading h2,.glance-workday-heading){font-size:28px!important;line-height:1.3;font-weight:300;letter-spacing:-.035em}
+html[data-content-theme="story"] .app .focus-forward{gap:48px}
+html[data-content-theme="story"] .app .focus-trend-grid{gap:32px}
+html[data-content-theme="story"] .app .focus-trend-top h3{font-size:20px;font-weight:400}
+html[data-content-theme="story"] .app :is(.focus-report-lines p,.focus-preparation-brief p){line-height:1.85}
+@media(min-width:1000px){html[data-content-theme="story"] .app .glance-heading h1{font-size:64px}html[data-content-theme="story"] .app .focus-report{padding:42px 0}html[data-content-theme="story"] .app .focus-report-lines{column-gap:56px}html[data-content-theme="story"] .app .focus-forward{gap:64px}}
+
+/* Second review: original Story-style split banner and spacious spotlight bands.
+   The single decorative photograph is an approved real, non-airport courtyard. */
+html[data-content-theme="story"] .app main{padding-bottom:120px}
+html[data-content-theme="story"] .app .glance-heading{display:grid;grid-template-columns:1fr;gap:30px;padding:40px 0 0;margin-bottom:30px}
+html[data-content-theme="story"] .app .glance-heading h1{font-size:46px;font-weight:300;line-height:1.25;padding-inline:8px}
+html[data-content-theme="story"] .app .glance-heading::after{content:"";display:block;min-height:250px;background-image:url('/__preview/story-photo.jpg');background-size:cover;background-position:center 58%}
+html[data-content-theme="story"] .app :is(.focus-report,.focus-calendar,.focus-detail,.more-view){--type-body:16px}
+html[data-content-theme="story"] .app .focus-report{padding:38px 8px;border-top:0;border-bottom:1px solid #ddd}
+html[data-content-theme="story"] .app .focus-report-title h2{font-size:32px!important;line-height:1.3;font-weight:300;margin-bottom:24px}
+html[data-content-theme="story"] .app .focus-report :is(.focus-report-lines p,.focus-selected-country-changes p,.focus-preparation-brief p,.focus-preparation-events){font-size:16px;line-height:1.85;font-weight:400}
+html[data-content-theme="story"] .app .focus-report :is(.focus-today-title,.focus-preparation-brief h3){font-size:22px;font-weight:400;margin-block:20px 14px}
+html[data-content-theme="story"] .app :is(.focus-report small,.focus-event-details,.focus-report-basis,.focus-planning-basis,.focus-source){font-size:13px!important;line-height:1.7}
+html[data-content-theme="story"] .app .focus-preparation-brief>div{padding-block:30px}
+html[data-content-theme="story"] .app .focus-preparation-event+.focus-preparation-event{margin-top:24px}
+html[data-content-theme="story"] .app .focus-forward>section{padding-block:30px;border-bottom:1px solid #ddd}
+html[data-content-theme="story"] .app .focus-calendar li :is(p,strong){font-size:15px;line-height:1.7}
+@media(min-width:1000px){
+ html[data-content-theme="story"] .app .glance-heading{grid-template-columns:1fr 1fr;gap:60px;min-height:460px;align-items:center;padding-top:0}
+ html[data-content-theme="story"] .app .glance-heading h1{font-size:64px;padding:40px}
+ html[data-content-theme="story"] .app .glance-heading::after{min-height:460px;align-self:stretch}
+ html[data-content-theme="story"] .app .focus-report{padding:64px 48px}
+ html[data-content-theme="story"] .app .focus-report-lines{display:block;max-width:720px}
+ html[data-content-theme="story"] .app .focus-report-lines>p{margin-block:14px}
+ html[data-content-theme="story"] .app .focus-preparation-brief{display:grid;grid-template-columns:1.3fr 1fr;gap:48px;margin-block:44px}
+ html[data-content-theme="story"] .app .focus-preparation-brief>:is(details,h2){grid-column:1/-1}
+ html[data-content-theme="story"] .app .focus-forward>.focus-calendar{display:grid;grid-template-columns:1fr 2fr;gap:48px;padding-block:64px}
+ html[data-content-theme="story"] .app .focus-forward>.focus-calendar>.focus-section-heading{display:block}
+ html[data-content-theme="story"] .app .focus-forward>.focus-calendar>small{grid-column:1/-1}
+ html[data-content-theme="story"] .app .focus-forward>#focus-country-trends{padding:64px 48px}
+}
