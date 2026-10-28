@@ -66,6 +66,23 @@ for(const width of [360,1440])test(`airport navigation has clear aligned selecti
  await expect(nav.getByRole('button',{name:'항공편',exact:true})).toHaveAttribute('aria-current','page');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+test('당일 비교 uses an explicitly provisional snapshot and one chosen baseline day',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-10-19T12:00:00+09:00'));await records(page);
+ await page.goto('/ko?insight=rhythm&date=2026-10-19');const frame=page.frameLocator('.airport-period-frame');
+ await frame.getByRole('button',{name:'당일 비교',exact:true}).click();
+ await expect(frame.locator('#comparison-caption')).toContainText('당일 미확정');
+ await expect(frame.getByLabel('비교 기간 시작일')).toHaveValue('2026-10-19');
+ await frame.getByLabel('오늘과 비교할 날짜').fill('2026-10-05');
+ await expect(frame.getByLabel('기준 기간 시작일')).toHaveValue('2026-10-05');
+ await expect(frame.getByLabel('기준 기간 종료일')).toHaveValue('2026-10-05');
+});
+test('당일 비교 refuses truncated data',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-10-19T12:00:00+09:00'));await records(page);
+ await page.route('**/api/live/flights*',r=>r.fulfill({json:{...flights,truncated:true}}));
+ await page.goto('/ko?insight=rhythm&date=2026-10-19');const frame=page.frameLocator('.airport-period-frame');
+ await frame.getByRole('button',{name:'당일 비교',exact:true}).click();
+ await expect(frame.locator('#range-error')).toContainText('오늘 항공편을 확인하지 못했습니다');
+});
 test('More explains airport roles with compact type and notice links match the release',async({page})=>{
  await page.goto('/ko/more');const guide=page.locator('.site-usage-guide');
  await expect(guide.locator('h2')).toHaveText('누가, 어떻게 쓰면 좋을까요?');
