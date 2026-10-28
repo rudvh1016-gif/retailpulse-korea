@@ -63,7 +63,7 @@ for(const width of [360,1440])test(`Chinese core screens, calendar details, allo
 test('Chinese terminal and date controls retain scope through refresh and unavailable dates',async({page})=>{
  await fixtures(page);await page.goto('/zh/airport?date=2026-10-19');
  const tabs=page.locator('.airport-view > .terminal-selector').getByRole('tab');
- await expect(tabs.first()).toBeVisible();
+ await expect(tabs.first()).toBeVisible();await expect(page.locator('.date-nav')).toBeVisible();
  for(const index of [1,2,3,0]){await tabs.nth(index).click();await expect(tabs.nth(index)).toHaveAttribute('aria-selected','true');await noKoreanUI(page);}
  await tabs.nth(2).click();await expect(page).toHaveURL(/terminal=T2/);await page.reload();await expect(tabs.nth(2)).toHaveAttribute('aria-selected','true');
  await chooseDate(page,'2026-10-18');await expect(page).toHaveURL(/date=2026-10-18/);await expect(page).toHaveURL(/terminal=T2/);await noKoreanUI(page);

@@ -1,6 +1,6 @@
 # Chinese UI audit — 2026-10-29
 
-Scope: Simplified Chinese (`zh`, existing `简体中文` / `zh-CN` convention). Initial main: `39b7852c32d9f304a26254492a18ae94da8d7e38`. Separate branch: `fix/chinese-site-copy`. No collector, API credential, account, scheduler, calculation, source-date, terminal scope, or airport-period artifact changes.
+Scope: Simplified Chinese (`zh`, existing `简体中文` / `zh-CN` convention). Initial main: `39b7852c32d9f304a26254492a18ae94da8d7e38`. Integrated latest main / UI #498: `a314d87c9de8eb348c831aa74909f5d28c37c9d1`. Separate branch: `fix/chinese-site-copy`. No collector, API credential, account, scheduler, calculation, source-date, terminal scope, or airport-period artifact changes.
 
 ## Findings and corrections
 
@@ -15,7 +15,7 @@ Scope: Simplified Chinese (`zh`, existing `简体中文` / `zh-CN` convention). 
 
 Source inventory and rendered checks are different evidence:
 
-- `node scripts/audit-chinese-source.mjs <output.json>` inventories **441 app/lib source files, 4,567 Korean literal occurrences, 3,542 unique literals** at the initial scan. This includes valid Korean locale records, canonical source identifiers, and Korean-only screens; occurrences are review candidates, not automatically Chinese leaks.
+- `node scripts/audit-chinese-source.mjs <output.json>` inventories **444 app/lib source and JSON files, 5,643 Korean literal occurrences, 4,287 unique literals** in the final source inventory. This includes valid Korean locale records, canonical source identifiers, and Korean-only screens; occurrences are review candidates, not automatically Chinese leaks.
 - Static tests cover every current preparation-event display field, stored arrival display data and every reachable traveler-condition result/guidance combination, runtime review statuses, calendar months/year boundary, monthly charts and missing states. Chinese formatting preserves numeric text; source objects remain unchanged.
 - The original Korean full holiday page was rendered from main `39b7852` and compared byte-for-byte with the modified default Korean render. The rendered footer baseline is committed. Existing Korean briefing fixture comparison also passes.
 - A real Chrome mobile sweep visited 15 Chinese routes: home, airport, countries, preparation, more, airport news, Seoul overview, four Seoul areas, consumption, tourism desk, travel records, about. Raw provider addresses/narratives are distinguished above; language-choice names intentionally retain their own language.
@@ -25,7 +25,7 @@ Source inventory and rendered checks are different evidence:
 ## Checks
 
 - Targeted unit/render/data suites: **93 passed**.
-- New Chrome browser suite: **4 passed** before final main integration.
+- New Chrome browser suite: **5 passed** covering mobile/desktop, language/reload, terminal/date scope, and delayed/failure states.
 - TypeScript: passed. Production build: passed.
 - Changed-file ESLint: no errors; three pre-existing navigation/image warnings.
 - Secret scan: running across reachable history at the time of this record; final result belongs in the PR.

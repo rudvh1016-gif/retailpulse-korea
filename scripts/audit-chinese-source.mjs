@@ -2,11 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 const files=[];
-function visit(directory){for(const entry of fs.readdirSync(directory,{withFileTypes:true})){const file=path.join(directory,entry.name);if(entry.isDirectory())visit(file);else if(/\.(?:[cm]?ts|tsx|[cm]?js|jsx)$/.test(file))files.push(file);}}
+function visit(directory){for(const entry of fs.readdirSync(directory,{withFileTypes:true})){const file=path.join(directory,entry.name);if(entry.isDirectory())visit(file);else if(/\.(?:[cm]?ts|tsx|[cm]?js|jsx|json)$/.test(file))files.push(file);}}
 visit('app');visit('lib');
 const entries=[];
 for(const file of files){
- const source=fs.readFileSync(file,'utf8'),tree=ts.createSourceFile(file,source,ts.ScriptTarget.Latest,true,file.endsWith('x')?ts.ScriptKind.TSX:ts.ScriptKind.TS);
+ const source=fs.readFileSync(file,'utf8'),tree=ts.createSourceFile(file,source,ts.ScriptTarget.Latest,true,file.endsWith('.json')?ts.ScriptKind.JSON:file.endsWith('x')?ts.ScriptKind.TSX:ts.ScriptKind.TS);
  function walk(node){
   if((ts.isStringLiteralLike(node)||ts.isJsxText(node)||ts.isTemplateHead(node)||ts.isTemplateMiddle(node)||ts.isTemplateTail(node))&&/[가-힣]/.test(node.text)){
    const point=tree.getLineAndCharacterOfPosition(node.getStart(tree));
