@@ -418,3 +418,7 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
  .app .airport-view > #airport-data-flow > button { font-size:12px; }
  .app .airport-view > .airport-context-nav > button { flex:1 0 76px; font-size:12px; }
 }
+
+/* The illustration has unused lower canvas; pull the gate key closer without
+   moving the overlaid flight values or cropping the image. */
+.airport-concept-picture[data-scene="static"]:not([data-building="all"]) { margin-bottom:calc(-1 * min(140px, 15vw)); }

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import postcss from 'postcss';
 const read=p=>readFileSync(new URL(`../${p}`,import.meta.url),'utf8');
 const css=read('app/departure-guide-entry.module.css');
-const candidate=css.slice(css.indexOf('/* Owner 2026-10-21: exactly'));
+const candidate=css.slice(css.indexOf('/* Owner 2026-10-21: exactly'),css.indexOf('/* The airport controls share'));
 const nav=read('app/glass-navigation.css');
 test('five-control material matches the final bottom bar, including six shadows',()=>{
  const shadow=nav.split('.glass-nav::before{')[1].split('box-shadow:')[1].split(';')[0];
