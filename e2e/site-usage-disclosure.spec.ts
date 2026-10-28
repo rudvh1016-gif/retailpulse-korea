@@ -61,7 +61,7 @@ for(const lang of ['ko','en','zh','ja'])for(const motion of ['reduce','no-prefer
  await page.route('**/api/live/flights*',route=>route.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:passengerStats}));
- await page.goto(`/${lang}/airport-countries?date=2026-10-19`);
+ await page.goto(`/${lang}/airport-countries?mode=passengers&date=2026-10-19`);
  const context=page.locator('.focus-trend-context[data-country="CN"] .focus-calendar-context');
  const details=context.getByTestId('monthly-calendar-reference'),toggle=details.locator('summary');
  const qualification=context.getByText('일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준',{exact:true});
@@ -128,7 +128,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test.descr
   await page.keyboard.press('Space');await expect(evidence).not.toHaveAttribute('open','');await expect(note).toBeHidden();
  };
 
- await page.goto(`/${lang}/airport-countries`,{waitUntil:'domcontentloaded'});
+ await page.goto(`/${lang}/airport-countries?mode=passengers`,{waitUntil:'domcontentloaded'});
  const cn=context('CN'),jp=context('JP');await cn.scrollIntoViewIfNeeded();
  await expect(cn.locator('[data-vacation-group="CN"]')).toHaveCount(1);
  const members=cn.locator('.focus-vacation-period');await expect(members).toHaveCount(2);

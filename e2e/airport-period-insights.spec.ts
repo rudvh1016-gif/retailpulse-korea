@@ -19,8 +19,20 @@ async function records(page:Page){
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
- await page.route('**/api/live/airport-days*',r=>r.fulfill({json:{mode:'airport-days',date:new URL(r.request().url()).searchParams.get('date'),history:dates.map(day=>({T1:{day,total:300,hours:hour(300),complete:true},T2:{day,total:250,hours:hour(250),complete:true}})),countryDays:dates.flatMap(date=>['JP','CN'].filter(country=>country!=='CN'||date!=='2026-10-07').map(country=>({country,scope:'ALL',date,complete:true,value:country==='JP'?(date>='2026-09-21'&&date<='2026-09-23'?160:150):100})))}}));
+ const countryDays=dates.flatMap(date=>['JP','CN'].filter(country=>country!=='CN'||date!=='2026-10-07').map(country=>({country,scope:'ALL',date,complete:true,value:country==='JP'?(date>='2026-09-21'&&date<='2026-09-23'?160:150):100})));
+ await page.route('**/api/live/airport-days*',r=>r.fulfill({json:{mode:'airport-days',date:new URL(r.request().url()).searchParams.get('date'),history:dates.map(day=>({T1:{day,total:300,hours:hour(300),complete:true},T2:{day,total:250,hours:hour(250),complete:true}})),countryDays,countryDaysByTerminal:{T1:countryDays.map(row=>({...row,scope:'T1',value:row.value-40})),T2:countryDays.map(row=>({...row,scope:'T2',value:40}))}}}));
 }
+for(const width of [320,1440])test(`country comparison switches actual terminal records and shows flags ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});await records(page);await page.goto('/ko/airport-countries?mode=flights&date=2026-10-19');
+ const frame=page.frameLocator('.airport-period-frame'),scope=frame.getByRole('group',{name:'터미널 선택'});
+ await expect(scope.getByRole('button',{name:'전체'})).toHaveAttribute('aria-pressed','true');
+ await expect(frame.locator('.country-pairs .country-flag').first()).toBeVisible();
+ await scope.getByRole('button',{name:'T2'}).click();
+ await expect(scope.getByRole('button',{name:'T2'})).toHaveAttribute('aria-pressed','true');
+ await expect(frame.locator('#boundary')).toContainText('T2');
+ await expect(frame.locator('.country-pairs').first()).toContainText('40');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
 for(const width of [360,390,430,1440])test(`airport period comparison preserves the glance and supports two ranges ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await records(page);
  // The existing country-trend widgets also read this endpoint in the parent.
@@ -53,6 +65,8 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
  expect(historyRequests).toBe(1);
  await frame.getByRole('button',{name:/일본 09\/21.*09\/23/ }).click();
  await expect(frame.locator('.holiday-value')).toHaveText(['150편','160편']);
+ await expect(frame.locator('#takeaway')).toContainText('포함일수');
+ await expect(frame.locator('#boundary')).toContainText('연휴의 인과 효과');
  await expect(frame.locator('#holiday-calendar-context')).toContainText('경로의 날');
  await frame.getByRole('button',{name:'같은 기간 국가별 항공편 →',exact:true}).click();
  await expect(page).toHaveURL(/airport-countries\?mode=flights/);

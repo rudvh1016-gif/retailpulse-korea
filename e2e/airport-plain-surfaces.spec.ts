@@ -20,6 +20,7 @@ for(const width of [390,1280])test(`white airport ground and restrained action s
  const tabs=page.locator('#airport-data-flow button');
  for(const tab of await tabs.all())await expect(tab).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
  await tabs.nth(2).click();await expect(tabs.nth(2)).toHaveAttribute('aria-selected','true');
+ await page.mouse.move(0,0);
  await expect(tabs.nth(2)).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(tabs.nth(2)).toHaveCSS('border-bottom-width','1px');
  const news=page.getByTestId('airport-customs-news-entry');
  await expect(news).toHaveCSS('background-color','rgb(255, 255, 255)');

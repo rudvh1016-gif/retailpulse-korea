@@ -36,7 +36,7 @@ function FocusLiveData({date,children,home=false}:{date?:string|null;children:Re
  const checkedAt=months.map(item=>item.retrievedAt).sort().at(-1)??null;
  return <AirportFocusData.Provider value={{...officialCalendar,asOf,trends,homeMonthlySelection,homeTrends,checkedAt,preview:false,failed:summary===null||latest.failed}}>{children}</AirportFocusData.Provider>;
 }
-function go(lang:Lang,slug:string,date?:string|null){window.location.assign(`/${lang}/${slug}${date?`?date=${encodeURIComponent(date)}`:''}`);}
+function go(lang:Lang,slug:string,date?:string|null){const query=new URLSearchParams();if(lang==='ko'&&slug==='airport-countries')query.set('mode','passengers');if(date)query.set('date',date);window.location.assign(`/${lang}/${slug}${query.size?'?'+query:''}`);}
 export function AirportFocusGlance(props:ComponentProps<typeof AirportGlance>){
  const {lang,selectedDate}=props;
  const copy=airportFocusCopy(lang);
@@ -44,7 +44,7 @@ export function AirportFocusGlance(props:ComponentProps<typeof AirportGlance>){
 }
 export function AirportFocusStatus(props:ComponentProps<typeof AirportViewComponent>){
  const copy=airportFocusCopy(props.lang);
- return <FocusLiveData date={props.date}><div className="airport-focus-shell airport-focus-operating"><AirportSceneArtwork.Provider value="/airport-models/approval-v3"><RoutePassengerPlacement.Provider value={<a className="focus-country-jump" href={`/${props.lang}/airport-countries${props.date?`?date=${props.date}`:''}`}>{copy.countryJump}</a>}><AirportView {...props} industryContext={<StaffCalendarContext onMore={()=>go(props.lang,'airport-prepare')}/>}/></RoutePassengerPlacement.Provider></AirportSceneArtwork.Provider></div></FocusLiveData>;
+ return <FocusLiveData date={props.date}><div className="airport-focus-shell airport-focus-operating"><AirportSceneArtwork.Provider value="/airport-models/approval-v3"><RoutePassengerPlacement.Provider value={<a className="focus-country-jump" href={`/${props.lang}/airport-countries?mode=passengers${props.date?`&date=${props.date}`:''}`}>{copy.countryJump}</a>}><AirportView {...props} industryContext={<StaffCalendarContext onMore={()=>go(props.lang,'airport-prepare')}/>}/></RoutePassengerPlacement.Provider></AirportSceneArtwork.Provider></div></FocusLiveData>;
 }
 function CountryContents({lang,date}:{lang:Lang;date:string|null}){
  const copy=airportFocusCopy(lang);

@@ -1,0 +1,5 @@
+Airline marks identify their respective operators and remain their owners' trademarks.
+Korean Air: current 2025 mark, https://commons.wikimedia.org/wiki/File:Korean_Air_2025.svg (public domain text/logo, trademark restrictions may apply).
+Other marks come from https://github.com/imgmongelli/airlines-logos-dataset (README describes the dataset as MIT licensed) and the current https://airinfo.airport.kr/ap_en/1408/subview.do airline listing. Airport listing marks take priority where listed in lib/airport-airline-official.ts. Operator identity and code are matched before inclusion; uncertain codes have no logo until reviewed. Airline country and name are current listing/registry details, not passenger nationality. Logos remain the property of their owners.
+
+VZ logo: https://suvarnabhumi.airportthai.co.th/service/airport-guide/detail/AirlineInformation_BKK (VZ / TVJ). JD and KN codes: IATA airline directory; their images are from the dataset above.

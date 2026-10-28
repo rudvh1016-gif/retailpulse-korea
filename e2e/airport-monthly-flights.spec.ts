@@ -16,6 +16,12 @@ for(const width of [360,390,430,1280])test(`monthly cards show top eight, expand
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:payload}));
  await page.goto('/ko/airport-countries?mode=zones&date=2026-10-10&building=T2');
  const section=page.getByTestId('airport-month-flights'),countries=section.getByTestId('destination-daily-changes');
+ const zone=section.getByTestId('airport-month-zones');
+ await expect(zone.locator('tbody th').first().locator('.airport-zone-symbol')).toHaveText('→');
+ const airlines=section.getByTestId('month-list-airlines');await airlines.locator('summary').click();
+ const ke=airlines.locator('tbody tr').filter({has:page.locator('.airport-month-airline-code',{hasText:/^KE$/})});
+ await expect(ke.locator('.airport-month-airline-country')).toContainText('대한민국');
+ await expect(ke.locator('.airport-month-airline-logo')).toHaveAttribute('src','/images/airline-logos/KE.svg');
  const cards=countries.locator(':scope > ul > li'),toggle=countries.getByRole('button',{name:'더 보기',exact:true});
  const order=['CN','DE','FR','JP','PH','TH','TW','US','VN'];
  await expect(countries.getByRole('heading',{name:'항공편 많은 국가 TOP8'})).toBeVisible();
