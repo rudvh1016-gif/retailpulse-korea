@@ -33,7 +33,8 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1000
  if(lang==='ko'&&(width===390||width===1440))await page.screenshot({path:info.outputPath(`five-flow-${width}.png`),fullPage:true});
  if(lang==='ko'&&width===1440){
   await page.setViewportSize({width:390,height:1000});await expect(rows).toHaveCount(7);await page.setViewportSize({width:1440,height:1000});await expect.poll(()=>rows.count()).toBeGreaterThan(7);
-  flightReply={...flights,flights:flights.flights.filter(row=>row.airportCode==='NRT')};await page.reload();await expect(countries.locator('.glance-detail-link')).toContainText('(1)');await expect(rows).toHaveCount(1);
+  const tokyoFlights=flights.flights.filter(row=>row.airportCode==='도쿄/하네다');expect(tokyoFlights.length).toBeGreaterThan(0);
+  flightReply={...flights,flights:tokyoFlights};await page.reload();await expect(countries.locator('.glance-detail-link')).toContainText('(1)');await expect(rows).toHaveCount(1);
  }
  // The weekly official schedule lives on the airport status page, not the glance page.
  await page.goto(`/${lang}/airport?date=2026-10-19`);
