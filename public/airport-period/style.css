@@ -100,3 +100,7 @@ html{overflow-y:hidden}body{display:flow-root}
 .band-summary col:first-child{width:28%}.band-summary col:not(:first-child){width:36%}
 @media(max-width:600px){.range-form fieldset>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.range-form fieldset>div>span{display:none}.range-form fieldset label{display:flex;flex-direction:column;align-items:stretch;gap:4px}.range-form input[type=date]{width:100%;min-width:0;padding:7px 4px;font-size:13px;min-height:44px}.presets button,.scope button,.measure button{min-height:44px}}
 @media(max-width:600px){.band-grid{gap:18px 16px}.bands-heading h4{font-size:15px}.bands-heading p{font-size:11px}.band-summary h5{font-size:15px}.band-summary time{font-size:12px}.band-summary tbody td{font-size:17px}.band-summary header{gap:4px;margin-bottom:8px}.band-changes .band-change-label,.band-changes .increase,.band-changes .decrease,.band-changes .neutral{font-size:11px}}
+/* One-date comparison stays compact on phone and keyboard accessible. */
+#today-compare-control:not([hidden]) { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:10px 0; color:#333; font-size:13px; }
+#today-compare-date { min-height:44px; max-width:100%; border:0; border-bottom:1px solid #aab6c0; background:#fff; color:#172b3a; font:inherit; }
+#today-compare-date:focus-visible { outline:2px solid #345b7b; outline-offset:2px; }

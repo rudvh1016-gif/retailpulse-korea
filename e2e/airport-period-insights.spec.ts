@@ -49,6 +49,33 @@ test('unavailable analysis can retry without substituting old embedded records',
  await expect(frame.getByRole('button',{name:'다시 불러오기'})).toBeVisible();await expect(frame.locator('#panel')).toBeHidden();
  await records(page);await frame.getByRole('button',{name:'다시 불러오기'}).click();await expect(frame.locator('#panel')).toBeVisible();
 });
+test('당일 비교 uses an explicitly provisional snapshot and one chosen baseline day',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-10-19T12:00:00+09:00'));await records(page);
+ await page.goto('/ko?insight=rhythm&date=2026-10-19');const frame=page.frameLocator('.airport-period-frame');
+ await frame.getByRole('button',{name:'당일 비교',exact:true}).click();
+ await expect(frame.locator('#comparison-caption')).toContainText('당일 미확정');
+ await expect(frame.getByLabel('비교 기간 시작일')).toHaveValue('2026-10-19');
+ await frame.getByLabel('오늘과 비교할 날짜').fill('2026-10-05');
+ await expect(frame.getByLabel('기준 기간 시작일')).toHaveValue('2026-10-05');
+ await expect(frame.getByLabel('기준 기간 종료일')).toHaveValue('2026-10-05');
+});
+test('당일 비교 refuses truncated data',async({page})=>{
+ await page.clock.setFixedTime(new Date('2026-10-19T12:00:00+09:00'));await records(page);
+ await page.route('**/api/live/flights*',r=>r.fulfill({json:{...flights,truncated:true}}));
+ await page.goto('/ko?insight=rhythm&date=2026-10-19');const frame=page.frameLocator('.airport-period-frame');
+ await frame.getByRole('button',{name:'당일 비교',exact:true}).click();
+ await expect(frame.locator('#range-error')).toContainText('오늘 항공편을 확인하지 못했습니다');
+});
+test('항공사 이전은 정확한 전후 날짜를 넣고 빈 과거 자료를 0으로 취급하지 않는다',async({page})=>{
+ await records(page);
+ await page.route('**/api/live/airport-days*',r=>new URL(r.request().url()).searchParams.get('date')==='2026-02-11'?r.fulfill({json:{mode:'airport-days',date:'2026-02-11',history:[],countryDays:[]}}):r.fallback());
+ await page.goto('/ko?insight=terminal&date=2026-10-19');const frame=page.frameLocator('.airport-period-frame');
+ await frame.getByRole('button',{name:'아시아나 · 2026/01/14'}).click();
+ await expect(frame.getByLabel('기준 기간 시작일')).toHaveValue('2025-12-17');
+ await expect(frame.getByLabel('비교 기간 종료일')).toHaveValue('2026-02-10');
+ await expect(frame.locator('#finding-title')).toHaveText('양쪽 기간의 기록이 필요합니다');
+ await expect(frame.getByRole('link',{name:'이전 공지 확인 ↗'})).toBeVisible();
+});
 test('More explains airport roles with compact type and notice links match the release',async({page})=>{
  await page.goto('/ko/more');const guide=page.locator('.site-usage-guide');
  await expect(guide.locator('h2')).toHaveText('누가, 어떻게 쓰면 좋을까요?');
