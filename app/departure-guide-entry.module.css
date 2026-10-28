@@ -104,7 +104,7 @@ details.guide > summary.entry:is(.entry), .tripEntry:is(.tripEntry),
 @media not (forced-colors:active) {
  .tripEntry:is(.tripEntry) { border:0; border-bottom:1px solid #dce2e7; border-radius:0; background:#fff; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
  :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts) { border:0; border-bottom:1px solid #dce2e7; border-radius:0; }
- :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]) { border:0; border-bottom:2px solid transparent; border-radius:0; background:#fff; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+ :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]) { border:0; border-bottom:1px solid transparent; border-radius:0; background:#fff; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
  :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"]) { border-bottom-color:#345b7b; color:#244967; }
  :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"]::after) { display:none; }
 }
