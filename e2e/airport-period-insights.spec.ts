@@ -34,6 +34,10 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
  for(const name of ['항공편 주말이 더 많나요?','어느 터미널이 달라졌나요?','연휴에는 늘었나요?']){
   await page.getByRole('tab',{name,exact:true}).click();await expect(frame.locator('#section-title')).toHaveText(name);
   await expect(frame.getByLabel('기준 기간 시작일')).toHaveValue('2026-09-12');
+  if(name==='항공편 주말이 더 많나요?'){
+   await expect(frame.locator('#takeaway')).toContainText('출발편이 가장 많은 요일');
+   await expect(frame.locator('#boundary')).toContainText('출발편 평균');
+  }
  }
  expect(historyRequests).toBe(1);
  await frame.getByRole('button',{name:'일본 9/21–9/23 · 3일',exact:true}).click();
