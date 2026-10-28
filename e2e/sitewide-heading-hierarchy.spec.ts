@@ -115,7 +115,8 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
   for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
- await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['✓시간·터미널','노선·휴일 준비']);
+ const staffTitles=new URL(page.url()).pathname.startsWith('/zh')?['✓时段与航站楼','航线与假期准备']:['✓시간·터미널','노선·휴일 준비'];
+ await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(staffTitles);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 
