@@ -29,14 +29,17 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1000
   await expect(card.locator(':scope > img')).toHaveCount(0);const group=card.locator('.focus-calendar-country'),flag=group.locator('img'),name=group.locator('.focus-calendar-country-name');await expect(flag).toHaveCount(1);await expect(name).toBeVisible();
   const f=(await flag.boundingBox())!,n=(await name.boundingBox())!;expect(Math.abs(f.y-n.y)).toBeLessThanOrEqual(3);expect(n.x-f.x-f.width).toBeGreaterThanOrEqual(4);expect(n.x-f.x-f.width).toBeLessThanOrEqual(8);
  }
- const weekly=page.locator('.focus-staff-calendar');await weekly.scrollIntoViewIfNeeded();await expect(weekly).toBeVisible();
- const weeklyRows=weekly.locator(':scope > p');expect(await weeklyRows.count()).toBeGreaterThan(0);
- for(const note of await weekly.locator(':scope > p > small').all()){await expect(note).toHaveCSS('font-size','11px');await expect(note).toHaveCSS('font-weight','400');}
- for(let i=1;i<await weeklyRows.count();i++){const before=(await weeklyRows.nth(i-1).boundingBox())!,after=(await weeklyRows.nth(i).boundingBox())!;expect(after.y-before.y-before.height).toBeGreaterThanOrEqual(8);expect(after.y-before.y-before.height).toBeLessThanOrEqual(16);}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  if(lang==='ko'&&(width===390||width===1440))await page.screenshot({path:info.outputPath(`five-flow-${width}.png`),fullPage:true});
  if(lang==='ko'&&width===1440){
   await page.setViewportSize({width:390,height:1000});await expect(rows).toHaveCount(7);await page.setViewportSize({width:1440,height:1000});await expect.poll(()=>rows.count()).toBeGreaterThan(7);
   flightReply={...flights,flights:flights.flights.filter(row=>row.airportCode==='NRT')};await page.reload();await expect(countries.locator('.glance-detail-link')).toContainText('(1)');await expect(rows).toHaveCount(1);
  }
+ // The weekly official schedule lives on the airport status page, not the glance page.
+ await page.goto(`/${lang}/airport?date=2026-10-19`);
+ const weekly=page.locator('.focus-staff-calendar');await expect(weekly).toBeVisible();await weekly.scrollIntoViewIfNeeded();
+ const weeklyRows=weekly.locator(':scope > p');expect(await weeklyRows.count()).toBeGreaterThanOrEqual(2);
+ await expect(weekly).toContainText('미얀마');await expect(weekly).toContainText('카자흐스탄');
+ for(const note of await weekly.locator(':scope > p > small').all()){await expect(note).toHaveCSS('font-size','11px');await expect(note).toHaveCSS('font-weight','400');}
+ for(let i=1;i<await weeklyRows.count();i++){const before=(await weeklyRows.nth(i-1).boundingBox())!,after=(await weeklyRows.nth(i).boundingBox())!;expect(after.y-before.y-before.height).toBeGreaterThanOrEqual(8);expect(after.y-before.y-before.height).toBeLessThanOrEqual(16);}
 });
