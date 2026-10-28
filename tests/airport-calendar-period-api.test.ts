@@ -20,4 +20,6 @@ test('shared preparation API exposes reviewed rest intervals, workdays and expli
  const nationalDay=preparationEventsOn(preparation,'2026-10-01').find(e=>e.country==='CN')!;
  assert.match(nationalDay.notes,/2026-09-20, 2026-10-10 \(휴일 아님\)/);
  assert.equal(preparationEventsOn(preparation,'2026-09-25').find(e=>e.country==='KR')!.scope,'전국 법정 공휴일');
+ const fallback=preparationEventsOn(preparationEvents('2026-10-28'),'2026-09-25').find(e=>e.country==='CN')!;
+ assert.equal(fallback.scope,'전국 휴일 일정');assert.match(fallback.description_ko,/구분은 확인 중/);
 });
