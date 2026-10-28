@@ -35,14 +35,13 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   expect(label.lines).toBe(1);expect(label.textWidth).toBeLessThanOrEqual(label.buttonWidth);
   expect((await buildingTabs.last().boundingBox())!.height).toBeLessThanOrEqual(44);
 
-  const zones=page.getByTestId('map-zone-countries');
-  const total=()=>zones.locator('[data-side][data-total]').evaluateAll(nodes=>nodes.reduce((sum,node)=>sum+Number(node.getAttribute('data-total')),0));
-  await expect.poll(total).toBe(4);
+  await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator','4');
+  await expect(page.getByRole('link',{name:'국가별 출발 구역 보기 ↗'})).toBeVisible();
   for (const [index,count] of [[1,1],[2,1],[3,1],[0,4]] as const) {
     await buildingTabs.nth(index).focus();
     await page.keyboard.press('Space');
     await expect(buildingTabs.nth(index)).toHaveAttribute('aria-selected','true');
-    await expect.poll(total).toBe(count);
+    await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator',String(count));
     if(index===3)await expect(page.getByTestId('concourse-unsupported')).toBeVisible();
   }
 
@@ -54,7 +53,7 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await expect(map.getByTestId('map-from')).toBeVisible();
   await map.getByTestId('map-from').selectOption('11');
   await map.getByTestId('map-to').selectOption('12');
-  await expect.poll(total).toBe(0);
+  await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator','0');
   if (width===320) {
     // Read one layout frame: separate protocol calls can straddle the browser's scroll adjustment.
     const boxes=await presets.evaluateAll(buttons=>buttons.map(button=>{const b=button.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,width:b.width,height:b.height};}));

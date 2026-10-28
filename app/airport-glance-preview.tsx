@@ -155,7 +155,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   forecast:`/${lang}/airport?terminal=${scope==='all'?'all':forecastTerminal}${dateQuery}#airport-forecast-title`,
   wait:scope==='CONCOURSE'?`/${lang}/airport?terminal=T1${dateQuery}#airport-checkpoints-title`:`${details}#airport-checkpoints-title`,
   map:scope==='CONCOURSE'?`${details}#airport-concourse`:`${details}#airport-departure-model-slot`,
-  countries:`${details}#airport-zone-countries`,
+  countries:lang==='ko'?`/ko/airport-countries?mode=zones&building=${scope}${dateQuery}#airport-zone-countries`:`${details}#airport-zone-countries`,
   monthCountries:`${details}#airport-month-destinations`,
  };
  // While a value is unknown its placeholder keeps the loaded shape: an invisible pseudo-element of that shape (.glance-hold, outside the DOM
