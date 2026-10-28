@@ -24,4 +24,3 @@ test('returning-reader test state preserves analytics choice and uses the actual
  assert.deepEqual(result.origins[0].localStorage[0],state.origins[0].localStorage[0]);
  assert.equal(result.origins[0].localStorage[1].name,UPDATE_NOTICE_UNTIL_KEY);
 });
-

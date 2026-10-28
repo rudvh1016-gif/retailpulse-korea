@@ -9,4 +9,3 @@ export function noticeDismissedState(origin='http://127.0.0.1:4173',state={cooki
  entry.localStorage.push({name:'koretail-notice:airport-period-20261028-v1:until',value:String(Date.UTC(2099,0,1))});
  return result;
 }
-
