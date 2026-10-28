@@ -40,7 +40,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report-basis')).toContainText('누락일을 0으로 계산하지 않습니다');
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','normal');
- await expect(page.locator('.focus-passenger-comparison')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
+ await expect(page.locator('.focus-passenger-comparison-core')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width>=1000?'28px':'24px');
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
  await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
@@ -64,13 +64,17 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  }
  await expect(page.locator('.focus-report-lines p').first()).toHaveCSS('font-size','16px');
  await expect(page.locator('.focus-people-metric > .focus-metric-label')).toHaveText('예상 인원 · 단순합계');
- await expect(page.locator('.focus-today-title')).toHaveCSS('padding-bottom','0px');
- await expect(page.locator('.focus-today-title')).toHaveCSS('border-bottom-width','0px');
+ await expect(page.locator('.focus-report-date')).toHaveCSS('padding-bottom','0px');
+ await expect(page.locator('.focus-report-date')).toHaveCSS('border-bottom-width','0px');
  const metricBoxes=await page.locator('.focus-core-metric').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,scroll:node.scrollWidth,width:node.clientWidth};}));
  expect(metricBoxes).toHaveLength(2);
  for(const box of metricBoxes)expect(box.scroll).toBeLessThanOrEqual(box.width+1);
  if(width>=1200)expect(Math.abs(metricBoxes[0].y-metricBoxes[1].y)).toBeLessThanOrEqual(1);
- else expect(metricBoxes[1].y).toBeGreaterThanOrEqual(metricBoxes[0].bottom);
+ else {
+  expect(metricBoxes[0].right).toBeLessThanOrEqual(metricBoxes[1].x);
+  const labels=await page.locator('.focus-figures-title,.focus-flight-metric > .focus-metric-label').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right};}));
+  expect(labels).toHaveLength(2);expect(labels[0].right).toBeLessThanOrEqual(labels[1].x);expect(Math.abs(labels[0].y-labels[1].y)).toBeLessThanOrEqual(1);
+ }
 
  const upcomingBody=page.locator('.focus-preparation-events').first();
  const bodyToken=await upcomingBody.evaluate(node=>getComputedStyle(node).getPropertyValue('--type-body').trim());

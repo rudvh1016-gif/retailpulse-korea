@@ -20,9 +20,9 @@ test('passenger and flight figures gain one real localized heading with number-f
  assert.match(children[0].getText(tree),/data-heading="subsection"/);
  for(const field of ['passengers','transferPassengers','referenceSum','flights'])assert.ok(children[1].getText(tree).includes(`context.${field}`));
  const metrics=children[1].getText(tree);
- assert.ok(metrics.indexOf('context.referenceSum')<metrics.indexOf('focus-passenger-parts'));
+ assert.ok(metrics.indexOf('context.referenceSum')<metrics.indexOf('parts='));
  assert.match(metrics,/focus-number-first-grid/);assert.match(metrics,/focus-core-metric focus-people-metric/);assert.match(metrics,/focus-core-metric focus-flight-metric/);
- const order=['focus-today-title','focus-report-lines','focus-selected-country-stack','<PreparationBrief lang={lang}','className="focus-report-basis"'].map(text=>source.indexOf(text,source.indexOf('export function OverviewHeadline')));
+ const order=['focus-report-date','focus-report-lines','focus-selected-country-stack','<PreparationBrief lang={lang}','className="focus-report-basis"'].map(text=>source.indexOf(text,source.indexOf('export function OverviewHeadline')));
  assert.ok(order.every((n,i)=>n>=0&&(!i||n>order[i-1])),'mobile DOM reading order stays unchanged');
 });
 
