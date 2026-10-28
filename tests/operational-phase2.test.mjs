@@ -118,6 +118,20 @@ test('A1 review never opens the legacy generic provider helper during or after t
 // Compare protected bytes after reversing only these exact approved navigation
 // expressions and their canonical-contract comment. Every other byte is locked.
 const approvedCanonicalPatches={
+  "app/site-usage-guide.tsx": [
+    ["import {useEffect,useRef} from 'react';\n", ""],
+    [`  const section=useRef<HTMLElement>(null);
+  useEffect(()=>{
+    const root=section.current;if(!root)return;
+    const media=window.matchMedia('(min-width: 1000px)');
+    const details=[...root.querySelectorAll<HTMLDetailsElement>(':scope > details')];
+    let mobileStates=details.map(item=>item.open);
+    const apply=()=>{if(media.matches){mobileStates=details.map(item=>item.open);details.forEach(item=>{item.open=true;});}else details.forEach((item,i)=>{item.open=mobileStates[i];});};
+    apply();media.addEventListener('change',apply);return()=>media.removeEventListener('change',apply);
+  },[]);
+`, ""],
+    ['<section ref={section} className="site-usage-guide"', '<section className="site-usage-guide"']
+  ],
   "app/retailpulse-app.tsx": [
     [
       "AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide",
