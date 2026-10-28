@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- A full navigation initializes the site's custom route shell. */
+import {useEffect,useRef} from 'react';
 import { passengerCopy } from "../lib/passenger-copy";
 import type { Lang } from "./retailpulse-data";
 
@@ -61,10 +62,19 @@ function ReadingParagraphs({ text }: { text: string }) {
 }
 
 export function SiteUsageGuide({ lang }: { lang: Lang }) {
+  const section=useRef<HTMLElement>(null);
+  useEffect(()=>{
+    const root=section.current;if(!root)return;
+    const media=window.matchMedia('(min-width: 1000px)');
+    const details=[...root.querySelectorAll<HTMLDetailsElement>(':scope > details')];
+    let mobileStates=details.map(item=>item.open);
+    const apply=()=>{if(media.matches){mobileStates=details.map(item=>item.open);details.forEach(item=>{item.open=true;});}else details.forEach((item,i)=>{item.open=mobileStates[i];});};
+    apply();media.addEventListener('change',apply);return()=>media.removeEventListener('change',apply);
+  },[]);
   const t = copy[lang];
   const examples = { ko: "활용 예시", en: "Usage examples", zh: "使用示例", ja: "活用例" }[lang];
   const disclosureStyle = { minHeight: 44, boxSizing: "border-box" as const, padding: "12px 0", cursor: "pointer" };
-  return <section className="site-usage-guide" aria-labelledby="site-usage-title">
+  return <section ref={section} className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 data-heading="section" id="site-usage-title"><span className="heading-marker" aria-hidden="true"/>{t.title}</h2>
     <p>{t.intro}</p>
     {lang==='ko'&&<details id="airport-usage-guide" data-testid="airport-usage-guide"><summary style={disclosureStyle}>인천공항 이용 방법</summary>

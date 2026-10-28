@@ -11,7 +11,7 @@ export interface PreparationEvent {
  dateLabel_ko:string;scope:string;description_ko:string;cardSummary_ko:string;
  connectionStatus_ko:string;connectionNote_ko:string;restConditions_ko:string[];
  verificationMethod:string;notes:string;sourceURL:string;verifiedAt:string;
- isRepresentative?:boolean;kind:'public_holiday'|'school_break';
+ isRepresentative?:boolean;kind:'public_holiday'|'school_break'|'major_event';supportingSourceURL?:string;
 }
 /** Reuse reviewed dates only. Automatic replacement is restricted to its exact
  * country/year/scope; a stale replacement must not revive superseded seed dates. */
@@ -39,7 +39,8 @@ export function preparationEvents(asOf:string,calendarEvents?:CalendarEvent[],sc
  // Preserve the owner's full descriptions while adopting a newer review of
  // the same stable event ID (for example a newly published Korean annual list).
  const refreshed=preserved.map(event=>{const newer=additional.find(row=>row.id===event.id&&row.verifiedAt>event.verifiedAt);return newer?{...event,verifiedAt:newer.verifiedAt,sourceURL:newer.sourceURL,verificationMethod:newer.verificationMethod}:event;});
- const all=[...refreshed,...additional];
+ const majorEvents:PreparationEvent[]=asOf>='2026-10-29'?[{id:'KR-2026-CSAT',country:'KR',countryLabel:'한국',name:'2027학년도 대학수학능력시험',start:'2026-11-19',end:'2026-11-19',dateLabel_ko:'2026-11-19',scope:'주요 일정 · 공휴일 아님',description_ko:'영어 듣기평가 13:10–13:35 KST에 항공기·헬리콥터 이착륙 시간을 조정합니다.',cardSummary_ko:'',connectionStatus_ko:'공식 일정과 운항 참고',connectionNote_ko:'개별 항공편의 지연이나 여객 수요 변화를 뜻하지 않습니다.',restConditions_ko:[],verificationMethod:'REVIEWED_OFFICIAL_SNAPSHOT',notes:'공항 운영 참고입니다. 개별 항공편 지연이나 매출 영향을 확정하지 않습니다.',sourceURL:'https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=294&boardSeq=100526&lev=0&m=020402',supportingSourceURL:'https://www.korea.kr/news/policyNewsView.do?newsId=148973935',verifiedAt:'2026-10-29',isRepresentative:false,kind:'major_event'},{id:'KR-2026-KOREA-GRAND-FESTIVAL',country:'KR',countryLabel:'한국',name:'코리아 그랜드 페스티벌',start:'2026-10-29',end:'2026-11-15',dateLabel_ko:'2026-10-29~2026-11-15',scope:'주요 행사 · 공휴일 아님',description_ko:'정부가 안내한 소비·관광 행사입니다. 해당 인천공항 매장과 브랜드의 참여 여부를 확인해 주세요.',cardSummary_ko:'',connectionStatus_ko:'공식 행사 안내',connectionNote_ko:'특정 매장 참여나 매출 증가를 뜻하지 않습니다.',restConditions_ko:[],verificationMethod:'REVIEWED_OFFICIAL_SNAPSHOT',notes:'참여 매장·조건은 각각 확인이 필요합니다.',sourceURL:'https://www.mois.go.kr/frt/bbs/type010/commonSelectBoardArticle.do?bbsId=BBSMSTR_000000000008&nttId=130507',verifiedAt:'2026-10-29',isRepresentative:false,kind:'major_event'}]:[];
+ const all=[...refreshed,...additional,...majorEvents];
  return sortCalendarEvents(all.filter((event,index)=>all.findIndex(other=>other.id===event.id||other.country===event.country&&other.countryLabel===event.countryLabel&&other.start===event.start&&other.end===event.end&&other.name===event.name&&other.scope===event.scope)===index));
 }
 export function shiftPreparationMonth(month:string,offset:number):string {
