@@ -1,13 +1,15 @@
 'use client';
+import {chineseText} from '../lib/chinese-ui';
 
 import {useEffect,useId,useRef,useState,type KeyboardEvent,type PointerEvent as ReactPointerEvent} from 'react';
 import {nearestMonthlyPoint} from '../lib/monthly-chart-pointer';
+import type {Lang} from './retailpulse-data';
 import type {FocusTrend} from './airport-focus-data';
 
 const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
 const width=332,height=178;
 
-export default function MonthlyLineChart({row}:{row:FocusTrend}){
+export default function MonthlyLineChart({row,lang='ko'}:{row:FocusTrend;lang?:Lang}){
  const [activeMonth,setActiveMonth]=useState<string|null>(null);
  const [pinned,setPinned]=useState(false);
  const chart=useRef<HTMLDivElement>(null);
@@ -28,7 +30,7 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
   return()=>{document.removeEventListener('pointerdown',dismiss);document.removeEventListener('keydown',escape);};
  },[activeMonth,pinned]);
 
- if(!values.length)return <p>월별 자료 확인 중</p>;
+ if(!values.length)return <p>{chineseText(lang,"월별 자료 확인 중")}</p>;
  const low=Math.max(0,Math.floor(Math.min(...values)*0.9/10000)*10000);
  const high=Math.max(low+10000,Math.ceil(Math.max(...values)*1.1/10000)*10000);
  const x=(index:number)=>48+index*256/Math.max(1,row.points.length-1);
@@ -58,7 +60,7 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
  };
 
  return <figure className="focus-line-chart focus-interactive-line-chart">
-  <div ref={chart} className="focus-month-plot" role="group" aria-label={`${row.label} 월별 출발 여객`}
+  <div ref={chart} className="focus-month-plot" role="group" aria-label={chineseText(lang,`${row.label} 월별 출발 여객`)}
    onPointerDown={event=>{
     if(!event.isPrimary||event.button!==0||drag.current)return;
     suppressClick.current=false;
@@ -83,12 +85,12 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
    <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false">
     {[low,(low+high)/2,high].map(tick=><g key={tick}>
      <line x1="48" x2="304" y1={y(tick)} y2={y(tick)} stroke="#e3e8ed" strokeWidth="0.75" vectorEffect="non-scaling-stroke"/>
-     <text x="40" y={y(tick)+3} textAnchor="end" className="focus-chart-tick">{`${number.format(tick/10000)}만`}</text>
+     <text x="40" y={y(tick)+3} textAnchor="end" className="focus-chart-tick">{chineseText(lang,`${number.format(tick/10000)}만`)}</text>
     </g>)}
     {row.points.map((point,index)=>{
      const previous=row.points[index-1],selected=activeMonth===point.month;
      return <g key={point.month} data-month={point.month}>
-      <text x={x(index)} y="158" textAnchor="middle" className="focus-chart-tick" data-selected={selected}>{monthLabel(point.month)}</text>
+      <text x={x(index)} y="158" textAnchor="middle" className="focus-chart-tick" data-selected={selected}>{chineseText(lang,monthLabel(point.month))}</text>
       {point.departures!==null&&<>
        {previous?.departures!==null&&previous?.departures!==undefined&&<line className="focus-month-line" x1={x(index-1)} y1={y(previous.departures)} x2={x(index)} y2={y(point.departures)} stroke="#28445f" strokeWidth="1.25" vectorEffect="non-scaling-stroke" strokeLinecap="round"/>}
        <circle className="focus-month-point" cx={x(index)} cy={y(point.departures)} r="2.5" fill="white" stroke="#28445f" strokeWidth="1.25" vectorEffect="non-scaling-stroke" data-selected={selected}/>
@@ -99,14 +101,14 @@ export default function MonthlyLineChart({row}:{row:FocusTrend}){
    </svg>
    {row.points.map((point,index)=><button key={point.month} ref={node=>{targets.current[index]=node;}} type="button"
     className="focus-month-target" style={{left:`${boundary(index)/width*100}%`,width:`${(boundary(index+1)-boundary(index))/width*100}%`}} data-month={point.month}
-    aria-label={`${row.label} ${point.month.slice(0,4)}년 ${readout(point)}`} aria-pressed={activeMonth===point.month}
+    aria-label={chineseText(lang,`${row.label} ${point.month.slice(0,4)}년 ${readout(point)}`)} aria-pressed={activeMonth===point.month}
     aria-describedby={activeMonth===point.month?tooltipId:undefined}
     onPointerEnter={event=>{if(event.pointerType!=='touch'&&!drag.current)setActiveMonth(point.month);}}
     onFocus={()=>setActiveMonth(point.month)} onClick={()=>{setActiveMonth(point.month);setPinned(true);}}
-    onKeyDown={event=>move(event,index)}><span className="sr-only">{monthLabel(point.month)} 여객 수 확인</span></button>)}
+    onKeyDown={event=>move(event,index)}><span className="sr-only">{chineseText(lang,monthLabel(point.month))}{chineseText(lang," 여객 수 확인")}</span></button>)}
    {active&&<div id={tooltipId} role="tooltip" className="focus-month-tooltip"
-    style={{left:`clamp(8px, calc(${x(activeIndex)/width*100}% - 76px), calc(100% - 160px))`,top:`max(0px, calc(${(active.departures===null?100:y(active.departures))/height*100}% - 38px))`}}>{readout(active)}</div>}
+    style={{left:`clamp(8px, calc(${x(activeIndex)/width*100}% - 76px), calc(100% - 160px))`,top:`max(0px, calc(${(active.departures===null?100:y(active.departures))/height*100}% - 38px))`}}>{chineseText(lang,readout(active))}</div>}
   </div>
-  <figcaption>세로축 {number.format(low)}–{number.format(high)}명 · 국가별 범위 다름</figcaption>
+  <figcaption>{chineseText(lang,"세로축 ")}{chineseText(lang,number.format(low))}–{chineseText(lang,number.format(high))}{chineseText(lang,"명 · 국가별 범위 다름")}</figcaption>
  </figure>;
 }

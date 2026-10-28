@@ -38,6 +38,7 @@ import {
   type EventPresentationStatus,
 } from "../lib/event-presentation";
 import { describeSourcePeriod, PERIOD_VOUCH_WINDOW_MS } from "../lib/source-period";
+import {chineseText} from '../lib/chinese-ui';
 import { formatRepresentativeStations } from "../lib/subway-ridership";
 import { buildWeatherGuide, worseAirGrade } from "../lib/weather-guide";
 import { WeatherScene } from './weather-scene';
@@ -1788,9 +1789,9 @@ export function buildStoreDynamicsPresentation(
       retrievedAt: lastCollectedAt,
       nowIso: nowIso ?? row.retrievedAt,
     }, lang),
-    areaValue: row.tradeAreaName.endsWith(row.tradeAreaTypeName)
+    areaValue: chineseText(lang,row.tradeAreaName.endsWith(row.tradeAreaTypeName)
       ? row.tradeAreaName
-      : `${row.tradeAreaName} · ${row.tradeAreaTypeName}`,
+      : `${row.tradeAreaName} · ${row.tradeAreaTypeName}`),
     totalLabel: storeDynamicsText.total[lang],
     totalValue: countValue(row.totalStoreCount),
     composition: [
@@ -1968,7 +1969,9 @@ function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: La
   const status: EventPresentationStatus = suppliedStatus === "IN_OFFICIAL_PERIOD" || suppliedStatus === "UPCOMING"
     ? suppliedStatus
     : eventStatusForDate(event, serviceDate);
-  const preview = eventPreview(event.overview);
+  const localizedOverview=chineseText(lang,event.overview);
+  const sourceOriginal=lang==='zh'&&/[가-힣]/.test(localizedOverview??'');
+  const preview = chineseText(lang,eventPreview(event.overview));
   const homepage = safeOfficialEventHomepage(event.homepage);
   const place = [formatEventPlace(event), event.addressDetail?.trim()].filter(Boolean).join(" · ");
   const distance = formatEventDistance(lang, event);
@@ -1978,15 +1981,16 @@ function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: La
         <span className={`event-status ${status.toLowerCase().replaceAll("_", "-")}`}>
           {status === "IN_OFFICIAL_PERIOD" ? text.eventInOfficialPeriod[lang] : text.eventStartsAfterSelectedDate[lang]}
         </span>
-        <h4>{[event.categoryName, event.title].filter(Boolean).join(" · ")}</h4>
+        <h4>{chineseText(lang,[event.categoryName, event.title].filter(Boolean).join(" · "))}</h4>
       </header>
-      <p className="event-meta">{[formatEventPeriod(event), place].filter(Boolean).join(" · ")}</p>
+      <p className="event-meta">{lang==='zh'?<>{formatEventPeriod(event)}{place&&<> · <span lang={/[가-힣]/.test(place)?'ko':undefined}>{/[가-힣]/.test(place)?'地址原文：':''}{place}</span></>}</>:[formatEventPeriod(event), place].filter(Boolean).join(" · ")}</p>
       {distance && <p className="event-distance">{text.eventDistanceBasis[lang]} {distance}</p>}
-      {preview && <p className="event-preview">{preview}</p>}
+      {sourceOriginal&&/[가-힣]/.test(preview??'')&&<small lang="zh-CN">官方原文（韩语）</small>}
+      {preview && <p className="event-preview" lang={sourceOriginal&&/[가-힣]/.test(preview??'')?'ko':undefined}>{preview}</p>}
       <div className="event-actions">
         {event.overview && <details>
-          <summary>{text.eventDetails[lang]}</summary>
-          <p className="event-overview">{event.overview}</p>
+          <summary>{text.eventDetails[lang]}{sourceOriginal?' · 官方原文（韩语）':''}</summary>
+          <p className="event-overview" lang={sourceOriginal?'ko':undefined}>{localizedOverview}</p>
         </details>}
         {homepage && <a href={homepage} target="_blank" rel="noopener noreferrer">{text.eventOfficialPage[lang]} <span aria-hidden="true">↗</span></a>}
       </div>
@@ -2073,7 +2077,7 @@ export default function LiveSignals({ lang, area, date = null }: { lang: Lang; a
     const subway = block.subwayRidership;
     // The station says its own name. "선정 역" was internal vocabulary that
     // told a visitor nothing about which station the number came from.
-    const station = formatRepresentativeStations(subway.selectedStations);
+    const station = chineseText(lang,formatRepresentativeStations(subway.selectedStations));
     const withStation = (action: string, count: number) =>
       `${station ? `${station} ` : ""}${action} ${formatPeopleValue(lang, count)}${text.foreignPeople[lang]}`;
     rows.push({

@@ -1,4 +1,5 @@
 'use client';
+import {chineseText} from '../lib/chinese-ui';
 import type {Lang} from './retailpulse-data';
 import type {LiveSummary} from './live-signals';
 import {fromSummary,type SeoulFlowArea} from '../lib/seoul-flow-data.mjs';
@@ -45,7 +46,7 @@ export function SeoulFlowModels({summary,area,lang,publication}:{summary:LiveSum
   <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{t.title}</h3>
   <div className={styles.row} data-flow="station">
    <ModelImage name="station"/>
-   <div className={styles.content}><h4>{t.station}{station?.stationName?` · ${station.stationName.replaceAll('|',' · ')}`:''}</h4>
+   <div className={styles.content}><h4>{t.station}{station?.stationName?` · ${chineseText(lang,station.stationName.replaceAll('|',' · '))}`:''}</h4>
     <dl className={styles.metrics}><div><dt>{t.alighting}</dt><dd>{value(station?.alightingCount)}{station?.alightingCount!=null&&<small>{t.people}</small>}</dd></div><div><dt>{t.boarding}</dt><dd>{value(station?.boardingCount)}{station?.boardingCount!=null&&<small>{t.people}</small>}</dd></div></dl>
     <p className={styles.basis}>{t.date} · {reference(station?.referenceDate??null,lang)} · {station?sourceName[lang]:'—'}</p>
     <p className={styles.basis}>{t.retrieved} · {reference(station?.retrievedAt??null,lang,true)}</p><p className={styles.note}>{t.stationNote}</p>
