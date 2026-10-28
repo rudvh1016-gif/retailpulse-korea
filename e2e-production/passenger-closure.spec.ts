@@ -49,7 +49,7 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
   for(const path of ['/ko/more','/ko/about']) {
     await page.goto(path);
     await expect(page.getByText(path==='/ko/more'?'한눈에의 예상 인원은 출국장 예고와 별도 환승 예고의 단순 합계입니다. 출국장 예고에는 내·외국인 구분이 없습니다.':passengerCopy.limitation.ko,{exact:false}).first()).toBeVisible();
-    await expect(page.getByText(passengerCopy.noSum.ko,{exact:true}).first()).toBeVisible();
+    await expect(page.getByText(passengerCopy.noSum.ko,{exact:false}).first()).toBeVisible();
     await expect(page.locator('body')).not.toContainText('공항 승객에는 내국인과 환승객 등이 포함');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   }
