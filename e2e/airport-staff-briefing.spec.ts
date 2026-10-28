@@ -24,13 +24,13 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  await expect(holiday.locator('h4')).not.toContainText('금융기관');
 
  await expect(briefing).toContainText('선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님');
- await expect(briefing.locator('.staff-brief-heading')).toContainText('2026-10-19');
- await expect(briefing.locator('.staff-brief-heading')).toContainText('KST 수집');
+ await expect(flow.getByTestId('glance-key-growth').locator('.staff-brief-heading')).toContainText('2026-10-19');
+ await expect(flow.getByTestId('glance-key-growth').locator('.staff-brief-heading')).toContainText('KST 수집');
  expect(await flow.getByTestId('glance-key-growth').evaluate(e=>e.nextElementSibling?.classList.contains('airport-staff-briefing'))).toBe(true);
  expect(await briefing.evaluate(e=>e.nextElementSibling?.classList.contains('glance-overview-extras'))).toBe(true);
  const flowBox=await flow.boundingBox(),briefingBox=await briefing.boundingBox();
  expect(briefingBox!.width).toBeCloseTo(flowBox!.width,0);
- await expect(briefing.locator('.staff-brief-heading small')).toHaveCSS('font-size','11px');
+ await expect(flow.getByTestId('glance-key-growth').locator('.staff-brief-heading small')).toHaveCSS('font-size','11px');
  const basis=briefing.locator('.staff-route-details');
  await expect(basis).not.toHaveAttribute('open','');
  await expect(basis.locator('p').first()).not.toBeVisible();

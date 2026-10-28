@@ -25,10 +25,11 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  for(const row of await commentary.all()){await expect(row).toHaveCSS('font-size','12px');await expect(row.locator('b')).toHaveCSS('font-size','12px');}
  await expect(report.locator('.focus-selected-country-changes:not(.focus-return-context)>small').first()).toHaveCSS('font-size','11px');
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');
- await expect(flow.locator('.airport-flow-check')).toHaveCount(4);
- for(const check of await flow.locator('.airport-flow-check').all()){await expect(check).toHaveAttribute('aria-hidden','true');await expect(check).toHaveText('✓');await expect(check).toHaveCSS('font-size','11px');await expect(check).toHaveCSS('color','rgb(17, 17, 17)');}
- await expect(page.locator('h1 .airport-flow-check,h2 .airport-flow-check')).toHaveCount(0);
- if(width<=700){const a=(await flow.getByTestId('glance-key-growth').locator('small').boundingBox())!,b=(await flow.locator('.staff-brief-heading small').boundingBox())!;expect(b.y-a.y-a.height).toBeGreaterThanOrEqual(0);expect(b.y-a.y-a.height).toBeLessThanOrEqual(8);}
+ await expect(flow.locator('.airport-flow-dot')).toHaveCount(5);
+ for(const check of await flow.locator('.airport-flow-dot').all()){await expect(check).toHaveAttribute('aria-hidden','true');await expect(check).toHaveText('·');await expect(check).toHaveCSS('font-size','11px');await expect(check).toHaveCSS('color','rgb(17, 17, 17)');}
+ await expect(page.locator('h1 .airport-flow-dot,h2 .airport-flow-dot')).toHaveCount(0);
+ const growth=flow.getByTestId('glance-key-growth'),period=growth.locator(':scope > small'),collected=growth.locator('.staff-brief-heading small');await expect(collected).toContainText('2026-10-19');const a=(await period.boundingBox())!,b=(await collected.boundingBox())!;expect(b.y-a.y-a.height).toBeGreaterThanOrEqual(0);expect(b.y-a.y-a.height).toBeLessThanOrEqual(8);
+ expect(await page.locator('.airport-flow-dot').evaluateAll(nodes=>nodes.every(n=>n.parentElement?.matches('.glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title')))).toBe(true);
  if(lang==='ko'&&width<=700){
   const tabs=page.locator('.airport-insight-tabs:not(.country-tabs)'),buttons=tabs.getByRole('tab');await expect(buttons).toHaveCount(5);
   const boxes=await buttons.evaluateAll(nodes=>nodes.map(n=>{const b=n.getBoundingClientRect();return {y:b.y,height:b.height,size:getComputedStyle(n).fontSize};}));
