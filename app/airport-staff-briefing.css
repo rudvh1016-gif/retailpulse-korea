@@ -1,7 +1,7 @@
-/* Continue the three key metrics under their shared airport-flow heading. */
+/* Continue the two staff topics under their shared airport-flow heading. */
 .airport-staff-briefing{grid-column:1/-1;min-width:0;color:var(--ink);font-family:var(--font-ui)}
 .staff-brief-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.staff-brief-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.staff-brief-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
 .staff-brief-grid section{min-width:0}.staff-brief-grid h3{font-size:14px;font-weight:600;color:var(--navy,#24272c);margin:0 0 10px}
 .airport-staff-briefing p{font-size:13px;line-height:1.7;margin:0 0 8px;overflow-wrap:anywhere}
 .glance-insights .airport-staff-briefing small{display:block;font-size:11px;line-height:1.7;color:#536172}

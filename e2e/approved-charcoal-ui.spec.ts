@@ -28,7 +28,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  }
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width===320?'24px':'28px');
  for(const sentence of await page.locator('.focus-selected-country-changes:not([aria-label])>p').all())expect((await sentence.innerText()).trim()).not.toMatch(/\.$/);
- const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');await expect(flow.locator('.airport-flow-item-title')).toHaveCount(6);
+ const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');await expect(flow.locator('.airport-flow-item-title')).toHaveCount(5);
  for(const heading of await flow.locator('.airport-flow-item-title').all()){await expect(heading.locator('.ui-line-icon')).toHaveCount(0);await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('font-weight',lang==='zh'||lang==='ja'?'600':'700');}
  for(const metric of await flow.locator(':scope > a > strong').all()){await expect(metric).toHaveCSS('font-size','14px');await expect(metric).toHaveCSS('font-weight','400');}
  const content=flow.locator('.staff-brief-grid');

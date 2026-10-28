@@ -8,10 +8,10 @@ const css=postcss.parse(read('app/airport-staff-briefing.css'));
 const rule=selector=>css.nodes.find(node=>node.type==='rule'&&node.selector===selector);
 const declarations=node=>Object.fromEntries(node.nodes.filter(node=>node.type==='decl').map(({prop,value})=>[prop,value]));
 
-test('all six airport-flow titles use one opt-in charcoal heading style, not the numeric values',()=>{
+test('all five airport-flow titles use one opt-in charcoal heading style, not the numeric values',()=>{
  const top=read('app/airport-glance-preview.tsx'),bottom=read('app/airport-staff-briefing.tsx');
  assert.equal((top.match(/<h3 className="airport-flow-item-title">/g)||[]).length,3);
- assert.equal((bottom.match(/<h3 data-heading="subsection" className="airport-flow-item-title">/g)||[]).length,3);
+ assert.equal((bottom.match(/<h3 data-heading="subsection" className="airport-flow-item-title">/g)||[]).length,2);
  assert.doesNotMatch(bottom,/>0[123] (?:시간|노선|품목)/);
  const title=rule(`:root body ${scope} .airport-flow-item-title`),values=declarations(title);
  assert.deepEqual([values['font-family'],values['font-size'],values['font-weight'],values.color,values['line-height'],values.margin],['var(--font-ui)','16px','700','#222326','1.4','0 0 10px']);
@@ -22,7 +22,7 @@ test('all six airport-flow titles use one opt-in charcoal heading style, not the
  assert.ok(css.nodes.some(node=>node.type==='atrule'&&node.params==='(forced-colors:active)'&&node.toString().includes('color:CanvasText!important')));
 });
 
-test('the same three columns and vertical mobile reading order connect all six items',()=>{
+test('the metrics and staff topics retain the vertical mobile reading order',()=>{
  assert.equal(declarations(rule(scope))['column-gap'],'24px');
  assert.equal(declarations(rule(`${scope} .staff-brief-grid`))['column-gap'],'24px');
  assert.equal(declarations(rule(`${scope}>a`)).display,'block');
@@ -37,7 +37,7 @@ test('the same three columns and vertical mobile reading order connect all six i
 });
 
 
-test('only the six opt-in topics lower content and nested emphasis below their titles',()=>{
+test('the opt-in topics lower content and nested emphasis below their titles',()=>{
  const content=declarations(rule(scope+' .staff-brief-grid :is(p,h4,a)'));
  assert.deepEqual([content['font-size'],content['font-weight']],['14px','400']);
  const metric=declarations(rule(scope+' .staff-brief-grid>section>p,'+scope+'>a>strong'));
