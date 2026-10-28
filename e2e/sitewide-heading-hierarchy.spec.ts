@@ -27,9 +27,8 @@ async function verifyHeadings(page:Page,textScale=1){
   const textNode=walker.nextNode();
   const range=document.createRange();if(textNode)range.selectNodeContents(textNode);
   const approvedBand=node.matches('.airport-focus-shell .focus-report h3.focus-brief-band,.glance-insights[aria-labelledby="airport-staff-briefing-title"] h3.airport-flow-item-title');
-  const airportDot=node.matches('.airport-focus-shell :is(h1,h2)[data-heading],.airport-focus-shell .focus-report h3:is(.focus-brief-band,.focus-figures-title)[data-heading],.glance-insights[aria-labelledby="airport-staff-briefing-title"] h3.airport-flow-item-title');
   const icon=node.querySelector(':scope > svg.ui-line-icon');
-  return {compactGuide:!!node.closest('.site-usage-guide'),headingDisplay:style.display,airportDot,markerEnd:markerStyle?parseFloat(markerStyle.marginInlineEnd):0,markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  return {compactGuide:!!node.closest('.site-usage-guide'),markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
    textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
@@ -51,15 +50,14 @@ async function verifyHeadings(page:Page,textScale=1){
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
-  if(row.airportDot){expect(row.markerDisplay).toBe(['flex','inline-flex','grid','inline-grid'].includes(row.headingDisplay)?'block':'inline-block');expect(row.markerWidth).toBeGreaterThan(0);expect(row.markerHeight).toBeGreaterThan(0);expect(row.markerGlyph?.replace(/["']/g,'')).toBe('·');}
-  else{expect(row.markerDisplay,`no heading-prefix marker: ${row.text}`).toBe('none');expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);}
+  expect(row.markerDisplay,`no heading-prefix marker: ${row.text}`).toBe('none');expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);expect(row.markerGlyph).toBe('none');
   if(row.approvedBand){
    expect([row.paddingStart,row.paddingEnd,row.border,row.background]).toEqual([0,0,'0px','rgba(0, 0, 0, 0)']);
    expect(row.iconCount).toBe(0);
   }else expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
   for(const pseudo of row.pseudo){expect(pseudo.content).toBe('none');expect(pseudo.display).toBe('none');}
   // Removing a prefix must not require centered/right-aligned titles to move.
-  if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft+(row.airportDot?(row.markerWidth??0)+row.markerEnd:0),1);
+  if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
   const palette={page:['rgb(34, 35, 38)','750'],section:['rgb(34, 35, 38)','700'],subsection:['rgb(34, 35, 38)','600']} as const;
@@ -90,15 +88,15 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  const titles=flow.locator('.airport-flow-item-title');
  await expect(titles).toHaveCount(6);await page.evaluate(()=>document.fonts.ready);
  const rows=await titles.evaluateAll(nodes=>nodes.map(node=>{
-  const style=getComputedStyle(node),rect=node.getBoundingClientRect(),body=node.nextElementSibling?.getBoundingClientRect();
-  return {text:node.textContent?.trim(),tag:node.tagName,size:style.fontSize,weight:style.fontWeight,color:style.color,
+  const style=getComputedStyle(node),rect=node.getBoundingClientRect(),body=node.nextElementSibling?.getBoundingClientRect(),marker=node.querySelector(':scope > .heading-marker');
+  return {markerDisplay:marker?getComputedStyle(marker).display:null,markerWidth:marker?.getBoundingClientRect().width,text:node.textContent?.trim(),tag:node.tagName,size:style.fontSize,weight:style.fontWeight,color:style.color,
    family:style.fontFamily,lineHeight:style.lineHeight,spacing:style.letterSpacing,bottomMargin:style.marginBottom,
    staticCjk:!!node.closest('.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]'),
    x:rect.x,y:rect.y,width:rect.width,height:rect.height,bodyGap:body?body.top-rect.bottom:null,
    overflow:node.scrollWidth-node.clientWidth};
  }));
  for(const row of rows){
-  expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);
+  expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);expect(row.markerDisplay).toBe('none');expect(row.markerWidth).toBe(0);
   expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([enlarged?'32px':'16px',row.staticCjk?'600':'700','rgb(34, 35, 38)','10px']);
   expect([row.family,row.lineHeight,row.spacing]).toEqual([rows[0].family,rows[0].lineHeight,rows[0].spacing]);
   expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(9);expect(row.bodyGap!).toBeLessThanOrEqual(11);

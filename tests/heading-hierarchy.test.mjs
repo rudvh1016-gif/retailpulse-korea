@@ -50,7 +50,7 @@ test('screenshot middle headings and equivalent sitewide subsections use the exi
  // Airport, preparation and Seoul content share the role without text/locale matching.
  for(const file of ['airport-live-signals','airport-tax-refund-guide','business-compare','tourism-desk','seoul-flow-models'])assert.ok(headings.some(h=>h.file===`app/${file}.tsx`&&h.role==='subsection'),file);
 });
-test('default headings have no prefix or reserved inset; airport title dots are separately opt-in',()=>{
+test('all headings have no prefix or reserved inset',()=>{
  const css=read('app/heading-hierarchy.css');
  const marker=css.match(/:root body \[data-heading\] > \.heading-marker\s*\{([^}]+)\}/)?.[1];
  assert.equal(marker?.trim(),'display:none!important');
