@@ -16,14 +16,14 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  await expect(page.getByRole('heading',{name:/오늘 업무에서 먼저 확인|선택일 업무 지표/})).toHaveCount(0);
  for(const metric of ['wait','upcoming','growth'])await expect(flow.getByTestId(`glance-key-${metric}`)).toHaveCount(1);
  const briefing=flow.locator('.airport-staff-briefing');await expect(page.locator('.airport-staff-briefing')).toHaveCount(1);await expect(briefing).toContainText('출발 예정편');
- await expect(briefing.locator('.staff-brief-grid>section')).toHaveCount(3);
+ await expect(briefing.locator('.staff-brief-grid>section')).toHaveCount(2);
+ await expect(briefing.getByText('품목별 확인',{exact:true})).toHaveCount(0);
  const holiday=briefing.locator('.staff-holiday-event');await expect(holiday).toBeVisible();
  await expect(holiday.locator('h4')).toHaveCSS('font-weight','400');
  await expect(holiday.locator('p').first()).toHaveCSS('font-weight','400');
  await expect(holiday.locator('h4')).not.toContainText('금융기관');
 
  await expect(briefing).toContainText('선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님');
- await expect(briefing.locator('a[href*="airport-prepare"]')).toHaveAttribute('href',/date=2026-10-19#arrival-allowances$/);
  await expect(briefing.locator('.staff-brief-heading')).toContainText('2026-10-19');
  await expect(briefing.locator('.staff-brief-heading')).toContainText('KST 수집');
  expect(await flow.getByTestId('glance-key-growth').evaluate(e=>e.nextElementSibling?.classList.contains('airport-staff-briefing'))).toBe(true);
@@ -44,10 +44,8 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  await expect(basis).toHaveAttribute('open','');await expect(basis).toContainText('노선 국가 기준');await expect(briefing).not.toContainText('노선 국가를 고객 국적으로');await expect(briefing).not.toContainText('귀국객 집중을 확정한 예측');
  await expect(basis.locator('.staff-route-sample')).toHaveCSS('white-space','nowrap');
  await page.keyboard.press('Enter');await expect(basis).not.toHaveAttribute('open','');
- await expect(briefing.locator('details').filter({has:page.getByText('패션·명품',{exact:true})})).toHaveAttribute('open','');
- const cosmetics=briefing.locator('details').filter({has:page.getByText('화장품·향수',{exact:true})});
- await cosmetics.locator('summary').click();await expect(cosmetics).toHaveAttribute('open','');
- await cosmetics.locator('summary').click();await expect(cosmetics).not.toHaveAttribute('open','');
+ const changeBlock=page.locator('.focus-report .focus-selected-country-changes').first();
+ await expect(changeBlock).toHaveCSS('border-bottom-width',width>=1000?'0px':'1px');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`navy-home-${width}.png`)});
  await briefing.scrollIntoViewIfNeeded();await briefing.screenshot({path:info.outputPath(`navy-staff-${width}.png`)});

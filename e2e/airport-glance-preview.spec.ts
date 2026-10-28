@@ -49,6 +49,14 @@ for(const width of [360,390,430,1440])test(`decision summary with image overlays
  await expect(app.locator('.glance-building-T2')).toHaveCSS('opacity','1');await expect(app.locator('.glance-building-T2 small')).toHaveCSS('color','rgb(0, 0, 0)');
  const disclosure=app.locator('.glance-airport>.glance-context summary');await disclosure.focus();await page.keyboard.press('Enter');await expect(app.locator('.glance-airport>.glance-context p').first()).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });
+test('upcoming area details and counting basis start closed independently',async({page})=>{
+ await routeData(page);await page.goto('/ko/airport-glance-preview');
+ const future=page.getByTestId('glance-future'),zones=future.getByTestId('glance-future-zones').locator('details'),basis=future.locator(':scope > details.glance-context');
+ await expect(zones).toBeVisible();await expect(zones).not.toHaveAttribute('open','');await expect(basis).not.toHaveAttribute('open','');
+ await zones.locator('summary').click();await expect(zones).toHaveAttribute('open','');await expect(basis).not.toHaveAttribute('open','');
+ await basis.locator('summary').click();await expect(basis).toHaveAttribute('open','');
+ await basis.locator('summary').click();await expect(basis).not.toHaveAttribute('open','');
+});
 test('rapid past-day changes clear present waits and upcoming departures',async({page})=>{
  await routeData(page);await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.getByTestId('glance-key-wait')).toContainText('24 분');
  await app.locator('input[type=date]').fill('2026-10-09');await app.locator('input[type=date]').fill('2026-10-10');await expect(app.locator('.glance-map-heading')).toContainText('0 편');await expect(app.getByTestId('glance-key-wait')).toContainText('확인 가능한 자료 없음');await expect(app.getByTestId('glance-key-upcoming')).toContainText('현재 이후 예정편 없음');await expect(app.locator('.glance-map-queue')).toHaveCount(0);
