@@ -11,8 +11,12 @@ import {useAirportHashReveal} from './use-airport-hash-reveal';
 export default function AirportCountryZones({date,initialScope}:{date?:string|null;initialScope?:string|null}){
  useAirportHashReveal();
  const today=kstDayOf(new Date().toISOString());
- const [day,setDay]=useState(date??today);
- const [scope,setScope]=useState<FlightBuildingScope>(initialScope&&['all','T1','T2','CONCOURSE'].includes(initialScope)?initialScope as FlightBuildingScope:'T2');
+ const [dayChoice,setDayChoice]=useState<{initial:string|null|undefined;value:string}|null>(null);
+ const day=dayChoice&&dayChoice.initial===date?dayChoice.value:date??today;
+ const setDay=(value:string)=>setDayChoice({initial:date,value});
+ const [scopeChoice,setScopeChoice]=useState<{initial:string|null|undefined;value:FlightBuildingScope}|null>(null);
+ const scope:FlightBuildingScope=scopeChoice&&scopeChoice.initial===initialScope?scopeChoice.value:initialScope&&['all','T1','T2','CONCOURSE'].includes(initialScope)?initialScope as FlightBuildingScope:'T2';
+ const setScope=(value:FlightBuildingScope)=>setScopeChoice({initial:initialScope,value});
  const [preset,setPreset]=useState<WindowPreset>('DAY');
  const [hours,setHours]=useState<[number,number]>([9,18]);
  const now=usePresentationClock(new Date().toISOString()),kst=new Date(now+9*3_600_000),isToday=day===kst.toISOString().slice(0,10);
