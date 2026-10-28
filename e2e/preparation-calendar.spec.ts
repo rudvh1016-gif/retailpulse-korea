@@ -1,7 +1,34 @@
 import {test,expect} from '@playwright/test';
 import calendar from '../data/airport-focus-preview/calendar-context.json' with {type:'json'};
+import manual from '../data/official-calendar/priority-country-multiyear.json' with {type:'json'};
 const today='2026-10-21';
 const nationalDay=calendar.events.find(event=>event.country==='KR'&&event.start==='2026-10-03')!;
+test('calendar API failure keeps reviewed CN dates without claiming their statutory type',async({page})=>{
+ await page.setViewportSize({width:390,height:1000});
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:{mode:'live-summary',todayKst:today,serviceDateKst:today,generatedAt:`${today}T00:00:00Z`,dayRelation:'TODAY',areas:{},airport:{},sources:[]}}));
+ await page.route('**/api/airport/calendar',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.goto('/ko/airport-prepare',{waitUntil:'domcontentloaded'});
+ const month=page.locator('.preparation-month');await expect(month.locator('h3').first()).toHaveText('2026년 10월');
+ await expect(async()=>{if((await month.locator('h3').first().innerText()).includes('10월'))await month.getByRole('button',{name:'이전 달',exact:true}).click();await expect(month.locator('h3').first()).toHaveText('2026년 9월',{timeout:500});}).toPass();
+ await month.locator('time[datetime="2026-09-25"]').locator('..').click();
+ const china=page.locator('.preparation-day-description').filter({has:page.locator('strong').filter({hasText:'중국 · 중추절'})});
+ await expect(china).toContainText('전국 휴일 일정');await expect(china).toContainText('구분은 확인 중');await expect(china).not.toContainText('전국 법정 공휴일');
+});
+for(const width of [390,1440])test(`reviewed adjusted rest intervals retain their scope ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:{mode:'live-summary',todayKst:today,serviceDateKst:today,generatedAt:`${today}T00:00:00Z`,dayRelation:'TODAY',areas:{},airport:{},sources:[]}}));
+ await page.route('**/api/airport/calendar',route=>route.fulfill({json:{status:'PARTIAL',events:[...calendar.events.filter(e=>e.country!=='CN'),...manual.events],calendarReplacementScopes:[],sources:[],checkedAt:null}}));
+ await page.goto('/ko/airport-prepare',{waitUntil:'domcontentloaded'});
+ const month=page.locator('.preparation-month');await expect(month.locator('h3').first()).toHaveText('2026년 10월');
+ await expect(async()=>{if((await month.locator('h3').first().innerText()).includes('10월'))await month.getByRole('button',{name:'이전 달',exact:true}).click();await expect(month.locator('h3').first()).toHaveText('2026년 9월',{timeout:500});}).toPass();
+ await month.locator('time[datetime="2026-09-25"]').locator('..').click();
+ const china=page.locator('.preparation-day-description').filter({has:page.locator('strong').filter({hasText:'중국 · 중추절'})});
+ await expect(china).toContainText('전국 조정 휴무 구간');await expect(china).not.toContainText('전국 법정 공휴일');
+ await expect(china).toContainText('모든 날짜가 법정 공휴일이라는 뜻은 아닙니다');
+ await month.getByRole('button',{name:'다음 달',exact:true}).click();await month.locator('time[datetime="2026-10-01"]').locator('..').click();
+ const national=page.locator('.preparation-day-description').filter({has:page.locator('strong').filter({hasText:'중국 · 국경절'})});
+ await expect(national).toContainText('보충근무일 2026-09-20, 2026-10-10 (휴일 아님)');
+});
 for(const width of [320,390,1440])test(`preparation month grid and preserved details ${width}`,async({page},info)=>{
  test.setTimeout(90000);
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
