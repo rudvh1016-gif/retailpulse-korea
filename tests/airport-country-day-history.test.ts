@@ -2,6 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {dailyFlightProfile} from '../lib/airport-day-profile';
 import {countryDayObservations,storedCountryDayObservations} from '../lib/airport-country-day-history';
+import {AIRPORT_AIRLINE_OVERRIDES,AIRPORT_AIRLINE_LOGO_EXTENSIONS} from '../lib/airport-airline-official';
 import {compareHolidayPeriod} from '../lib/holiday-period-comparison.mjs';
 const day='2026-10-01';
 const row={physicalFlightId:'a',terminal:'T1',gate:'11',scheduledAt:day+'T12:00:00+09:00',retrievedAt:day+'T13:00:00Z',status:'departed',airportCode:'베이징/서우두'};
@@ -29,4 +30,10 @@ test('terminal country series keeps T1 with the concourse separate from T2',()=>
  assert.equal(value('ALL','JP')?.value,2);assert.equal(value('T1','JP')?.value,1);assert.equal(value('T2','JP')?.value,1);
  assert.equal(value('T1','CN')?.value,1);assert.equal(value('T2','CN')?.value,0);
  for(const scope of ['ALL','T1','T2'] as const)assert.ok(countryDayObservations({...p,unknownBuilding:1},scope).every(r=>r.value===null&&!r.complete));
+});
+test('current airport listing corrects reused and rebranded airline codes',()=>{
+ assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.HH,{name:'Qanot Sharq',country:'UZ'});
+ assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.WE,{name:'PARATA AIR',country:'KR'});
+ assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.TW,{name:'Trinity Airways',country:'KR'});
+ for(const code of ['HH','WE','TW'])assert.ok(AIRPORT_AIRLINE_LOGO_EXTENSIONS[code]);
 });
