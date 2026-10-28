@@ -283,8 +283,8 @@ test("Store Dynamics is a dedicated historical block with four-language limitati
       `${realtimeTerm} must appear only in the exact negative limitation`);
   }
   assert.match(signals, /timeState: signalStructureText\.timeState\.historical\[lang\]/);
-  assert.match(signals, /<(\w+) lang="ko">\{presentation\.areaValue\}<\/\1>/,
-    "official Korean geography keeps its source language for assistive technology");
+  assert.ok(signals.includes("<span lang={/[\\uac00-\\ud7a3]/.test(presentation.areaValue)?'ko':undefined}>{presentation.areaValue}</span>"),
+    "Korean geography is marked Korean while translated geography inherits the page language");
   // The spreadsheet grid is gone: no cell-per-field grid, and the one rule
   // left is the divider before the quarter's change.
   for (const gridClass of ["store-dynamics-counts", "store-dynamics-changes", "store-dynamics-context"]) {
