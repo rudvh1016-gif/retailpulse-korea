@@ -14,6 +14,9 @@ for(const width of [360,1440])test(`국가별 출발 구역에서 터미널과 �
  await expect(page.getByRole('group',{name:'출발 구역 터미널 선택'})).toBeVisible();
  await expect(page.getByTestId('map-zone-countries')).toBeVisible();
  await expect(page.getByTestId('daily-country-heading')).toContainText('2026-10-19');
+ await page.getByRole('button',{name:'시간 직접 선택'}).click();
+ await expect(page.getByLabel('시작',{exact:true})).toBeVisible();
+ await expect(page.getByLabel('끝',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'T1 본관',exact:true}).click();
  await expect(page.getByRole('button',{name:'T1 본관',exact:true})).toHaveAttribute('aria-pressed','true');
  await expect(page.getByTestId('airport-month-flights')).toBeVisible();
