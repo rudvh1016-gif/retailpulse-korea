@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync} from 'node:fs';
+import {readDutyFreeRecent,DUTY_FREE_RECENT_SQL} from '../lib/duty-free-recent-store.ts';
+import {recentDutyFreeDates,validDutyFreeRecent} from '../lib/duty-free-recent.ts';
+import {dutyFreeSources} from '../lib/duty-free-exchange.ts';
+const now=new Date('2026-10-28T05:00:00Z');
+function fixture(t){const sql=new DatabaseSync(':memory:');t.after(()=>sql.close());for(const migration of ['0022_duty_free_exchange.sql','0024_duty_free_exchange_daily.sql'])sql.exec(readFileSync(new URL(`../drizzle/${migration}`,import.meta.url),'utf8'));const db={prepare(text){return {bind(...args){return {async all(){return {success:true,results:sql.prepare(text).all(...args)};}};}};}};const insert=(date,rate,vendor='shilla',url=dutyFreeSources.shilla,evidence='CURRENT_WIDGET',verifiedAt=`${date}T01:00:00Z`)=>sql.prepare(`INSERT INTO duty_free_exchange_daily VALUES (?,?,'USD',?, ?,?,'INTERNET_SHOP',?,'hash')`).run(vendor,date,rate,verifiedAt,url,evidence);return {sql,db,insert};}
+test('recent window is seven exact KST dates across month/year/leap boundaries',()=>{
+ assert.deepEqual(recentDutyFreeDates('2027-01-03'),['2026-12-28','2026-12-29','2026-12-30','2026-12-31','2027-01-01','2027-01-02','2027-01-03']);assert.ok(recentDutyFreeDates('2028-03-01').includes('2028-02-29'));assert.equal(recentDutyFreeDates('2026-02-30'),null);
+});
+test('bounded existing-store read preserves precision, genuine gaps and source contract without writes',async t=>{
+ const {db,sql,insert}=fixture(t);insert('2026-10-22',1400.25);insert('2026-10-28',1332.1);insert('2026-10-29',9999);insert('2026-10-21',8888);insert('2026-10-23',7777,'shinsegae');insert('2026-10-24',6666,'shilla','https://example.com');
+ const before=sql.prepare('SELECT COUNT(*) n FROM duty_free_exchange_daily').get().n,result=await readDutyFreeRecent(db,now);assert.equal(validDutyFreeRecent(result),true);assert.equal(result.days.length,7);assert.equal(result.observedDays,2);assert.deepEqual(result.days.map(d=>d.krwPerUsd),[1400.25,null,null,null,null,null,1332.1]);assert.equal(result.fullDayApplicabilityVerified,false);assert.equal(sql.prepare('SELECT COUNT(*) n FROM duty_free_exchange_daily').get().n,before);
+ const plan=sql.prepare(`EXPLAIN QUERY PLAN ${DUTY_FREE_RECENT_SQL}`).all(result.start,result.end,dutyFreeSources.shilla);assert.ok(plan.some(r=>/SEARCH duty_free_exchange_daily USING INDEX/.test(r.detail)));assert.ok(!plan.some(r=>/SCAN duty_free_exchange_daily/.test(r.detail)));
+});
+test('empty storage remains seven nulls; failure is not empty data',async t=>{const {db}=fixture(t),result=await readDutyFreeRecent(db,now);assert.equal(result.observedDays,0);assert.equal(result.missingDates.length,7);assert.ok(result.days.every(d=>d.krwPerUsd===null));await assert.rejects(()=>readDutyFreeRecent({prepare(){return {bind(){return {all:async()=>({success:false})};}};}},now),/D1_READ_FAILED/);});
+test('explicit next-day announcement keeps its true date and current-widget mismatch fails',async t=>{const {db,insert}=fixture(t);insert('2026-10-28',1333.45,'shilla',dutyFreeSources.shilla,'EXPLICIT_SOURCE_DATE','2026-10-27T13:00:00Z');assert.equal((await readDutyFreeRecent(db,now)).days[6].krwPerUsd,1333.45);});
+test('invalid daily evidence fails instead of corrupting coverage',async t=>{const {db,insert}=fixture(t);insert('2026-10-28',1333.45,'shilla',dutyFreeSources.shilla,'CURRENT_WIDGET','2026-10-27T01:00:00Z');await assert.rejects(()=>readDutyFreeRecent(db,now),/INVALID_OBSERVATION/);});
+test('DTO rejects reordered, forged, missing-metadata and zero observations without throwing',async t=>{const {db,insert}=fixture(t);insert('2026-10-28',1332.1);const good=await readDutyFreeRecent(db,now);for(const change of [d=>{d.days.reverse();},d=>{d.days[6].krwPerUsd=0;},d=>{d.currency='JPY';},d=>{d.sourceUrl='https://example.com';},d=>{d.days[0].verifiedAt=now.toISOString();},d=>{d.observedDays=7;},d=>{d.generatedAt='2026-10-27T01:00:00Z';},d=>{d.days[0]=null;},d=>{d.asOfDateKst='2026-99-99';}]){const bad=structuredClone(good);change(bad);assert.doesNotThrow(()=>validDutyFreeRecent(bad));assert.equal(validDutyFreeRecent(bad),false);}});
