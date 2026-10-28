@@ -67,9 +67,11 @@ for(const width of [360,1440])test(`airport navigation has clear aligned selecti
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test('당일 비교 uses an explicitly provisional snapshot and one chosen baseline day',async({page})=>{
+ let chunks=0;page.on('request',request=>{if(/\/airport-period\/today-[a-f0-9]+\.js/.test(request.url()))chunks++;});
  await page.clock.setFixedTime(new Date('2026-10-19T12:00:00+09:00'));await records(page);
  await page.goto('/ko?insight=rhythm&date=2026-10-19');const frame=page.frameLocator('.airport-period-frame');
- await frame.getByRole('button',{name:'당일 비교',exact:true}).click();
+ await expect(frame.locator('#panel')).toBeVisible();expect(chunks).toBe(0);
+ await frame.getByRole('button',{name:'당일 비교',exact:true}).click();await expect.poll(()=>chunks).toBe(1);
  await expect(frame.locator('#comparison-caption')).toContainText('당일 미확정');
  await expect(frame.getByLabel('비교 기간 시작일')).toHaveValue('2026-10-19');
  await frame.getByLabel('오늘과 비교할 날짜').fill('2026-10-05');
