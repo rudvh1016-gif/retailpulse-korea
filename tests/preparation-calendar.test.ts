@@ -46,7 +46,7 @@ test('scope-aware replacement never revives superseded dates and never promotes 
 test('calendar renders flag and small name per day with accessible expansion, +N overflow and truthful empty guidance',()=>{
  const all=preparationEvents(asOf),events=preparationEventsInMonth(all,'2026-12');
  const html=renderToStaticMarkup(React.createElement(PreparationCalendar,{events,month:'2026-12',today:asOf,onMonthChange:()=>{}}));
- assert.match(html,/aria-label="이전 달"/);assert.match(html,/aria-label="다음 달"/);assert.match(html,/>오늘<\/button>/);assert.match(html,/preparation-event-more/);assert.match(html,/전체 이름과 적용 대상 보기/);assert.match(html,/aria-expanded="false"/);assert.match(html,/빈 날짜는 휴일 없음이 아닌/);assert.match(html,/성탄/);
+ assert.match(html,/aria-label="이전 달"/);assert.match(html,/aria-label="다음 달"/);assert.match(html,/<input type="month" aria-label="달력 년월 선택" value="2026-12"/);assert.match(html,/preparation-event-more/);assert.match(html,/전체 이름과 적용 대상 보기/);assert.match(html,/aria-expanded="false"/);assert.match(html,/빈 날짜는 휴일 없음이 아닌/);assert.match(html,/성탄/);
  const korean=renderToStaticMarkup(React.createElement(PreparationCalendar,{events:preparationEventsInMonth(all,'2026-10'),month:'2026-10',today:asOf,onMonthChange:()=>{}}));assert.match(korean,/kr\.svg/);
 });
 test('full list retains explanations and scope/check date while compact mode has no month grid',()=>{

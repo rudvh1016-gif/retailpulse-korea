@@ -49,3 +49,7 @@
 @media(max-width:700px){.preparation-month-toolbar h3{font-size:17px}.preparation-month-grid td,.preparation-day{min-height:90px;height:90px}.preparation-day{padding:6px 1px}.preparation-event-chip{padding:2px;gap:2px}.preparation-arrival-link{padding:14px 12px;gap:10px}.preparation-arrival-copy strong{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.preparation-arrival-link .preparation-arrival-icon{animation:none!important}.preparation-arrival-arrow{transition:none;transform:none!important}}
 .preparation-day-description{min-width:0;padding:8px 0}.preparation-day-description>strong{font-size:12px;font-weight:600}.preparation-day-description>p{margin:4px 0!important;font-size:11px;line-height:1.65;color:var(--focus-muted)}
+
+.preparation-month-toolbar{flex-wrap:wrap}
+.preparation-month-navigation input[type=month]{min-height:44px;width:125px;min-width:0;max-width:100%;padding:0 4px;border:0;background:transparent;color:var(--focus-ink);font:inherit;font-size:12px}
+.preparation-month-navigation input[type=month]:focus-visible{outline:2px solid var(--focus-ink);outline-offset:2px}

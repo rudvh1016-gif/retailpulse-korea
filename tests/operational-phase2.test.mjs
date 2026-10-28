@@ -118,6 +118,27 @@ test('A1 review never opens the legacy generic provider helper during or after t
 // Compare protected bytes after reversing only these exact approved navigation
 // expressions and their canonical-contract comment. Every other byte is locked.
 const approvedCanonicalPatches={
+  "app/source-status.tsx": [
+    [" // This list is a display selection; source health and historical evidence stay intact.\n const failures=summary?.sources?.filter(row=>row.sourceId!=='KASI_PUBLIC_HOLIDAYS'&&!['LIVE','OFFICIAL_HISTORICAL'].includes(row.status))??[];", " const failures=summary?.sources?.filter(row=>!['LIVE','OFFICIAL_HISTORICAL'].includes(row.status))??[];"],
+    ["현재 표시 중인 자료의 수집 오류가 없습니다.", "현재 표시할 수집 오류가 없습니다."],
+    ["No collection errors for the sources shown.", "No collection errors currently reported."],
+    ["当前显示的资料没有报告收集错误。", "当前未报告收集错误。"],
+    ["表示中の資料に収集エラーはありません。", "現在、報告された収集エラーはありません。"]
+  ],
+  "app/site-usage-guide.tsx": [
+    ["import {useEffect,useRef} from 'react';\n", ""],
+    [`  const section=useRef<HTMLElement>(null);
+  useEffect(()=>{
+    const root=section.current;if(!root)return;
+    const media=window.matchMedia('(min-width: 1000px)');
+    const details=[...root.querySelectorAll<HTMLDetailsElement>(':scope > details')];
+    let mobileStates=details.map(item=>item.open);
+    const apply=()=>{if(media.matches){mobileStates=details.map(item=>item.open);details.forEach(item=>{item.open=true;});}else details.forEach((item,i)=>{item.open=mobileStates[i];});};
+    apply();media.addEventListener('change',apply);return()=>media.removeEventListener('change',apply);
+  },[]);
+`, ""],
+    ['<section ref={section} className="site-usage-guide"', '<section className="site-usage-guide"']
+  ],
   "app/retailpulse-app.tsx": [
     [
       "AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide",

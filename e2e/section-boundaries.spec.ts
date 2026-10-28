@@ -68,8 +68,11 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,1280]){
 
   await page.goto(`/${lang}/more`);
   const guide=page.locator('.site-usage-guide'),method=guide.locator(':scope > h3');
-  await boundary(guide,14,13);await boundary(method,13,12);
+  await boundary(guide,14,13);
   const examples=guide.getByTestId('usage-examples');
+  if(width>=1000){await expect(examples).toHaveAttribute('open','');await expect(method).toHaveCSS('border-top-width','0px');await expect(method).toHaveCSS('padding-top','0px');await expect(method).toHaveCSS('margin-top','26px');await examples.locator('summary').click();}
+  else await expect(examples).not.toHaveAttribute('open','');
+  await boundary(method,13,12);
   await examples.locator('summary').focus();await page.keyboard.press('Enter');
   await expect(examples).toHaveAttribute('open','');
   await expect(examples.locator('dl')).toHaveCSS('border-bottom-width','1px');
@@ -78,6 +81,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,1280]){
   await expect(method).toHaveCSS('margin-top','26px');
   await examples.locator('summary').click();await boundary(method,13,12);
   const methodology=guide.getByTestId('usage-method');
+  if(width>=1000){await expect(methodology).toHaveAttribute('open','');await methodology.locator('summary').click();}
   await methodology.locator('summary').click();await expect(methodology).toHaveAttribute('open','');
   await methodology.locator('summary').click();await expect(methodology).not.toHaveAttribute('open','');
   await expect(guide.locator('.site-usage-limit')).toBeVisible();await noOverflow(page);
