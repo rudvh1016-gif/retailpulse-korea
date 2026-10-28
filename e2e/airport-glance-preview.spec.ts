@@ -163,7 +163,7 @@ for(const state of ['failed','missing','partial','zero'] as const)test(`destinat
 // Owner, 2026-10-14: "공항상세누르면 해당정보에 적합한 페이지로 이동시켜줘 지금은 그냥 공항페이지 젤상단으로만이동돼".
 // These sections mount after the client data, past the browser's own fragment scroll: the airport page
 // must still land on each one, below the sticky header and airport menu, and open a closed list.
-for(const [hash,check] of [['airport-month-destinations','details'],['airport-checkpoints-title','heading'],['airport-forecast-title','heading']] as const)
+for(const [hash,check] of [['airport-month-destinations','details'],['airport-zone-countries','section'],['airport-checkpoints-title','heading'],['airport-forecast-title','heading']] as const)
 test(`airport detail link lands on #${hash} below the sticky bars`,async({page})=>{
  await page.setViewportSize({width:390,height:844});await routeData(page);
  await page.goto(`/ko/airport?terminal=all&date=${date}#${hash}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');

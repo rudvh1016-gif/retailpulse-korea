@@ -29,6 +29,13 @@ function stickyOffset(){
 export function useAirportHashReveal(){
  useEffect(()=>{
   let finish=()=>{},clickTimer:number|undefined;
+  // Preserve old Korean links after the destination section moved to country flows.
+  if(location.pathname==='/ko/airport'&&location.hash==='#airport-zone-countries'){
+   const old=new URLSearchParams(location.search),scope=old.get('building')??old.get('terminal')??'all';
+   const query=new URLSearchParams({mode:'zones',building:['all','T1','T2','CONCOURSE'].includes(scope)?scope:'all'}),date=old.get('date');
+   if(date&&/^\d{4}-\d{2}-\d{2}$/.test(date))query.set('date',date);
+   location.replace('/ko/airport-countries?'+query+'#airport-zone-countries');return;
+  }
   const reveal=()=>{
    finish();
    const id=location.hash.slice(1);
