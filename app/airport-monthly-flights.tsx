@@ -23,7 +23,7 @@ export function useAirportMonthRequest(date:string|null){
  const request=usePreparedMonth<Reply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,date??'');
  return {month,setChosen,request};
 }
-export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string;monthly?:ReturnType<typeof useAirportMonthRequest>}){
+export function AirportMonthlyFlights({lang,terminal,date,monthly,showCountryRanking=true}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string;monthly?:ReturnType<typeof useAirportMonthRequest>;showCountryRanking?:boolean}){
  const own=useAirportMonthRequest(monthly?null:date);
  const {month,setChosen,request}=monthly??own;
  const scope:MonthScope=terminal==='all'?'ALL':terminal,response=request.reply;
@@ -58,7 +58,7 @@ export function AirportMonthlyFlights({lang,terminal,date,monthly}:{lang:Lang;te
    {(request.pending||request.failed||request.retained)&&<p className="airport-month-state" role="status">{t(lang,'마지막 확인 집계를 표시합니다.','Showing the last confirmed count.','显示上次确认的汇总。','最後に確認した集計を表示しています。')} {response?.data?.asOf} KST · {response?.calculatedAt}</p>}
    <p className="airport-month-basis" data-testid="airport-month-basis">{comparisonBasis}</p>
    <p className="airport-month-total">{t(lang,'출국편','Departures','出境航班','出発便')}: <strong>{value(total.previous)} → {value(total.current)}</strong> {t(lang,'편/일','flights/day','班/日','便/日')} · <ChangeRate value={total.percent} lang={lang}/></p>
-   <AirportDestinationDailyChanges lang={lang} current={current} previous={previous} scope={selected}/>
+   {showCountryRanking&&<AirportDestinationDailyChanges lang={lang} current={current} previous={previous} scope={selected}/>}
    {table(([['EAST',t(lang,'동편','East','东侧','東側')],['WEST',t(lang,'서편','West','西侧','西側')],['CENTER',t(lang,'중앙','Centre','中央','中央')],['UNVERIFIED',t(lang,'구역 미정','Side unconfirmed','区域未确认','区画未確認')]] as const).map(([key,label])=>row(label,counts=>counts.sides[key])),false,true,true)}
    <details><summary>{t(lang,'동편·서편·중앙 항공편 비율','East, west and centre flight shares','东侧、西侧及中央航班占比','東・西・中央の便数割合')}</summary>
     <p>{t(lang,'아래 표: 선택 범위의 전체 항공편을 100%로 계산하며 중앙·위치 미확인을 포함합니다. T1은 본관 항공편만 집계합니다.','Table: all counted flights in the selected scope equal 100%, including centre and unverified. T1 counts main-building flights only.','下表以所选范围全部航班为100%，包含中央及位置未确认。T1仅计主楼航班。','下表は選択範囲の全便を100%とし、中央・位置未確認を含みます。T1は本館の便のみです。')}</p>
