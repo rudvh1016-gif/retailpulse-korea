@@ -74,7 +74,7 @@ async function verifyHeadings(page:Page,textScale=1){
  // the whole current list, not an old name against its newly shifted neighbour.
  await expect(async()=>{
   for(const title of await headings.all()){
-   const text=(await title.evaluate(node=>{const copy=node.cloneNode(true) as HTMLElement;copy.querySelectorAll('[aria-hidden="true"]').forEach(n=>n.remove());return copy.textContent??'';})).replace(/\s+/g,' ').trim();
+   const text=(await title.evaluate(node=>{const copy=node.cloneNode(true) as HTMLElement;copy.querySelectorAll('.airport-flow-check[aria-hidden="true"]').forEach(n=>n.remove());return copy.textContent??'';})).replace(/\s+/g,' ').trim();
    await expect(title).toHaveAccessibleName(text,{timeout:100});
   }
  }).toPass({timeout:8000,intervals:[100,250,500]});
@@ -112,7 +112,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
   for(let i=1;i<6;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
- await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['시간·터미널','노선·휴일 준비','품목별 확인']);
+ await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['✓시간·터미널','노선·휴일 준비','품목별 확인']);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 
@@ -158,7 +158,7 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
   await expect(page.locator('.focus-today-title')).toHaveCount(0);await expect(page.locator('.focus-report-date')).toBeVisible();await expect(page.locator('.focus-report-date')).not.toHaveAttribute('data-heading');
   for(const heading of await page.locator('.focus-selected-country-changes h3,.focus-preparation-brief h3').all())await expect(heading).toHaveAttribute('data-heading','subsection');
   const staff=page.locator('.staff-brief-grid > section > h3');
-  await expect(staff).toHaveText(['시간·터미널','노선·휴일 준비','품목별 확인']);
+  await expect(staff).toHaveText(['✓시간·터미널','노선·휴일 준비','품목별 확인']);
   await expect(staff.locator(':scope > .heading-marker')).toHaveCount(3);
   const parentSize=await page.locator('#airport-staff-briefing-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
