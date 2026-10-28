@@ -39,7 +39,7 @@ test('incomplete month uses only included days, names the actual month and never
 test('all locales show count and percentage signs with selected day and actual scope, not passenger units',()=>{
  for(const lang of ['ko','en','zh','ja'] as const){
   const html=renderToStaticMarkup(h(EventCountryFlights,{country:'TH',label:'태국',context:eventFlights({scope:'T2',baseline:{...flightBaseline(),scopes:{...flightBaseline().scopes,T2:flightBaseline().scopes.ALL}}}),lang}));
-  for(const text of ['2026-10-22','T2','16','2026-09','▲ 2.5','▲ 13%','data-direction="down"'])assert.ok(html.includes(text),text);
+  for(const text of ['2026-10-22','T2','16','2026-09','△ 2.5','△ 13%','data-direction="down"'])assert.ok(html.includes(text),text);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
   assert.doesNotMatch(html,/passengers|명|人/);
  }

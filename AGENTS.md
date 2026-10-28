@@ -1,5 +1,9 @@
 # KORETAIL — Shared AI Instructions
 
+## Owner-approved airport comparison release — 2026-10-27
+
+The owner explicitly authorized implementing the reviewed airport comparison in the live site, updating the notice and airport-centred More guide, and deploying after verification. The latest change symbols are **+ increase / △ decrease (hollow triangle)**; this supersedes the October 21 filled-triangle presentation rule below. Keep signed calculations unchanged. The new Korean comparison views use whole-number display for daily flight means, percentages and deltas, with less-than-one bounds for nonzero small changes. Existing flight displays keep their precision. Use navy chart marks, neutral body text, small guide copy, and preserve the existing airport glance. Existing non-Korean route screens remain intact; do not insert untranslated analysis into them.
+
 This repository is worked on by multiple coding agents, including Codex and Claude Code.
 
 ## Canonical brand

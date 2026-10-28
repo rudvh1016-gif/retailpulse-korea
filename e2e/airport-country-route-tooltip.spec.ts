@@ -22,7 +22,7 @@ async function openCountryRoute(page:Page,entry:'direct'|'navigation',mobile:boo
   await page.locator(mobile?'.bottom-nav':'.top-nav').getByRole('link',{name:'국가별 흐름',exact:true}).click();
   await expect(page).toHaveURL(/\/ko\/airport-countries(?:\?|$)/);
  }
- await expect(page.getByRole('heading',{name:'T1 + T2 국가별 흐름',exact:true})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'국가별 흐름',exact:true})).toBeVisible();
  const country=page.locator('#focus-country-trends article').filter({has:page.getByRole('heading',{name:'중국',exact:true})});
  // The table distinguishes the full country route from home/preview cards.
  await expect(country.locator('.focus-month-values')).toHaveCount(1);

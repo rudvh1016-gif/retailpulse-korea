@@ -37,7 +37,7 @@ test('site JSON-LD reuses the same introduction and visible copy remains truthfu
   assert.doesNotMatch(layout,/서울 주요 상권/);
   assert.match(app,/서울 지역 참고자료도 함께 제공합니다/);
   assert.match(app,/business\.place === "airport"/);
-  assert.match(guide,/서울 지역 자료도 별도 화면/);
+  assert.match(guide,/서울 지역 자료는 더보기/);
   assert.doesNotMatch(app,/인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에/);
 });
 

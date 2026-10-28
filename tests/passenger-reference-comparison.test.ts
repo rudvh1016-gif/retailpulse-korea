@@ -47,7 +47,7 @@ test('one-day arithmetic total versus a prior-month DAILY mean preserves count a
  const down=compare(52_919,'2026-10-21',baseline())!;
  assert.equal(down.currentDays,1);assert.equal(down.currentMean,52_919);assert.equal(down.baselineDays,30);
  assert.equal(down.delta,-7_081);assert.equal(down.percent,-7_081/60_000*100);
- assert.equal(passengerDailyDeltaText(down.delta),'7,081명/일 감소');assert.equal(formatChangeRate(down.percent),'▲ 12%');
+ assert.equal(passengerDailyDeltaText(down.delta),'7,081명/일 감소');assert.equal(formatChangeRate(down.percent),'△ 12%');
  const up=compare(67_081,'2026-10-21',baseline())!;
  assert.equal(up.delta,7_081);assert.equal(formatChangeRate(up.percent),'+12%');assert.equal(passengerDailyDeltaText(up.delta),'7,081명/일 증가');
  const same=compare(60_000,'2026-10-21',baseline())!;

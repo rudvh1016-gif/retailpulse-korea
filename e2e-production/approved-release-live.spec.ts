@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 for(const width of [390,1440])test(`approved airport glance and menu live ${width}`,async({page},testInfo)=>{
  await page.setViewportSize({width,height:900});await page.goto('/ko/airport-glance');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- const glance=page.getByTestId('airport-glance-preview');await expect(glance).toBeVisible();await expect(glance.locator('.glance-header')).toHaveCount(0);await expect(glance.locator('.glance-heading')).not.toContainText('공개 반영 전');
+ const glance=page.getByTestId('airport-glance-preview');await expect(glance).toBeVisible();await expect(glance.locator('.glance-header')).toHaveCount(0);await expect(page.locator('.airport-insight-shell > .glance-heading')).toContainText('인천공항 한눈에');await expect(page.locator('.airport-insight-shell > .glance-heading')).not.toContainText('공개 반영 전');
  const nav=page.locator(width<1000?'.bottom-nav':'.top-nav'),names=['한눈에','공항현황','국가별 흐름','미리 준비','더보기'];
  const paths=['/ko','/ko/airport','/ko/airport-countries','/ko/airport-prepare','/ko/more'];
  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href',new URL('/ko',page.url()).href);

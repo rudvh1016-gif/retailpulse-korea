@@ -22,7 +22,7 @@ test("정수로 반올림해도 실제 증가와 감소 방향은 남는다", ()
   assert.equal(comparisonValue(oneMorePerson), "+0%");
   assert.doesNotMatch(comparisonValue(oneMorePerson), /^\+?0\.0%$/);
   // 1명 줄어든 경우도 방향이 남는다.
-  assert.equal(comparisonValue(rangeChange(9999, 9999, 10000, 10000, "date")), "▲ 0%");
+  assert.equal(comparisonValue(rangeChange(9999, 9999, 10000, 10000, "date")), "△ 0%");
   // 진짜로 같은 값이면 방향 없는 0%.
   assert.equal(comparisonValue(rangeChange(10000, 10000, 10000, 10000, "date")), "0%");
   // 해상도를 넘는 변화는 그대로 숫자로.

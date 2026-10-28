@@ -15,7 +15,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
     const heading = page.locator('.flight-summary-heading');
     const baseline = heading.locator('.flight-comparison-baseline');
     await expect(baseline).toHaveText('(2026-10-14)');
-    await expect(heading.locator('.change-rate[data-direction="down"]')).toHaveText('▲ 1%');
+    await expect(heading.locator('.change-rate[data-direction="down"]')).toHaveText('△ 1%');
     const layout = await heading.evaluate(node => {
       const date = node.querySelector('.flight-comparison-baseline')!;
       const comparison = node.querySelector('[role="img"]')!;

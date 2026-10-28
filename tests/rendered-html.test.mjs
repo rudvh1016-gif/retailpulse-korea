@@ -16,6 +16,31 @@ async function renderPath(path, documentLanguage = "ko") {
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
+test('only the public airport analysis document permits same-origin framing',async()=>{
+  for(const path of ['/airport-period/frame.html','/airport-period/frame','/airport-period/frame/']){
+    const response=await renderPath(path);
+    if(path.endsWith('/')&&response.status===308){
+      assert.equal(response.headers.get('location'),'/airport-period/frame');
+      continue; // The canonical document's policy is asserted above.
+    }
+    const csp=response.headers.get('content-security-policy');
+    assert.match(csp,/frame-ancestors 'self'(?:;|$)/,path);
+    assert.match(csp,/script-src 'self';/,path);
+    assert.doesNotMatch(csp,/https:|\*/,path);
+    assert.equal(response.headers.get('x-frame-options'),'SAMEORIGIN',path);
+    assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow',path);
+  }
+  const page=await renderPath('/ko');
+  assert.match(page.headers.get('content-security-policy'),/frame-ancestors 'none'/);
+  assert.equal(page.headers.get('x-frame-options'),'DENY');
+  const headers=await read('../public/_headers');
+  for(const path of ['/airport-period/frame.html','/airport-period/frame','/airport-period/frame/']){
+    const block=headers.split('\n\n').find(block=>block.split('\n').includes(path));
+    assert.ok(block,`${path} must also protect direct Workers assets`);
+    assert.match(block,/frame-ancestors 'self'/);assert.match(block,/X-Frame-Options: SAMEORIGIN/);
+  }
+});
+
 test('preparation reviewed sources render in the visible initial document outside streamed hidden containers',async()=>{
   const response=await renderPath('/ko/airport-prepare');assert.equal(response.status,200);
   const html=await response.text(),target=html.indexOf('data-testid="arrival-reviewed-overview"');assert.ok(target>0);

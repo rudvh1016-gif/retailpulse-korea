@@ -9,7 +9,7 @@ import type {PassengerReferenceMonth} from '../lib/passenger-reference-month';
 const ref:PassengerReferenceMonth={month:'2026-09',start:'2026-09-01',end:'2026-09-30',expectedDays:30,completeDays:30,missingDates:[],mean:60_000,status:'COMPLETE'};
 test('brief renders people/day and shared signed percentage, with honest partial and loading states',()=>{
  const render=(total:number|null,baseline=ref)=>renderToStaticMarkup(h(PassengerBriefComparison,{total,day:"2026-10-21",baseline}));
- assert.match(render(52_919),/60,000명\/일/);assert.match(render(52_919),/▲ 7,081명\/일/);assert.match(render(52_919),/▲ 12%/);assert.match(render(52_919),/data-direction="down"/);
+ assert.match(render(52_919),/60,000명\/일/);assert.match(render(52_919),/△ 7,081명\/일/);assert.match(render(52_919),/△ 12%/);assert.match(render(52_919),/data-direction="down"/);
  const partial=render(52_919,{...ref,status:'PARTIAL',mean:null,completeDays:22,missingDates:Array.from({length:8},(_,i)=>`2026-09-0${i+1}`)});
  assert.match(partial,/30일 중 22일 합산자료 확인 · 8일 미확인 · 비교 보류/);assert.doesNotMatch(partial,/%|명\/일 감소|명\/일 증가/);
  assert.match(render(null),/선택일 단순합계 확인 중/);assert.match(render(100,{...ref,mean:0}),/증감률 계산 불가/);
@@ -19,7 +19,7 @@ test('proved observed days render the sample label, numerator, divisor and missi
   missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),
   observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50_000,transfers:10_000}))};
  const html=renderToStaticMarkup(h(PassengerBriefComparison,{total:52_919,day:'2026-10-21',baseline}));
- assert.match(html,/전월 수집 22일 기준 일평균\(전체 30일 중\)/);assert.match(html,/60,000명\/일/);assert.match(html,/▲ 7,081명\/일/);assert.match(html,/▲ 12%/);
+ assert.match(html,/전월 수집 22일 기준 일평균\(전체 30일 중\)/);assert.match(html,/60,000명\/일/);assert.match(html,/△ 7,081명\/일/);assert.match(html,/△ 12%/);
  assert.match(html,/1,320,000명 ÷ 22일 · 8일 미확인 · 월전체 평균 아님/);assert.doesNotMatch(html,/비교 보류/);
 });
 test('each planning country owns its flag, preserved date/source and optional country metric',()=>{
@@ -106,7 +106,7 @@ test('daily-average core stays concise with closed basis and directional count i
   const core=html.split('<details')[0],basis=html.split('<details')[1];
   assert.doesNotMatch(core,/1,320,000/);assert.match(core,/60,000/);assert.match(core,/2026-09/);
   assert.match(core,/data-direction="(?:up|down|neutral)"/);
-  assert.match(core,total===61000?/\+1,000/:total===59000?/▲ 1,000/:/0/);
+  assert.match(core,total===61000?/\+1,000/:total===59000?/△ 1,000/:/0/);
   assert.match(basis,/^ class="focus-passenger-calculation">/);assert.match(basis,/1,320,000/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
   if(lang==='ko')assert.match(core,/2026-09월-22일 MTD 예보 일평균 60,000명 대비/);

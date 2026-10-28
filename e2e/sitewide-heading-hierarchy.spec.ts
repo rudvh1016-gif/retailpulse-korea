@@ -13,7 +13,7 @@ async function fixtures(page:Page){
  await page.route('**/api/live/passenger-reference*',r=>r.fulfill({json:{status:'UNAVAILABLE',data:null}}));
 }
 
-async function verifyHeadings(page:Page){
+async function verifyHeadings(page:Page,textScale=1){
  const headings=page.locator('[data-heading]:visible');
  await expect(headings.first()).toBeVisible();
  await page.evaluate(()=>document.fonts.ready);
@@ -29,7 +29,7 @@ async function verifyHeadings(page:Page){
   const approvedBand=node.matches('.airport-focus-shell .focus-report h3.focus-brief-band,.glance-insights[aria-labelledby="airport-staff-briefing-title"] h3.airport-flow-item-title');
   const airportDot=node.matches('.airport-focus-shell :is(h1,h2)[data-heading],.airport-focus-shell .focus-report h3:is(.focus-brief-band,.focus-figures-title)[data-heading],.glance-insights[aria-labelledby="airport-staff-briefing-title"] h3.airport-flow-item-title');
   const icon=node.querySelector(':scope > svg.ui-line-icon');
-  return {headingDisplay:style.display,airportDot,markerEnd:markerStyle?parseFloat(markerStyle.marginInlineEnd):0,markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  return {compactGuide:!!node.closest('.site-usage-guide'),headingDisplay:style.display,airportDot,markerEnd:markerStyle?parseFloat(markerStyle.marginInlineEnd):0,markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
    textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
@@ -44,7 +44,10 @@ async function verifyHeadings(page:Page){
  for(const row of rows){
   expect(row.connected,'heading remains connected during style snapshot').toBe(true);expect(row.fontDefined,'actual heading font is defined').toBe(true);
   expect(row.text).toBeTruthy();
-  expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  // The owner requested smaller guide copy; assert its exact hierarchy at both
+  // normal size and 200% text enlargement, while retaining every overflow check.
+  if(row.compactGuide)expect(row.size,`compact guide ${row.role}: ${row.text}`).toBe((row.role==='section'?18:15)*textScale);
+  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -133,7 +136,7 @@ async function verifyEnlargedHeadings(page:Page){
   await expect(title).toHaveText(text);
   // Short localized titles may still fit at 200%; normal wrapping must be allowed,
   // not forced. The full title, accessibility, zero prefix and overflow checks apply.
-  await verifyHeadings(page);
+  await verifyHeadings(page,2);
   if(await page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]').count())await verifyAirportFlowTitles(page,true);
  }finally{await observer.evaluate(observer=>observer.disconnect());await observer.dispose();}
 }

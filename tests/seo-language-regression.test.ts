@@ -20,7 +20,7 @@ test('wrapper connects localized copy without altering locale-aware links',()=>{
   // The country page alone has an explicitly scoped four-language title;
   // navigation and the remaining copy retain their original localized wiring.
   for(const title of ['T1 + T2 국가별 흐름','T1 + T2 Route-country trends','T1 + T2 航线国家趋势','T1 + T2 路線国別の推移']) assert.ok(source.includes(title),title);
-  assert.match(source,/<h1 data-heading="page">[^]*?\[lang\]\}<\/h1><MonthlyAirportScope lang=\{lang\}\/>/);
+  assert.match(source,/<h1 data-heading="page">[^]*?\[lang\]\}<\/h1>\}<MonthlyAirportScope lang=\{lang\}\/>/);
   assert.ok(source.includes('artworkNote={copy.model}'));
   assert.ok(source.includes('href={`/${lang}/airport-news`}'));
   assert.ok(source.includes('airportFocusCopy(props.lang)'));

@@ -1894,15 +1894,15 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 /* Settings and sources */
 .preference-block, .source-block { margin: 30px 0 0; padding-top: 22px; border-top: 1px solid var(--line); }
 .site-usage-guide { margin-top: 14px; padding-top: 13px; border-top: var(--section-rule-width) solid var(--section-rule-color); }
-.site-usage-guide h2 { font-size: 22px; letter-spacing: -.025em; }
+.site-usage-guide h2 { font-size: 18px; letter-spacing: -.025em; }
 .site-usage-guide h3 { margin: 26px 0 8px; font-size: 17px; }
 .site-usage-guide > h3 { margin-top: 13px; padding-top: var(--section-gap); border-top: var(--section-rule-width) solid var(--section-rule-color); }
 /* Expanded examples already end with a rule; do not draw a second one. */
 .site-usage-guide > details[open] + h3 { margin-top: 26px; padding-top: 0; border-top: 0; }
-.site-usage-guide p { max-width: 78ch; font-size: 15px; line-height: 1.7; }
+.site-usage-guide p { max-width: 78ch; font-size: 13px; line-height: 1.7; }
 .site-usage-guide dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 22px; padding: 20px 0; border-block: 1px solid var(--line); }
-.site-usage-guide dt { font-size: 16px; font-weight: var(--weight-strong); }
-.site-usage-guide dd { margin: 8px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted); }
+.site-usage-guide dt { font-size: 14px; font-weight: var(--weight-strong); }
+.site-usage-guide dd { margin: 8px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); }
 .site-usage-guide .site-usage-limit { font-size: 13px; color: var(--muted); }
 .lang-ko .site-usage-guide { font-family: var(--font-ui); }
 .preference-rows { margin: 14px 0 0; padding: 0; list-style: none; }

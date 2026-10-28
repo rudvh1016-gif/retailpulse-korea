@@ -1,3 +1,8 @@
+/* Owner requested a compact airport-centred usage guide, 2026-10-27. */
+:root body .site-usage-guide h2[data-heading="section"]{font-size:18px!important}
+:root body .site-usage-guide h3[data-heading="subsection"]{font-size:15px!important}
+:root body .site-usage-guide :is(p,dd,summary){font-size:13px}
+
 /* Owner-approved site-wide heading hierarchy (2026-10-22 KST).
  * Explicit roles only: leave body labels, table headers, buttons and the glass dock alone.
  * Important typography intentionally supersedes older compact !important heading rules.

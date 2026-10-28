@@ -19,6 +19,7 @@ test('airport home wrapper renders English copy and keeps Korean copy and links'
   const compiled=ts.transpileModule(jsx,{compilerOptions:{jsx:ts.JsxEmit.React,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
   const context=vm.createContext({React,require:createRequire(import.meta.url),airportFocusCopy,
     FocusLiveData:({children})=>children,
+    AirportGlanceInsights:({children})=>children,
     AirportGlance:({artworkNote,overviewExtras})=>React.createElement('div',null,React.createElement('p',null,artworkNote),overviewExtras),
     HolidayList:()=>null,CountryTrends:()=>null,OverviewHeadline:()=>null,go:()=>{},
   });

@@ -16,8 +16,13 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: optional example
  assert.ok(details[1].includes('data-testid="usage-method"'));
  assert.match(details[2],/<p>/);
  const visible=html.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g,'');
- assert.ok(visible.includes(passengerCopy.scope[lang]));
- assert.ok(visible.includes(passengerCopy.limitation[lang]));
+ if(lang==='ko'){
+  assert.ok(visible.includes('출국장 예고와 별도 환승 예고의 단순 합계'));
+  assert.ok(visible.includes('출국장 예고에는 내·외국인 구분이 없습니다'));
+ }else{
+  assert.ok(visible.includes(passengerCopy.scope[lang]));
+  assert.ok(visible.includes(passengerCopy.limitation[lang]));
+ }
  assert.ok(visible.includes(passengerCopy.noSum[lang]));
  assert.match(visible,/class="site-usage-limit"/);
  assert.equal((visible.match(/<h3\b[^>]*>/g)??[]).length,1);
