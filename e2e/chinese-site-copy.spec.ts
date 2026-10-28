@@ -67,12 +67,14 @@ test('Chinese terminal and date controls retain scope through refresh and unavai
  for(const index of [1,2,3,0]){await tabs.nth(index).click();await expect(tabs.nth(index)).toHaveAttribute('aria-selected','true');await noKoreanUI(page);}
  await tabs.nth(2).click();await expect(page).toHaveURL(/terminal=T2/);await page.reload();await expect(tabs.nth(2)).toHaveAttribute('aria-selected','true');
  await chooseDate(page,'2026-10-18');await expect(page).toHaveURL(/date=2026-10-18/);await expect(page).toHaveURL(/terminal=T2/);await noKoreanUI(page);
+ const language=page.locator('select').filter({has:page.locator('option[value="zh"]')}).first();await language.selectOption('ko');await expect(page).toHaveURL(/\/ko\/airport\?/);await expect(page).toHaveURL(/terminal=T2/);await expect(page).toHaveURL(/date=2026-10-18/);await page.reload();await expect(tabs.nth(2)).toHaveAttribute('aria-selected','true');
 });
 test('Chinese stays selected through language change, refresh, date query and tab navigation',async({page})=>{
- await fixtures(page);await page.goto('/ko/airport-countries?date=2026-10-19');await expect(page.locator('.focus-country-brief li').first()).toBeVisible();
+ await fixtures(page);await page.goto('/ko/airport-countries?mode=passengers&date=2026-10-19');await expect(page.locator('.focus-country-brief li').first()).toBeVisible();
  const language=page.locator('select').filter({has:page.locator('option[value="zh"]')}).first();await language.selectOption('zh');
- await expect(page).toHaveURL(/\/zh\/airport-countries\?date=2026-10-19/);await page.reload();await expect(language).toHaveValue('zh');
+ await expect(page).toHaveURL(/\/zh\/airport-countries\?/);expect(new URL(page.url()).searchParams.get('date')).toBe('2026-10-19');expect(new URL(page.url()).searchParams.get('mode')).toBe('passengers');await page.reload();await expect(language).toHaveValue('zh');
  await expect(page.locator('.focus-country-brief')).toContainText('最新公布月份');await noKoreanUI(page);
+ await language.selectOption('ko');await expect(page).toHaveURL(/\/ko\/airport-countries\?/);await expect(page.locator('#country-flow-tab-passengers')).toHaveAttribute('aria-selected','true');expect(new URL(page.url()).searchParams.get('date')).toBe('2026-10-19');
 });
 test('slow and failed summaries show Chinese unavailable copy without zero-filled calendar',async({page})=>{
  await fixtures(page);let release:()=>void=()=>{};const gate=new Promise<void>(resolve=>{release=resolve;});

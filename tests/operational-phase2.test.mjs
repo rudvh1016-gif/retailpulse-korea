@@ -131,6 +131,10 @@ const approvedCanonicalPatches={
   ],
   "app/retailpulse-app.tsx": [
     [
+      '    if (/^\\/(?:ko|en|zh|ja)(?:\\/|$)/.test(window.location.pathname)) {\n      const path=window.location.pathname.replace(/^\\/(?:ko|en|zh|ja)(?=\\/|$)/,`/${next}`);\n      window.history.pushState({}, "", path+window.location.search+window.location.hash);\n    } else if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);',
+      '    if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);'
+    ],
+    [
       "AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide",
       "AirportGlance = LazyAirportGlance, IndustryGuide"
     ],
