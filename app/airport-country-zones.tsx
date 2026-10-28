@@ -6,8 +6,10 @@ import {AirportMonthlyFlights} from './airport-monthly-flights';
 import {departureMap,presetWindow,customWindow,type FlightBuildingScope,type WindowPreset} from '../lib/airport-departure-map';
 import {kstDayOf,shiftKstDay} from '../lib/kst';
 import {usePresentationClock} from './presentation-clock';
+import {useAirportHashReveal} from './use-airport-hash-reveal';
 
 export default function AirportCountryZones({date,initialScope}:{date?:string|null;initialScope?:string|null}){
+ useAirportHashReveal();
  const today=kstDayOf(new Date().toISOString());
  const [day,setDay]=useState(date??today);
  const [scope,setScope]=useState<FlightBuildingScope>(initialScope&&['all','T1','T2','CONCOURSE'].includes(initialScope)?initialScope as FlightBuildingScope:'T2');

@@ -28,7 +28,7 @@ for(const width of [360,390,430,1440])test(`decision summary with image overlays
  const imageBox=await app.locator('.glance-art-frame>img').boundingBox(),labels=await app.locator('.glance-building').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom};}));
  for(const box of labels){expect(box.x).toBeGreaterThanOrEqual(imageBox!.x);expect(box.right).toBeLessThanOrEqual(imageBox!.x+imageBox!.width+1);expect(box.y).toBeGreaterThanOrEqual(imageBox!.y);expect(box.bottom).toBeLessThanOrEqual(imageBox!.y+imageBox!.height+1);}expect(labels[0].bottom).toBeLessThan(labels[1].y);expect(labels[1].bottom).toBeLessThan(labels[2].y);
  await expect(app.locator('.glance-bars,.glance-hour-picker,.glance-destinations details')).toHaveCount(0);await expect(app.locator('.glance-included-days')).toHaveText('포함일 · 전월 1 일 / 선택월 1 일');
- await expect(app.getByRole('link',{name:'국가 전체 보기 (1) ↗'})).toHaveAttribute('href',new RegExp('#airport-zone-countries$'));
+ await expect(app.getByRole('link',{name:'국가 전체 보기 (1) ↗'})).toHaveAttribute('href',new RegExp('/ko/airport-countries\\?mode=zones&building=all&date=2026-10-11#airport-zone-countries$'));
  // Owner, 2026-10-14: Top 5 by the change in daily-mean flights, shown as a count, not a rate;
  // every detail link names the section that holds the same information.
  const increase=app.getByTestId('glance-ranking-increase');await expect(app.locator('.glance-ranking>.glance-section-head h2')).toHaveText('전월비 일평균 증가 Top 5');await expect(increase.locator('th').nth(3)).toHaveText('증감');
@@ -163,7 +163,7 @@ for(const state of ['failed','missing','partial','zero'] as const)test(`destinat
 // Owner, 2026-10-14: "공항상세누르면 해당정보에 적합한 페이지로 이동시켜줘 지금은 그냥 공항페이지 젤상단으로만이동돼".
 // These sections mount after the client data, past the browser's own fragment scroll: the airport page
 // must still land on each one, below the sticky header and airport menu, and open a closed list.
-for(const [hash,check] of [['airport-month-destinations','details'],['airport-zone-countries','section'],['airport-checkpoints-title','heading'],['airport-forecast-title','heading']] as const)
+for(const [hash,check] of [['airport-month-destinations','details'],['airport-checkpoints-title','heading'],['airport-forecast-title','heading']] as const)
 test(`airport detail link lands on #${hash} below the sticky bars`,async({page})=>{
  await page.setViewportSize({width:390,height:844});await routeData(page);
  await page.goto(`/ko/airport?terminal=all&date=${date}#${hash}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
