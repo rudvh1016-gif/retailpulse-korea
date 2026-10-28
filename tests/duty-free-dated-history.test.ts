@@ -41,3 +41,9 @@ test('D1 failure is not disguised as an archive-only success',async()=>{
  const db={prepare(){return {bind(){return {all:async()=>({success:false})};}};}} as unknown as Pick<D1Database,'prepare'>;
  await assert.rejects(()=>readDutyFreeDatedHistory(db,{},now,[archive('2026-09-10')]),/D1_READ_FAILED/);
 });
+test('existing explicit next-day application policy is preserved without moving dates',async t=>{
+ const {store,insert}=fixture(t);insert('2026-10-01',1400,{verifiedAt:'2026-09-30T03:00:00Z',evidence:'EXPLICIT_SOURCE_DATE'});
+ const result=await readDutyFreeDatedHistory(store,{start:'2026-10-01',end:'2026-10-01'},now,[]);
+ assert.equal(result.days[0].date,'2026-10-01');assert.equal(result.days[0].verifiedAt,'2026-09-30T03:00:00Z');assert.equal(result.days[0].dateEvidence,'EXPLICIT_SOURCE_DATE');
+ insert('2026-10-02',1401,{verifiedAt:'2026-09-30T03:00:00Z',evidence:'EXPLICIT_SOURCE_DATE'});await assert.rejects(()=>readDutyFreeDatedHistory(store,{start:'2026-10-02',end:'2026-10-02'},now,[]),/INVALID_OBSERVATION/);
+});

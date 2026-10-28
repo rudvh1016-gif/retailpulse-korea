@@ -1,5 +1,5 @@
 import archive from '../data/shilla-archive-observations.json';
-import {dutyFreeSources,kstExchangeDate,shiftExchangeDate} from './duty-free-exchange';
+import {dutyFreeSources,kstExchangeDate,shiftExchangeDate,verifiedDutyFreeObservation} from './duty-free-exchange';
 import {dutyFreeHistoryRange,type DutyFreeDatedDay,type DutyFreeDatedHistory} from './duty-free-dated-history';
 import type {ArchivedDutyFreeDay} from './duty-free-exchange-monthly';
 
@@ -15,10 +15,9 @@ export async function readDutyFreeDatedHistory(db:Pick<D1Database,'prepare'>,inp
  if(!rows.success)throw Error('D1_READ_FAILED');
  const byDate=new Map<string,DutyFreeDatedDay>();
  for(const row of rows.results??[]){
-  const captured=kstExchangeDate(Date.parse(row.verifiedAt));
+  const valid=verifiedDutyFreeObservation({vendor:'shilla',currency:'USD',scope:'INTERNET_SHOP',sourceUrl:dutyFreeSources.shilla,verified:true,serviceDateKst:row.date,krwPerUnit:row.rate,verifiedAt:row.verifiedAt,dateEvidence:row.evidence},now.getTime());
   if(shiftExchangeDate(row.date,0)!==row.date||row.date<range.start||row.date>range.end||!Number.isFinite(row.rate)||row.rate<=0||byDate.has(row.date)
-   ||!captured||Date.parse(row.verifiedAt)>now.getTime()||!['CURRENT_WIDGET','EXPLICIT_SOURCE_DATE'].includes(row.evidence)
-   ||(row.evidence==='CURRENT_WIDGET'?captured!==row.date:captured<row.date))throw Error('INVALID_OBSERVATION');
+   ||!valid||!['CURRENT_WIDGET','EXPLICIT_SOURCE_DATE'].includes(row.evidence))throw Error('INVALID_OBSERVATION');
   byDate.set(row.date,{date:row.date,krwPerUsd:row.rate,kind:'STORED_OBSERVATION',verifiedAt:row.verifiedAt,dateEvidence:row.evidence});
  }
  const seen=new Set<string>();
