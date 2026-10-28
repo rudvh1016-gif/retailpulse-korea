@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {officialCalendarResponse} from '../app/api/airport/calendar/route';
 import {periodCalendar} from '../lib/airport-period/calendar.mjs';
+import {preparationEvents,preparationEventsOn} from '../lib/preparation-calendar';
 test('shared preparation API exposes reviewed rest intervals, workdays and explicit annual coverage',async()=>{
  const reply=await officialCalendarResponse(null,new Date('2026-10-28T00:00:00Z'));
  const value=await reply.json();
@@ -11,4 +12,14 @@ test('shared preparation API exposes reviewed rest intervals, workdays and expli
  assert.equal(periodCalendar(value,'CN','2027-09-20','2027-09-20','2026-10-28').status,'unknown');
  assert.equal(periodCalendar(value,'JP','2026-09-28','2026-09-28','2026-10-28').status,'unknown');
  assert.equal(periodCalendar(value,'KR','2026-09-24','2026-09-30','2026-10-28').holidayDays,3);
+ const preparation=preparationEvents('2026-10-28',value.events,value.calendarReplacementScopes);
+ const rest=preparationEventsOn(preparation,'2026-09-25').find(e=>e.country==='CN')!;
+ assert.equal(rest.scope,'전국 조정 휴무 구간');assert.match(rest.description_ko,/모든 날짜가 법정 공휴일이라는 뜻은 아닙니다/);
+ assert.equal(rest.sourceURL,value.events.find((e:{country:string;start:string})=>e.country==='CN'&&e.start==='2026-09-25').sourceURL);
+ assert.equal(preparationEventsOn(preparation,'2026-09-20').filter(e=>e.country==='CN').length,0);
+ const nationalDay=preparationEventsOn(preparation,'2026-10-01').find(e=>e.country==='CN')!;
+ assert.match(nationalDay.notes,/2026-09-20, 2026-10-10 \(휴일 아님\)/);
+ assert.equal(preparationEventsOn(preparation,'2026-09-25').find(e=>e.country==='KR')!.scope,'전국 법정 공휴일');
+ const fallback=preparationEventsOn(preparationEvents('2026-10-28'),'2026-09-25').find(e=>e.country==='CN')!;
+ assert.equal(fallback.scope,'전국 휴일 일정');assert.match(fallback.description_ko,/구분은 확인 중/);
 });
