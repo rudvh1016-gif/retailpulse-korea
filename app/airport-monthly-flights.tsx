@@ -13,7 +13,7 @@ import {lookupAirline} from '../lib/airline-country';
 import {CountryFlag} from './airport-country-flag';
 import './airport-monthly-flights.css';
 const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
-const AIRLINE_LOGOS=new Set(['KE','OZ','LJ','RS','BX','DL','CI','MF','AF','AM','GA','VS','KL','SK']);
+const AIRLINE_LOGOS=new Set(['3U','5J','5Y','7C','AA','AC','AF','AI','AK','AM','AY','BI','BR','BX','CA','CI','CX','CZ','D7','DL','DV','EK','ET','EY','FM','GA','HU','HX','HY','JQ','KC','KE','KL','LH','LJ','LO','LX','MF','MH','MU','NX','OM','OZ','PR','QR','QV','RS','SC','SK','SQ','T5','TG','TK','TW','UA','UL','UO','VN','VS','WS','ZE','ZH']);
 interface Reply {status:string;month:string;months:string[];calculatedAt:string|null;lastPreparedAt?:string|null;data:AirportMonthlyRollups|null}
 /** The chosen month and its read. The airport model owns it, so the block can
  * move from the map's loading slot to the loaded layout without a second read. */
