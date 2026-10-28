@@ -64,3 +64,16 @@ test('a held next-day flight cache is bypassed at KST midnight, with no extra sa
  Date.now=()=>now;globalThis.fetch=async url=>{urls.push(String(url));return new Response(JSON.stringify({mode:'live-flights',serviceDateKst:'2026-10-10',basis:urls.length===1?'OFFICIAL_DEPARTURE_SCHEDULE':'COLLECTED_FLIGHT_RECORDS',flights:[]}));};
  try{const before=await loadFlights('2026-10-10');assert.equal(before.status==='OK'&&before.payload.basis,'OFFICIAL_DEPARTURE_SCHEDULE');await loadFlights('2026-10-10');assert.equal(urls.length,1);now+=2000;const after=await loadFlights('2026-10-10');assert.equal(after.status==='OK'&&after.payload.basis,'COLLECTED_FLIGHT_RECORDS');assert.equal(urls.length,2);assert.ok(urls[0].includes('_day=2026-10-09'));assert.ok(urls[1].includes('_day=2026-10-10'));}finally{globalThis.fetch=originalFetch;Date.now=originalNow;}
 });
+
+test('an interrupted 200 body retries once, coalesces callers and preserves exact date',async()=>{
+ const saved=globalThis.fetch;let reads=0;const urls:string[]=[];
+ globalThis.fetch=async url=>{urls.push(String(url));reads++;if(reads===1)return new Response(new ReadableStream({start(controller){controller.error(new TypeError('terminated body'));}}));return Response.json({mode:'live-flights',serviceDateKst:'2026-11-01',flights:[{gate:'215'}]});};
+ try{const a=loadFlights('2026-11-01'),b=loadFlights('2026-11-01');assert.equal(a,b);const result=await a;assert.equal(result.status,'OK');assert.equal(result.status==='OK'&&result.payload.flights[0].gate,'215');assert.equal(reads,2);assert.equal(urls[0],urls[1]);await loadFlights('2026-11-01');assert.equal(reads,2);}finally{globalThis.fetch=saved;}
+});
+test('repeated transport failure stays FAILED and HTTP/invalid JSON never trigger transport retries',async()=>{
+ const saved=globalThis.fetch;try{
+  let reads=0;globalThis.fetch=async()=>{reads++;throw new DOMException('timed out','TimeoutError');};assert.equal((await loadFlights('2026-11-02')).status,'FAILED');assert.equal(reads,2);
+  reads=0;globalThis.fetch=async()=>{reads++;return new Response('{}',{status:503});};assert.equal((await loadFlights('2026-11-03')).status,'FAILED');assert.equal(reads,1);
+  reads=0;globalThis.fetch=async()=>{reads++;return new Response('invalid');};assert.equal((await loadFlights('2026-11-04')).status,'FAILED');assert.equal(reads,1);
+ }finally{globalThis.fetch=saved;}
+});

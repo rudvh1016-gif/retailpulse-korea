@@ -16,6 +16,22 @@ const pending = new Map<string, Promise<Loaded>>();
 const cached = new Map<string, { at: number; value: Loaded }>();
 export const FLIGHTS_TTL_MS = 120_000;
 
+async function readFlights(url:string,date:string):Promise<Loaded>{
+  for(let attempt=0;attempt<2;attempt++){
+    try{
+      const response=await fetch(url,{headers:{accept:'application/json'},cache:'no-cache',signal:AbortSignal.timeout(15_000)});
+      const payload=response.ok?await response.json() as FlightsPayload:null;
+      return payload?.mode==='live-flights'&&(!payload.serviceDateKst||payload.serviceDateKst===date)&&Array.isArray(payload.flights)?{status:'OK',payload}:{status:'FAILED'};
+    }catch(error){
+      // A 200 header is not a completed body. Retry one interrupted transport
+      // read of the same stored date; HTTP/JSON/contract failures stay failures.
+      const interrupted=error instanceof TypeError||(error instanceof Error&&['AbortError','TimeoutError'].includes(error.name));
+      if(attempt===1||!interrupted)return {status:'FAILED'};
+    }
+  }
+  return {status:'FAILED'};
+}
+
 export function loadFlights(date: string, refresh = false): Promise<Loaded> {
   const clockDay=kstDayOf(new Date(Date.now()).toISOString()),key=`${date}:${clockDay}`;
   let request = pending.get(key);
@@ -24,12 +40,7 @@ export function loadFlights(date: string, refresh = false): Promise<Loaded> {
   // Coalesce focus/visibility bursts without retaining a successful response forever.
   if (saved && Date.now() - saved.at < (refresh ? 5_000 : FLIGHTS_TTL_MS)) return Promise.resolve(saved.value);
   if (!request) {
-    request = fetch(`/api/live/flights?date=${encodeURIComponent(date)}&_day=${clockDay}`, { headers: { accept: 'application/json' }, cache: 'no-cache', signal: AbortSignal.timeout(15_000) })
-      .then(async (response) => {
-        const payload = response.ok ? await response.json() as FlightsPayload : null;
-        return payload?.mode === 'live-flights' && (!payload.serviceDateKst||payload.serviceDateKst===date) && Array.isArray(payload.flights) ? { status: 'OK' as const, payload } : { status: 'FAILED' as const };
-      })
-      .catch(() => ({ status: 'FAILED' as const }));
+    request = readFlights(`/api/live/flights?date=${encodeURIComponent(date)}&_day=${clockDay}`,date);
     pending.set(key, request);
     void request.then((result) => {
       pending.delete(key);

@@ -12,7 +12,7 @@ for (const width of [360, 1280]) {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     const reads: string[] = [];
-    page.on("request", (request) => { if (/\/api\/live\/(flights|airport-days)/.test(request.url())) reads.push(new URL(request.url()).pathname); });
+    page.on("request", (request) => { if (/\/api\/live\/(flights|airport-days)/.test(request.url())) reads.push(request.url()); });
     await page.setViewportSize({ width, height: width < 500 ? 860 : 1000 });
     await page.goto("/ko/business");
     await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
@@ -29,8 +29,10 @@ for (const width of [360, 1280]) {
       await expect(section.getByTestId("radar-items")).not.toContainText("고객");
     } else log(`${width} state`, await outcome.innerText());
     log(`${width} reads`, reads);
-    expect(reads.filter((path) => path === "/api/live/flights").length).toBeLessThanOrEqual(1);
-    expect(reads.filter((path) => path === "/api/live/airport-days").length).toBeLessThanOrEqual(1);
+    const flightReads=reads.filter(url=>new URL(url).pathname==='/api/live/flights');
+    expect(flightReads.length).toBeLessThanOrEqual(2);
+    expect(new Set(flightReads).size).toBeLessThanOrEqual(1);
+    expect(reads.filter(url=>new URL(url).pathname==='/api/live/airport-days').length).toBeLessThanOrEqual(1);
     await section.screenshot({ path: `production-visual-results/day-radar-${width}.png` });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
     expect(errors).toEqual([]);
