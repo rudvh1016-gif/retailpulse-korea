@@ -21,8 +21,8 @@ export default function AirportCountryZones({date,initialScope}:{date?:string|nu
  const {startMin,endMin}=span;
  const current=useFlights(day,scope);
  const next=useFlights(span.endMin>1440?shiftKstDay(day,1):null,scope);
- const map=useMemo(()=>current?.status==='OK'&&!current.payload.truncated&&current.payload.flights.length>0
-   ?departureMap({date:day,nextDate:shiftKstDay(day,1),terminal:scope==='T2'?'T2':'T1',buildingScope:scope,window:{startMin,endMin},rows:current.payload.flights,nextRows:next?.status==='OK'&&!next.payload.truncated?next.payload.flights:null})
+ const map=useMemo(()=>current?.status==='OK'&&current.payload.truncated===false&&current.payload.flights.length>0
+   ?departureMap({date:day,nextDate:shiftKstDay(day,1),terminal:scope==='T2'?'T2':'T1',buildingScope:scope,window:{startMin,endMin},rows:current.payload.flights,nextRows:next?.status==='OK'&&next.payload.truncated===false?next.payload.flights:null})
    :null,[current,next,day,scope,startMin,endMin]);
  return <section aria-label="국가별 출발 구역">
   <p className="airport-period-basis">목적지별 출발편을 터미널과 탑승 구역에서 확인합니다 · 승객 국적 아님</p>
