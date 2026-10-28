@@ -14,6 +14,8 @@ export interface CalendarEvent {
   verifiedAt: string;
   observedAt?: string;
   reviewValidUntil?: string;
+  dateKind?: string;
+  makeupWorkdays?: string[];
 }
 export interface CalendarQuery {
   country: string;
