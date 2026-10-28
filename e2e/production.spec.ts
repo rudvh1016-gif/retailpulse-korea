@@ -138,14 +138,17 @@ test("Store Dynamics is truthful and localized in all four languages", async ({ 
     const card = page.locator('[data-signal-key="store-dynamics"]');
     await expect(card).toBeVisible();
     for (const phrase of expected[locale]) await expect(card).toContainText(phrase);
-    await expect(card).toContainText("명동 남대문 북창동 다동 무교동 관광특구");
+    const areaName=locale==='zh'?"明洞、南大门、北仓洞、茶洞、武桥洞观光特区":"명동 남대문 북창동 다동 무교동 관광특구";
+    await expect(card).toContainText(areaName);
     await expect(card).not.toContainText("OA-15577");
     // Phase B v1 is counts only: no area-wide 개업률/폐업률 may be invented
     // from the summed counts and shown as if it were the official rate.
     await expect(card).not.toContainText("%");
-    // The official Korean trade-area name keeps its source language for
-    // assistive technology, wherever the redesign puts it.
-    await expect(card.locator('.store-dynamics-scope [lang="ko"]')).toContainText("명동 남대문 북창동 다동 무교동 관광특구");
+    // The display name must have the correct language for assistive technology.
+    const area=card.locator('.store-dynamics-scope span').last();
+    await expect(area).toHaveText(areaName);
+    if(locale==='zh')await expect(area).not.toHaveAttribute('lang','ko');
+    else await expect(area).toHaveAttribute('lang','ko');
     // The spreadsheet grid is gone: the total is the headline, set by type
     // rather than by a bordered cell. The unit is localized, so match the count.
     await expect(card.locator(".store-dynamics-total strong")).toContainText("174");
@@ -935,7 +938,8 @@ test("commercial and event controls preserve their meaning in KO EN ZH JA", asyn
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}/myeongdong`);
-    for (const phrase of expected[locale].slice(0, 3)) await expect(page.getByText(phrase, { exact: true }).first()).toBeVisible();
+    for (const phrase of expected[locale].slice(0, 2)) await expect(page.getByText(phrase, { exact: true }).first()).toBeVisible();
+    await expect(page.locator('.event-actions details > summary').filter({hasText:expected[locale][2]}).first()).toBeVisible();
     await expect(page.getByRole("link", { name: expected[locale][3] }).first()).toBeVisible();
   }
 });

@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {createHash} from 'node:crypto';
 import {createElement as h} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import HolidayList from '../app/airport-focus-holidays';
@@ -18,10 +17,10 @@ test('source/update footer is natively collapsed in full and compact calendars w
   assert.ok(html.indexOf('입출국 집중 시점은 휴일만으로 확인할 수 없습니다.')<html.indexOf('<details class="focus-calendar-source-notes">'));
  }
 });
-test('existing footer contents are byte-for-byte unchanged from the SG candidate',()=>{
- const source=readFileSync('app/airport-focus-holidays.tsx','utf8');
- const footer=source.slice(source.indexOf('<small className="focus-source">'),source.lastIndexOf('</small>')+8);
- assert.equal(createHash('sha256').update(footer).digest('hex'),'12dcc740023d162acdd28ccdeb00b1211d2ce6ddb8bc3ab99a240d1808ecb127');
+test('Korean footer rendering remains byte-for-byte unchanged from main 39b7852',()=>{
+ const html=renderToStaticMarkup(h(AirportFocusData.Provider,{value:{asOf:'2026-10-21',trends:[],checkedAt:null,preview:false,failed:false}},h(HolidayList,{full:true,lang:'ko'})));
+ const footer=html.split('<details class="focus-calendar-source-notes">')[1].split('</details>')[0];
+ assert.equal(footer,readFileSync('tests/fixtures/calendar-footer-ko-baseline.html','utf8'));
 });
 test('missing official basis remains a visible status rather than a collapsed warning',()=>{
  const html=renderToStaticMarkup(h(AirportFocusData.Provider,{value:{asOf:'',trends:[],checkedAt:null,preview:false,failed:true}},h(HolidayList,{full:true})));

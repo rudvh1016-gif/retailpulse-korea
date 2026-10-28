@@ -1,8 +1,9 @@
+import {koreanCompatibilitySource} from './helpers/chinese-source-compat.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
+const read=path=>koreanCompatibilitySource(readFileSync(new URL(path,import.meta.url),'utf8'));
 const glance=read('../app/airport-glance-preview.tsx');
 const rawBriefing=read('../app/airport-staff-briefing.tsx');
 const briefing=rawBriefing.replace(/<UiLineIcon kind="(?:week|return|month)"\/>/g,'');

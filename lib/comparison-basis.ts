@@ -44,6 +44,6 @@ export function comparisonBasisLabel(data:ComparisonBasis,lang:RateLang){
   const date=basis.cutoff!;
   return t(lang,`${month}월-${date.slice(8)}일 MTD ${forecast}일평균`,`${date} MTD ${forecast}mean/day`,`${date} MTD ${forecast}日均`,`${date} MTD ${forecast}日平均`);
  }
- if(basis.kind==='full-collected')return `${monthLabel} ${t(lang,`전체 수집분 ${forecast}일평균`,`full-calendar collected ${forecast}mean/day`,`全月已采集${forecast}日均`,`全月収集分の${forecast}日平均`)}`;
- return `${monthLabel} ${t(lang,`수집분 ${forecast}일평균`,`collected-day ${forecast}average`,`已采集${forecast}日均`,`収集分の${forecast}日平均`)}`;
+ if(basis.kind==='full-collected')return `${monthLabel} ${t(lang,`전체 수집분 ${forecast}일평균`,`full-calendar collected ${forecast}mean/day`,`全月有数据日期的${forecast}日均值`,`全月収集分の${forecast}日平均`)}`;
+ return `${monthLabel} ${t(lang,`수집분 ${forecast}일평균`,`collected-day ${forecast}average`,`有数据日期的${forecast}日均值`,`収集分の${forecast}日平均`)}`;
 }

@@ -45,19 +45,21 @@ test('small manual review date remains distinct from newer collection attempts a
  }
 });
 
-// Route coverage only: the reviewed legal guidance is Korean, not translated.
+// Route coverage only: Chinese uses reviewed translations; other locales retain the Korean guidance.
 for(const locale of ['ko','en','zh','ja'])test(`${locale}: condition guidance switches without carrying another country's answers`,async({page})=>{
  await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[{id:'CN',state:'CHECK_UNAVAILABLE',accessReviewRequired:true,lastSuccessfulCheckAt:null,lastCheckedAt:'2026-10-21T00:00:00Z',nextCheckAt:'2026-10-22T00:00:00Z'}]}}));
  await page.goto(`/${locale}/airport-prepare`,{waitUntil:'domcontentloaded'});
- const section=page.locator('#arrival-allowances');await expect(section).toHaveAttribute('lang','ko');
- await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('CN');
- for(const [label,value] of [['여행·물품 구분','ordinary'],['통상 거주지 (국적과 다름)','visitor'],['중국 본토 직전 출발지','korea'],['나이','adult'],['이번 입국을 포함한 15일 이내 중국 본토 입국','frequent']])await section.getByLabel(label,{exact:true}).selectOption(value);
- await expect(section.locator('.arrival-condition-guidance')).toContainText('15일 내 반복 입국');await expect(section.locator('.arrival-condition-guidance')).toContainText('적색통로');await expect(section.locator('.arrival-result dl')).toHaveCount(0);
- const conditionDetails=section.locator('.arrival-condition-guidance details');await expect(conditionDetails).toHaveJSProperty('open',false);await expect(conditionDetails.locator('a').first()).toBeHidden();await conditionDetails.locator('summary').click();await expect(conditionDetails.locator('a').first()).toBeVisible();await expect(conditionDetails).toContainText('이번 입국을 포함');
- await expect(section.locator('.arrival-check-status')).toContainText('자동 조회 미구성');await section.locator('.arrival-source summary').click();await expect(section.locator('.arrival-source')).toContainText('원문을 요청하지 않았습니다');await expect(section.locator('.arrival-review-date')).toContainText('2026-10-22');
- await section.getByLabel('이번 입국을 포함한 15일 이내 중국 본토 입국',{exact:true}).selectOption('normal');await expect(section.locator('.arrival-result')).toContainText('CNY 2,000');
- await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('JP');await expect(section.getByLabel('여행·물품 구분',{exact:true})).toHaveValue('');await expect(section.locator('.arrival-result')).toHaveCount(0);
- await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('child');await expect(section.locator('.arrival-condition-guidance')).toContainText('본인이 사용할');
- await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('VN');await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('ordinary');await section.getByLabel('나이',{exact:true}).selectOption('minor');await expect(section.locator('.arrival-result')).toContainText('VND 10,000,000');
- await section.getByLabel('도착 국가·지역',{exact:true}).selectOption('TH');await section.getByLabel('여행·물품 구분',{exact:true}).selectOption('gift');await expect(section.locator('.arrival-condition-guidance')).toContainText('선물은 본인용 한도로 단정하지 않습니다');await expect(section.locator('.arrival-result dl')).toHaveCount(0);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const text=(ko:string,zh:string)=>locale==='zh'?zh:ko;
+ const section=page.locator('#arrival-allowances');await expect(section).toHaveAttribute('lang',locale==='zh'?'zh':'ko');
+ await section.getByLabel(text('도착 국가·지역','入境国家与地区'),{exact:true}).selectOption('CN');
+ for(const [label,value] of [[text('여행·물품 구분','旅行及物品类别'),'ordinary'],[text('통상 거주지 (국적과 다름)','通常居住地（不同于国籍）'),'visitor'],[text('중국 본토 직전 출발지','进入中国大陆前的出发地'),'korea'],[text('나이','年龄'),'adult'],[text('이번 입국을 포함한 15일 이내 중국 본토 입국','包括本次入境在内，15天内进入中国大陆的次数'),'frequent']])await section.getByLabel(label,{exact:true}).selectOption(value);
+ await expect(section.locator('.arrival-condition-guidance')).toContainText(text('15일 내 반복 입국','15天内多次入境'));await expect(section.locator('.arrival-condition-guidance')).toContainText(text('적색통로','红色通道'));await expect(section.locator('.arrival-result dl')).toHaveCount(0);
+ const conditionDetails=section.locator('.arrival-condition-guidance details');await expect(conditionDetails).toHaveJSProperty('open',false);await expect(conditionDetails.locator('a').first()).toBeHidden();await conditionDetails.locator('summary').click();await expect(conditionDetails.locator('a').first()).toBeVisible();await expect(conditionDetails).toContainText(text('이번 입국을 포함','入境次数包含本次'));
+ await expect(section.locator('.arrival-check-status')).toContainText(text('자동 조회 미구성','未配置自动查询'));await section.locator('.arrival-source summary').click();await expect(section.locator('.arrival-source')).toContainText(text('원문을 요청하지 않았습니다','未请求原文'));await expect(section.locator('.arrival-review-date')).toContainText('2026-10-22');
+ await section.getByLabel(text('이번 입국을 포함한 15일 이내 중국 본토 입국','包括本次入境在内，15天内进入中国大陆的次数'),{exact:true}).selectOption('normal');await expect(section.locator('.arrival-result')).toContainText('CNY 2,000');
+ await section.getByLabel(text('도착 국가·지역','入境国家与地区'),{exact:true}).selectOption('JP');await expect(section.getByLabel(text('여행·물품 구분','旅行及物品类别'),{exact:true})).toHaveValue('');await expect(section.locator('.arrival-result')).toHaveCount(0);
+ await section.getByLabel(text('여행·물품 구분','旅行及物品类别'),{exact:true}).selectOption('ordinary');await section.getByLabel(text('나이','年龄'),{exact:true}).selectOption('child');await expect(section.locator('.arrival-condition-guidance')).toContainText(text('본인이 사용할','本人使用'));
+ await section.getByLabel(text('도착 국가·지역','入境国家与地区'),{exact:true}).selectOption('VN');await section.getByLabel(text('여행·물품 구분','旅行及物品类别'),{exact:true}).selectOption('ordinary');await section.getByLabel(text('나이','年龄'),{exact:true}).selectOption('minor');await expect(section.locator('.arrival-result')).toContainText('VND 10,000,000');
+ await section.getByLabel(text('도착 국가·지역','入境国家与地区'),{exact:true}).selectOption('TH');await section.getByLabel(text('여행·물품 구분','旅行及物品类别'),{exact:true}).selectOption('gift');await expect(section.locator('.arrival-condition-guidance')).toContainText(text('선물은 본인용 한도로 단정하지 않습니다','不直接按本人使用额度判断礼品'));await expect(section.locator('.arrival-result dl')).toHaveCount(0);
 });

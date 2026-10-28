@@ -1,9 +1,10 @@
+import {koreanCompatibilitySource} from './helpers/chinese-source-compat.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
 import ts from 'typescript';
 import postcss from 'postcss';
-const read=p=>readFileSync(p,'utf8');
+const read=p=>koreanCompatibilitySource(readFileSync(p,'utf8'));
 const files=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?files(`${dir}/${entry.name}`):entry.name.endsWith('.tsx')?[`${dir}/${entry.name}`]:[]);
 const headings=[];
 for(const file of files('app')){

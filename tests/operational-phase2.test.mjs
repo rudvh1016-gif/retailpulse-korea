@@ -131,6 +131,10 @@ const approvedCanonicalPatches={
   ],
   "app/retailpulse-app.tsx": [
     [
+      '    if (/^\\/(?:ko|en|zh|ja)(?:\\/|$)/.test(window.location.pathname)) {\n      const path=window.location.pathname.replace(/^\\/(?:ko|en|zh|ja)(?=\\/|$)/,`/${next}`);\n      window.history.pushState({}, "", path+window.location.search+window.location.hash);\n    } else if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);',
+      '    if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);'
+    ],
+    [
       "AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide",
       "AirportGlance = LazyAirportGlance, IndustryGuide"
     ],
@@ -176,6 +180,8 @@ const approvedCanonicalPatches={
     ]
   ]
 };
+// Exact owner-requested Chinese presentation exceptions; all other bytes stay locked.
+approvedCanonicalPatches["app/live-signals.tsx"]=JSON.parse(readFileSync("tests/fixtures/chinese-live-signals-approved-patches.json","utf8"));
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');
