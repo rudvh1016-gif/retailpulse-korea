@@ -22,9 +22,16 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
  const eventName=(item:typeof details[number])=>item.title.slice(calendarCountryName(item.country).length+1).replace(/^공휴일 · /,'');
  const dates=(item:typeof details[number])=><>{chineseText(lang,item.start)}{chineseText(lang,item.start!==item.end?`–${item.end}`:'')}</>;
  const flag=(country:string)=><span aria-hidden="true" style={{display:'inline-flex',verticalAlign:'-2px'}}><CountryFlag code={country} size={16}/></span>;
+ const scopeLabel=(item:typeof details[number])=>{
+  if(lang!=='zh')return item.scopeLabel;
+  // A reviewed region can itself contain a middle dot; split only the final
+  // applicability qualifier so the region keeps its complete meaning.
+  const separator=item.scopeLabel.lastIndexOf(' · ');
+  return separator<0?chineseText(lang,item.scopeLabel):`${chineseText(lang,item.scopeLabel.slice(0,separator))} · ${chineseText(lang,item.scopeLabel.slice(separator+3))}`;
+ };
  const evidence=(item:typeof details[number])=><>
   {dates(item)}{chineseText(lang,item.relation==='previous'?' · 직전 월':'')}<br/>
-  {chineseText(lang,item.months.map(period=>period.month).join(' · '))} · {chineseText(lang,item.country==='KR'&&item.kind==='school_break'?'초등학교 방학기간 참고 · 개별 학교 예시':item.scopeLabel)}
+  {chineseText(lang,item.months.map(period=>period.month).join(' · '))} · {item.country==='KR'&&item.kind==='school_break'?chineseText(lang,'초등학교 방학기간 참고 · 개별 학교 예시'):scopeLabel(item)}
   {chineseText(lang,item.kind==='school_break'&&item.country!=='KR'?` · ${item.name}`:'')}
   {chineseText(lang,item.role==='origin'?' · 한국 출발지 참고':'')}
   {chineseText(lang,' · ')}<a href={item.sourceURL} target="_blank" rel="noreferrer">{chineseText(lang,"공식 원문 ↗")}</a>{chineseText(lang," · 확인일 ")}{chineseText(lang,item.verifiedAt)}
