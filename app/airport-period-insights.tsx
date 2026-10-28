@@ -13,7 +13,7 @@ const keys=['aStart','aEnd','bStart','bEnd'] as const;
 function validRanges(value:unknown):value is Ranges {return !!value&&typeof value==='object'&&keys.every(k=>typeof (value as Ranges)[k]==='string'&&/^\d{4}-\d{2}-\d{2}$/.test((value as Ranges)[k]));}
 const subscribe=(callback:()=>void)=>{window.addEventListener('popstate',callback);window.addEventListener('koretail:analysis-nav',callback);return()=>{window.removeEventListener('popstate',callback);window.removeEventListener('koretail:analysis-nav',callback);};};
 function useQuery(){return new URLSearchParams(useSyncExternalStore(subscribe,()=>window.location.search,()=>''));}
-function navigate(key:string,value:string){const url=new URL(location.href);if(value==='overview'||value==='passengers')url.searchParams.delete(key);else url.searchParams.set(key,value);history.pushState(null,'',url);window.dispatchEvent(new Event('koretail:analysis-nav'));}
+function navigate(key:string,value:string){const url=new URL(location.href);if((key==='insight'&&value==='overview')||(key==='mode'&&value==='zones'))url.searchParams.delete(key);else url.searchParams.set(key,value);history.pushState(null,'',url);window.dispatchEvent(new Event('koretail:analysis-nav'));}
 function tabKeys(e:KeyboardEvent<HTMLButtonElement>,index:number,length:number,select:(index:number)=>void){if(e.ctrlKey||e.metaKey||e.altKey)return;const next=e.key==='ArrowRight'?(index+1)%length:e.key==='ArrowLeft'?(index+length-1)%length:e.key==='Home'?0:e.key==='End'?length-1:null;if(next!==null){e.preventDefault();select(next);const buttons=e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]');buttons?.[next].focus();}}
 function PeriodFrame({view,date}:{view:View;date?:string|null}){
  const frame=useRef<HTMLIFrameElement>(null),params=useQuery(),ranges=Object.fromEntries(keys.map(k=>[k,params.get(k)]));
@@ -46,11 +46,11 @@ function KoreanGlance({children,date}:{children:ReactNode;date?:string|null}){
 }
 export function AirportGlanceInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'?<KoreanGlance {...props}/>:props.children;}
 function KoreanCountries({children,date}:{children:ReactNode;date?:string|null}){
- const query=useQuery(),mode=query.get('mode')==='flights'?'flights':query.get('mode')==='zones'?'zones':'passengers',monthly=query.get('period')==='monthly';
- const labels=[['passengers','국가별 출국 여객'],['flights','국가별 항공편'],['zones','국가별 출발 구역']] as const;
+ const query=useQuery(),mode=query.get('mode')==='flights'?'flights':query.get('mode')==='passengers'?'passengers':'zones',monthly=query.get('period')==='monthly';
+ const labels=[['zones','국가별 출발 구역'],['passengers','국가별 출국 여객'],['flights','국가별 항공편']] as const;
  return <section className="airport-insight-shell airport-country-insights"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>국가별 흐름</h1>
   <div role="tablist" className="airport-insight-tabs country-tabs" aria-label="국가별 흐름 보기 선택">{labels.map(([id,label],i)=><button key={id} id={'country-flow-tab-'+id} role="tab" tabIndex={mode===id?0:-1} aria-selected={mode===id} aria-controls={'country-flow-'+id} onClick={()=>navigate('mode',id)} onKeyDown={e=>tabKeys(e,i,labels.length,n=>navigate('mode',labels[n][0]))}>{label}</button>)}</div>
-  <p className="airport-period-basis">{mode==='passengers'?'공항 전체 공식 월 실적 · 명':mode==='flights'?'일별 비교: 공항 전체 · 월 집계: 터미널 선택 · 편/일':'터미널별 국가·구역 출발편'}<br/>노선의 목적지 국가 기준 · 승객 국적 아님</p>
+  <p className="airport-period-basis">{mode==='passengers'?'공항 전체 공식 월 실적 · 명':mode==='flights'?'터미널별 출발편 비교 · 편/일':'터미널별 국가·구역 출발편'}<br/>노선의 목적지 국가 기준 · 승객 국적 아님</p>
   <div id="country-flow-passengers" role="tabpanel" aria-labelledby="country-flow-tab-passengers" hidden={mode!=='passengers'}>{children}</div>
   {mode==='flights'&&<div id="country-flow-flights" role="tabpanel" aria-labelledby="country-flow-tab-flights"><div className="airport-period-modes" role="group" aria-label="항공편 비교 방식"><button aria-pressed={!monthly} onClick={()=>navigate('period','custom')}>기간 직접 비교</button><button aria-pressed={monthly} onClick={()=>navigate('period','monthly')}>터미널별 월 집계</button></div>{monthly?<CountryFlights lang="ko" date={date??null}/>:<PeriodFrame key={date??'today'} view="country" date={date}/>}</div>}
   {mode==='zones'&&<div id="country-flow-zones" role="tabpanel" aria-labelledby="country-flow-tab-zones"><CountryZones key={`${date??'today'}:${query.get('building')??'default'}`} date={date} initialScope={query.get('building')}/></div>}

@@ -108,3 +108,9 @@ details.guide > summary.entry:is(.entry), .tripEntry:is(.tripEntry),
  :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"]) { border-bottom-color:#345b7b; color:#244967; }
  :global(.app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"]::after) { display:none; }
 }
+.newsArrow { display:inline-block; margin-left:8px; color:#345b7b; font-weight:600; }
+.newsArrow::before { content:'↗'; }
+@media(hover:hover){
+ .tripEntry:is(.tripEntry):hover { background:#f4f6f8; }
+ .tripEntry:hover strong { text-decoration:underline; text-underline-offset:4px; }
+}

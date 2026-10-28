@@ -94,3 +94,10 @@
 .airport-month-flights [data-testid="airport-month-zones"] tbody td:last-child{font-size:16px;font-weight:600}
 .airport-month-flights .airport-month-source-summary{font-size:13px;line-height:1.6;margin:8px 0}
 .airport-month-flights .airport-month-source-summary a{display:inline-block;min-height:44px;align-content:center;text-underline-offset:3px}
+.airport-month-flights .airport-zone-symbol{display:inline-block;width:1.5em;color:#456984;font-size:1em;font-weight:500}
+.airport-month-flights .airport-month-airline{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.airport-month-flights .airport-month-airline-country{display:inline-flex;align-items:center;gap:3px;color:#505a63}
+.airport-month-flights .airport-month-airline-country img{object-fit:contain}
+.airport-month-flights .airport-month-airline-country small{font-size:11px;font-weight:400;white-space:nowrap}
+.airport-month-flights .airport-month-airline-logo{display:inline-block;width:40px;height:20px;object-fit:contain}
+.airport-month-flights .airport-month-airline-note{font-size:12px;color:#59636c}

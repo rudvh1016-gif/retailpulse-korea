@@ -21,7 +21,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${la
   const month=new URL(route.request().url()).searchParams.get('month')??'2026-09',date=new Date(`${month}-01T00:00:00Z`);date.setUTCMonth(date.getUTCMonth()-1);const previousMonth=date.toISOString().slice(0,7);
   return route.fulfill({json:{status:'READY',month,previousMonth,current:{ROUTE_COUNTRY_PASSENGERS:stats(month)},previous:{ROUTE_COUNTRY_PASSENGERS:stats(previousMonth)}}});
  });
- await page.goto(`/${lang}/airport-countries?date=2026-09-19`);
+ await page.goto(`/${lang}/airport-countries?mode=passengers&date=2026-09-19`);
  const contexts=page.locator('.focus-calendar-context');await expect(contexts.first()).toBeVisible();
  for(const context of await contexts.all()){
   const countries=context.locator(':scope > [data-calendar-country]');

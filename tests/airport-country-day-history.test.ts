@@ -22,3 +22,11 @@ test('actual holiday and nonholiday observations compare with explicit coverage'
  const result=compareHolidayPeriod(values,{country:'CN',metric:'departure_flights',scope:'ALL',month:'2026-10',start:'2026-10-01',end:'2026-10-08',asOf:'2026-10-09',holiday:{start:'2026-10-01',end:'2026-10-07'}});
  assert.equal(result.status,'available');assert.equal(result.holiday.mean,1);assert.equal(result.nonHoliday.mean,1);assert.equal(result.holiday.sampleDays,1);assert.equal(result.holiday.expectedDays,7);
 });
+test('terminal country series keeps T1 with the concourse separate from T2',()=>{
+ const rows=[row,{...row,physicalFlightId:'b',terminal:'CONCOURSE',gate:'120',airportCode:'NRT'},{...row,physicalFlightId:'c',terminal:'T2',gate:'250',airportCode:'NRT'}];
+ const p=dailyFlightProfile(rows,day,true);
+ const value=(scope:'ALL'|'T1'|'T2',country:string)=>countryDayObservations(p,scope).find(r=>r.country===country);
+ assert.equal(value('ALL','JP')?.value,2);assert.equal(value('T1','JP')?.value,1);assert.equal(value('T2','JP')?.value,1);
+ assert.equal(value('T1','CN')?.value,1);assert.equal(value('T2','CN')?.value,0);
+ for(const scope of ['ALL','T1','T2'] as const)assert.ok(countryDayObservations({...p,unknownBuilding:1},scope).every(r=>r.value===null&&!r.complete));
+});
