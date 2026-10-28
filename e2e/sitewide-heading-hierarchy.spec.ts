@@ -1,8 +1,11 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page,type Locator} from '@playwright/test';
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
+
+// Decorative checks stay visible but do not enter a heading's spoken name.
+async function headingName(title:Locator){return title.evaluate(node=>{const text=(node as HTMLElement).innerText.replace(/\s+/g,' ').trim(),check=node.querySelector(':scope > .airport-flow-check[aria-hidden="true"]');return check?.textContent==='✓'&&text.startsWith('✓')?text.slice(1).trim():text;},undefined,{timeout:100});}
 
 // Captured selected-day inputs only. No provider traffic or production writes.
 async function fixtures(page:Page){
@@ -74,7 +77,7 @@ async function verifyHeadings(page:Page,textScale=1){
  // the whole current list, not an old name against its newly shifted neighbour.
  await expect(async()=>{
   for(const title of await headings.all()){
-   const text=(await title.innerText({timeout:100})).replace(/\s+/g,' ').trim();
+   const text=await headingName(title);
    await expect(title).toHaveAccessibleName(text,{timeout:100});
   }
  }).toPass({timeout:8000,intervals:[100,250,500]});
@@ -102,7 +105,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
   expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(9);expect(row.bodyGap!).toBeLessThanOrEqual(11);
   expect(row.overflow).toBeLessThanOrEqual(1);
  }
- for(const title of await titles.all())await expect(title).toHaveAccessibleName((await title.innerText()).replace(/\s+/g,' ').trim());
+ for(const title of await titles.all())await expect(title).toHaveAccessibleName(await headingName(title));
  const width=page.viewportSize()!.width;
  if(width>700){
   expect(rows[0].y).toBeCloseTo(rows[1].y,0);expect(rows[1].y).toBeCloseTo(rows[2].y,0);
@@ -112,7 +115,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
   for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
- await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['시간·터미널','노선·휴일 준비']);
+ await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['✓시간·터미널','노선·휴일 준비']);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 
@@ -158,7 +161,7 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
   await expect(page.locator('.focus-today-title')).toHaveCount(0);await expect(page.locator('.focus-report-date')).toBeVisible();await expect(page.locator('.focus-report-date')).not.toHaveAttribute('data-heading');
   for(const heading of await page.locator('.focus-selected-country-changes h3,.focus-preparation-brief h3').all())await expect(heading).toHaveAttribute('data-heading','subsection');
   const staff=page.locator('.staff-brief-grid > section > h3');
-  await expect(staff).toHaveText(['시간·터미널','노선·휴일 준비']);
+  await expect(staff).toHaveText(['✓시간·터미널','노선·휴일 준비']);
   await expect(staff.locator(':scope > .heading-marker')).toHaveCount(2);
   const parentSize=await page.locator('#airport-staff-briefing-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));

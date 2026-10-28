@@ -57,3 +57,11 @@
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(b,strong,span,time){font-size:inherit;font-weight:400!important}
 
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid summary{font-size:14px;line-height:1.5}
+
+/* Only the four requested flow subtitles have a quiet check. */
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title>.airport-flow-check{display:inline-block;font-size:11px;font-weight:700!important;color:#111;margin-inline-end:5px;vertical-align:baseline}
+@media(max-width:700px){
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"]>.airport-staff-briefing{margin-top:-20px;padding-top:0}
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"]>.airport-staff-briefing>.staff-brief-heading{margin-top:0;margin-bottom:8px;padding-top:0}
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a[data-testid="glance-key-growth"]{padding-bottom:2px}
+}
