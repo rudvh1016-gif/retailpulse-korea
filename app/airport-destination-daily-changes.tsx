@@ -31,7 +31,7 @@ export function AirportDestinationDailyChanges({lang,current,previous,scope}:{la
     <div className="airport-country-bars">
      {[{label:previousLabel,number:row.previous},{label:currentLabel,number:row.current}].map(({label,number},index)=><div key={index} className="airport-country-bar-row" data-period={index?'current':'previous'}>
       <span className="airport-country-bar-month">{label}</span>
-      <span className="airport-country-bar-track" aria-hidden="true"><span style={{width:`${(number??0)/max*100}%`}}/></span>
+      <span className="airport-country-bar-track" aria-hidden="true"><span key={`${label}-${number}-${max}`} style={{width:`${(number??0)/max*100}%`}}/></span>
       <strong>{value(number)}</strong>
      </div>)}
     </div>

@@ -1,0 +1,27 @@
+/* Only data marks move. Values, axes, missing marks and interaction targets stay put. */
+@keyframes chart-fill-horizontal { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes chart-fill-vertical { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(.route-country-comparison > i, .route-country-comparison > b,
+      .airport-country-bar-track > span, .cfp-track > i,
+      .airport-month-compare-track > span, .history-bars li > i,
+      .compare-bars div > i, .airport-gate-bar, .flight-side-distribution) {
+    transform-origin: left center;
+    animation: chart-fill-horizontal 450ms ease-out;
+  }
+  /* SVG fill-box is required so each mark grows from its own baseline. */
+  @supports (transform-box: fill-box) {
+    .chart-fill-x-svg {
+      transform-box: fill-box;
+      transform-origin: left center;
+      animation: chart-fill-horizontal 450ms ease-out;
+    }
+    .chart-fill-y-svg,
+    .airport-month-chart svg > g {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      animation: chart-fill-vertical 450ms ease-out;
+    }
+  }
+}
