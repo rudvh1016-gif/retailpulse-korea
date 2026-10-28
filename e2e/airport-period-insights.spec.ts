@@ -97,7 +97,10 @@ test('More explains airport roles with compact type and notice links match the r
  await page.goto('/ko/more');const guide=page.locator('.site-usage-guide');
  await expect(guide.locator('h2')).toHaveText('누가, 어떻게 쓰면 좋을까요?');
  await expect(guide.locator('p').first()).toHaveCSS('font-size','13px');
- await page.locator('.more-section-links').getByRole('button',{name:'인천공항 이용 방법'}).click();
+ const airportGuideButton=page.locator('.more-section-links').getByRole('button',{name:'인천공항 이용 방법'});
+ await expect(airportGuideButton).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+ await expect(airportGuideButton).toHaveCSS('border-bottom-width','1px');
+ await airportGuideButton.click();
  await expect(guide.locator('#airport-usage-guide')).toHaveAttribute('open','');
  for(const name of ['공항한눈에','공항현황','국가별 흐름','미리 준비'])await expect(guide.getByRole('link',{name,exact:true})).toBeVisible();
  await guide.getByText('활용 예시',{exact:true}).click();
