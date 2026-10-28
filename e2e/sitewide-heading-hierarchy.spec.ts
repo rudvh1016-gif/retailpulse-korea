@@ -157,7 +157,7 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
  }
  if(!route){
   await expect(page.locator('.focus-report-title h2')).toHaveAttribute('data-heading','section');
-  await expect(page.locator('.focus-today-title')).toHaveAttribute('data-heading','subsection');
+  await expect(page.locator('.focus-today-title')).toHaveCount(0);await expect(page.locator('.focus-report-date')).toBeVisible();await expect(page.locator('.focus-report-date')).not.toHaveAttribute('data-heading');
   for(const heading of await page.locator('.focus-selected-country-changes h3,.focus-preparation-brief h3').all())await expect(heading).toHaveAttribute('data-heading','subsection');
   const staff=page.locator('.staff-brief-grid > section > h3');
   await expect(staff).toHaveText(['시간·터미널','노선·휴일 준비','품목별 확인']);

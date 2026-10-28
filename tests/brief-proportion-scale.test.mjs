@@ -9,7 +9,7 @@ test('Today figures remain proportional to body text without changing heading ro
  assert.deepEqual(values('.airport-focus-shell .focus-report .focus-core-metric .focus-metric-total','font-size'),[{value:'24px',media:null},{value:'28px',media:'(min-width:1000px)'}]);
  assert.equal(values('.airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change)','font-size').at(-1).value,'16px');
  assert.equal(values('.airport-focus-shell .focus-report .focus-core-metric p','font-size').at(-1).value,'16px');
- assert.equal(values('.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts','font-size').at(-1).value,'14px');
+ assert.equal(values('.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts','font-size').at(-1).value,'12px');
  assert.equal(values('.airport-focus-shell .focus-report .focus-number-first-grid','gap')[0].value,'14px');
  assert.ok(!css.toString().includes('clamp(32px,3.2vw,44px)'));
 });
