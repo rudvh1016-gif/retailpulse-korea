@@ -21,7 +21,7 @@ export function DutyFreeMonthlyTrend({lang}:{lang:Lang}){
  const number=new Intl.NumberFormat(({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'})[lang],{minimumFractionDigits:2,maximumFractionDigits:2});
  const values=data?.days.flatMap(row=>row.krwPerUsd===null?[]:[row.krwPerUsd])??[];
  const low=values.length?Math.max(0,Math.floor((Math.min(...values)-5)/10)*10):0,high=values.length?Math.max(low+10,Math.ceil((Math.max(...values)+5)/10)*10):10;
- const x=(i:number)=>48+i*256/6,y=(value:number)=>130-(value-low)/(high-low)*104;
+ const x=(i:number)=>48+i*256/6,y=(value:number)=>130-(value-low)/(high-low)*80;
  const label=(i:number)=>{const row=data!.days[i];return `${row.date} · ${row.krwPerUsd===null?words.missing:number.format(row.krwPerUsd)+' KRW / USD'}`;};
  const select=(clientX:number,element:HTMLDivElement)=>{if(!data)return;const bounds=element.getBoundingClientRect();setActive(Math.max(0,Math.min(6,Math.round((((clientX-bounds.left)/bounds.width)*332-48)/256*6))));};
  const chosen=active===null?null:data?.days[active],tooltipX=active===null?0:Math.max(102,Math.min(250,x(active))),tooltipY=chosen?.krwPerUsd==null?14:Math.max(4,y(chosen.krwPerUsd)-48);
