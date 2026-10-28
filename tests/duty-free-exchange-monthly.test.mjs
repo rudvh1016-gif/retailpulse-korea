@@ -49,10 +49,10 @@ test('monthly cache bounded to midnight, normalized path and safe methods only',
  assert.equal(shouldRouteToSummaryCache('GET',path),true);assert.equal(shouldRouteToSummaryCache('POST',path),false);
  assert.equal(canonicalSummaryUrl(new URL(`https://example.com${path}?date=2020-01-01&x=3`)),`https://example.com${path}`);
 });
-test('chart preserves current FX behavior and uses thin gap-aware lines, keyboard/month readouts',()=>{
+test('chart preserves current FX behavior and uses thin gap-aware lines, keyboard/date readouts',()=>{
  const ui=readFileSync(new URL('../app/duty-free-monthly-trend.tsx',import.meta.url),'utf8');
- assert.match(ui,/최근 6개월 환율 그래프 보기/);assert.match(ui,/확보한 날짜 평균/);assert.match(ui,/strokeWidth="1.25"/);assert.match(ui,/previous\?\.averageKrwPerUsd!==null/);
- for(const token of ['observedDays','calendarDays','onPointerEnter','onFocus','onClick','ArrowRight','ArrowLeft','aria-expanded','aria-controls','aria-live'])assert.ok(ui.includes(token),token);
+ assert.match(ui,/최근 7일 환율 그래프 보기/);assert.doesNotMatch(ui,/duty-free-month-list/);assert.match(ui,/strokeWidth="1.25"/);assert.match(ui,/previous\?\.krwPerUsd!==null/);
+ for(const token of ['observedDays','missingDates','onPointerDown','onPointerMove','aria-valuetext','onFocus','onClick','ArrowRight','ArrowLeft','aria-expanded','aria-controls','aria-live'])assert.ok(ui.includes(token),token);
  assert.doesNotMatch(ui,/setInterval|localStorage|gsap/);
 });
 
