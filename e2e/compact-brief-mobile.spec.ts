@@ -1,0 +1,28 @@
+import {test,expect} from '@playwright/test';
+import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
+import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
+import months from './fixtures/airport-focus/months.json' with {type:'json'};
+import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
+const reference={month:'2026-09',start:'2026-09-01',end:'2026-09-30',expectedDays:30,completeDays:30,status:'COMPLETE',mean:60000,missingDates:[]};
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440])test(`compact metric roles ${lang} ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/**',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
+ for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
+ await page.route('**/api/live/passenger-reference*',r=>r.fulfill({json:{status:'READY',month:'2026-09',data:{all:reference,T1:reference,T2:reference}}}));
+ await page.goto(`/${lang}?date=2026-10-19`);const report=page.locator('.focus-report');
+ await expect(report.locator('.focus-today-title')).toHaveCount(0);
+ await expect(report.locator('.focus-report-date')).toContainText('2026-10-19');
+ await expect(report.locator('.focus-report-date .heading-marker')).toHaveCount(0);
+ const left=report.locator('.focus-figures-title'),right=report.locator('.focus-flight-metric > .focus-metric-label');
+ await expect(left).toBeVisible();await expect(right).toBeVisible();
+ if(width<1000){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
+ const calculation=report.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
+ await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size','12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size','12px');
+ const label=(await toggle.locator(':scope > span').first().boundingBox())!,partBox=(await parts.boundingBox())!;expect(partBox.y-label.y-label.height).toBeGreaterThanOrEqual(0);expect(partBox.y-label.y-label.height).toBeLessThanOrEqual(3);
+ await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
+ // Stress narrow columns without altering fixture/source calculations.
+ await report.locator('.focus-metric-total').first().evaluate(node=>{node.textContent='1,234,567,890 people';});
+ expect(await report.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
