@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import {waitForRenderedRoute} from './route-readiness';
 
 import { lookupAirline } from "../lib/airline-country";
 import { AIRLINE_REGISTRY } from "../lib/airline-registry";
@@ -79,7 +80,7 @@ async function openRoute(page: import("@playwright/test").Page, path: string) {
   for (let attempt = 0; ; attempt += 1) {
     try {
       await page.goto(path, { waitUntil: "domcontentloaded" });
-      await expect(page.locator("main.page-shell")).toBeVisible();
+      await waitForRenderedRoute(page,path);
       // Screenshots must contain the local font, not a transient swap face.
       await page.evaluate(async () => { await document.fonts.ready; });
       // Let the first paint settle so a sampled pixel is the final colour.
