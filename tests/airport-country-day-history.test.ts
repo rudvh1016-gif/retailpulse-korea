@@ -35,5 +35,6 @@ test('current airport listing corrects reused and rebranded airline codes',()=>{
  assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.HH,{name:'Qanot Sharq',country:'UZ'});
  assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.WE,{name:'PARATA AIR',country:'KR'});
  assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.TW,{name:'Trinity Airways',country:'KR'});
- for(const code of ['HH','WE','TW'])assert.ok(AIRPORT_AIRLINE_LOGO_EXTENSIONS[code]);
+ assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.VZ,{name:'Thai VietJet Air',country:'TH'});
+ for(const code of ['HH','WE','TW','JD','KN','VZ'])assert.ok(AIRPORT_AIRLINE_LOGO_EXTENSIONS[code]);
 });
