@@ -16,7 +16,7 @@ export default function UpdateNotice({lang}:{lang:string}){
  const preview=usePathname()?.endsWith('/airport-focus-preview')??false;
  const releaseItems=[
   {title:'공항한눈에는 그대로',body:'오늘의 예상 인원·출발편·대기와 앞으로 1·3·6시간의 흐름을 먼저 확인하세요.',path:'한눈에 → 공항한눈에',view:'home',link:'오늘 공항 확인'},
-  {title:'두 기간의 항공편 비교',body:'시간대·요일·터미널·연휴를 두 기간으로 비교하세요. 오늘과 지정 날짜도 비교할 수 있습니다.',path:'한눈에 → 언제 몰렸나요?',view:'rhythm',link:'기간 비교 보기'},
+  {title:'두 기간의 항공편 비교',body:'시간대·요일·터미널·연휴를 두 기간으로 비교하세요. 하루 평균과 실제 포함일수를 표시하며 오늘과 지정 날짜도 비교할 수 있습니다.',path:'한눈에 → 언제 몰렸나요?',view:'rhythm',link:'기간 비교 보기'},
   {title:'국가별 여객과 항공편',body:'공식 월 출국 여객, 항공편 비교, 터미널·구역별 목적지 항공편을 구분해 확인하세요.',path:'국가별 흐름 → 국가별 항공편',view:'flights',link:'국가별 항공편 보기'},
   {title:'처음이라면 더보기',body:'판매사원·영업관리자·고객 안내 직원의 활용 방법과 + 신장, △ 역신장 표시를 짧게 정리했습니다.',path:'더보기 → 누가, 어떻게 쓰면 좋을까요?',view:'more',link:'이용 방법 보기'},
  ];
