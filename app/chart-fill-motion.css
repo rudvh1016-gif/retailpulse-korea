@@ -17,7 +17,8 @@
       transform-origin: left center;
       animation: chart-fill-horizontal 450ms ease-out;
     }
-    .chart-fill-y-svg {
+    .chart-fill-y-svg,
+    .airport-month-chart svg > g {
       transform-box: fill-box;
       transform-origin: center bottom;
       animation: chart-fill-vertical 450ms ease-out;

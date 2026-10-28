@@ -41,8 +41,27 @@ test('vertical bars grow from their own baseline while gaps and labels remain un
   await page.route('**/api/live/summary*',route=>route.fulfill({json:SUMMARY_FIXTURE}));
   await page.goto('/ko/airport');
   const chart=page.getByTestId('airport-mtd').locator('.airport-month-chart');
-  const bar=chart.locator('.chart-fill-y-svg').first();
+  const bar=chart.locator('svg > g').first();
   await expect(bar).toBeAttached();
-  const state=await bar.evaluate(el=>{const a=el.getAnimations()[0]; if(!a) return null; a.pause(); a.currentTime=225; const box=(el as SVGGraphicsElement).getBBox(); const matrix=new DOMMatrix(getComputedStyle(el).transform); const half=el.getBoundingClientRect(); a.currentTime=450; const final=el.getBoundingClientRect(); return {scale:matrix.d, boxHeight:box.height, bottom:half.bottom, finalBottom:final.bottom, value:el.querySelector('.airport-month-bar')?.getAttribute('data-value')};});
+  const state=await bar.evaluate(el=>{(el as SVGElement).style.animationName='none'; getComputedStyle(el).animationName; (el as SVGElement).style.removeProperty('animation-name'); getComputedStyle(el).animationName; const a=el.getAnimations()[0]; if(!a) return null; a.pause(); a.currentTime=225; const box=(el as SVGGraphicsElement).getBBox(); const matrix=new DOMMatrix(getComputedStyle(el).transform); const half=el.getBoundingClientRect(); a.currentTime=450; const final=el.getBoundingClientRect(); return {scale:matrix.d, boxHeight:box.height, bottom:half.bottom, finalBottom:final.bottom, value:el.querySelector('.airport-month-bar')?.getAttribute('data-value')};});
   expect(state).not.toBeNull(); expect(state!.scale).toBeGreaterThan(0); expect(state!.scale).toBeLessThan(1); expect(state!.boxHeight).toBeGreaterThan(0); expect(state!.bottom).toBeCloseTo(state!.finalBottom,1); expect(state!.value).not.toBeNull();
+});
+
+for (const reduced of [false, true]) test(`history filter updates existing bars with motion preference reduced=${reduced}`, async ({page}) => {
+  await page.emulateMedia({reducedMotion:reduced?'reduce':'no-preference'});
+  await page.route('**/api/live/summary*',route=>route.fulfill({json:SUMMARY_FIXTURE}));
+  await page.goto('/en/airport');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+  await page.locator('.airport-context-nav').getByRole('button',{name:'HISTORY'}).click();
+  const history=page.locator('.airport-history');
+  const bars=history.locator('.history-bars i');
+  await expect(bars).toHaveCount(6);
+  await bars.evaluateAll(async nodes=>{await Promise.all(nodes.flatMap(node=>node.getAnimations().map(animation=>animation.finished.catch(()=>{}))));});
+  const widths=await bars.evaluateAll(nodes=>nodes.map(node=>(node as HTMLElement).style.width));
+  await page.evaluate(()=>{const original=Element.prototype.animate; (window as unknown as {fillCalls:number}).fillCalls=0; Element.prototype.animate=function(...args) { if(this.matches('.history-bars i')) (window as unknown as {fillCalls:number}).fillCalls++; return original.apply(this,args); };});
+  await history.getByRole('button',{name:'ARRIVALS'}).click();
+  await expect.poll(async()=>await bars.evaluateAll(nodes=>nodes.map(node=>(node as HTMLElement).style.width))).not.toEqual(widths);
+  if (reduced) await expect.poll(()=>page.evaluate(()=>(window as unknown as {fillCalls:number}).fillCalls)).toBe(0);
+  else await expect.poll(()=>page.evaluate(()=>(window as unknown as {fillCalls:number}).fillCalls)).toBeGreaterThan(0);
+  await expect(history.locator('.history-bars b').first()).not.toBeEmpty();
 });

@@ -4,7 +4,6 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import {buildRevision} from '../lib/build-revision';
 import "./globals.css";
-import "./chart-fill-motion.css";
 import "./heading-hierarchy.css";
 import "./disclosure-hierarchy.css";
 import "./change-rate.css";
