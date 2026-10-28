@@ -20,6 +20,8 @@ export function preparationEvents(asOf:string,calendarEvents?:CalendarEvent[],sc
  const preserved:PreparationEvent[]=holidays.events.filter(event=>event.status==='OFFICIAL_DATE_CONFIRMED'&&event.checkedAt.slice(0,10)<=asOf&&!scopes.some(scope=>scope.country===event.country&&scope.year===Number(event.start.slice(0,4))&&(scope.country==='SG'?(scope.scope==='national'?event.type==='public_holiday'&&!event.region:event.type==='conditional_substitute_holiday'):scope.country==='JP'?event.type==='public_holiday'&&!event.region:event.type==='federal_employee_holiday'&&event.countryLabel==='미국'))).map(event=>({...event,kind:'public_holiday',verifiedAt:event.checkedAt.slice(0,10)}));
  const names=new Intl.DisplayNames(['ko'],{type:'region'});
  const reviewed=calendarEvents??snapshot.events.map(event=>({...event,region:event.region??undefined})) as CalendarEvent[];
+ const adjustedRest=(event:CalendarEvent)=>event.kind==='public_holiday'&&event.scope==='national'&&event.dateKind==='announced_rest_interval';
+ const unknownCnType=(event:CalendarEvent)=>event.kind==='public_holiday'&&event.scope==='national'&&event.country==='CN'&&!event.dateKind;
  // The reviewed BOT bank list uses TH-date-bank; the richer card snapshot
  // uses TH-all-date-bank (or the older major suffix). Reconcile only proven same-source/same-scope aliases,
  // never all holidays sharing a date (national or regional entries stay distinct).
@@ -30,11 +32,11 @@ export function preparationEvents(asOf:string,calendarEvents?:CalendarEvent[],sc
  };
  const additional=reviewed.filter(event=>event.status==='verified'&&isExactDate(event.start)&&isExactDate(event.end)&&event.start<=event.end&&isExactDate(event.verifiedAt)&&event.verifiedAt<=asOf&&(!event.reviewValidUntil||event.reviewValidUntil>=asOf)&&(event.scope==='national'||Boolean(event.region))).map(event=>({
   id:displayId(event),country:event.country,countryLabel:event.country==='KR'?'한국':names.of(event.country)??event.country,name:event.name,start:event.start,end:event.end,
-  dateLabel_ko:event.start===event.end?event.start:`${event.start}~${event.end}`,scope:event.scope==='national'?'전국 법정 공휴일':event.region??'적용 대상 확인 필요',
-  description_ko:event.country==='SG'?(event.scope==='institutional'?'원래 공휴일이 본인의 휴무일인 경우 적용되는 대체휴일입니다.':singaporeMeanings[event.name]??'공식 자료에서 확인한 공휴일입니다.'):event.kind==='school_break'?`${event.region}에 한정된 방학입니다. 전국 공통 방학이 아닙니다.`:event.scope==='national'?'공식 자료에서 확인한 공휴일입니다.':'표시된 지역·기관에 적용되는 일정이며 전국 또는 모든 사업장의 휴무를 뜻하지 않습니다.',
+  dateLabel_ko:event.start===event.end?event.start:`${event.start}~${event.end}`,scope:event.scope==='national'?(adjustedRest(event)?'전국 조정 휴무 구간':unknownCnType(event)?'전국 휴일 일정':'전국 법정 공휴일'):event.region??'적용 대상 확인 필요',
+  description_ko:adjustedRest(event)?'공식 발표된 조정 휴무 구간입니다. 모든 날짜가 법정 공휴일이라는 뜻은 아닙니다.':unknownCnType(event)?'공식 자료에서 확인한 휴일 일정입니다. 법정 공휴일·조정 휴무 구분은 확인 중입니다.':event.country==='SG'?(event.scope==='institutional'?'원래 공휴일이 본인의 휴무일인 경우 적용되는 대체휴일입니다.':singaporeMeanings[event.name]??'공식 자료에서 확인한 공휴일입니다.'):event.kind==='school_break'?`${event.region}에 한정된 방학입니다. 전국 공통 방학이 아닙니다.`:event.scope==='national'?'공식 자료에서 확인한 공휴일입니다.':'표시된 지역·기관에 적용되는 일정이며 전국 또는 모든 사업장의 휴무를 뜻하지 않습니다.',
   cardSummary_ko:'',connectionStatus_ko:'적용 조건과 확인일',connectionNote_ko:'휴일은 출입국 인원이나 혼잡을 보장하지 않습니다.',restConditions_ko:[`공식 자료 확인일 ${event.verifiedAt}`],
   verificationMethod:scopes.some(scope=>scope.country===event.country&&scope.year===Number(event.start.slice(0,4))&&scope.scope===event.scope)?'OFFICIAL_STRUCTURED_SCHEMA':'REVIEWED_OFFICIAL_SNAPSHOT',
-  notes:event.country==='SG'&&event.scope==='institutional'?'원래 공휴일이 본인의 휴무일인 경우에만 적용됩니다. 전 국민 공통 휴무일을 뜻하지 않습니다.':event.country==='KR'?'검토된 한국 공식 일정입니다. KASI 자동 수집 성공을 뜻하지 않습니다.':'',sourceURL:event.sourceURL,verifiedAt:event.verifiedAt,isRepresentative:event.kind==='public_holiday',kind:event.kind,
+  notes:adjustedRest(event)?'법정 공휴일·주말·조정 휴무가 함께 포함될 수 있습니다.'+(event.makeupWorkdays?.length?` 보충근무일 ${event.makeupWorkdays.join(', ')} (휴일 아님)`:''):event.country==='SG'&&event.scope==='institutional'?'원래 공휴일이 본인의 휴무일인 경우에만 적용됩니다. 전 국민 공통 휴무일을 뜻하지 않습니다.':event.country==='KR'?'검토된 한국 공식 일정입니다. KASI 자동 수집 성공을 뜻하지 않습니다.':'',sourceURL:event.sourceURL,verifiedAt:event.verifiedAt,isRepresentative:event.kind==='public_holiday',kind:event.kind,
  }));
  // Preserve the owner's full descriptions while adopting a newer review of
  // the same stable event ID (for example a newly published Korean annual list).
