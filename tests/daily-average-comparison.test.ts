@@ -30,7 +30,7 @@ test('passenger sample retains baseline value, collected-day evidence and no dup
  const core=visible(html.split('<details')[0]);
  assert.match(core,/100,000/);assert.equal((core.match(/505/g)||[]).length,1);assert.match(core,/\+1%/);
  assert.doesNotMatch(core,/MTD|마감/);assert.doesNotMatch(html,/<details[^>]* open/);
- if(lang==='ko'){assert.match(core,/수집분 예보 일평균/);assert.match(core,/명 대비/);assert.match(core,/증가/);assert.match(html,/월전체 평균 아님/);}
+ if(lang==='ko'){assert.match(core,/지난달 자료가 확보된 날의 하루 평균과 비교 \(2026-09 일평균 100,000명\)/);assert.match(html,/수집분 예보 일평균/);assert.match(core,/증가/);assert.match(html,/월전체 평균 아님/);}
  }
 });
 

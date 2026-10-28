@@ -4,8 +4,8 @@ import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
 
-// Decorative checks stay visible but do not enter a heading's spoken name.
-async function headingName(title:Locator){return title.evaluate(node=>{const text=(node as HTMLElement).innerText.replace(/\s+/g,' ').trim(),check=node.querySelector(':scope > .airport-flow-check[aria-hidden="true"]');return check?.textContent==='✓'&&text.startsWith('✓')?text.slice(1).trim():text;},undefined,{timeout:100});}
+// Only the five flow dots stay visible but do not enter a heading's spoken name.
+async function headingName(title:Locator){return title.evaluate(node=>{const text=(node as HTMLElement).innerText.replace(/\s+/g,' ').trim(),check=node.querySelector(':scope > .airport-flow-dot[aria-hidden="true"]');return check?.textContent==='·'&&text.startsWith('·')?text.slice(1).trim():text;},undefined,{timeout:100});}
 
 // Captured selected-day inputs only. No provider traffic or production writes.
 async function fixtures(page:Page){
@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page,textScale=1){
   // The owner requested smaller guide copy; assert its exact hierarchy at both
   // normal size and 200% text enlargement, while retaining every overflow check.
   if(row.compactGuide)expect(row.size,`compact guide ${row.role}: ${row.text}`).toBe((row.role==='section'?18:15)*textScale);
-  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?(page.viewportSize()!.width<=700?16:18):row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -110,12 +110,12 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  if(width>700){
   expect(rows[0].y).toBeCloseTo(rows[1].y,0);expect(rows[1].y).toBeCloseTo(rows[2].y,0);
   expect(rows[3].y).toBeCloseTo(rows[4].y,0);expect(rows[3].x).toBeCloseTo(rows[0].x,0);
-  expect(rows[3].width).toBeCloseTo(rows[4].width,0);expect(rows[4].x).toBeGreaterThan(rows[3].x+rows[3].width);
+  for(let i=0;i<2;i++){expect(rows[i+3].x).toBeCloseTo(rows[i].x,0);expect(rows[i+3].width).toBeCloseTo(rows[i].width,0);}
  }else{
   for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
- await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['✓시간·터미널','노선·휴일 준비']);
+ await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['·시간·터미널','·노선·휴일 준비']);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 
@@ -161,7 +161,7 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
   await expect(page.locator('.focus-today-title')).toHaveCount(0);await expect(page.locator('.focus-report-date')).toBeVisible();await expect(page.locator('.focus-report-date')).not.toHaveAttribute('data-heading');
   for(const heading of await page.locator('.focus-selected-country-changes h3,.focus-preparation-brief h3').all())await expect(heading).toHaveAttribute('data-heading','subsection');
   const staff=page.locator('.staff-brief-grid > section > h3');
-  await expect(staff).toHaveText(['✓시간·터미널','노선·휴일 준비']);
+  await expect(staff).toHaveText(['·시간·터미널','·노선·휴일 준비']);
   await expect(staff.locator(':scope > .heading-marker')).toHaveCount(2);
   const parentSize=await page.locator('#airport-staff-briefing-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));

@@ -9,4 +9,17 @@
 }
 .airport-insight-tabs.country-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
 .airport-insight-tabs.country-tabs button{min-width:0;text-align:center;white-space:normal;word-break:keep-all}
+.airport-insight-tabs-wrap{display:contents}.airport-insight-more{display:none}
+@media(max-width:700px){
+ .airport-insight-shell{padding-inline:2px}
+ .airport-insight-tabs-wrap{display:grid;grid-template-columns:minmax(0,1fr) 20px;align-items:start;border-bottom:1px solid #dce2e7;margin-bottom:16px}
+ .airport-insight-tabs-wrap .airport-insight-tabs{min-width:0;border-bottom:0;margin-bottom:0;padding-inline-start:0;scroll-padding-inline-start:0}
+ .airport-insight-tabs-wrap .airport-insight-tabs button:first-child{min-width:44px;padding-inline-start:0}
+ .airport-insight-more{display:grid;place-items:center;width:20px;min-height:56px;pointer-events:none;visibility:hidden}
+ .airport-insight-more[data-visible=true]{visibility:visible}
+ .airport-insight-more::after{content:'';width:6px;height:6px;border-right:1.5px solid #24272c;border-top:1.5px solid #24272c;transform:rotate(45deg)}
+ .airport-insight-tabs.country-tabs{display:flex;flex-wrap:nowrap;gap:14px;overflow-x:auto;overscroll-behavior-x:contain}
+ .airport-insight-tabs.country-tabs button{flex:0 0 auto;min-width:44px;min-height:44px;white-space:nowrap;word-break:normal}
+}
+@media(max-width:365px){.airport-insight-shell{padding-inline:6px}}
 .airport-period-modes{flex-wrap:wrap}

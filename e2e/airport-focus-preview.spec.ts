@@ -40,7 +40,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report-basis')).toContainText('누락일을 0으로 계산하지 않습니다');
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','normal');
- await expect(page.locator('.focus-passenger-comparison-core')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
+ await expect(page.locator('.focus-passenger-comparison-core')).toHaveText('자료가 확보된 날의 하루 평균과 비교: 같은 기준의 비교자료 확인 중');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width>=1000?'28px':'24px');
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
  await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();

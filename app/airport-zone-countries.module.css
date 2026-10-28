@@ -35,6 +35,7 @@
 
 /* Country names, counts and shares have distinct reading roles. */
 :global(.airport-zone-countries) .heading{font-size:18px;line-height:1.4;color:#111;margin:0 0 6px}
+@media(max-width:700px){:global(.airport-zone-countries) .headingKorean{font-size:11px;letter-spacing:-.03em;white-space:nowrap}}
 :global(.airport-zone-countries) h5.zoneHeading{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;line-height:1.5}
 .zoneTotal{display:flex;align-items:baseline;gap:8px;white-space:nowrap}
 .zoneTotal strong{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}

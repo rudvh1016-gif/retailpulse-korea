@@ -8,6 +8,16 @@ const summary={...SUMMARY_FIXTURE,todayKst:'2026-10-10',serviceDateKst:'2026-10-
 const reply=(month='2026-10')=>({status:'READY',month,months:['2026-10','2026-09'],calculatedAt:'2026-10-10T01:00:00Z',data:{version:AIRPORT_MONTH_VERSION,asOf:'2026-10-10',sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,months:[
  buildAirportFlightMonth('2026-10','2026-10-10',[row('2026-10-01','a','T2','274'),row('2026-10-01','b','T2','274'),row('2026-10-01','c','CONCOURSE','110')],new Set(['2026-10-01'])),
  buildAirportFlightMonth('2026-09','2026-10-10',[row('2026-09-01','d','T2','231'),row('2026-09-02','e','T2','274')],new Set(['2026-09-01','2026-09-02']))]}});
+for(const width of [320,390,430,1440])test(`airport monthly zone table remains legible and operable ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});
+ await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply()}));
+ await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await expect(section.getByTestId('airport-month-zones')).toBeVisible();
+ const sizes=await section.evaluate(node=>{const size=(selector:string)=>parseFloat(getComputedStyle(node.querySelector(selector)!).fontSize);return {title:size('.airport-month-zone-title'),table:size('[data-testid="airport-month-zones"] table'),summary:size(':scope > details > summary'),current:size('[data-testid="airport-month-zones"] tbody td:nth-child(3)')};});
+ if(width<=700)expect(sizes).toEqual({title:16,table:13,summary:14,current:14});else{expect(sizes.title).toBe(18);expect(sizes.summary).toBe(18);expect(sizes.current).toBe(16);}
+ const summaries=section.locator(':scope > details > summary');expect(await summaries.count()).toBeGreaterThanOrEqual(5);
+ for(const summary of await summaries.all()){expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);await summary.click();await expect(summary.locator('..')).toHaveAttribute('open','');await summary.click();await expect(summary.locator('..')).not.toHaveAttribute('open','');}
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
 for(const width of [360,390,430,1280])test(`monthly cards show top eight, expand in rank order and retain share bases ${width}`,async({page})=>{
  const payload=reply();
  payload.data.months[0]=buildAirportFlightMonth('2026-10','2026-10-10',['NRT','PEK','BKK','HAN','TPE','MNL','LAX','FRA','CDG'].map((airportCode,index)=>({...row('2026-10-01',String(index),'T2','274'),airportCode})),new Set(['2026-10-01']));
