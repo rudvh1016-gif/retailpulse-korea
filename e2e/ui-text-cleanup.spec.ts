@@ -53,6 +53,7 @@ for(const width of [320,390,430,1280]) {
   await model.scrollIntoViewIfNeeded();
   await expect(model.locator('.gate-leader-zones > section')).toHaveCount(3);
   await expect(model.getByTestId('gate-unverified-details')).toHaveCount(0);
+  await page.goto(`/ko/airport-countries?mode=zones&date=${date}&building=T2`);
   const countries=page.getByTestId('map-zone-countries');
   await countries.scrollIntoViewIfNeeded();
   await expect(countries.locator('h5')).toHaveCount(3);
@@ -61,7 +62,7 @@ for(const width of [320,390,430,1280]) {
    await expect(heading).toHaveCSS('color','rgb(0, 0, 0)');
   }
   await expect(countries.getByTestId('country-unverified-details')).toHaveCount(0);
-  records=[...known,...unknown];await page.reload();
+  records=[...known,...unknown];await page.goto('/ko/airport?terminal=T2');
   await model.scrollIntoViewIfNeeded();
   const note=model.getByTestId('gate-unverified-details');
   await expect(note.locator('summary')).toHaveText('※ 위치 미확인 3편');
@@ -71,6 +72,7 @@ for(const width of [320,390,430,1280]) {
   await expect(note.locator('li').first()).toContainText('UNKNOWN0');
   await page.keyboard.press('Space');await expect(note).not.toHaveAttribute('open','');
   await model.screenshot({path:`../ui-headings-evidence-20261006/gate-note-${width}.png`});
+  await page.goto(`/ko/airport-countries?mode=zones&date=${date}&building=T2`);
   await countries.scrollIntoViewIfNeeded();
   const countryNote=countries.getByTestId('country-unverified-details');
   await expect(countryNote).toHaveAttribute('data-total','3');
