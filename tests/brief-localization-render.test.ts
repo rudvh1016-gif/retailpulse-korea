@@ -13,7 +13,8 @@ const context:GlanceOverviewContext={day:'2026-10-21',scope:'T2',flights:264,pas
 for(const lang of ['ko','en','zh'] as const)test(`${lang}: complete screenshot brief renders all sections, date/scope and sign truth`,()=>{
  const render=(asOf:string,values=context)=>renderToStaticMarkup(h(AirportFocusData.Provider,{value:{asOf,trends:[],checkedAt:null,preview:false,failed:false}},h(OverviewHeadline,{context:values,lang,onCountries:()=>{},onPrepare:()=>{}})));
  const markup=render('2026-10-21');
- if(lang==='ko')assert.equal(markup.replace(/<svg class="ui-line-icon"[\s\S]*?<\/svg>/g,'').replace(/ class="focus-brief-band"/g,'').replace(/ focus-brief-band/g,'').replace(/ data-heading="(?:page|section|subsection)"/g,'').replace(/<span class="heading-marker" aria-hidden="true"><\/span>/g,''),readFileSync('tests/fixtures/brief-ko-localization-baseline.html','utf8'));
+ assert.equal((markup.match(/class="focus-country-change-copy"/g)??[]).length,2);
+ if(lang==='ko')assert.equal(markup.replace(/ class="focus-country-change-copy"/g,'').replace(/<svg class="ui-line-icon"[\s\S]*?<\/svg>/g,'').replace(/ class="focus-brief-band"/g,'').replace(/ focus-brief-band/g,'').replace(/ data-heading="(?:page|section|subsection)"/g,'').replace(/<span class="heading-marker" aria-hidden="true"><\/span>/g,''),readFileSync('tests/fixtures/brief-ko-localization-baseline.html','utf8'));
  else{assert.doesNotMatch(markup,/[가-힣]/);assert.doesNotMatch(render(''),/[가-힣]/);assert.doesNotMatch(render('2026-10-21',{...context,flights:null,passengers:null,transferPassengers:null,referenceSum:null,flightBaseline:null,selectedCountryChanges:[]}),/[가-힣]/);}
  for(const value of ['43,319','9,600','52,919','264','2026-10-21','T2','+4%','△ 15%'])assert.ok(markup.includes(value),value);
  assert.ok(markup.includes('focus-preparation-brief'));assert.ok(markup.includes('focus-report-basis'));
