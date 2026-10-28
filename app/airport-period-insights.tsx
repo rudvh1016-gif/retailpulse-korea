@@ -5,6 +5,7 @@ import type {Lang} from './retailpulse-data';
 import {AIRPORT_PERIOD_VERSION} from '../lib/airport-period-version';
 import './airport-period-insights.css';
 const CountryFlights=dynamic(()=>import('./airport-country-flights'));
+const CountryZones=dynamic(()=>import('./airport-country-zones'));
 const tabs=[['overview','공항한눈에'],['rhythm','언제 몰렸나요?'],['weekday','항공편 주말이 더 많나요?'],['terminal','어느 터미널이 달라졌나요?'],['holiday','연휴에는 늘었나요?']] as const;
 type View='rhythm'|'weekday'|'terminal'|'holiday'|'country';
 type Ranges={aStart:string;aEnd:string;bStart:string;bEnd:string};
@@ -45,13 +46,14 @@ function KoreanGlance({children,date}:{children:ReactNode;date?:string|null}){
 }
 export function AirportGlanceInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'?<KoreanGlance {...props}/>:props.children;}
 function KoreanCountries({children,date}:{children:ReactNode;date?:string|null}){
- const query=useQuery(),mode=query.get('mode')==='flights'?'flights':'passengers',monthly=query.get('period')==='monthly';
- const labels=[['passengers','국가별 출국 여객'],['flights','국가별 항공편']] as const;
+ const query=useQuery(),mode=query.get('mode')==='flights'?'flights':query.get('mode')==='zones'?'zones':'passengers',monthly=query.get('period')==='monthly';
+ const labels=[['passengers','국가별 출국 여객'],['flights','국가별 항공편'],['zones','국가별 출발 구역']] as const;
  return <section className="airport-insight-shell airport-country-insights"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>국가별 흐름</h1>
-  <div role="tablist" className="airport-insight-tabs country-tabs" aria-label="국가별 흐름 보기 선택">{labels.map(([id,label],i)=><button key={id} id={'country-flow-tab-'+id} role="tab" tabIndex={mode===id?0:-1} aria-selected={mode===id} aria-controls={'country-flow-'+id} onClick={()=>navigate('mode',id)} onKeyDown={e=>tabKeys(e,i,2,n=>navigate('mode',labels[n][0]))}>{label}</button>)}</div>
-  <p className="airport-period-basis">{mode==='passengers'?'공항 전체 공식 월 실적 · 명':'일별 비교: 공항 전체 · 월 집계: 터미널 선택 · 편/일'}<br/>노선의 목적지 국가 기준 · 승객 국적 아님</p>
+  <div role="tablist" className="airport-insight-tabs country-tabs" aria-label="국가별 흐름 보기 선택">{labels.map(([id,label],i)=><button key={id} id={'country-flow-tab-'+id} role="tab" tabIndex={mode===id?0:-1} aria-selected={mode===id} aria-controls={'country-flow-'+id} onClick={()=>navigate('mode',id)} onKeyDown={e=>tabKeys(e,i,labels.length,n=>navigate('mode',labels[n][0]))}>{label}</button>)}</div>
+  <p className="airport-period-basis">{mode==='passengers'?'공항 전체 공식 월 실적 · 명':mode==='flights'?'일별 비교: 공항 전체 · 월 집계: 터미널 선택 · 편/일':'터미널별 국가·구역 출발편'}<br/>노선의 목적지 국가 기준 · 승객 국적 아님</p>
   <div id="country-flow-passengers" role="tabpanel" aria-labelledby="country-flow-tab-passengers" hidden={mode!=='passengers'}>{children}</div>
   {mode==='flights'&&<div id="country-flow-flights" role="tabpanel" aria-labelledby="country-flow-tab-flights"><div className="airport-period-modes" role="group" aria-label="항공편 비교 방식"><button aria-pressed={!monthly} onClick={()=>navigate('period','custom')}>기간 직접 비교</button><button aria-pressed={monthly} onClick={()=>navigate('period','monthly')}>터미널별 월 집계</button></div>{monthly?<CountryFlights lang="ko" date={date??null}/>:<PeriodFrame key={date??'today'} view="country" date={date}/>}</div>}
+  {mode==='zones'&&<div id="country-flow-zones" role="tabpanel" aria-labelledby="country-flow-tab-zones"><CountryZones key={`${date??'today'}:${query.get('building')??'default'}`} date={date} initialScope={query.get('building')}/></div>}
  </section>;
 }
 export function AirportCountryInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'?<KoreanCountries {...props}/>:props.children;}

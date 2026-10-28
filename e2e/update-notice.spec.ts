@@ -18,7 +18,7 @@ test('the October 27 notice is visible despite dismissing or snoozing the prior 
  await page.goto('/ko');
  const dialog=page.getByRole('dialog');
  await expect(dialog).toBeVisible();
- await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-10-27');
+ await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-10-28');
  await expect(dialog).toContainText('공항한눈에는 그대로');
  await expect(dialog).toContainText('판매사원');
  expect(await page.evaluate(()=>localStorage.getItem('koretail-notice:airport-flow-20261021-v1:until'))).toBe(String(Date.UTC(2099,0,1)));

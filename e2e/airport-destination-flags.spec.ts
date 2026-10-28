@@ -15,7 +15,7 @@ for(const width of [320,390,430])test(`destination flags and all-country disclos
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',flights,truncated:false,retrievedAt:flights[0].retrievedAt}}));
- await page.goto('/ko/airport?terminal=T1');
+ await page.goto('/ko/airport-countries?mode=zones&date=2026-08-31&building=T1');
  const zone=page.getByTestId('map-zone-countries').locator('[data-side=WEST]');
  await expect(zone).toHaveAttribute('data-total','12');
  await expect(zone.locator('li[data-country=JP]')).toHaveAttribute('data-share','33');
@@ -42,12 +42,10 @@ for(const width of [320,390,430])test(`destination flags and all-country disclos
  await zone.screenshot({path:`outputs/destination-countries-${width}.png`});
  await page.keyboard.press('Enter');await expect(disclosure).not.toHaveAttribute('open','');
  await page.keyboard.press('Enter');await expect(disclosure).toHaveAttribute('open','');
- const map=page.getByTestId('departure-map');
- await expect(map).toBeVisible();
- const terminalTabs=page.locator('.airport-view > .terminal-selector').getByRole('tab');
- await terminalTabs.nth(2).click();await expect(zone).toHaveAttribute('data-total','0');
- await terminalTabs.nth(1).click();await expect(zone).toHaveAttribute('data-total','12');
- await map.locator('[data-preset=CUSTOM]').click();await map.getByTestId('map-from').selectOption('11');await map.getByTestId('map-to').selectOption('12');
+ const terminalControls=page.getByRole('group',{name:'출발 구역 터미널 선택'});
+ await terminalControls.getByRole('button',{name:'T2',exact:true}).click();await expect(zone).toHaveAttribute('data-total','0');
+ await terminalControls.getByRole('button',{name:'T1 본관',exact:true}).click();await expect(zone).toHaveAttribute('data-total','12');
+ await page.getByRole('button',{name:'시간 직접 선택'}).click();await page.getByLabel('시작',{exact:true}).selectOption('11');await page.getByLabel('끝',{exact:true}).selectOption('12');
  await expect(zone).toHaveAttribute('data-total','0');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  expect(errors).toEqual([]);

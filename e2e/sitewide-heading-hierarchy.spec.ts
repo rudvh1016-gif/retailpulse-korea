@@ -1,8 +1,11 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page,type Locator} from '@playwright/test';
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
+
+// Decorative checks stay visible but do not enter a heading's spoken name.
+async function headingName(title:Locator){return (await title.evaluate(node=>{const copy=node.cloneNode(true) as HTMLElement;copy.querySelectorAll('.airport-flow-check[aria-hidden="true"]').forEach(n=>n.remove());return copy.textContent??'';})).replace(/\s+/g,' ').trim();}
 
 // Captured selected-day inputs only. No provider traffic or production writes.
 async function fixtures(page:Page){
@@ -74,7 +77,7 @@ async function verifyHeadings(page:Page,textScale=1){
  // the whole current list, not an old name against its newly shifted neighbour.
  await expect(async()=>{
   for(const title of await headings.all()){
-   const text=(await title.evaluate(node=>{const copy=node.cloneNode(true) as HTMLElement;copy.querySelectorAll('.airport-flow-check[aria-hidden="true"]').forEach(n=>n.remove());return copy.textContent??'';})).replace(/\s+/g,' ').trim();
+   const text=await headingName(title);
    await expect(title).toHaveAccessibleName(text,{timeout:100});
   }
  }).toPass({timeout:8000,intervals:[100,250,500]});
@@ -102,7 +105,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
   expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(9);expect(row.bodyGap!).toBeLessThanOrEqual(11);
   expect(row.overflow).toBeLessThanOrEqual(1);
  }
- for(const title of await titles.all())await expect(title).toHaveAccessibleName((await title.innerText()).replace(/\s+/g,' ').trim());
+ for(const title of await titles.all())await expect(title).toHaveAccessibleName(await headingName(title));
  const width=page.viewportSize()!.width;
  if(width>700){
   for(let i=0;i<3;i++){expect(rows[i].x).toBeCloseTo(rows[i+3].x,0);expect(rows[i].width).toBeCloseTo(rows[i+3].width,0);}

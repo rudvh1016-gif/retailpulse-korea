@@ -1034,18 +1034,25 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
     },
   ];
 
+  const visibleSections = lang === 'ko' ? [
+    {eyebrow:'01 · KORETAIL',title:'누구를 위한 서비스인가요?',body:'인천공항 판매·식음료 직원과 영업·현장 관리자가 공항의 오늘과 달라진 흐름을 살펴보는 서비스입니다. 서울 지역 자료도 이용할 수 있습니다.'},
+    {eyebrow:'02 · AIRPORT',title:'어떤 정보를 볼 수 있나요?',body:'한눈에에서 예상 인원과 출발편을 확인하고 시간대·요일·터미널·연휴 전후를 비교합니다. 공항현황은 대기와 출발편, 국가별 흐름은 목적지별 여객과 항공편, 미리 준비는 휴일과 반입 안내를 제공합니다.'},
+    {eyebrow:'03 · READING',title:'숫자와 색은 어떻게 읽나요?',body:'파란색 +는 신장, 빨간색 △는 역신장입니다. 비교 기간·단위·포함 날짜를 함께 확인하세요. 표시 숫자는 반올림하며 계산은 원래 값으로 합니다.'},
+    {eyebrow:'04 · LIMITS',title:'자료를 볼 때 주의할 점',body:'예상은 실제 인원이나 매출이 아닙니다. 목적지 국가는 승객 국적이 아닙니다. '+passengerCopy.limitation.ko+' '+passengerCopy.noSum.ko+' 자료가 없을 때는 확인 불가로 표시합니다.'},
+  ] : sections;
+
   return (
     <section className="view-section about-view">
       <div className="view-intro">
         <div>
           <p className="eyebrow">ABOUT KORETAIL</p>
-          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "공식 데이터만,\n있는 그대로", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "인천공항의 흐름을\n한눈에", en: "Official data only,\nexactly as published", zh: "只用官方数据，\n如实呈现", ja: "公式データだけを、\nありのままに" })}</h1>
           <p>{localText(lang, { ko: "인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.", en: "KORETAIL combines Korea and Retail, focusing on Incheon Airport flights, passenger trends and travel preparation, with source dates and references.", zh: "KORETAIL 由 Korea 与 Retail 组合而成，以仁川机场航班、旅客趋势与出行准备为中心，并标明资料日期和来源。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。仁川空港のフライト・旅客動向・旅行準備を中心に、資料の日付と出典を案内します。" })}</p>
         </div>
       </div>
 
       <div className="about-sections">
-        {sections.map((section) => <section key={section.eyebrow} className="about-section">
+        {visibleSections.map((section) => <section key={section.eyebrow} className="about-section">
           <p className="eyebrow">{section.eyebrow}</p>
           <h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{section.title}</h2>
           <p>{section.body}</p>
@@ -1092,6 +1099,7 @@ function MoreView({
 
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         <button type="button" className="update-notice-trigger" aria-haspopup="dialog" onClick={()=>window.dispatchEvent(new Event(UPDATE_NOTICE_OPEN_EVENT))}>{localText(lang,{ko:'공지사항 보기',en:'View update notice',zh:'查看更新公告',ja:'更新のお知らせ'})}</button>
+        {lang === "ko" && <button type="button" className="update-notice-trigger" onClick={() => { const guide = document.getElementById("airport-usage-guide"); if (guide instanceof HTMLDetailsElement) { guide.open = true; guide.scrollIntoView({ behavior: "smooth", block: "start" }); } }}>인천공항 이용 방법</button>}
         {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <AnalyticsConsent lang={lang} />
