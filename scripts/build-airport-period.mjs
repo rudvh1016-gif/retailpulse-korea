@@ -4,7 +4,13 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 const source=new URL('../lib/airport-period/',import.meta.url),out=new URL('../public/airport-period/',import.meta.url);
 await fs.mkdir(out,{recursive:true});
-await build({entryPoints:[fileURLToPath(new URL('start.mjs',source))],outfile:fileURLToPath(new URL('runtime.js',out)),bundle:true,minify:true,format:'esm',target:'es2022',logLevel:'warning'});
+// Load the daily-profile parser only when the visitor selects today's comparison.
+// Content-addressing keeps already-open pages able to request their original chunk.
+const today=await build({entryPoints:[fileURLToPath(new URL('today.mjs',source))],bundle:true,minify:true,format:'esm',target:'es2022',write:false,logLevel:'warning'});
+const todayBytes=today.outputFiles[0].contents;
+const todayName='today-'+createHash('sha256').update(todayBytes).digest('hex').slice(0,12)+'.js';
+await fs.writeFile(new URL(todayName,out),todayBytes);
+await build({entryPoints:[fileURLToPath(new URL('start.mjs',source))],outfile:fileURLToPath(new URL('runtime.js',out)),bundle:true,minify:true,format:'esm',target:'es2022',define:{__AIRPORT_TODAY_CHUNK__:JSON.stringify('./'+todayName)},logLevel:'warning'});
 // Windows checkout line endings must not change the version of identical assets.
 const readText=async name=>(await fs.readFile(new URL(name,source),'utf8')).replaceAll('\r\n','\n');
 const styles=(await readText('fonts.css'))+'\n'+await readText('style.css');

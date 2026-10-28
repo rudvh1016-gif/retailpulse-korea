@@ -10,8 +10,8 @@ test('one moved model follows time filters and exposes exact gate evidence witho
  const model=page.getByTestId('airport-concept-model');await expect(model).toHaveCount(1);
  await expect(page.locator('.airport-flow img')).toHaveCount(0);
  await expect(page.getByTestId('airport-departure-overview').getByTestId('airport-concept-model')).toHaveCount(0);
- const order=await page.evaluate(()=>{const chart=document.querySelector('.airport-hero .airport-flow')!;const model=document.querySelector('[data-testid=airport-concept-model]')!;const countries=document.querySelector('[data-testid=map-zone-countries]')!;return {chartBottom:chart.getBoundingClientRect().bottom,modelTop:model.getBoundingClientRect().top,modelBottom:model.getBoundingClientRect().bottom,countriesTop:countries.getBoundingClientRect().top};});
- expect(order.modelTop).toBeGreaterThanOrEqual(order.chartBottom);expect(order.countriesTop).toBeGreaterThanOrEqual(order.modelBottom);
+ const order=await page.evaluate(()=>{const chart=document.querySelector('.airport-hero .airport-flow')!;const model=document.querySelector('[data-testid=airport-concept-model]')!;return {chartBottom:chart.getBoundingClientRect().bottom,modelTop:model.getBoundingClientRect().top};});
+ expect(order.modelTop).toBeGreaterThanOrEqual(order.chartBottom);await expect(page.getByRole('link',{name:'국가별 출발 구역 보기 ↗'})).toBeVisible();
  await expect(model.getByTestId('model-unverified-gate-numbers')).toContainText('T2 999');
  const register=model.getByTestId('gate-region-register');
  await expect(register.locator('.gate-region-columns [data-side=EAST]')).toContainText('253–270, 273–291');
