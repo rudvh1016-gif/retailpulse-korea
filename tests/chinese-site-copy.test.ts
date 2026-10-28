@@ -7,6 +7,7 @@ import {chineseText} from '../lib/chinese-ui';
 import chineseMappings from '../lib/chinese-ui.json';
 import {airportFocusCopy} from '../app/airport-focus-copy';
 import {preparationEvents,preparationEventsInMonth} from '../lib/preparation-calendar';
+import {officialCalendarResponse} from '../app/api/airport/calendar/route';
 import {AirportFocusData} from '../app/airport-focus-data';
 import arrival from '../data/airport-focus-preview/arrival-allowances.json';
 import {evaluateArrival,arrivalCheckSummary,arrivalCheckExplanation,visibleArrivalConditions} from '../lib/arrival-allowance-guidance';
@@ -50,6 +51,22 @@ test('server review statuses and unavailable cases do not fall back to Korean',(
   const row={state,lastCheckedAt:'2026-10-28',nextCheckAt:'2026-10-29',id:'JP'};
   translated([arrivalCheckSummary(row),arrivalCheckExplanation(row)]);
  }
+});
+test('Chinese rest intervals and unknown classifications retain their distinct meaning and workdays',async()=>{
+ const response=await officialCalendarResponse(null,new Date('2026-10-28T00:00:00Z'));
+ const calendar=await response.json();
+ const reviewed=preparationEvents('2026-10-28',calendar.events,calendar.calendarReplacementScopes);
+ const rest=reviewed.find(event=>event.country==='CN'&&event.start==='2026-10-01');
+ assert.ok(rest);
+ assert.equal(chineseText('zh',rest.scope),'全国调休时段');
+ assert.match(chineseText('zh',rest.description_ko),/并不表示所有日期都是法定节假日/);
+ assert.match(chineseText('zh',rest.notes),/2026-09-20, 2026-10-10（不是假日）/);
+ translated([rest.scope,rest.description_ko,rest.notes]);
+ const fallback=preparationEvents('2026-10-28').find(event=>event.country==='CN'&&event.start==='2026-09-25');
+ assert.ok(fallback);
+ assert.equal(chineseText('zh',fallback.scope),'全国假期安排');
+ assert.match(chineseText('zh',fallback.description_ko),/区分仍在确认中/);
+ translated([fallback.scope,fallback.description_ko]);
 });
 test('calendar, holiday disclosures, monthly chart, staff and arrival render in Chinese in normal and missing states',()=>{
  const render=(failed:boolean)=>renderToStaticMarkup(h(AirportFocusData.Provider,{value:{asOf:failed?'':'2026-10-28',trends:failed?[]:[{code:'JP',label:'일본',points:[{month:'2026-08',departures:1000},{month:'2026-09',departures:2000}]}],checkedAt:null,preview:true,failed}},h('div',null,
