@@ -54,7 +54,7 @@
 
 /* The existing briefing now carries all three time horizons before detailed figures. */
 .focus-report{padding:18px 20px;margin:18px 0 16px;border:1px solid rgba(205,217,229,.8);border-radius:22px;background:transparent;box-shadow:none}
-.focus-report-title{margin-bottom:12px}.focus-today-title{font-size:14px;font-weight:700;margin:0 0 7px}.focus-today-title small{font-size:11px;font-weight:400;color:#65707c;margin-left:8px}
+.focus-report-title{margin-bottom:12px}.focus-report-date{font-size:14px;font-weight:700;margin:0 0 7px}.focus-report-date small{font-size:11px;font-weight:400;color:#65707c;margin-left:8px}
 .focus-report-lines{grid-template-columns:1fr;gap:5px}.focus-report-lines p{font-size:13px;line-height:1.65}
 .focus-report .focus-preparation-brief>div{padding:12px 0 0;margin-top:12px}.focus-report .focus-preparation-brief p{font-size:13px;margin-bottom:3px}.focus-report .focus-preparation-brief h3{margin-bottom:5px}
 .focus-report :is(.focus-planning-basis,.focus-report-basis){font-size:10px;color:#65707c;margin-top:8px;line-height:1.6}.focus-report :is(.focus-planning-basis,.focus-report-basis) summary{cursor:pointer;padding-block:3px}.focus-report-basis small{display:block;font-size:10px;line-height:1.6;margin-top:5px}
@@ -67,7 +67,7 @@
 .focus-report .focus-event-row{display:block}.focus-report .focus-event-row+.focus-event-row{margin-top:5px}
 .focus-report :is(.focus-event-row b,.focus-report-lines b){font-weight:var(--weight-strong)}
 .focus-report .focus-preparation-brief>div>small,.focus-report .focus-planning-link{font-size:12px;line-height:1.6;letter-spacing:inherit}
-.focus-report :is(.focus-today-title,.focus-preparation-brief h3){font-size:15px}
+.focus-report :is(.focus-report-date,.focus-preparation-brief h3){font-size:15px}
 
 /* Mobile-only owner adjustment; desktop and supporting copy stay unchanged. */
 @media(max-width:700px){.focus-report .focus-report-lines p,.focus-report .focus-preparation-brief p{font-size:12px}}
@@ -93,7 +93,7 @@
     Only the final flexible row absorbs surplus, below the top-aligned basis. */
  .focus-report{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(0,1fr) auto;column-gap:36px;align-items:start}
  .focus-report-title{grid-column:1/-1;grid-row:1}
- .focus-today-title{grid-column:1;grid-row:2}
+ .focus-report-date{grid-column:1;grid-row:2}
  .focus-report-lines{grid-column:1;grid-row:3;display:block}
  .focus-selected-country-stack{grid-column:1;grid-row:4}
  .focus-report-basis{grid-column:1;grid-row:5}
@@ -107,7 +107,7 @@
 .focus-history-loading{min-height:210px;display:grid;place-items:center;font-size:12px;color:#65707c}
 
 /* Owner palette refinement, 2026-10-20: ink navy, white data surfaces and quiet silver. */
-.airport-focus-shell :is(.glance-heading h1,.focus-detail h1,.focus-report-title h2,.focus-section-heading h2,.focus-today-title,.focus-preparation-brief h3,.focus-trend-top h3,.focus-trend-value){color:var(--navy, #24272c)}
+.airport-focus-shell :is(.glance-heading h1,.focus-detail h1,.focus-report-title h2,.focus-section-heading h2,.focus-report-date,.focus-preparation-brief h3,.focus-trend-top h3,.focus-trend-value){color:var(--navy, #24272c)}
 .focus-line-chart line[stroke="#28445f"],.focus-line-chart circle[stroke="#28445f"]{stroke:var(--navy, #24272c)}
 
 /* Requested neutral refinement: restrained hierarchy, not a navy-tinted card. */
@@ -180,7 +180,7 @@
 /* Read each briefing topic as one unit: title, content, then a quiet boundary.
    The existing source order is unchanged at mobile widths. No inner card surfaces. */
 .airport-focus-shell .focus-report .focus-report-title{margin-bottom:20px}
-.airport-focus-shell .focus-report .focus-today-title{margin:0 0 12px}
+.airport-focus-shell .focus-report .focus-report-date{margin:0 0 12px}
 .airport-focus-shell .focus-report .focus-figures-title{margin:0 0 8px}
 .airport-focus-shell .focus-report .focus-selected-country-stack{margin-top:12px;padding-top:12px;border-top:var(--section-rule-width,1px) solid var(--section-rule-color,#d5d9de)}
 .airport-focus-shell .focus-report .focus-selected-country-changes{margin-top:0}
@@ -204,7 +204,7 @@
 
 /* Approved number-first briefing: shared source order, quiet rules, no card fill. */
 .airport-focus-shell .focus-report{background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-.airport-focus-shell .focus-report .focus-today-title{padding-bottom:12px;border-bottom:1px solid var(--section-rule-color,#d5d9de)}
+.airport-focus-shell .focus-report .focus-report-date{padding-bottom:12px;border-bottom:1px solid var(--section-rule-color,#d5d9de)}
 .airport-focus-shell .focus-report .focus-number-first-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 .airport-focus-shell .focus-report .focus-core-metric{min-width:0;overflow-wrap:anywhere}
 .airport-focus-shell .focus-report .focus-core-metric p{margin:0;font-size:16px;line-height:1.5}
@@ -287,3 +287,22 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report .focus-return-context .focus-return-events>.focus-preparation-event{margin-top:0}
  .airport-focus-shell .focus-return-events>.focus-preparation-event:only-child{grid-column:1/-1}
 }
+
+/* Plain date context, with no redundant Today heading or reserved title gap. */
+.airport-focus-shell .focus-report .focus-report-date{font-size:12px;font-weight:400;line-height:1.5;margin:0 0 8px;padding:0;border:0;color:var(--text-muted,#667484)}
+
+/* The two mobile metrics retain their original labels, values and reading order. */
+@media(max-width:999px){
+ .airport-focus-shell .focus-report .focus-report-lines{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px;align-items:start}
+ .airport-focus-shell .focus-report .focus-report-lines>.focus-figures-title{grid-column:1;grid-row:1}
+ .airport-focus-shell .focus-report .focus-number-first-grid{display:contents}
+ .airport-focus-shell .focus-report .focus-people-metric{grid-column:1;grid-row:2}
+ .airport-focus-shell .focus-report .focus-flight-metric{grid-column:2;grid-row:1/3}
+}
+
+/* Shared calculation disclosures: small copy, compact component counts, full touch area. */
+:root body :is(.focus-comparison-basis,.daily-comparison-basis){font-size:12px!important;font-weight:400;line-height:1.5}
+:root body :is(.focus-passenger-calculation,.focus-monthly-calculation)>summary{font-size:12px;font-weight:400;line-height:1.5;min-height:44px;padding:4px 0;box-sizing:border-box}
+:root body .focus-passenger-calculation>summary>span:first-child{display:block}
+:root body :is(.focus-passenger-calculation,.focus-monthly-calculation)>p{font-size:12px;font-weight:400;line-height:1.5;margin:4px 0}
+.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{display:block;font-size:12px;font-weight:400;line-height:1.5;margin-top:2px}

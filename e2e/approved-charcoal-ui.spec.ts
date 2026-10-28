@@ -18,7 +18,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  let monthlyReads=0;await page.route('**/api/live/duty-free-exchange/monthly',r=>{monthlyReads++;return r.fulfill({json:{vendor:'shilla',currency:'USD',scope:'INTERNET_SHOP',sourceUrl:dutyFreeSources.shilla,asOfDateKst:date,generatedAt:at,months:['05','06','07','08','09','10'].map((month,index)=>({month:`2026-${month}`,averageKrwPerUsd:index===5?1400.67:null,observedDays:index===5?1:0,calendarDays:[31,30,31,31,30,31][index],inProgress:index===5}))}});});
  expect(kstExchangeDate(Date.parse(at))).toBe(date);expect(datedSummary.todayKst).toBe(date);
  await page.goto(`/${lang}?date=${date}`);
- const bands=page.locator('.focus-report h3.focus-brief-band');await expect(bands).toHaveCount(4);
+ const bands=page.locator('.focus-report h3.focus-brief-band');await expect(bands).toHaveCount(3);
+ await expect(page.locator('.focus-today-title')).toHaveCount(0);await expect(page.locator('.focus-report-date')).toContainText(date);
  await expect(page.locator('.focus-preparation-brief [data-line-icon="month"]')).toHaveCount(0);
  for(const band of await bands.all()){
   await expect(band).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(band).toHaveCSS('border-top-width','0px');await expect(band).toHaveCSS('padding-left','0px');await expect(band).toHaveCSS('font-size','16px');await expect(band).toHaveCSS('font-weight','600');
