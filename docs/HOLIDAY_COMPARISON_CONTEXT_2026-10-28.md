@@ -2,6 +2,8 @@
 
 Baseline: `7d99392ed8679943809ad278ecdd01a630cf87fa` (origin/main checked at clone and again before PR preparation).
 
+Main advanced to `12a92a072af92c502f6fff0d7d2e11ecccb3bc89` during work (PR496). This branch was rebased onto it, preserving the new today comparison, content-addressed lazy parser, airline relocation controls and all upstream navigation changes. Generated assets were rebuilt from the combined sources.
+
 The gray bar represents the selected reference period, not a nonholiday period. The previous UI already mentioned Mid-Autumn in a small conditional note. It did not read the shared calendar API, and the recommendation buttons and overlap note had separate fixed 2026 dates.
 
 ## Change
@@ -30,6 +32,8 @@ For the reported CN comparison, the shared reviewed facts give Mid-Autumn **2026
 - Playwright comparison suite: **9 passed**, including 360/390/430/1440px, CN reference holiday overlap, 7/7 vs 6/7 observations, independent destination/origin labels, and unavailable-calendar behavior. Existing tab test now retries the action until React has attached its handler; the first run exposed this server-render/hydration test race.
 - Mobile and desktop screenshots were generated from synthetic local flight fixtures and inspected. They are not screenshots of a deployed change.
 - Applicable zero-cost audit: no source activation, paid service, credentials, account/auth, collection cadence, retention, D1 schema/write or forecast/outcome changes. One additional cached calendar read per opened comparison document; no polling. Existing source failure and year-boundary tests remain applicable.
+- After rebasing, 16 targeted calendar/range/today-parser unit checks, typecheck, changed-file ESLint and the full build passed again. The combined Playwright file finished **19 passed**. Its first run had 4 guide-link/terminal-selection failures from initial clicks before React handlers attached. Retrying the action until its existing open/selected assertion succeeded resolved them; no production UI or expected result was changed. Holiday, range, today-comparison and airline-relocation tests all pass together.
+- A broader Windows unit run had 19 failed cases outside the focused passing suites, including CRLF-sensitive workflow regexes, approved-source byte locks and existing UI source contracts. No full-suite pass is claimed. Linux CI must establish the final repository result. Working tree and task commits passed the repository credential patterns; the exhaustive reachable-history scan remained running at PR preparation.
 
 ## Release boundary
 

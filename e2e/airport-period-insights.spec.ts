@@ -8,7 +8,8 @@ const calendar={events:[...calendarSeed.events.filter(e=>e.country!=='CN'),...ca
 const dates=Array.from({length:48},(_,i)=>new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10));
 const hour=(n:number)=>Array.from({length:24},(_,h)=>h===8?n:0);
 for(const [label,path,heading] of [['공항한눈에','/ko','인천공항 한눈에'],['공항현황','/ko/airport','인천공항'],['국가별 흐름','/ko/airport-countries','국가별 흐름'],['미리 준비','/ko/airport-prepare','미리 준비']] as const)test(`인천공항 이용 방법 링크 이동: ${label}`,async({page})=>{
- await page.goto('/ko/more');await page.getByRole('button',{name:'인천공항 이용 방법'}).click();
+ await page.goto('/ko/more');
+ await expect(async()=>{await page.getByRole('button',{name:'인천공항 이용 방법'}).click();await expect(page.getByTestId('airport-usage-guide')).toHaveAttribute('open','',{timeout:500});}).toPass();
  await page.getByTestId('airport-usage-guide').getByRole('link',{name:label,exact:true}).click();
  await expect.poll(()=>new URL(page.url()).pathname).toBe(path);
  await expect(page.getByRole('heading',{name:heading,exact:true}).first()).toBeVisible();
@@ -69,8 +70,7 @@ for(const width of [360,1440])test(`airport navigation has clear aligned selecti
  await page.setViewportSize({width,height:900});await records(page);await page.goto('/ko/airport');
  const terminals=page.locator('#airport-data-flow');
  await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toBeVisible();
- await terminals.getByRole('tab',{name:'T2',exact:true}).click();
- await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
+ await expect(async()=>{const tab=terminals.getByRole('tab',{name:'T2',exact:true});await tab.click();await expect(tab).toHaveAttribute('aria-selected','true',{timeout:500});}).toPass();
  await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveCSS('border-bottom-color','rgb(52, 91, 123)');
  const nav=page.locator('.airport-context-nav');await nav.getByRole('button',{name:'항공편',exact:true}).click();
  await expect(nav.getByRole('button',{name:'항공편',exact:true})).toHaveAttribute('aria-current','page');
