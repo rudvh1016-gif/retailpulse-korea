@@ -4,6 +4,7 @@ import {register} from 'node:module';
 import {createElement as h} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {chineseText} from '../lib/chinese-ui';
+import chineseMappings from '../lib/chinese-ui.json';
 import {airportFocusCopy} from '../app/airport-focus-copy';
 import {preparationEvents,preparationEventsInMonth} from '../lib/preparation-calendar';
 import {AirportFocusData} from '../app/airport-focus-data';
@@ -59,6 +60,8 @@ test('calendar, holiday disclosures, monthly chart, staff and arrival render in 
  for(const month of ['2026-10','2026-11','2026-12','2027-01'])assert.doesNotMatch(visible(renderToStaticMarkup(h(PreparationCalendar,{lang:'zh',events:preparationEventsInMonth(events,month),month,today:'2026-10-28',onMonthChange:()=>{}}))),hangul);
 });
 test('interpolated source numbers retain precision and Korean remains unchanged',()=>{
+ const numbers=(text:string)=>(text.match(/(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?/g)??[]).sort();
+ for(const [original,translation] of Object.entries(chineseMappings))assert.deepEqual(numbers(translation),numbers(original),original);
  for(const value of ['760mL 기준 3병','궐련만 200개비. 다른 종류·혼합은 별도 환산.','2026년 9월 기준','9월 · 43,319명',' (공동 3개 시간대)']){
   assert.deepEqual(chineseText('zh',value).match(/\d[\d,.]*/g),value.match(/\d[\d,.]*/g));assert.equal(chineseText('ko',value),value);
  }
