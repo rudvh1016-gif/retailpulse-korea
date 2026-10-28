@@ -24,7 +24,7 @@ for (const width of [390, 1440]) for (const reduced of [false, true]) {
     expect(motion.width).toBe('90%');
     expect(motion.name).toBe(reduced?'none':'chart-fill-horizontal');
     if(!reduced) {
-      const motionAtHalf=await bar.evaluate(el=>{const a=el.getAnimations()[0]; a.pause(); a.currentTime=225; const half=el.getBoundingClientRect(); const scale=new DOMMatrix(getComputedStyle(el).transform).a; a.currentTime=450; const final=el.getBoundingClientRect(); return {scale,left:half.left,finalLeft:final.left};});
+      const motionAtHalf=await bar.evaluate(el=>{(el as HTMLElement).style.animationName='none'; getComputedStyle(el).animationName; (el as HTMLElement).style.removeProperty('animation-name'); getComputedStyle(el).animationName; const a=el.getAnimations()[0]; a.pause(); a.currentTime=225; const half=el.getBoundingClientRect(); const scale=new DOMMatrix(getComputedStyle(el).transform).a; a.currentTime=450; const final=el.getBoundingClientRect(); return {scale,left:half.left,finalLeft:final.left};});
       expect(motionAtHalf.scale).toBeGreaterThan(0); expect(motionAtHalf.scale).toBeLessThan(1); expect(motionAtHalf.left).toBeCloseTo(motionAtHalf.finalLeft,1);
       await expect(first.locator('.route-month-total')).toHaveText(['1,000','900']);
     }
