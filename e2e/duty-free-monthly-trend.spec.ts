@@ -1,76 +1,39 @@
-import archive from '../data/shilla-archive-observations.json' with {type:'json'};
-import {test,expect} from '@playwright/test';
+import {test,expect,type Page} from '@playwright/test';
 import {SUMMARY_FIXTURE} from './summary-fixture';
 import {dutyFreeSources} from '../lib/duty-free-exchange';
+import {recentFxFixture} from './duty-free-recent-fixture';
 const asOf='2026-10-21',at='2026-10-21T05:00:00Z';
-const observation={vendor:'shilla',serviceDateKst:asOf,currency:'USD',krwPerUnit:1332.1,verifiedAt:at,sourceUrl:dutyFreeSources.shilla,scope:'INTERNET_SHOP',verified:true,dateEvidence:'CURRENT_WIDGET'};
-const monthly={vendor:'shilla',currency:'USD',scope:'INTERNET_SHOP',sourceUrl:dutyFreeSources.shilla,asOfDateKst:asOf,generatedAt:at,
- months:['05','06','07','08','09','10'].map((month,index)=>({month:`2026-${month}`,averageKrwPerUsd:index===5?1332.1:null,observedDays:index===5?1:0,calendarDays:[31,30,31,31,30,31][index],inProgress:index===5}))};
-for(const lang of ['ko','en','zh','ja'])for(const width of [360,1280])test(`FX monthly explicit-open sparse history and accessible readout ${lang} ${width}`,async({page})=>{
- await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});await page.clock.setFixedTime(new Date(at));
- await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
- await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',serviceDateKst:asOf,flights:[],truncated:false,retrievedAt:null}}));
- await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:{mode:'duty-free-exchange',collectionMode:'AUTOMATED',generatedAt:at,todayKst:asOf,sources:[{vendor:'shilla',observation,lastAttemptAt:at,lastAttemptStatus:'SUCCESS',errorCode:null,nextAttemptAt:null}]}}));
- let reads=0;await page.route('**/api/live/duty-free-exchange/monthly',r=>{reads++;return r.fulfill({json:monthly});});
- const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(`/${lang}/airport`);const strip=page.getByTestId('airport-duty-free-exchange');
- await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');expect(reads).toBe(0);
- await strip.locator('summary').click();expect(reads).toBe(0);
- const toggle=strip.locator('.duty-free-monthly-toggle');await toggle.click();await expect(toggle).toHaveAttribute('aria-expanded','true');
- const chart=strip.locator('.duty-free-monthly-chart');await expect(chart.locator('li')).toHaveCount(6);
- await expect(chart.locator('circle')).toHaveCount(1); // A lone real point, never a fabricated six-month line.
- await expect(chart.locator('.duty-free-month-readout')).toContainText('1,332.10');
- const targets=chart.locator('.duty-free-month-target');await targets.first().focus();await expect(targets.first()).toBeFocused();
- await page.keyboard.press('End');await expect(targets.last()).toBeFocused();await expect(chart.locator('.duty-free-month-readout')).toContainText('2026-10');
- await page.keyboard.press('ArrowLeft');await expect(targets.nth(4)).toBeFocused();await expect(chart.locator('.duty-free-month-readout')).toContainText('2026-09');
- await targets.last().click();await expect(chart.locator('.duty-free-month-readout')).toContainText('1,332.10');
- await toggle.click();await toggle.click();await expect(chart).toBeVisible();expect(reads).toBe(1);
- expect(await chart.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);expect(errors).toEqual([]);
- await expect(strip.getByTestId('duty-free-rate')).toContainText('1,332.10');
-});
-
-for(const width of [360,1280])test(`FX archive supplement disclosure, full chart and live precedence ${width}`,async({page})=>{
- await page.setViewportSize({width,height:900});await page.clock.setFixedTime(new Date(at));
- await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
- await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',serviceDateKst:asOf,flights:[],truncated:false,retrievedAt:null}}));
- await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:{mode:'duty-free-exchange',collectionMode:'AUTOMATED',generatedAt:at,todayKst:asOf,sources:[{vendor:'shilla',observation,lastAttemptAt:at,lastAttemptStatus:'SUCCESS',errorCode:null,nextAttemptAt:null}]}}));
- const liveDate='2026-10-14',liveRate=1400;
- const used=archive.observations.filter(row=>row.observedDateKst!==liveDate);
- const days=[...used.map(row=>({date:row.observedDateKst,rate:row.krwPerUsd})),{date:liveDate,rate:liveRate}];
- const response={...monthly,archive:{kind:'ARCHIVED_OBSERVATION',verifiedAt:archive.verifiedAt,fullDayApplicabilityVerified:false,used,skippedLiveDates:[liveDate]},months:monthly.months.map(row=>{
-  const values=days.filter(day=>day.date.startsWith(row.month)).map(day=>day.rate);
-  return {...row,observedDays:values.length,averageKrwPerUsd:values.reduce((sum,n)=>sum+n,0)/values.length};
- })};
- await page.route('**/api/live/duty-free-exchange/monthly',r=>r.fulfill({json:response}));
- await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');
- await strip.locator('.duty-free-rate-sources > summary').click();
- await strip.getByRole('button',{name:/최근 6개월 환율 그래프 보기/}).click();
- const chart=strip.locator('.duty-free-monthly-chart');await expect(chart.locator('circle')).toHaveCount(6);
- await expect(chart.locator('li').first()).toContainText('31일 중 8일 자료');
- await expect(chart.locator('li').nth(1)).toContainText('30일 중 2일 자료');
- await expect(chart.locator('li').nth(1)).toContainText('전월 확보일 평균 대비');await expect(chart.locator('li').nth(1)).toContainText('부분 날짜 비교');
- await expect(chart.locator('li').last()).toContainText(response.months[5].averageKrwPerUsd.toLocaleString('ko-KR',{minimumFractionDigits:2,maximumFractionDigits:2}));
- const evidence=strip.locator('.duty-free-archive'),summary=evidence.locator('summary');
- await summary.focus();await page.keyboard.press('Enter');await expect(evidence).toHaveAttribute('open','');
- await expect(evidence).toContainText('한 달 전체 평균이나 하루 종일 적용된 환율은 아닙니다.');
- await expect(evidence.locator('li')).toHaveCount(23);
- await expect(evidence.locator('li').filter({hasText:liveDate})).toHaveCount(0);
- const link=evidence.locator('a').first();await expect(link).toHaveAttribute('href',used[0].provenance[0].archiveUrl);
- for(const target of [summary,link])expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(44);
- await link.focus();await expect(link).toBeFocused();
- expect(await strip.locator('.duty-free-rate-detail').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
-});
-
-for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,1280])test(`stored-day FX comparison and plain coverage ${lang} ${width}`,async({page})=>{
- await page.setViewportSize({width,height:900});await page.clock.setFixedTime(new Date(at));
+async function setup(page:Page){
+ await page.clock.setFixedTime(new Date(at));await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/**',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
+ const observation={vendor:'shilla',serviceDateKst:asOf,currency:'USD',krwPerUnit:1332.1,verifiedAt:at,sourceUrl:dutyFreeSources.shilla,scope:'INTERNET_SHOP',verified:true,dateEvidence:'CURRENT_WIDGET'};
  await page.route('**/api/live/duty-free-exchange',r=>r.fulfill({json:{mode:'duty-free-exchange',collectionMode:'AUTOMATED',generatedAt:at,todayKst:asOf,sources:[{vendor:'shilla',observation,lastAttemptAt:at,lastAttemptStatus:'SUCCESS',errorCode:null,nextAttemptAt:null}]}}));
- const response={...monthly,months:monthly.months.map((row,index)=>index===0?{...row,averageKrwPerUsd:1000,observedDays:31}:index===1?{...row,averageKrwPerUsd:1100,observedDays:2}:row)};
- await page.route('**/api/live/duty-free-exchange/monthly',r=>r.fulfill({json:response}));await page.goto(`/${lang}/airport`);
- const strip=page.getByTestId('airport-duty-free-exchange');await strip.locator('.duty-free-rate-sources>summary').click();const toggle=strip.locator('.duty-free-monthly-toggle');await toggle.focus();await page.keyboard.press('Enter');
- const june=strip.locator('.duty-free-month-list>li').nth(1);await expect(june).toContainText('1,100.00');await expect(june).toContainText('+10%');
- await expect(june).toContainText(({ko:'30일 중 2일 자료',en:'Data for 2 of 30 days',zh:'30天中有2天资料',ja:'30日のうち2日分の資料'} as const)[lang]);
- await expect(june).toContainText(({ko:'부분 날짜 비교',en:'Partial-day coverage',zh:'部分日期比较',ja:'一部の日付で比較'} as const)[lang]);
- await expect(strip.locator('.duty-free-month-list>li').nth(2)).not.toContainText('0%');await expect(strip.locator('.duty-free-month-list>li').last()).toContainText(({ko:'진행월',en:'Month in progress',zh:'进行中的月份',ja:'進行中の月'} as const)[lang]);
- await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','false');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+}
+for(const lang of ['ko','en','zh','ja'])for(const width of [360,1280])test(`FX seven dated observations, gaps, pointer and keyboard ${lang} ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});await setup(page);let reads=0;const data=recentFxFixture();await page.route('**/api/live/duty-free-exchange/recent',r=>{reads++;return r.fulfill({json:data});});
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(`/${lang}/airport`);const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');expect(reads).toBe(0);
+ await strip.locator('.duty-free-rate-sources>summary').click();const toggle=strip.locator('.duty-free-monthly-toggle');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);await toggle.click();
+ const chart=strip.locator('.duty-free-monthly-chart'),slider=chart.getByRole('slider'),readout=chart.locator('[aria-live]');await expect(chart.locator('circle')).toHaveCount(6);await expect(chart.locator('[data-rate-segment]')).toHaveCount(4);await expect(chart.locator('figcaption')).toContainText('6/7');await expect(chart.locator('figcaption')).toContainText('KRW / USD');
+ await slider.focus();await page.keyboard.press('Home');await expect(readout).toHaveText('2026-10-15 · 1,400.25 KRW / USD');await expect(slider).toHaveAttribute('aria-valuenow','0');
+ const point=chart.locator('[data-rate-date="2026-10-15"]'),bubble=chart.locator('.duty-free-recent-tooltip rect');await expect(point).toHaveAttribute('r','4');expect(Number(await bubble.getAttribute('y'))+Number(await bubble.getAttribute('height'))).toBeLessThan(Number(await point.getAttribute('cy'))-4);
+ await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowRight');await expect(readout).toContainText('2026-10-17');await expect(readout).not.toContainText('0.00');await expect(slider).toHaveAttribute('aria-valuenow','2');
+ await page.keyboard.press('End');await expect(readout).toHaveText('2026-10-21 · 1,332.10 KRW / USD');await expect(chart.locator('.duty-free-recent-tooltip')).toContainText('1,332.10 KRW / USD');await page.keyboard.press('Escape');await expect(chart.locator('.duty-free-recent-tooltip')).toHaveCount(0);
+ await slider.scrollIntoViewIfNeeded();const box=(await slider.boundingBox())!;await page.mouse.move(box.x+box.width*48/332,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width*304/332,box.y+box.height/2,{steps:6});await page.mouse.up();await expect(readout).toHaveText('2026-10-21 · 1,332.10 KRW / USD');
+ const evidence=strip.locator('.duty-free-recent-source');await expect(evidence).not.toHaveAttribute('open','');await evidence.locator('summary').focus();await page.keyboard.press('Enter');await expect(evidence.locator('li')).toHaveCount(7);await expect(evidence.getByRole('link')).toHaveAttribute('href',dutyFreeSources.shilla);await expect(evidence.locator('li').last()).toContainText('2026-10-21T01:00:00Z');expect((await evidence.getByRole('link').boundingBox())!.height).toBeGreaterThanOrEqual(44);await evidence.locator('summary').focus();await page.keyboard.press('Space');await expect(evidence).not.toHaveAttribute('open','');
+ await toggle.focus();await page.keyboard.press('Space');await expect(chart).toHaveCount(0);await page.keyboard.press('Enter');await expect(chart).toBeVisible();await expect(chart.locator('.duty-free-recent-tooltip')).toHaveCount(0);expect(reads).toBe(2);await expect(strip.getByTestId('duty-free-rate')).toContainText('1,332.10');await expect(strip.locator('.duty-free-month-list')).toHaveCount(0);expect(await chart.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);expect(errors).toEqual([]);
+});
+for(const width of [360,1280])for(const state of ['empty','failed','invalid','stale'])test(`FX seven-day ${state} is honest ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});await setup(page);const data=recentFxFixture(state==='stale'?'2026-10-20':asOf,state==='empty'?Array(7).fill(null):undefined);if(state==='invalid')data.days[6].krwPerUsd=0;
+ await page.route('**/api/live/duty-free-exchange/recent',r=>state==='failed'?r.fulfill({status:503,json:{error:'STORAGE_UNAVAILABLE'}}):r.fulfill({json:data}));await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await strip.locator('.duty-free-rate-sources>summary').click();await strip.locator('.duty-free-monthly-toggle').click();
+ await expect(strip.locator('.duty-free-monthly [role=status]')).toHaveText(state==='empty'?'자료 없음':'최근 환율 조회 실패');await expect(strip.locator('.duty-free-monthly-chart circle')).toHaveCount(0);await expect(strip.locator('.duty-free-monthly')).not.toContainText('0.00');await expect(strip.getByTestId('duty-free-rate')).toContainText('1,332.10');
+});
+test('native touch tap and drag select exact dated amount',async({browser,baseURL})=>{
+ const context=await browser.newContext({baseURL,viewport:{width:390,height:844},hasTouch:true,isMobile:true});const page=await context.newPage();await setup(page);await page.route('**/api/live/duty-free-exchange/recent',r=>r.fulfill({json:recentFxFixture()}));await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await strip.locator('.duty-free-rate-sources>summary').tap();await strip.locator('.duty-free-monthly-toggle').tap();const slider=strip.getByRole('slider');await slider.scrollIntoViewIfNeeded();const box=(await slider.boundingBox())!,y=box.y+box.height/2,x=(i:number)=>box.x+box.width*(48+i*256/6)/332;
+ await page.touchscreen.tap(x(0),y);await expect(strip.locator('.duty-free-month-readout')).toHaveText('2026-10-15 · 1,400.25 KRW / USD');
+ const cdp=await context.newCDPSession(page);await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x(0),y}]});for(let i=1;i<=6;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x(i),y}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect(strip.locator('.duty-free-month-readout')).toHaveText('2026-10-21 · 1,332.10 KRW / USD');await context.close();
+});
+test('open graph changes its exact seven dates at KST midnight',async({page})=>{
+ await setup(page);await page.clock.install({time:new Date('2026-10-21T14:59:00Z')});await page.clock.pauseAt(new Date('2026-10-21T14:59:59Z'));let reads=0;
+ await page.route('**/api/live/duty-free-exchange/recent',r=>{reads++;const data=recentFxFixture(reads===1?asOf:'2026-10-22',reads===1?undefined:[1400.25,1401.12,null,1402.34,1403.56,1404.78,null]);data.generatedAt=reads===1?'2026-10-21T14:59:59Z':'2026-10-21T15:00:00Z';return r.fulfill({json:data});});await page.goto('/ko/airport');const strip=page.getByTestId('airport-duty-free-exchange');await strip.locator('.duty-free-rate-sources>summary').click();await strip.locator('.duty-free-monthly-toggle').click();await expect(strip.locator('figcaption')).toContainText('2026-10-15 – 2026-10-21');
+ const response=page.waitForResponse(r=>r.url().endsWith('/duty-free-exchange/recent')&&r.status()===200);await page.clock.fastForward(1100);await response;await expect(strip.locator('figcaption')).toContainText('2026-10-16 – 2026-10-22');expect(reads).toBe(2);await expect(strip.locator('[data-rate-date="2026-10-15"]')).toHaveCount(0);
 });
