@@ -813,7 +813,7 @@ function BusinessHistoryBody({ lang, selected, setSelected }: { lang: Lang; sele
     <ol className="history-bars" aria-label={localText(lang, { ko: "월별 추이", en: "Monthly trend", zh: "月度趋势", ja: "月次推移" })}>
       {rows.map((row) => <li key={row.month} className={peakRow?.month === row.month ? "peak" : ""}>
         <span>{row.month}</span>
-        <i style={{ width: `${Math.max(2, row[selected] / max * 100)}%` }} />
+        <i key={`${selected}-${row[selected]}-${max}`} style={{ width: `${Math.max(2, row[selected] / max * 100)}%` }} />
         <b>{formatCount(lang, row[selected])}</b>
       </li>)}
     </ol>

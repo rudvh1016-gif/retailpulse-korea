@@ -1286,7 +1286,7 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
         <line className="airport-month-baseline" x1="0" x2={width} y1={height - 0.5} y2={height - 0.5}/>
         {days.map((day, index) => day.total === null
           ? <rect key={day.date} className="airport-month-gap" x={x(index) - barWidth / 2} y={height - 1.5} width={barWidth} height={1.5} />
-          : <g key={day.date}><rect className="airport-month-soft-depth" x={x(index) - barWidth / 2 + .7} y={barY(day.total) + 2} width={barWidth} height={Math.max(0, height - barY(day.total) - 2)} rx={Math.min(1.5, barWidth/2)} ry={6} fill="#a6c5ce"/><rect className="airport-month-bar" data-value={day.total} data-selected={day.date === shownDay.date || undefined}
+          : <g className="chart-fill-y-svg" key={`${day.date}-${day.total}-${maxDay}`}><rect className="airport-month-soft-depth" x={x(index) - barWidth / 2 + .7} y={barY(day.total) + 2} width={barWidth} height={Math.max(0, height - barY(day.total) - 2)} rx={Math.min(1.5, barWidth/2)} ry={6} fill="#a6c5ce"/><rect className="airport-month-bar" data-value={day.total} data-selected={day.date === shownDay.date || undefined}
               x={x(index) - barWidth / 2} y={barY(day.total)} width={barWidth} height={Math.max(0, height - barY(day.total))} rx={Math.min(1.5, barWidth / 2)} ry={6} />
               {day.total > 0 && <path className="airport-month-soft-highlight" d={`M${x(index)-barWidth/2+1.2} ${barY(day.total)+2} h${Math.max(0,barWidth-2.4)}`} stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>}
             </g>)}

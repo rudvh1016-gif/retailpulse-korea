@@ -119,7 +119,7 @@ export function AirportFlowFigure({ chartId, timeline, layers = null, lang = "ko
           const y = base - barHeight;
           const finish = band.now ? "now" : layout.now && band.x >= layout.now.x ? "ahead" : "elapsed";
           const lower = layout.stacked ? layout.layers[0].values[index] / layout.maxBand * (base - top) : 0;
-          return barHeight > 0 && <g key={band.start} data-start={band.start} data-value={band.value} data-height={barHeight} data-finish={finish}>
+          return barHeight > 0 && <g className="chart-fill-y-svg" key={`${band.start}-${barHeight}-${lower}`} data-start={band.start} data-value={band.value} data-height={barHeight} data-finish={finish}>
             <rect x={x} y={y} width={w} height={barHeight} rx={Math.min(1.5,barHeight/2)} style={{fill:finish==='now'?'#80b2a4':finish==='ahead'?'#aec5d8':'#43617f'}}/>
             {lower>0&&<rect x={x} y={base-lower} width={w} height={lower} style={{fill:band.now?'#b8d6ca':'#7194b2'}}/>}
           </g>;

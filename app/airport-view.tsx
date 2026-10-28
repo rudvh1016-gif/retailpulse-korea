@@ -154,7 +154,7 @@ export function AirportView({
             const isPeak = peakRow?.month === row.month;
             return <li key={row.month} className={isPeak ? "peak" : ""}>
               <span>{row.month}</span>
-              <i style={{ width: `${Math.max(2, value / historyMax * 100)}%` }} />
+              <i key={`${value}-${historyMax}`} style={{ width: `${Math.max(2, value / historyMax * 100)}%` }} />
               <b>{formatCount(lang, value)}</b>
             </li>;
           })}

@@ -54,9 +54,9 @@ function DailyRanges({ value, lang }: { value: RecordMonth; lang: Lang }) {
         const x = 6 + i * (608 / value.days.length), width = 608 / value.days.length - 5;
         const height = day.max === null ? 0 : Math.max(1, day.max / max * 90);
         const minHeight = day.min === null ? 0 : day.min / max * 90;
-        return <g key={day.date}>
+        return <g key={`${day.date}-${day.min}-${day.max}-${max}`}>
           <title>{day.date}: {day.min === null ? t(day.status === 'IN_PROGRESS' ? 'progress' : day.status === 'PARTIAL' ? 'partial' : 'missing') : `${range(day.min, day.max, lang)} ${t('unit')}`}</title>
-          {day.max !== null ? <><rect x={x} y={100-height} width={width} height={height} fill="#c6dddd" /><rect x={x} y={100-minHeight} width={width} height={minHeight} fill="#94bfc4" /></>
+          {day.max !== null ? <g className="chart-fill-y-svg"><rect x={x} y={100-height} width={width} height={height} fill="#c6dddd" /><rect x={x} y={100-minHeight} width={width} height={minHeight} fill="#94bfc4" /></g>
             : <line x1={x} x2={x+width} y1="95" y2="95" stroke="#555" strokeDasharray="2 2" />}
         </g>;
       })}

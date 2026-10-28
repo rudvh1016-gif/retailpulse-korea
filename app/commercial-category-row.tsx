@@ -35,13 +35,13 @@ export function CommercialCategoryRow({row,lang,metric,axes}:{row:CategoryActivi
    {geometry?<svg className="commercial-value-prism" viewBox="0 0 110 24" preserveAspectRatio="none" aria-hidden="true" focusable="false" data-metric={metric} data-lower={lower} data-upper={upper} data-zero={geometry.zero}>
     <defs><pattern id={patternId} width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" className="commercial-prism-uncertainty"/><path d="M-1 4L4-1M3 5L5 3" className="commercial-prism-hatch"/></pattern></defs>
     <path className="commercial-prism-axis" d="M0 22H100M0 20V24M100 20V24"/>
-    {upper>0&&<>
+    {upper>0&&<g className="chart-fill-x-svg" key={`${metric}-${lower}-${upper}`}>
      <path className="commercial-prism-top" d={`M0 10L4 6H${upper+4}L${upper} 10Z`}/>
      <rect className="commercial-prism-front" y="10" width={lower} height="10"/>
      {upper>lower&&<rect x={lower} y="10" width={upper-lower} height="10" fill={`url(#${patternId})`}/>}
      <path className="commercial-prism-side" d={`M${upper} 10L${upper+4} 6V16L${upper} 20Z`}/>
      <path className="commercial-prism-end" d={`M${upper} 10V20`}/>
-    </>}
+    </g>}
    </svg>:<small className="commercial-chart-unavailable">{({ko:'이 항목의 차트 수치 미제공',en:'Chart value not supplied for this category',zh:'未提供此行业的图表数值',ja:'この業種のグラフ値は未提供'})[lang]}</small>}
   </div>
  </li>;
