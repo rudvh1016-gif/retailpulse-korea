@@ -2,19 +2,24 @@ import {test,expect,type Page} from '@playwright/test';
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
+import calendarSeed from '../data/airport-focus-preview/calendar-context.json' with {type:'json'};
+import calendarManual from '../data/official-calendar/priority-country-multiyear.json' with {type:'json'};
+const calendar={events:[...calendarSeed.events.filter(e=>e.country!=='CN'),...calendarManual.events],sources:[],calendarCoverage:[{country:'CN',year:2026,scope:'national',verifiedAt:calendarManual.checkedOn}]};
 const dates=Array.from({length:48},(_,i)=>new Date(Date.UTC(2026,8,i+1)).toISOString().slice(0,10));
 const hour=(n:number)=>Array.from({length:24},(_,h)=>h===8?n:0);
 for(const [label,path,heading] of [['공항한눈에','/ko','인천공항 한눈에'],['공항현황','/ko/airport','인천공항'],['국가별 흐름','/ko/airport-countries','국가별 흐름'],['미리 준비','/ko/airport-prepare','미리 준비']] as const)test(`인천공항 이용 방법 링크 이동: ${label}`,async({page})=>{
- await page.goto('/ko/more');await page.getByRole('button',{name:'인천공항 이용 방법'}).click();
+ await page.goto('/ko/more');
+ await expect(async()=>{await page.getByRole('button',{name:'인천공항 이용 방법'}).click();await expect(page.getByTestId('airport-usage-guide')).toHaveAttribute('open','',{timeout:500});}).toPass();
  await page.getByTestId('airport-usage-guide').getByRole('link',{name:label,exact:true}).click();
  await expect.poll(()=>new URL(page.url()).pathname).toBe(path);
  await expect(page.getByRole('heading',{name:heading,exact:true}).first()).toBeVisible();
 });
 async function records(page:Page){
+ await page.route('**/api/airport/calendar',r=>r.fulfill({json:calendar}));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
- await page.route('**/api/live/airport-days*',r=>r.fulfill({json:{mode:'airport-days',date:new URL(r.request().url()).searchParams.get('date'),history:dates.map(day=>({T1:{day,total:300,hours:hour(300),complete:true},T2:{day,total:250,hours:hour(250),complete:true}})),countryDays:dates.flatMap(date=>['JP','CN'].map(country=>({country,scope:'ALL',date,complete:true,value:country==='JP'?(date>='2026-09-21'&&date<='2026-09-23'?160:150):100})))}}));
+ await page.route('**/api/live/airport-days*',r=>r.fulfill({json:{mode:'airport-days',date:new URL(r.request().url()).searchParams.get('date'),history:dates.map(day=>({T1:{day,total:300,hours:hour(300),complete:true},T2:{day,total:250,hours:hour(250),complete:true}})),countryDays:dates.flatMap(date=>['JP','CN'].filter(country=>country!=='CN'||date!=='2026-10-07').map(country=>({country,scope:'ALL',date,complete:true,value:country==='JP'?(date>='2026-09-21'&&date<='2026-09-23'?160:150):100})))}}));
 }
 for(const width of [360,390,430,1440])test(`airport period comparison preserves the glance and supports two ranges ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await records(page);
@@ -25,7 +30,7 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
  await expect(page.getByRole('heading',{name:'인천공항 한눈에',exact:true})).toBeVisible();
  await expect(page.locator('#airport-insight-overview .focus-report')).toBeVisible();
  await expect(page.locator('.airport-period-frame')).toHaveCount(0);expect(historyRequests).toBe(0);
- await page.getByRole('tab',{name:'언제 몰렸나요?',exact:true}).click();
+ await expect(async()=>{const tab=page.getByRole('tab',{name:'언제 몰렸나요?',exact:true});await tab.click();await expect(tab).toHaveAttribute('aria-selected','true',{timeout:500});}).toPass();
  const frame=page.frameLocator('.airport-period-frame');
  await expect(frame.getByText('오전·오후의 변화를 쉽게 파악해보세요')).toBeVisible();
  await expect(frame.locator('#takeaway')).toContainText('기준 대비 하루 평균 출발편');
@@ -46,9 +51,9 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
   }
  }
  expect(historyRequests).toBe(1);
- await frame.getByRole('button',{name:'일본 9/21–9/23 · 3일',exact:true}).click();
+ await frame.getByRole('button',{name:/일본 09\/21.*09\/23/ }).click();
  await expect(frame.locator('.holiday-value')).toHaveText(['150편','160편']);
- await expect(frame.locator('#context-note')).toContainText('2026/9/21–9/23');
+ await expect(frame.locator('#holiday-calendar-context')).toContainText('경로의 날');
  await frame.getByRole('button',{name:'같은 기간 국가별 항공편 →',exact:true}).click();
  await expect(page).toHaveURL(/airport-countries\?mode=flights/);
  await expect(page.getByRole('tab',{name:'국가별 항공편',exact:true})).toHaveAttribute('aria-selected','true');
@@ -65,8 +70,7 @@ for(const width of [360,1440])test(`airport navigation has clear aligned selecti
  await page.setViewportSize({width,height:900});await records(page);await page.goto('/ko/airport');
  const terminals=page.locator('#airport-data-flow');
  await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toBeVisible();
- await terminals.getByRole('tab',{name:'T2',exact:true}).click();
- await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
+ await expect(async()=>{const tab=terminals.getByRole('tab',{name:'T2',exact:true});await tab.click();await expect(tab).toHaveAttribute('aria-selected','true',{timeout:500});}).toPass();
  await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveCSS('border-bottom-color','rgb(52, 91, 123)');
  const nav=page.locator('.airport-context-nav');await nav.getByRole('button',{name:'항공편',exact:true}).click();
  await expect(nav.getByRole('button',{name:'항공편',exact:true})).toHaveAttribute('aria-current','page');
@@ -100,6 +104,28 @@ test('항공사 이전은 정확한 전후 날짜를 넣고 빈 과거 자료를
  await expect(frame.getByLabel('비교 기간 종료일')).toHaveValue('2026-02-10');
  await expect(frame.locator('#finding-title')).toHaveText('양쪽 기간의 기록이 필요합니다');
  await expect(frame.getByRole('link',{name:'이전 공지 확인 ↗'})).toBeVisible();
+});
+for(const width of [360,1440])test(`CN holiday overlap and independent flight coverage stay visible ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:1100});await records(page);
+ await page.goto('/airport-period/frame.html?date=2026-10-19&view=holiday');
+ await page.locator('[data-holiday="CN"]').filter({hasText:'10/01'}).click();
+ const context=page.locator('#holiday-calendar-context'),before=context.locator('[data-period="previous"]'),after=context.locator('[data-period="current"]');
+ await expect(before).toContainText('중추절');await expect(before).toContainText('2026-09-25~2026-09-27');
+ await expect(before).toContainText('항공편 수집 7/7일');await expect(after).toContainText('항공편 수집 6/7일');
+ await expect(before).toContainText('한국 출발지 참고');await expect(before).toContainText('추석');
+ await expect(context).not.toContainText('경로의 날');await expect(context).toContainText('색은 휴일 여부를 뜻하지 않습니다');
+ await expect(page.locator('#context-note')).toContainText('수집일이 부족');
+ await expect(before.getByRole('link',{name:'공식 출처'})).toHaveAttribute('href',/beijing.gov.cn/);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:testInfo.outputPath(`holiday-overlap-${width}.png`),fullPage:true});
+});
+test('failed calendar leaves flights visible and says unknown, never no holidays',async({page})=>{
+ await records(page);await page.route('**/api/airport/calendar',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.goto('/airport-period/frame.html?date=2026-10-19&view=holiday');
+ await expect(page.locator('.holiday-value')).toHaveCount(2);
+ await expect(page.locator('#holiday-calendar-context')).toContainText('자료 미확인');
+ await expect(page.locator('#holiday-suggestions')).toContainText('확인된 연휴 추천 자료 없음');
+ await expect(page.locator('#holiday-calendar-context')).not.toContainText('조정 휴무 없음');
 });
 test('More explains airport roles with compact type and notice links match the release',async({page})=>{
  await page.goto('/ko/more');const guide=page.locator('.site-usage-guide');

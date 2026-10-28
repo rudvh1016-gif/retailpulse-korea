@@ -5,7 +5,7 @@ import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
 
 // Decorative checks stay visible but do not enter a heading's spoken name.
-async function headingName(title:Locator){return (await title.evaluate(node=>{const copy=node.cloneNode(true) as HTMLElement;copy.querySelectorAll('.airport-flow-check[aria-hidden="true"]').forEach(n=>n.remove());return copy.textContent??'';})).replace(/\s+/g,' ').trim();}
+async function headingName(title:Locator){return title.evaluate(node=>{const text=(node as HTMLElement).innerText.replace(/\s+/g,' ').trim(),check=node.querySelector(':scope > .airport-flow-check[aria-hidden="true"]');return check?.textContent==='✓'&&text.startsWith('✓')?text.slice(1).trim():text;},undefined,{timeout:100});}
 
 // Captured selected-day inputs only. No provider traffic or production writes.
 async function fixtures(page:Page){
