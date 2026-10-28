@@ -31,7 +31,9 @@ for (const width of [360, 1280]) {
     const map = sides.getByTestId("departure-map");
     await expect(map.or(sides.getByTestId("map-failed"))).toBeVisible({ timeout: 20_000 });
     expect(await sides.getByTestId("map-failed").count(), "the flight records load").toBe(0);
-    expect(flightRequests.length).toBe(1);
+    expect(flightRequests.length).toBeGreaterThanOrEqual(1);
+    expect(flightRequests.length).toBeLessThanOrEqual(2);
+    expect(new Set(flightRequests).size,'one stored date even after a transport retry').toBe(1);
     const response = await flightResponse;
     const flights = await response.json() as FlightsPayload;
     expect(new URL(response.url()).searchParams.get("date"), "map and card use the same service date").toBe(summary.serviceDateKst);
