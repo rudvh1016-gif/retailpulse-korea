@@ -5,7 +5,9 @@ import type {Lang} from './retailpulse-data';
 import {AIRPORT_PERIOD_VERSION} from '../lib/airport-period-version';
 import './airport-period-insights.css';
 const CountryFlights=dynamic(()=>import('./airport-country-flights'));
-const CountryZones=dynamic(()=>import('./airport-country-zones'));
+// The default tab is selected from browser URL state. Mount it after hydration
+// so a server placeholder cannot be replaced while readers interact with it.
+const CountryZones=dynamic(()=>import('./airport-country-zones'),{ssr:false});
 const tabs=[['overview','공항한눈에'],['rhythm','언제 몰렸나요?'],['weekday','항공편 주말이 더 많나요?'],['terminal','어느 터미널이 달라졌나요?'],['holiday','연휴에는 늘었나요?']] as const;
 type View='rhythm'|'weekday'|'terminal'|'holiday'|'country';
 type Ranges={aStart:string;aEnd:string;bStart:string;bEnd:string};
