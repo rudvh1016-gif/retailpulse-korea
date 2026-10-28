@@ -1939,7 +1939,7 @@ function StoreDynamicsCard({ presentation }: { presentation: StoreDynamicsPresen
     <div className="store-dynamics-content">
       <p className="store-dynamics-scope">
         <span>{presentation.periodValue}</span>
-        <span lang="ko">{presentation.areaValue}</span>
+        <span lang={/[\uac00-\ud7a3]/.test(presentation.areaValue)?'ko':undefined}>{presentation.areaValue}</span>
       </p>
       {presentation.period && <p className="signal-row-period">
         <span>{presentation.period.cadenceLabel}</span>

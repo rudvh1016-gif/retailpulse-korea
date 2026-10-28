@@ -19,7 +19,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [390,1440])test(`home
  await page.goto(`/${lang}?date=2026-10-19`,{waitUntil:'domcontentloaded'});
  const section=page.locator('#focus-country-trends');await section.scrollIntoViewIfNeeded();
  const cards=section.locator('.focus-trend-grid > article');
- await expect(cards.locator('.focus-trend-top h3')).toHaveText(['인도','인도네시아','뉴질랜드']);
+ await expect(cards.locator('.focus-trend-top h3')).toHaveText(lang==='zh'?['印度','印度尼西亚','新西兰']:['인도','인도네시아','뉴질랜드']);
  const basis=section.locator('.focus-monthly-selection-basis');await expect(basis).toHaveAttribute('data-month','2026-09');
  const detail=basis.locator('details'),toggle=detail.locator('summary');
  await expect(detail).not.toHaveAttribute('open','');
@@ -33,8 +33,8 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [390,1440])test(`home
  const chart=cards.first().locator('.focus-interactive-line-chart');
  await expect(chart.locator('.focus-month-point')).toHaveCount(1);
  const august=chart.locator('button[data-month="2026-08"]');await august.focus();
- await expect(chart.getByRole('tooltip')).toHaveText('8월 · 자료 없음');
- await page.keyboard.press('ArrowRight');await expect(chart.getByRole('tooltip')).toHaveText('9월 · 1,000,000명');
+ await expect(chart.getByRole('tooltip')).toHaveText(lang==='zh'?'8月 · 暂无资料':'8월 · 자료 없음');
+ await page.keyboard.press('ArrowRight');await expect(chart.getByRole('tooltip')).toHaveText(lang==='zh'?'9月 · 1,000,000人':'9월 · 1,000,000명');
  await expect(chart.getByRole('tooltip')).toHaveCSS('pointer-events','none');
  await expect(chart.getByRole('tooltip')).toHaveCSS('background-color','rgba(255, 255, 255, 0.6)');
  await page.keyboard.press('Escape');await expect(chart.getByRole('tooltip')).toHaveCount(0);

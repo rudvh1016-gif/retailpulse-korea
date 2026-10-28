@@ -34,5 +34,9 @@
   [
     "    const station = chineseText(lang,formatRepresentativeStations(subway.selectedStations));\n",
     "    const station = formatRepresentativeStations(subway.selectedStations);\n"
+  ],
+  [
+    "        <span lang={/[\\uac00-\\ud7a3]/.test(presentation.areaValue)?'ko':undefined}>{presentation.areaValue}</span>\n",
+    "        <span lang=\"ko\">{presentation.areaValue}</span>\n"
   ]
 ]
