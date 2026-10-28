@@ -22,6 +22,8 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
  await page.getByRole('tab',{name:'언제 몰렸나요?',exact:true}).click();
  const frame=page.frameLocator('.airport-period-frame');
  await expect(frame.getByText('오전·오후의 변화를 쉽게 파악해보세요')).toBeVisible();
+ await expect(frame.locator('#takeaway')).toContainText('기준 대비 하루 평균 출발편');
+ await expect(frame.locator('#boundary')).toContainText('비중은 하루 출발편 중 각 시간대의 비율');
  await frame.getByLabel('기준 기간 시작일').fill('2026-09-12');await frame.getByLabel('기준 기간 종료일').fill('2026-09-18');
  await frame.getByLabel('비교 기간 시작일').fill('2026-10-01');await frame.getByLabel('비교 기간 종료일').fill('2026-10-30');
  await frame.getByRole('button',{name:'기간 적용',exact:true}).click();
@@ -48,6 +50,17 @@ test('unavailable analysis can retry without substituting old embedded records',
  await page.goto('/ko?insight=rhythm&date=2026-10-19');const frame=page.frameLocator('.airport-period-frame');
  await expect(frame.getByRole('button',{name:'다시 불러오기'})).toBeVisible();await expect(frame.locator('#panel')).toBeHidden();
  await records(page);await frame.getByRole('button',{name:'다시 불러오기'}).click();await expect(frame.locator('#panel')).toBeVisible();
+});
+for(const width of [360,1440])test(`airport navigation has clear aligned selections ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});await records(page);await page.goto('/ko/airport');
+ const terminals=page.locator('#airport-data-flow');
+ await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toBeVisible();
+ await terminals.getByRole('tab',{name:'T2',exact:true}).click();
+ await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');
+ await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveCSS('border-bottom-color','rgb(52, 91, 123)');
+ const nav=page.locator('.airport-context-nav');await nav.getByRole('button',{name:'항공편',exact:true}).click();
+ await expect(nav.getByRole('button',{name:'항공편',exact:true})).toHaveAttribute('aria-current','page');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test('More explains airport roles with compact type and notice links match the release',async({page})=>{
  await page.goto('/ko/more');const guide=page.locator('.site-usage-guide');
