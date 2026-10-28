@@ -1,4 +1,5 @@
 import { passengerCopy } from "../lib/passenger-copy";
+import Link from 'next/link';
 import type { Lang } from "./retailpulse-data";
 
 const copy = {
@@ -66,6 +67,14 @@ export function SiteUsageGuide({ lang }: { lang: Lang }) {
   return <section className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 data-heading="section" id="site-usage-title"><span className="heading-marker" aria-hidden="true"/>{t.title}</h2>
     <p>{t.intro}</p>
+    {lang==='ko'&&<details data-testid="airport-usage-guide"><summary style={disclosureStyle}>인천공항 이용 방법</summary>
+      <dl>
+        <div><dt><Link href="/ko">공항한눈에</Link></dt><dd>오늘 예상 인원·출발편을 확인하고, 두 기간의 시간대·요일·터미널 변화를 비교합니다</dd></div>
+        <div><dt><Link href="/ko/airport">공항현황</Link></dt><dd>근무 터미널을 선택해 출국장 대기와 시간대별 출발편을 확인합니다</dd></div>
+        <div><dt><Link href="/ko/airport-countries">국가별 흐름</Link></dt><dd>공항 전체의 국가별 월 여객과 터미널별 항공편 변화를 각각 확인합니다</dd></div>
+        <div><dt><Link href="/ko/airport-prepare">미리 준비</Link></dt><dd>국가별 휴일과 도착국 반입 면세한도를 확인합니다</dd></div>
+      </dl>
+    </details>}
     <details data-testid="usage-examples"><summary style={disclosureStyle}>{examples}</summary>
       <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
     </details>
