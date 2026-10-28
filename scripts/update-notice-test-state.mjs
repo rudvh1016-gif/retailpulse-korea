@@ -6,6 +6,7 @@ export function noticeDismissedState(origin='http://127.0.0.1:4173',state={cooki
  const url=new URL(origin).origin,result=structuredClone(state);
  let entry=result.origins.find(row=>row.origin===url);
  if(!entry){entry={origin:url,localStorage:[]};result.origins.push(entry);}
- entry.localStorage.push({name:'koretail-notice:airport-period-20261027-v1:until',value:String(Date.UTC(2099,0,1))});
+ entry.localStorage.push({name:'koretail-notice:airport-period-20261028-v1:until',value:String(Date.UTC(2099,0,1))});
  return result;
 }
+

@@ -12,7 +12,7 @@ test('notice expires at the exact clicked instant plus seven days',()=>{
 test('invalid preferences cannot break first display and keys are isolated',()=>{
  for(const value of [null,'','bad','NaN','-1','Infinity','1.5','9007199254740992'])assert.equal(noticeDeadline(value,100),null);
  assert.notEqual(UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY);
- assert.match(UPDATE_NOTICE_SESSION_KEY,/airport-period-20261027-v1/);
+ assert.match(UPDATE_NOTICE_SESSION_KEY,/airport-period-20261028-v1/);
  assert.notEqual(UPDATE_NOTICE_SESSION_KEY,'koretail-notice:airport-comparison-20261019-v1:closed');
  assert.notEqual(UPDATE_NOTICE_UNTIL_KEY,'koretail-notice:airport-comparison-20261019-v1:until');
  assert.doesNotMatch(UPDATE_NOTICE_UNTIL_KEY,/analytics-consent|airport-scope/);
@@ -24,3 +24,4 @@ test('returning-reader test state preserves analytics choice and uses the actual
  assert.deepEqual(result.origins[0].localStorage[0],state.origins[0].localStorage[0]);
  assert.equal(result.origins[0].localStorage[1].name,UPDATE_NOTICE_UNTIL_KEY);
 });
+
