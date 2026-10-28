@@ -1,0 +1,38 @@
+name: Verify Customs Source Read Only
+
+on:
+  pull_request:
+    paths:
+      - scripts/probe-customs-news.ts
+      - .github/workflows/verify-customs-source.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: customs-source-probe-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check official source without credentials or database access
+        run: npx tsx scripts/probe-customs-news.ts
+        env:
+          RPK_CUSTOMS_SOURCE_PROBE: 'true'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: customs-source-probe
+          path: customs-source-probe.json
+          if-no-files-found: warn
+          retention-days: 7
