@@ -118,6 +118,17 @@ test('A1 review never opens the legacy generic provider helper during or after t
 // Compare protected bytes after reversing only these exact approved navigation
 // expressions and their canonical-contract comment. Every other byte is locked.
 const approvedCanonicalPatches={
+  // Owner-requested terminal and section labels; all other bytes remain locked.
+  "app/airport-view.tsx": [
+    [
+      `      <p className="airport-menu-label" id="airport-terminal-label">{localText(lang,{ko:'터미널 선택',en:'Choose terminal',zh:'选择航站楼',ja:'ターミナルを選択'})}</p>\n      <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-labelledby="airport-terminal-label">`,
+      `      <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-label="Terminal">`
+    ],
+    [
+      `      {!concourse&&<p className="airport-menu-label airport-section-label">{localText(lang,{ko:'공항 정보 선택',en:'Choose airport information',zh:'选择机场信息',ja:'空港情報を選択'})}</p>}\n`,
+      ``
+    ]
+  ],
   "app/retailpulse-app.tsx": [
     [
       "AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide",
