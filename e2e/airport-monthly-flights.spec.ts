@@ -14,7 +14,7 @@ for(const width of [360,390,430,1280])test(`monthly cards show top eight, expand
  await page.setViewportSize({width,height:900});
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:payload}));
- await page.goto('/ko/airport');
+ await page.goto('/ko/airport-countries?mode=zones&date=2026-10-10&building=T2');
  const section=page.getByTestId('airport-month-flights'),countries=section.getByTestId('destination-daily-changes');
  const cards=countries.locator(':scope > ul > li'),toggle=countries.getByRole('button',{name:'더 보기',exact:true});
  const order=['CN','DE','FR','JP','PH','TH','TW','US','VN'];
@@ -36,7 +36,7 @@ for(const width of [360,390,430,1280])test(`monthly cards show top eight, expand
 for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`daily-mean scope, complete lists and keyboard ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply()}));
- await page.goto(`/${lang}/airport`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ await page.goto(lang==='ko'?'/ko/airport-countries?mode=zones&date=2026-10-10&building=all':`/${lang}/airport`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
  const includedDates=section.locator('details').filter({has:page.locator('.airport-month-period')}),includedSummary=includedDates.locator(':scope > summary');
  await includedSummary.click();await expect(includedDates).toHaveAttribute('open','');await expect(includedDates.locator('.airport-month-period').first()).toBeVisible();
  await expect(includedDates).toContainText('2026-09-01–2026-09-30');await expect(includedDates).toContainText('2/30');await expect(includedDates).toContainText('1/9');
@@ -47,7 +47,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  if(lang==='ko'&&width===390){await section.evaluate(el=>window.scrollTo(0,window.scrollY+el.getBoundingClientRect().top-180));await page.screenshot({path:info.outputPath('monthly-cross-fixture-390.png')});}
  const countries=section.getByTestId('month-list-destinationCountries');await countries.locator('summary').focus();await page.keyboard.press('Enter');await expect(countries).toHaveAttribute('open','');
  await expect(countries.locator('tbody tr')).toHaveCount(1);
- for(let repeat=0;repeat<2;repeat++){await page.getByRole('tab',{name:'T1',exact:true}).click();await page.getByRole('tab',{name:'T2',exact:true}).click();await expect(section).toContainText('+100%');}
+ for(let repeat=0;repeat<2;repeat++){if(lang==='ko'){const controls=page.getByRole('group',{name:'출발 구역 터미널 선택'});await controls.getByRole('button',{name:'T1 본관',exact:true}).click();await controls.getByRole('button',{name:'T2',exact:true}).click();}else{await page.getByRole('tab',{name:'T1',exact:true}).click();await page.getByRole('tab',{name:'T2',exact:true}).click();}await expect(section).toContainText('+100%');}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });
 test('a slower old month cannot replace a new selection; failures and zero baselines are explicit',async({page})=>{
