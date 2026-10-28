@@ -67,7 +67,7 @@ export function SiteUsageGuide({ lang }: { lang: Lang }) {
   return <section className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 data-heading="section" id="site-usage-title"><span className="heading-marker" aria-hidden="true"/>{t.title}</h2>
     <p>{t.intro}</p>
-    {lang==='ko'&&<details data-testid="airport-usage-guide"><summary style={disclosureStyle}>인천공항 이용 방법</summary>
+    {lang==='ko'&&<details id="airport-usage-guide" data-testid="airport-usage-guide"><summary style={disclosureStyle}>인천공항 이용 방법</summary>
       <dl>
         <div><dt><Link href="/ko">공항한눈에</Link></dt><dd>오늘 예상 인원·출발편을 확인하고, 두 기간의 시간대·요일·터미널 변화를 비교합니다</dd></div>
         <div><dt><Link href="/ko/airport">공항현황</Link></dt><dd>근무 터미널을 선택해 출국장 대기와 시간대별 출발편을 확인합니다</dd></div>

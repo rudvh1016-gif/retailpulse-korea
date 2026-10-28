@@ -1099,6 +1099,7 @@ function MoreView({
 
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         <button type="button" className="update-notice-trigger" aria-haspopup="dialog" onClick={()=>window.dispatchEvent(new Event(UPDATE_NOTICE_OPEN_EVENT))}>{localText(lang,{ko:'공지사항 보기',en:'View update notice',zh:'查看更新公告',ja:'更新のお知らせ'})}</button>
+        {lang === "ko" && <button type="button" onClick={() => { const guide = document.getElementById("airport-usage-guide"); if (guide instanceof HTMLDetailsElement) { guide.open = true; guide.scrollIntoView({ behavior: "smooth", block: "start" }); } }}>인천공항 이용 방법</button>}
         {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <AnalyticsConsent lang={lang} />
