@@ -163,7 +163,7 @@ jobs:
         run: |
           npx playwright test e2e/airport-period-insights.spec.ts e2e/update-notice.spec.ts --project chromium --workers=2 --output country-tooltip-results/airport-period
           npx playwright test --config playwright.country-tooltip.config.ts --project country-chromium
-          npx playwright test e2e/sitewide-heading-hierarchy.spec.ts e2e/airport-focus-production.spec.ts e2e/compact-brief-mobile.spec.ts e2e/airport-flow-reference.spec.ts e2e/airport-month-daily-trend.spec.ts e2e/brief-desktop-row-spacing.spec.ts e2e/airport-customs-news.spec.ts e2e/date-controls.spec.ts e2e/airport-departure-preparation.spec.ts e2e/departure-guide-entry.spec.ts e2e/midnight-consumption-sharpness.spec.ts e2e/mobile-briefing-repair.spec.ts e2e/arrival-allowance-refresh.spec.ts e2e/monthly-records.spec.ts --project chromium --workers=2 --output country-tooltip-results/airport-layout
+          npx playwright test e2e/sitewide-heading-hierarchy.spec.ts e2e/airport-focus-production.spec.ts e2e/compact-brief-mobile.spec.ts e2e/five-flow-layout.spec.ts e2e/rhythm-average-copy.spec.ts e2e/airport-flow-reference.spec.ts e2e/airport-month-daily-trend.spec.ts e2e/brief-desktop-row-spacing.spec.ts e2e/airport-customs-news.spec.ts e2e/date-controls.spec.ts e2e/airport-departure-preparation.spec.ts e2e/departure-guide-entry.spec.ts e2e/midnight-consumption-sharpness.spec.ts e2e/mobile-briefing-repair.spec.ts e2e/arrival-allowance-refresh.spec.ts e2e/monthly-records.spec.ts --project chromium --workers=2 --output country-tooltip-results/airport-layout
       - name: Save country-route and search identity evidence
         if: always()
         uses: actions/upload-artifact@v4

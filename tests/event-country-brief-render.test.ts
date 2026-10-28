@@ -24,11 +24,11 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: every represente
  assert.doesNotMatch(html,/data-flight-day="2026-10-27"|data-flight-day="2026-11-05"/);
 });
 test('staff event selection cannot attach the largest unrelated route to the Thai holiday',()=>{
- const html=renderToStaticMarkup(h(AirportFocusData.Provider,{value:{...provider,calendarEvents:[event('TH','2026-10-23','Thai fixture event')]}},h(AirportStaffBriefing,{lang:'ko',day:context.day,peak:null,flights:context.eventFlights!,retrievedAt:'2026-10-22T00:00:00Z',changes:[{country:'TW',label:'대만',count:90,mean:1,delta:89,percent:8900,month:'2026-09',days:30}]})));
+ const html=renderToStaticMarkup(h(AirportFocusData.Provider,{value:{...provider,calendarEvents:[event('TH','2026-10-23','Thai fixture event')]}},h(AirportStaffBriefing,{lang:'ko',day:context.day,peak:null,flights:context.eventFlights!,changes:[{country:'TW',label:'대만',count:90,mean:1,delta:89,percent:8900,month:'2026-09',days:30}]})));
  const card=html.split('<div class="staff-holiday-event"')[1].split('<details')[0];assert.match(card,/Thai fixture event/);assert.match(card,/태국행 <b>16편/);assert.doesNotMatch(card,/대만|90편|8900/);
 });
 
 test('staff briefing without a verified event retains its existing ranked route summary',()=>{
- const html=renderToStaticMarkup(h(AirportFocusData.Provider,{value:{...provider,asOf:'',calendarEvents:[]}},h(AirportStaffBriefing,{lang:'ko',day:context.day,peak:null,flights:context.eventFlights!,retrievedAt:null,changes:[{country:'TW',label:'대만',count:90,mean:1,delta:89,percent:8900,month:'2026-09',days:30}]})));
+ const html=renderToStaticMarkup(h(AirportFocusData.Provider,{value:{...provider,asOf:'',calendarEvents:[]}},h(AirportStaffBriefing,{lang:'ko',day:context.day,peak:null,flights:context.eventFlights!,changes:[{country:'TW',label:'대만',count:90,mean:1,delta:89,percent:8900,month:'2026-09',days:30}]})));
  assert.match(html,/staff-route-metric" data-country="TW"/);assert.match(html,/대만행 90편/);assert.match(html,/8900%/);assert.doesNotMatch(html,/staff-holiday-event/);
 });
