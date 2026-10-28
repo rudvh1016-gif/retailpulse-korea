@@ -1970,7 +1970,7 @@ function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: La
     ? suppliedStatus
     : eventStatusForDate(event, serviceDate);
   const localizedOverview=chineseText(lang,event.overview);
-  const sourceOriginal=lang==='zh'&&/[가-힣]/.test(localizedOverview??'');
+  const sourceOriginal=lang==='zh'&&/[\uac00-\ud7a3]/.test(localizedOverview??'');
   const preview = chineseText(lang,eventPreview(event.overview));
   const homepage = safeOfficialEventHomepage(event.homepage);
   const place = [formatEventPlace(event), event.addressDetail?.trim()].filter(Boolean).join(" · ");
@@ -1983,10 +1983,10 @@ function EventCard({ event, lang, serviceDate }: { event: LiveEventRow; lang: La
         </span>
         <h4>{chineseText(lang,[event.categoryName, event.title].filter(Boolean).join(" · "))}</h4>
       </header>
-      <p className="event-meta">{lang==='zh'?<>{formatEventPeriod(event)}{place&&<> · <span lang={/[가-힣]/.test(place)?'ko':undefined}>{/[가-힣]/.test(place)?'地址原文：':''}{place}</span></>}</>:[formatEventPeriod(event), place].filter(Boolean).join(" · ")}</p>
+      <p className="event-meta">{lang==='zh'?<>{formatEventPeriod(event)}{place&&<> · <span lang={/[\uac00-\ud7a3]/.test(place)?'ko':undefined}>{/[\uac00-\ud7a3]/.test(place)?'地址原文：':''}{place}</span></>}</>:[formatEventPeriod(event), place].filter(Boolean).join(" · ")}</p>
       {distance && <p className="event-distance">{text.eventDistanceBasis[lang]} {distance}</p>}
-      {sourceOriginal&&/[가-힣]/.test(preview??'')&&<small lang="zh-CN">官方原文（韩语）</small>}
-      {preview && <p className="event-preview" lang={sourceOriginal&&/[가-힣]/.test(preview??'')?'ko':undefined}>{preview}</p>}
+      {sourceOriginal&&/[\uac00-\ud7a3]/.test(preview??'')&&<small lang="zh-CN">官方原文（韩语）</small>}
+      {preview && <p className="event-preview" lang={sourceOriginal&&/[\uac00-\ud7a3]/.test(preview??'')?'ko':undefined}>{preview}</p>}
       <div className="event-actions">
         {event.overview && <details>
           <summary>{text.eventDetails[lang]}{sourceOriginal?' · 官方原文（韩语）':''}</summary>

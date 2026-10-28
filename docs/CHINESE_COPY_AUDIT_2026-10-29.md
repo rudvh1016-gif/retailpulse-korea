@@ -25,12 +25,16 @@ Source inventory and rendered checks are different evidence:
 ## Checks
 
 - Targeted unit/render/data suites: **93 passed**.
+- Supplementary source-layout, font, display-order and Chinese regression run: **61 passed** (overlaps the targeted set). Legacy source-shape assertions now unwrap display lookups for Korean compatibility; actual Chinese output is still tested separately. Nine exact localization patches restore `app/live-signals.tsx` to its original protected SHA `ff18b64c...`, so the operational UI lock does not permit unrelated edits.
 - New Chrome browser suite: **5 passed** covering mobile/desktop, language/reload, terminal/date scope, and delayed/failure states.
 - TypeScript: passed. Production build: passed.
 - Changed-file ESLint: no errors; three pre-existing navigation/image warnings.
-- Secret scan: running across reachable history at the time of this record; final result belongs in the PR.
+- Full local unit command: **2,533 tests / 2,511 pass / 22 fail**. The 22 failing titles reproduce on the untouched `a314d87c` baseline in this Windows environment (21 in the comparison run; the restored airport-period content-hash case also reproduced separately with identical hashes). The generated-period hash is affected by checkout line endings; other failures include pre-existing workflow/source assertions, importer dependencies and rendered-HTML expectations. This is not a green full-suite claim. Logs and baseline comparisons are local evidence.
+- Current working-tree credential-pattern scan: PASS for all five repository patterns. The full reachable-history scan remains pending; do not infer a history PASS.
 - UI review used the repository frontend-design and web-design-guidelines skills. No font, spacing, sizing, or layout redesign. Chinese loading/failure messages, native controls, `aria-label`s, source provenance, and text wrapping were checked.
 
 Architecture audit applicability: presentation-only; no added provider calls, paid dependencies, cron jobs, D1 reads/writes or schema changes. Worker/D1 production performance and source activation gates are outside this change and are not marked PASS.
 
 Merge coordination: keep UI #498, analysis #497, holiday #501 and historical-data work intact. Shared component hunks only add language propagation/display copy. Merge/deployment and any APPROVE review submission remain withheld for parent coordination.
+
+Publication blocker: opening the draft PR was denied by automatic approval review because the trusted original user messages did not explicitly authorize publishing/opening a PR. The action did not execute and was not retried. The branch is pushed and the complete draft body is prepared locally; creating the PR requires explicit user approval. No CI run was created for this branch because the workflow's push allowlist does not include it; no remote CI PASS is claimed.

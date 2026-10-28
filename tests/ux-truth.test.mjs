@@ -305,7 +305,8 @@ test("the event card leads with official fields and exposes the complete descrip
     "category then title, and no category means no placeholder");
   assert.match(signals, /formatEventPlace\(event\)/, "the place line is the official address");
   assert.match(signals, /<details>/, "the complete stored overview is available on demand");
-  assert.match(signals, /<p className="event-overview">\{event\.overview\}<\/p>/);
+  assert.match(signals, /<p className="event-overview"[^>]*>\{localizedOverview\}<\/p>/);
+  assert.match(signals, /const localizedOverview=chineseText\(lang,event.overview\)/, "the complete source overview is translated only at display time");
   assert.match(signals, /safeOfficialEventHomepage\(event\.homepage\)/);
   assert.match(signals, /target="_blank" rel="noopener noreferrer"/);
   assert.doesNotMatch(styles, /-webkit-line-clamp:\s*[1-9]/,

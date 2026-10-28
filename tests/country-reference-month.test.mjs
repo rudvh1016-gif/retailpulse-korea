@@ -1,7 +1,8 @@
+import {koreanCompatibilitySource} from './helpers/chinese-source-compat.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const source=readFileSync(new URL('../app/airport-focus-preview.tsx',import.meta.url),'utf8');
+const source=koreanCompatibilitySource(readFileSync(new URL('../app/airport-focus-preview.tsx',import.meta.url),'utf8'));
 const css=readFileSync(new URL('../app/airport-focus-preview.css',import.meta.url),'utf8');
 test('prominent reference month follows the returned monthly data rather than a hardcoded September',()=>{
  const start=source.indexOf('export function CountryBriefing');

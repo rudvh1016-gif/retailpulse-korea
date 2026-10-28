@@ -1,3 +1,4 @@
+import {chineseText} from '../lib/chinese-ui';
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -300,7 +301,7 @@ test("Store Dynamics presents stored official counts only, never an area-wide ra
     assert.ok(presentation);
     const rendered = JSON.stringify(presentation);
     for (const fragment of expected[lang]) assert.ok(rendered.includes(fragment), `${lang}: ${fragment}`);
-    assert.match(rendered, /명동 남대문 북창동 다동 무교동 관광특구/);
+    assert.ok(rendered.includes(chineseText(lang,"명동 남대문 북창동 다동 무교동 관광특구")));
     assert.doesNotMatch(rendered, /OA-15577/);
     assert.equal(presentation.meta[0], {ko:'서울시 상권분석서비스',en:'Seoul Commercial District Analysis Service',zh:'首尔市商圈分析服务',ja:'ソウル市商圏分析サービス'}[lang]);
     assert.match(rendered, /2026-09-03 10:00 KST/);
@@ -309,7 +310,7 @@ test("Store Dynamics presents stored official counts only, never an area-wide ra
     assert.doesNotMatch(rendered, /%/, `${lang}: no percentage may be presented as an area-wide official rate`);
     assert.doesNotMatch(rendered, /개업률|폐업률|opening rate|closure rate|开业率|歇业率|開業率|廃業率/i, lang);
     assert.equal(presentation.timeState, { ko: "과거 자료", en: "Historical", zh: "历史资料", ja: "過去資料" }[lang]);
-    assert.equal(presentation.areaValue, "명동 남대문 북창동 다동 무교동 관광특구",
+    assert.equal(presentation.areaValue, chineseText(lang,"명동 남대문 북창동 다동 무교동 관광특구"),
       "do not repeat an official type already present in the official name");
   }
 

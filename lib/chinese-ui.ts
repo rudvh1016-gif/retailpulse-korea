@@ -17,6 +17,6 @@ export function chineseText<T>(lang:Lang,value:T):T {
  // Card excerpts remove a final sentence mark; reuse the full reviewed translation.
  if(dictionary[value+'.'])return dictionary[value+'.'].replace(/[。.]$/,'') as T;
  if(/\([금토일월화수목]\)/.test(value)&&/^[\d/()~年月日一二三四五六周\s금토일월화수목–-]+$/.test(value))return value.replace(/\(([금토일월화수목])\)/g,(_,day)=>`(周${dictionary[day]})`) as T;
- for(const {pattern,value:template} of patterns){const match=value.match(pattern);if(match){const translated=template.replace(/\{(\d+)\}/g,(_,index)=>String(chineseText(lang,match[Number(index)+1])));if(!/[가-힣]/.test(translated))return translated as T;}}
+ for(const {pattern,value:template} of patterns){const match=value.match(pattern);if(match){const translated=template.replace(/\{(\d+)\}/g,(_,index)=>String(chineseText(lang,match[Number(index)+1])));if(!/[\uac00-\ud7a3]/.test(translated))return translated as T;}}
  return value;
 }

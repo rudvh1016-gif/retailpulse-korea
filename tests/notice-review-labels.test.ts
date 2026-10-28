@@ -1,9 +1,10 @@
+import {koreanCompatibilitySource} from './helpers/chinese-source-compat.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {UPDATE_NOTICE_TITLE} from '../lib/update-notice-preference';
 import {arrivalManualReviewLabel,arrivalReviewDateLabel,arrivalReviewSentence} from '../lib/arrival-review-date';
-const read=(path:string)=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
+const read=(path:string)=>koreanCompatibilitySource(readFileSync(new URL(`../${path}`,import.meta.url),'utf8'));
 test('all notice locales share the exact durable owner heading without changing accessible identity',()=>{
  assert.equal(UPDATE_NOTICE_TITLE,'new update!');
  const source=read('app/update-notice.tsx');
