@@ -12,7 +12,7 @@ for (const width of [390, 1440]) for (const reduced of [false, true]) {
     await page.route('**/api/live/summary*',route=>route.fulfill({json:{...SUMMARY_FIXTURE,todayKst:'2026-10-10',serviceDateKst:'2026-10-10'}}));
     await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:{status:'READY',month:'2026-09',previousMonth:'2026-08',current:{ROUTE_COUNTRY_PASSENGERS:data('2026-09',900)},previous:{ROUTE_COUNTRY_PASSENGERS:data('2026-08',1000)}}}));
     await page.route('**/api/live/airport-passenger-comparison*',route=>{const q=new URL(route.request().url()).searchParams; const selected=q.get('selected')!,baseline=q.get('baseline')!;return route.fulfill({json:{status:'READY',selectedMonth:selected,baselineMonth:baseline,selected:data(selected,selected==='2026-03'?800:900),baseline:data(baseline,baseline==='2026-03'?1200:1000),availableMonths:['2026-03','2026-08','2026-09']}});});
-    await page.goto('/zh/airport-countries?date=2026-10-10');
+    await page.goto('/zh/airport-countries?mode=passengers&date=2026-10-10');
     await page.addStyleTag({content: '.route-country-comparison > * { animation-play-state: paused !important; }'});
     const block=page.getByTestId('airport-route-passengers');
     await block.scrollIntoViewIfNeeded();
