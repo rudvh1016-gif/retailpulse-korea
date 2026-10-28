@@ -314,6 +314,8 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 .airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis){font-size:11px!important;font-weight:400;line-height:1.5}
 .airport-focus-shell .focus-report .focus-passenger-comparison-core:not(:has(.focus-comparison-change)){font-size:11px;font-weight:400;line-height:1.5}
 .airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change):has(>.glance-count-change[data-direction=down]){color:#a12d3f}
+/* Long translated units may wrap after the signed value inside their own column. */
+.airport-focus-shell .focus-report .focus-core-metric .glance-count-change{white-space:normal}
 @media(max-width:700px){
  .airport-focus-shell.airport-focus-operating .focus-report{box-sizing:border-box;width:calc(100vw - 16px);margin-inline:calc(50% - 50vw + 8px);padding-inline:12px}
  .airport-focus-shell .focus-report .focus-report-lines{column-gap:28px}

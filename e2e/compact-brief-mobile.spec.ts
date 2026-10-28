@@ -46,10 +46,21 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  await expect(signed).toHaveAttribute('data-direction',width===320?'down':width===390?'neutral':'up');
  if(width===320){await expect(change).toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toContainText('△');await expect(change.locator('.focus-passenger-rate .change-rate')).toHaveCSS('color','rgb(161, 45, 63)');}
  else {await expect(change).not.toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toHaveCSS('color',width===390?'rgb(89, 99, 110)':'rgb(36, 89, 166)');}
+ if(width<=700){
+  const overflow=await report.locator('.focus-core-metric').evaluateAll(nodes=>nodes.flatMap(metric=>{
+   const box=metric.getBoundingClientRect(),walker=document.createTreeWalker(metric,NodeFilter.SHOW_TEXT),issues=[];
+   for(let text=walker.nextNode();text;text=walker.nextNode()){
+    if(!text.textContent?.trim()||text.parentElement?.closest('.sr-only'))continue;
+    const range=document.createRange();range.selectNodeContents(text);
+    for(const rect of range.getClientRects())if(rect.width>0&&(rect.left<box.left-1||rect.right>box.right+1))issues.push({text:text.textContent,left:rect.left,right:rect.right,columnLeft:box.left,columnRight:box.right});
+   }return issues;
+  }));expect(overflow,'visible metric text stays inside its own column and preserves the center gap').toEqual([]);
+ }
  const label=(await toggle.locator(':scope > span').first().boundingBox())!,partBox=(await parts.boundingBox())!;expect(partBox.y-label.y-label.height).toBeGreaterThanOrEqual(0);expect(partBox.y-label.y-label.height).toBeLessThanOrEqual(3);
  await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
  // Stress narrow columns without altering fixture/source calculations.
  await report.locator('.focus-metric-total').first().evaluate(node=>{node.textContent='1,234,567,890 people';});
+ expect(await report.locator('.focus-metric-total').first().evaluate(node=>{const box=node.closest('.focus-core-metric')!.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()].every(rect=>rect.left>=box.left-1&&rect.right<=box.right+1);}),'long headline figures wrap inside their own column').toBe(true);
  expect(await report.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  if(lang==='ko'&&width===320){referenceAvailable=false;await page.reload();await expect(report.locator('.focus-passenger-parts')).toContainText('103,124');await expect(report.locator('.focus-comparison-change')).toHaveCount(0);const missing=report.locator('.focus-passenger-comparison-core');await expect(missing).toContainText('같은 기준의 비교자료 확인 중');await expect(missing).toHaveCSS('font-size','11px');await expect(missing).not.toHaveCSS('color','rgb(161, 45, 63)');}
 });
