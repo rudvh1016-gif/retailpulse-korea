@@ -45,7 +45,7 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  await expect(basis.locator('.staff-route-sample')).toHaveCSS('white-space','nowrap');
  await page.keyboard.press('Enter');await expect(basis).not.toHaveAttribute('open','');
  const changeBlock=page.locator('.focus-report .focus-selected-country-changes').first();
- await expect(changeBlock).toHaveCSS('border-bottom-width',width>=1000?'0px':'1px');
+ await expect(changeBlock).toHaveCSS('border-bottom-width',width>=1000||width<=700?'0px':'1px');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`navy-home-${width}.png`)});
  await briefing.scrollIntoViewIfNeeded();await briefing.screenshot({path:info.outputPath(`navy-staff-${width}.png`)});

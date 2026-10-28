@@ -42,5 +42,6 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1000
  const weeklyRows=weekly.locator(':scope > p');expect(await weeklyRows.count()).toBeGreaterThanOrEqual(2);
  await expect(weekly).toContainText('미얀마');await expect(weekly).toContainText('카자흐스탄');
  for(const note of await weekly.locator(':scope > p > small').all()){await expect(note).toHaveCSS('font-size','11px');await expect(note).toHaveCSS('font-weight','400');}
- for(let i=1;i<await weeklyRows.count();i++){const before=(await weeklyRows.nth(i-1).boundingBox())!,after=(await weeklyRows.nth(i).boundingBox())!;expect(after.y-before.y-before.height).toBeGreaterThanOrEqual(8);expect(after.y-before.y-before.height).toBeLessThanOrEqual(16);}
+ const gaps=await weeklyRows.evaluateAll(rows=>rows.slice(1).map((row,i)=>row.getBoundingClientRect().top-rows[i].getBoundingClientRect().bottom));
+ for(const gap of gaps){expect(gap).toBeGreaterThanOrEqual(8);expect(gap).toBeLessThanOrEqual(16);}
 });

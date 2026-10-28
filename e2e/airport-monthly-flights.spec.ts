@@ -13,7 +13,7 @@ for(const width of [320,390,430,1440])test(`airport monthly zone table remains l
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply()}));
  await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await expect(section.getByTestId('airport-month-zones')).toBeVisible();
  const sizes=await section.evaluate(node=>{const size=(selector:string)=>parseFloat(getComputedStyle(node.querySelector(selector)!).fontSize);return {title:size('.airport-month-zone-title'),table:size('[data-testid="airport-month-zones"] table'),summary:size(':scope > details > summary'),current:size('[data-testid="airport-month-zones"] tbody td:nth-child(3)')};});
- if(width<=700)expect(sizes).toEqual({title:16,table:12,summary:14,current:14});else{expect(sizes.title).toBe(18);expect(sizes.summary).toBe(18);expect(sizes.current).toBe(16);}
+ if(width<=700)expect(sizes).toEqual({title:16,table:13,summary:14,current:14});else{expect(sizes.title).toBe(18);expect(sizes.summary).toBe(18);expect(sizes.current).toBe(16);}
  const summaries=section.locator(':scope > details > summary');expect(await summaries.count()).toBeGreaterThanOrEqual(5);
  for(const summary of await summaries.all()){expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);await summary.click();await expect(summary.locator('..')).toHaveAttribute('open','');await summary.click();await expect(summary.locator('..')).not.toHaveAttribute('open','');}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
