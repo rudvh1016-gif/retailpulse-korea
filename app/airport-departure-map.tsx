@@ -1,5 +1,6 @@
 'use client';
 import {AirportRouteCountryPassengers} from './airport-route-country-passengers';
+import Link from 'next/link';
 import './airport-reading.css';
 import { contextText } from './operational-context';
 
@@ -142,7 +143,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   // The architectural illustration is data-free. Keep it available while counts
   // are withheld; do not show zone counts, shares or official coordinates here.
   const routePassengers=referenceSummary&&<AirportRouteCountryPassengers lang={lang} month={referenceSummary.serviceDateKst.slice(0,7)} terminal={terminal}/>;
-  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>{routePassengers}<AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly}/></>,modelTarget):null;
+  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>{routePassengers}<AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly} showCountryRanking={lang!=='ko'}/></>,modelTarget):null;
   if (current === undefined) return <>{unavailableModel}<p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p></>;
   if (current.status === 'FAILED' || !map) return <>{unavailableModel}<p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p></>;
   if (current.payload.truncated || (span.endMin > 1440 && next?.status === 'OK' && next.payload.truncated)) return <>{unavailableModel}
@@ -201,8 +202,9 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         <button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>{copied==='OK'&&<p role="status">{copy.copied[lang]}</p>}{copied==='FAILED'&&<><p role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{whiteSpace:'pre-wrap'}}>{share}</pre></>}
       </details>
       {topReference}
-      <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly}/>
-      {map.nextDay!=='MISSING'&&<AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/>}
+      <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly} showCountryRanking={lang!=='ko'}/>
+      {lang==='ko'&&<p><Link href={`/ko/airport-countries?mode=zones&date=${encodeURIComponent(date)}&building=${encodeURIComponent(buildingScope??terminal)}`}>국가별 출발 구역 보기 ↗</Link></p>}
+      {lang!=='ko'&&map.nextDay!=='MISSING'&&<AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/>}
     </div>,modelTarget);
   }
 
@@ -215,7 +217,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
       })}
     </div>
     {buildingScope&&<p className="prep-note">{{ko:'건물별 편수: T1 본관·T2·탑승동을 별도 집계합니다. 전체에는 건물 미정도 포함하며 탑승동 여객 예보는 따로 제공되지 않습니다.',en:'Physical buildings: T1 main, T2 and concourse are counted separately. All includes unknown buildings. No separate concourse passenger forecast is provided.',zh:'按T1主楼、T2、登机楼分别统计。全部包含建筑未定航班。不提供登机楼独立旅客预测。',ja:'T1本館・T2・搭乗棟を別々に集計。全体は建物未定便も含みます。搭乗棟単独の旅客予想は提供されません。'}[lang]}</p>}
-    {map.nextDay !== 'MISSING' ? (modelPlacement ? modelTarget && createPortal(<><AirportConceptModel map={map} lang={lang} evidence={evidence}/>{topReference}<AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/></>,modelTarget) : <><AirportConceptModel map={map} lang={lang} evidence={evidence}/><AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/></>) : unavailableModel}
+    {map.nextDay !== 'MISSING' ? (modelPlacement ? modelTarget && createPortal(<><AirportConceptModel map={map} lang={lang} evidence={evidence}/>{topReference}{lang!=='ko'&&<AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/>}</>,modelTarget) : <><AirportConceptModel map={map} lang={lang} evidence={evidence}/>{lang!=='ko'&&<AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/>}</>) : unavailableModel}
     <div className="date-nav-shortcuts" role="group" aria-label={copy.time[lang]} style={{ flexWrap: 'wrap' }}>
       {presets.map((value) => <button key={value} type="button" aria-pressed={preset === value} data-preset={value} style={{ whiteSpace: 'nowrap', flex: '0 0 auto' }}
         onClick={() => { setPreset(value); setSelected(null); }}>{copy.presets[value][lang]}</button>)}
