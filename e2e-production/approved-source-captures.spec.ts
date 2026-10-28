@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 // deployed revision before and after the suite; no response is intercepted.
 test('official route-country passenger section live 1440', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/ko/airport-countries#airport-route-passengers');
+  await page.goto('/ko/airport-countries?mode=passengers#airport-route-passengers');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const section = page.getByTestId('airport-route-passengers');
   await expect(section).toBeVisible();
@@ -32,7 +32,7 @@ test('whole-airport official hourly comparison live 1440', async ({ page }, test
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/ko/airport?terminal=all#airport-hourly-comparison');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  await expect(page.getByRole('tablist', { name: 'Terminal', exact: true })
+  await expect(page.getByRole('tablist', { name: '터미널 선택', exact: true })
     .getByRole('tab', { name: /전체/ })).toHaveAttribute('aria-selected', 'true');
   const section = page.locator('.airport-forecast');
   await expect(section.locator('#airport-hourly-comparison')).toBeVisible();
