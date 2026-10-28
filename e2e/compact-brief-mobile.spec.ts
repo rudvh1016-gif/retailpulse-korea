@@ -9,7 +9,8 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  await page.route('**/api/**',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
- await page.route('**/api/live/passenger-reference*',r=>r.fulfill({json:{status:'READY',month:'2026-09',data:{all:reference,T1:reference,T2:reference}}}));
+ const selectedReference={...reference,mean:width===320?120000:width===390?112403:60000};let referenceAvailable=true;
+ await page.route('**/api/live/passenger-reference*',r=>r.fulfill({json:referenceAvailable?{status:'READY',month:'2026-09',data:{all:selectedReference,T1:selectedReference,T2:selectedReference}}:{status:'UNAVAILABLE',month:'2026-09',data:null}}));
  await page.goto(`/${lang}?date=2026-10-19`);const report=page.locator('.focus-report');
  await expect(report.locator('.focus-today-title')).toHaveCount(0);
  await expect(report.locator('.focus-report-date')).toContainText('2026-10-19');
@@ -39,10 +40,16 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  if(width<1000){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
  const calculation=report.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
  await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size','12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
- const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size','12px');
+ const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size','11px');await expect(parts).toHaveCSS('font-weight','400');
+ for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size','11px');await expect(basis).toHaveCSS('font-weight','400');}
+ const change=report.locator('.focus-comparison-change'),signed=change.locator(':scope > .glance-count-change');
+ await expect(signed).toHaveAttribute('data-direction',width===320?'down':width===390?'neutral':'up');
+ if(width===320){await expect(change).toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toContainText('△');await expect(change.locator('.focus-passenger-rate .change-rate')).toHaveCSS('color','rgb(161, 45, 63)');}
+ else {await expect(change).not.toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toHaveCSS('color',width===390?'rgb(89, 99, 110)':'rgb(36, 89, 166)');}
  const label=(await toggle.locator(':scope > span').first().boundingBox())!,partBox=(await parts.boundingBox())!;expect(partBox.y-label.y-label.height).toBeGreaterThanOrEqual(0);expect(partBox.y-label.y-label.height).toBeLessThanOrEqual(3);
  await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
  // Stress narrow columns without altering fixture/source calculations.
  await report.locator('.focus-metric-total').first().evaluate(node=>{node.textContent='1,234,567,890 people';});
  expect(await report.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ if(lang==='ko'&&width===320){referenceAvailable=false;await page.reload();await expect(report.locator('.focus-passenger-parts')).toContainText('103,124');await expect(report.locator('.focus-comparison-change')).toHaveCount(0);const missing=report.locator('.focus-passenger-comparison-core');await expect(missing).toContainText('같은 기준의 비교자료 확인 중');await expect(missing).toHaveCSS('font-size','11px');await expect(missing).not.toHaveCSS('color','rgb(161, 45, 63)');}
 });
