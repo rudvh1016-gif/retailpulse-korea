@@ -14,7 +14,7 @@ export function PassengerBriefComparison({total,day,baseline,parts,lang='ko'}:{t
  const missing=baseline?.missingDates.length??0;
  return <div className="focus-passenger-comparison">{change
   ?<>
-   <p className="focus-passenger-comparison-core"><span className="focus-comparison-basis">{collectedDayComparisonCopy(lang,true)}{' ('}{baseline!.month} {number.format(change.mean)}{t('명)',' people)','人)','人)')}</span>{' '}<span className="focus-comparison-change">
+   <p className="focus-passenger-comparison-core"><span className="focus-comparison-basis">{collectedDayComparisonCopy(lang,true)}{' ('}{baseline!.month}{' '}<span className="focus-comparison-mean"><span className="focus-comparison-mobile-label">{t('일평균 ','daily mean ','日均','日平均 ')}</span>{number.format(change.mean)}{t('명)',' people)','人)','人)')}</span></span>{' '}<span className="focus-comparison-change">
     <CountChange integer delta={change.delta} format={value=>number.format(value)} lang={lang} unit={t('명/일',' people/day','人/天','人/日')}/>{' '}
     {change.delta>0?t('증가','increase','增加','増加'):change.delta<0?t('감소','decrease','减少','減少'):t('차이 없음','no change','无变化','変化なし')}{' '}
     {change.percent===null?<span className="focus-passenger-zero-basis">{t('기준값 0명 · 증감률 계산 불가','Zero baseline · percentage change unavailable','基准值为0人 · 无法计算变化率','基準値0人 · 増減率は算出不可')}</span>:<span className="focus-passenger-rate">(<ChangeRate value={change.percent} lang={lang}/>)</span>}

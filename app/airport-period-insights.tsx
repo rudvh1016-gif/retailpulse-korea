@@ -38,8 +38,16 @@ function PeriodFrame({view,date}:{view:View;date?:string|null}){
 }
 function KoreanGlance({children,date}:{children:ReactNode;date?:string|null}){
  const query=useQuery(),raw=query.get('insight'),view=tabs.some(([key])=>key===raw)?raw!:'overview';
+ const tabStrip=useRef<HTMLDivElement>(null),[moreTabs,setMoreTabs]=useState(false);
+ useEffect(()=>{
+  const strip=tabStrip.current;if(!strip)return;let active=true;
+  const update=()=>{if(active)setMoreTabs(strip.scrollWidth-strip.clientWidth-strip.scrollLeft>1);};
+  const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(update);observer?.observe(strip);
+  strip.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);void document.fonts.ready.then(update);update();
+  return()=>{active=false;observer?.disconnect();strip.removeEventListener('scroll',update);window.removeEventListener('resize',update);};
+ },[]);
  return <section className="airport-insight-shell" aria-label="인천공항 한눈에"><div className="glance-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>인천공항 한눈에</h1></div>
-  <div className="airport-insight-tabs" role="tablist" aria-label="공항 한눈에 보기 선택">{tabs.map(([key,label],i)=><button key={key} id={'airport-insight-tab-'+key} role="tab" aria-selected={view===key} aria-controls={key==='overview'?'airport-insight-overview':'airport-insight-analysis'} tabIndex={view===key?0:-1} onClick={()=>navigate('insight',key)} onKeyDown={e=>tabKeys(e,i,tabs.length,n=>navigate('insight',tabs[n][0]))}>{label}</button>)}</div>
+  <div className="airport-insight-tabs-wrap"><div ref={tabStrip} className="airport-insight-tabs" role="tablist" aria-label="공항 한눈에 보기 선택">{tabs.map(([key,label],i)=><button key={key} id={'airport-insight-tab-'+key} role="tab" aria-selected={view===key} aria-controls={key==='overview'?'airport-insight-overview':'airport-insight-analysis'} tabIndex={view===key?0:-1} onClick={()=>navigate('insight',key)} onKeyDown={e=>tabKeys(e,i,tabs.length,n=>navigate('insight',tabs[n][0]))}>{label}</button>)}</div><span className="airport-insight-more" data-visible={moreTabs} aria-hidden="true"/></div>
   <div id="airport-insight-overview" role="tabpanel" aria-labelledby="airport-insight-tab-overview" hidden={view!=='overview'}>{children}</div>
   {view!=='overview'&&<div id="airport-insight-analysis" role="tabpanel" aria-labelledby={'airport-insight-tab-'+view}><PeriodFrame key={date??'today'} date={date} view={view as View}/></div>}
  </section>;

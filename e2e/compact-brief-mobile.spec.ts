@@ -32,17 +32,33 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  expect(await page.locator('.airport-flow-dot').evaluateAll(nodes=>nodes.every(n=>n.parentElement?.matches('.glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title')))).toBe(true);
  if(lang==='ko'&&width<=700){
   const tabs=page.locator('.airport-insight-tabs:not(.country-tabs)'),buttons=tabs.getByRole('tab');await expect(buttons).toHaveCount(5);
+  const more=page.locator('.airport-insight-more');await expect(more).toHaveAttribute('data-visible','true');await expect(more).toBeVisible();
+  const heading=(await page.locator('.airport-insight-shell > .glance-heading h1').boundingBox())!,stripStart=(await tabs.boundingBox())!,reportStart=(await report.boundingBox())!.x+12;
+  expect(Math.abs(heading.x-reportStart)).toBeLessThanOrEqual(3);expect(Math.abs(stripStart.x-reportStart)).toBeLessThanOrEqual(3);
   const boxes=await buttons.evaluateAll(nodes=>nodes.map(n=>{const b=n.getBoundingClientRect();return {y:b.y,height:b.height,size:getComputedStyle(n).fontSize};}));
   for(const box of boxes){expect(box.y).toBe(boxes[0].y);expect(box.height).toBeGreaterThanOrEqual(48);expect(box.size).toBe('13px');}
   await buttons.first().focus();await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
+  await expect(more).toHaveAttribute('data-visible','false');await expect(more).toBeHidden();
   const selected=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;expect(selected.x).toBeGreaterThanOrEqual(strip.x-1);expect(selected.x+selected.width).toBeLessThanOrEqual(strip.x+strip.width+1);
   await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');await expect(report).toBeVisible();
+  await expect(more).toHaveAttribute('data-visible','true');
  }
  if(width<1000){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
  const calculation=report.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
  await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size','12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
- const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size','11px');await expect(parts).toHaveCSS('font-weight','400');
- for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size','11px');await expect(basis).toHaveCSS('font-weight','400');}
+ if(width<=700){
+  const reference=report.locator('.focus-comparison-basis'),mean=reference.locator('.focus-comparison-mean'),label=toggle.locator(':scope > span').first();
+  await expect(label).toHaveCSS('font-size','10px');await expect(mean).toHaveCSS('display','block');await expect(mean.locator('.focus-comparison-mobile-label')).toBeVisible();
+  const first=await reference.boundingBox(),second=await mean.boundingBox();expect(second!.y).toBeGreaterThan(first!.y);
+  const controls=page.locator('.glance-controls'),flowTitle=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');
+  const textStart=(await report.boundingBox())!.x+12,menu=(await controls.locator('button').first().boundingBox())!,note=(await page.locator('.glance-shared-note').boundingBox())!,flow=(await flowTitle.boundingBox())!;
+  const menuText=await controls.locator('button').first().evaluate(node=>{const text=[...node.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent?.trim());if(!text)return null;const range=document.createRange();range.selectNodeContents(text);return range.getBoundingClientRect().x;});
+  expect(menu.x).toBeGreaterThanOrEqual(8);expect(menuText).not.toBeNull();expect(Math.abs(menuText!-textStart)).toBeLessThanOrEqual(3);expect(Math.abs(note.x-textStart)).toBeLessThanOrEqual(3);expect(Math.abs(flow.x-textStart)).toBeLessThanOrEqual(3);
+  await expect(left).toHaveCSS('font-size','16px');await expect(right).toHaveCSS('font-size','14px');await expect(report.locator('.focus-metric-total').first()).toHaveCSS('font-size','20px');await expect(report.locator('.focus-comparison-change')).toHaveCSS('font-size','14px');
+  await expect(report.locator('.focus-selected-country-changes:not(.focus-return-context)').first()).toHaveCSS('border-bottom-width','0px');await expect(report).toHaveCSS('border-top-width','1px');
+ }else {await expect(report.locator('.focus-comparison-mobile-label')).toBeHidden();await expect(toggle.locator(':scope > span').first()).toHaveCSS('font-size','12px');}
+ const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size',width<=700?'10px':'11px');await expect(parts).toHaveCSS('font-weight','400');
+ for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size',width<=700?'10px':'11px');await expect(basis).toHaveCSS('font-weight','400');}
  const change=report.locator('.focus-comparison-change'),signed=change.locator(':scope > .glance-count-change');
  await expect(signed).toHaveAttribute('data-direction',width===320?'down':width===390?'neutral':'up');
  if(width===320){await expect(change).toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toContainText('△');await expect(change.locator('.focus-passenger-rate .change-rate')).toHaveCSS('color','rgb(161, 45, 63)');}

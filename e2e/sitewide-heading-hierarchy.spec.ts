@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page,textScale=1){
   // The owner requested smaller guide copy; assert its exact hierarchy at both
   // normal size and 200% text enlargement, while retaining every overflow check.
   if(row.compactGuide)expect(row.size,`compact guide ${row.role}: ${row.text}`).toBe((row.role==='section'?18:15)*textScale);
-  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?(page.viewportSize()!.width<=700?16:18):row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);

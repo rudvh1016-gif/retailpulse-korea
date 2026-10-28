@@ -335,3 +335,22 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 
 /* Weekly official events: compact evidence, a little room between countries. */
 .focus-staff-calendar>p+p{margin-top:12px}.focus-staff-calendar>p>small{font-size:11px;font-weight:400;line-height:1.6}
+
+/* Mobile glance aligns controls and the flow with the report text column. */
+.focus-comparison-mobile-label{display:none}
+@media(max-width:700px){
+ .page-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:2px}
+ .airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}
+ .airport-focus-shell .glance-controls>div{margin-inline-start:-9px}
+ .airport-focus-shell .focus-report .focus-selected-country-changes:not(.focus-return-context){border-bottom:0}
+ .airport-focus-shell .focus-passenger-calculation>summary>span:first-child{font-size:10px}
+ .airport-focus-shell .focus-comparison-mean{display:block}
+ .airport-focus-shell .focus-comparison-mobile-label{display:inline}
+ :root body .airport-focus-shell.airport-focus-operating .focus-report .focus-figures-title[data-heading="subsection"]{font-size:16px!important}
+ .airport-focus-shell.airport-focus-operating .focus-report .focus-core-metric .focus-metric-label{font-size:14px}
+ .airport-focus-shell.airport-focus-operating .focus-report .focus-core-metric .focus-metric-total{font-size:20px}
+ .airport-focus-shell.airport-focus-operating .focus-report :is(.focus-comparison-change,.daily-comparison-change){font-size:14px}
+ .airport-focus-shell.airport-focus-operating .focus-report :is(.focus-comparison-basis,.daily-comparison-basis){font-size:10px!important}
+ .airport-focus-shell.airport-focus-operating .focus-report .focus-core-metric .focus-passenger-parts{font-size:10px}
+}
+@media(max-width:365px){.page-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:6px}.airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}}

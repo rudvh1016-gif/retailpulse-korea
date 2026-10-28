@@ -94,3 +94,11 @@
 .airport-month-flights [data-testid="airport-month-zones"] tbody td:last-child{font-size:16px;font-weight:600}
 .airport-month-flights .airport-month-source-summary{font-size:13px;line-height:1.6;margin:8px 0}
 .airport-month-flights .airport-month-source-summary a{display:inline-block;min-height:44px;align-content:center;text-underline-offset:3px}
+@media(max-width:700px){
+ .airport-focus-shell .airport-month-flights .airport-month-zone-title{font-size:16px}
+ .airport-focus-shell .airport-month-flights > .airport-month-table :is(table,caption){font-size:12px}
+ .airport-focus-shell .airport-month-flights [data-testid="airport-month-zones"] th{font-size:12px}
+ .airport-focus-shell .airport-month-flights [data-testid="airport-month-zones"] tbody td:nth-child(2){font-size:12px}
+ .airport-focus-shell .airport-month-flights [data-testid="airport-month-zones"] tbody td:nth-child(3),.airport-focus-shell .airport-month-flights [data-testid="airport-month-zones"] tbody td:last-child{font-size:14px}
+ .airport-focus-shell .airport-month-flights > details > summary{font-size:14px}
+}

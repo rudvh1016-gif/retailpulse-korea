@@ -109,7 +109,7 @@ test('daily-average core stays concise with closed basis and directional count i
   assert.match(core,total===61000?/\+1,000/:total===59000?/△ 1,000/:/0/);
   assert.match(basis,/^ class="focus-passenger-calculation">/);assert.match(basis,/1,320,000/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
-  if(lang==='ko'){assert.match(core,/지난달 자료가 확보된 날의 하루 평균과 비교 \(2026-09 60,000명\)/);assert.match(basis,/2026-09월-22일 MTD 예보 일평균/);}
+  if(lang==='ko'){assert.match(core,/지난달 자료가 확보된 날의 하루 평균과 비교 \(2026-09/);assert.match(core,/focus-comparison-mobile-label">일평균 <\/span>60,000명\)/);assert.match(basis,/2026-09월-22일 MTD 예보 일평균/);}
  }
  const css=readFileSync('app/airport-focus-preview.css','utf8');
  assert.match(css,/focus-passenger-calculation>summary[^}]*min-height:44px/);
