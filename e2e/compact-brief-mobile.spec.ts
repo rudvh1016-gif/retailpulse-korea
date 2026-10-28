@@ -16,6 +16,26 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  await expect(report.locator('.focus-report-date .heading-marker')).toHaveCount(0);
  const left=report.locator('.focus-figures-title'),right=report.locator('.focus-flight-metric > .focus-metric-label');
  await expect(left).toBeVisible();await expect(right).toBeVisible();
+ if(width<=700){
+  const box=(await report.boundingBox())!;expect(box.x).toBeCloseTo(8,0);expect(box.x+box.width).toBeCloseTo(width-8,0);
+  await expect(report.locator('.focus-report-lines')).toHaveCSS('column-gap','28px');
+ }
+ const commentary=report.locator('.focus-country-change-copy');await expect(commentary.first()).toBeVisible();
+ for(const row of await commentary.all()){await expect(row).toHaveCSS('font-size','12px');await expect(row.locator('b')).toHaveCSS('font-size','12px');}
+ await expect(report.locator('.focus-selected-country-changes:not(.focus-return-context)>small').first()).toHaveCSS('font-size','11px');
+ const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');
+ await expect(flow.locator('.airport-flow-check')).toHaveCount(4);
+ for(const check of await flow.locator('.airport-flow-check').all()){await expect(check).toHaveAttribute('aria-hidden','true');await expect(check).toHaveText('✓');await expect(check).toHaveCSS('font-size','11px');await expect(check).toHaveCSS('color','rgb(17, 17, 17)');}
+ await expect(page.locator('h1 .airport-flow-check,h2 .airport-flow-check')).toHaveCount(0);
+ if(width<=700){const a=(await flow.getByTestId('glance-key-growth').locator('small').boundingBox())!,b=(await flow.locator('.staff-brief-heading small').boundingBox())!;expect(b.y-a.y-a.height).toBeGreaterThanOrEqual(0);expect(b.y-a.y-a.height).toBeLessThanOrEqual(8);}
+ if(lang==='ko'&&width<=700){
+  const tabs=page.locator('.airport-insight-tabs:not(.country-tabs)'),buttons=tabs.getByRole('tab');await expect(buttons).toHaveCount(5);
+  const boxes=await buttons.evaluateAll(nodes=>nodes.map(n=>{const b=n.getBoundingClientRect();return {y:b.y,height:b.height,size:getComputedStyle(n).fontSize};}));
+  for(const box of boxes){expect(box.y).toBe(boxes[0].y);expect(box.height).toBeGreaterThanOrEqual(48);expect(box.size).toBe('13px');}
+  await buttons.first().focus();await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
+  const selected=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;expect(selected.x).toBeGreaterThanOrEqual(strip.x-1);expect(selected.x+selected.width).toBeLessThanOrEqual(strip.x+strip.width+1);
+  await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');await expect(report).toBeVisible();
+ }
  if(width<1000){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
  const calculation=report.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
  await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size','12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);

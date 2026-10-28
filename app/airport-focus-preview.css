@@ -306,3 +306,12 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 :root body .focus-passenger-calculation>summary>span:first-child{display:block}
 :root body :is(.focus-passenger-calculation,.focus-monthly-calculation)>p{font-size:12px;font-weight:400;line-height:1.5;margin:4px 0}
 .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{display:block;font-size:12px;font-weight:400;line-height:1.5;margin-top:2px}
+
+/* Compact route commentary; headline figures and event cards retain their scale. */
+.airport-focus-shell .focus-report .focus-selected-country-changes>p.focus-country-change-copy{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.airport-focus-shell .focus-report .focus-selected-country-changes>p.focus-country-change-copy>b{font-size:inherit}
+.airport-focus-shell .focus-report .focus-selected-country-changes:not(.focus-return-context)>small{font-size:11px;line-height:1.6}
+@media(max-width:700px){
+ .airport-focus-shell.airport-focus-operating .focus-report{box-sizing:border-box;width:calc(100vw - 16px);margin-inline:calc(50% - 50vw + 8px);padding-inline:12px}
+ .airport-focus-shell .focus-report .focus-report-lines{column-gap:28px}
+}

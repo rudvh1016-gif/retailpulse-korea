@@ -74,7 +74,7 @@ async function verifyHeadings(page:Page,textScale=1){
  // the whole current list, not an old name against its newly shifted neighbour.
  await expect(async()=>{
   for(const title of await headings.all()){
-   const text=(await title.innerText({timeout:100})).replace(/\s+/g,' ').trim();
+   const text=(await title.evaluate(node=>{const copy=node.cloneNode(true) as HTMLElement;copy.querySelectorAll('[aria-hidden="true"]').forEach(n=>n.remove());return copy.textContent??'';})).replace(/\s+/g,' ').trim();
    await expect(title).toHaveAccessibleName(text,{timeout:100});
   }
  }).toPass({timeout:8000,intervals:[100,250,500]});
