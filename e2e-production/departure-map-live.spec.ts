@@ -26,12 +26,20 @@ for (const width of [360, 1280]) {
     await expect(sides).toBeVisible();
     expect(flightRequests, "the map reads nothing until it is opened").toEqual([]);
 
-    const flightResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/live/flights" && response.ok());
+    const flightResponse = page.waitForResponse(async response => {
+      if(new URL(response.url()).pathname!=="/api/live/flights"||!response.ok())return false;
+      try{
+        const payload=await response.json() as FlightsPayload;
+        return payload.mode==='live-flights'&&payload.serviceDateKst===summary.serviceDateKst&&Array.isArray(payload.flights);
+      }catch{return false;} // A 200 header with an interrupted body is not a loaded response.
+    });
     await sides.getByTestId("departure-map-section").locator(":scope > summary").click();
     const map = sides.getByTestId("departure-map");
     await expect(map.or(sides.getByTestId("map-failed"))).toBeVisible({ timeout: 20_000 });
     expect(await sides.getByTestId("map-failed").count(), "the flight records load").toBe(0);
-    expect(flightRequests.length).toBe(1);
+    expect(flightRequests.length).toBeGreaterThanOrEqual(1);
+    expect(flightRequests.length).toBeLessThanOrEqual(2);
+    expect(new Set(flightRequests).size,'one stored date even after a transport retry').toBe(1);
     const response = await flightResponse;
     const flights = await response.json() as FlightsPayload;
     expect(new URL(response.url()).searchParams.get("date"), "map and card use the same service date").toBe(summary.serviceDateKst);
