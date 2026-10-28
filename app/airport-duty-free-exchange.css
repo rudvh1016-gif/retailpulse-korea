@@ -34,6 +34,15 @@
 .duty-free-monthly-chart figcaption,.duty-free-month-list{color:var(--muted);font-size:11px}
 .duty-free-rate-detail .duty-free-month-list{list-style:none;padding:0;margin:8px 0}
 .duty-free-month-list li{padding:4px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.duty-free-recent-plot{min-height:44px;touch-action:pan-y;cursor:crosshair;border-radius:4px}
+.duty-free-recent-plot:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.duty-free-recent .duty-free-month-readout{min-height:1.5em;margin:4px 0;font-size:12px}
+.duty-free-recent-tooltip text{fill:var(--ink)}
+.duty-free-recent-tooltip rect{filter:drop-shadow(0 1px 2px #0002)}
+.duty-free-recent-source{font-size:12px}
+.duty-free-recent-source>summary,.duty-free-recent-source>a{min-height:44px;box-sizing:border-box;display:flex;align-items:center;width:fit-content}
+.duty-free-recent-source ul{padding-left:16px;margin:4px 0}
+.duty-free-recent-source li{overflow-wrap:anywhere;font-size:12px}
 
 /* The expanded exchange sheet is a separate, opaque reading surface, not a modal. */
 .airport-duty-free-exchange .duty-free-rate-detail{--ink:#202830;--muted:#586571;--line:#dce2e7;--paper:#fff;color:var(--ink);background:#fff;border:1px solid #d1d9e0;border-radius:12px;box-shadow:0 12px 36px rgba(24,39,53,.16),0 2px 6px rgba(24,39,53,.06);padding:0 14px 12px;isolation:isolate;scroll-padding-top:64px}
