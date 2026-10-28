@@ -26,7 +26,13 @@ for (const width of [360, 1280]) {
     await expect(sides).toBeVisible();
     expect(flightRequests, "the map reads nothing until it is opened").toEqual([]);
 
-    const flightResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/live/flights" && response.ok());
+    const flightResponse = page.waitForResponse(async response => {
+      if(new URL(response.url()).pathname!=="/api/live/flights"||!response.ok())return false;
+      try{
+        const payload=await response.json() as FlightsPayload;
+        return payload.mode==='live-flights'&&payload.serviceDateKst===summary.serviceDateKst&&Array.isArray(payload.flights);
+      }catch{return false;} // A 200 header with an interrupted body is not a loaded response.
+    });
     await sides.getByTestId("departure-map-section").locator(":scope > summary").click();
     const map = sides.getByTestId("departure-map");
     await expect(map.or(sides.getByTestId("map-failed"))).toBeVisible({ timeout: 20_000 });
