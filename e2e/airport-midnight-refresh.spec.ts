@@ -23,18 +23,18 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await expect(model.getByTestId('model-gates-pending')).toContainText(pending[lang]);
  await expect(model.getByTestId('model-gates-pending')).toContainText('3');
  await expect(model.locator('.airport-concept-counts [data-side]')).toHaveCount(0);
- await expect(page.getByTestId('map-zone-countries').locator('.airport-zone-country-grid [data-side]')).toHaveCount(0);
+ if(lang!=='ko')await expect(page.getByTestId('map-zone-countries').locator('.airport-zone-country-grid [data-side]')).toHaveCount(0);
  await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
  await expect(page.locator('.airport-forecast')).toContainText('2,900');
  await expect(page.locator('.airport-view .view-intro p:not(.eyebrow)')).toHaveCount(0);
  await expect(page.locator('body')).not.toContainText(/오늘\(.*\) 인천공항 출국 예상 승객이 가장 많은 시간|Incheon Airport's busiest departure hour|仁川机场官方预告出境人数最多的时段|公式予告で出国者が最も多い時間/);
  await expect(page.getByTestId('airport-weather')).toHaveCount(0);
  await expect(page.locator('.airport-checkpoints')).toBeVisible();
- const details=page.getByTestId('country-unverified-details');await details.locator('summary').press('Enter');await expect(details).toHaveAttribute('open');
- await details.locator('summary').press('Space');await expect(details).not.toHaveAttribute('open');
+ if(lang!=='ko'){const details=page.getByTestId('country-unverified-details');await details.locator('summary').press('Enter');await expect(details).toHaveAttribute('open');await details.locator('summary').press('Space');await expect(details).not.toHaveAttribute('open');}
  expect(await tofuCharacters(model)).toEqual([]);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
  if(lang==='ko'&&[390,1280].includes(width)){await model.scrollIntoViewIfNeeded();await page.screenshot({path:info.outputPath(`midnight-model-${width}.png`)});}
+ if(lang==='ko'){await page.goto(`/ko/airport-countries?mode=zones&date=${date}&building=T2`);const countries=page.getByTestId('map-zone-countries');await expect(countries.locator('.airport-zone-country-grid [data-side]')).toHaveCount(0);const details=countries.getByTestId('country-unverified-details');await details.locator('summary').press('Enter');await expect(details).toHaveAttribute('open');await details.locator('summary').press('Space');await expect(details).not.toHaveAttribute('open');}
 });
 
 test('mounted views refresh after TTL and focus, deduplicate and skip background polling',async({page})=>{
