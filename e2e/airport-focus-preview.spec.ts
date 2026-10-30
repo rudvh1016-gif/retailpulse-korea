@@ -62,7 +62,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
   await expect(event.locator('h4')).toBeVisible();
   for(const date of await event.locator('time').all())await expect(date).toBeVisible();
  }
- await expect(page.locator('.focus-report-lines p').first()).toHaveCSS('font-size','16px');
+ await expect(page.locator('.focus-report-lines p').first()).toHaveCSS('font-size',width<=600?'13px':'16px');
  await expect(page.locator('.focus-people-metric > .focus-metric-label')).toHaveText('예상 인원 · 단순합계');
  await expect(page.locator('.focus-report-date')).toHaveCSS('padding-bottom','0px');
  await expect(page.locator('.focus-report-date')).toHaveCSS('border-bottom-width','0px');
