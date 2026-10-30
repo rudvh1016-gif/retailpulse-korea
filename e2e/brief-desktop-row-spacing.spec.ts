@@ -22,7 +22,7 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  await expect(figuresTitle).toHaveText(({ko:'출국객·항공편',en:'Passengers and flights',zh:'出境旅客与航班',ja:'出国者・便数'} as Record<string,string>)[lang]);
  await expect(figuresTitle).toHaveAttribute('data-heading','subsection');
  await expect(figuresTitle).toHaveCSS('font-size',width<=600?'15px':'18px');
- await expect(report.locator('.focus-report-date')).toHaveCSS('font-size','12px');
+ await expect(report.locator('.focus-report-date')).toHaveCSS('font-size',lang==='zh'&&width<=600?'10px':'12px');
  const parent=report.locator('.focus-report-title > h2');
  await expect(parent).toHaveCSS('font-size','22px');await expect(parent).toHaveAttribute('data-heading','section');
  const parentSize=await parent.evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
