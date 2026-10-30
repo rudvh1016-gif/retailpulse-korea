@@ -184,7 +184,7 @@ for(const width of [320,390,1440])test(`mobile airport controls and country head
  await page.goto('/ko/airport-countries?date=2026-10-19');
  const heading=page.getByTestId('daily-country-heading');await expect(heading).toBeVisible();
  if(width<=600){
-  const lines=await heading.evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);return range.getClientRects().length});
+  const lines=await heading.evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);return new Set(Array.from(range.getClientRects(),rect=>Math.round(rect.top))).size});
   expect(lines).toBe(1);
  }
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
