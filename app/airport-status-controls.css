@@ -1,0 +1,28 @@
+/* The three airport-status selectors have room between choices, while the
+   quiet rule ends with the choices rather than crossing the whole page. */
+@media (max-width: 600px) {
+  :root body .app .airport-view > #airport-data-flow,
+  :root body .app .airport-view > .airport-context-nav {
+    width: max-content;
+    max-width: 100%;
+    gap: clamp(16px, 4.5vw, 20px);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  :root body .app .airport-view > #airport-data-flow {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  :root body .app .airport-view > #airport-data-flow::-webkit-scrollbar {
+    display: none;
+  }
+
+  :root body .app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts {
+    width: max-content;
+    max-width: 100%;
+    flex: 0 1 auto;
+    gap: clamp(16px, 4.5vw, 20px);
+    margin-inline: auto;
+  }
+}
