@@ -59,7 +59,7 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
   await expect(frame.getByLabel('기준 기간 시작일')).toHaveValue('2026-09-12');
   if(name==='항공편 주말이 더 많나요?'){
    await expect(frame.locator('#takeaway')).toContainText('출발편이 가장 많은 요일');
-   await expect(frame.locator('#boundary')).toContainText('출발편 평균');
+   await expect(frame.locator('#boundary')).toContainText(/요일 \d+일 평균 · 휴일·계절 영향 미분리/);
   }
  }
  expect(historyRequests).toBe(1);
@@ -138,7 +138,7 @@ test('failed calendar leaves flights visible and says unknown, never no holidays
  await page.goto('/airport-period/frame.html?date=2026-10-19&view=holiday');
  await expect(page.locator('.holiday-value')).toHaveCount(2);
  await expect(page.locator('#holiday-calendar-context')).toContainText('자료 미확인');
- await expect(page.locator('#holiday-suggestions')).toContainText('확인된 연휴 추천 자료 없음');
+ await expect(page.locator('#holiday-suggestions')).toContainText('연휴 추천 미확인 · 날짜 직접 선택');
  await expect(page.locator('#holiday-calendar-context')).not.toContainText('조정 휴무 없음');
 });
 test('More explains airport roles with compact type and notice links match the release',async({page})=>{

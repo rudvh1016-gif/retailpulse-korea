@@ -18,7 +18,7 @@ The prior copy audit, PR #507, is already merged. It explicitly left the new Kor
 
 ## Invariants and boundaries
 
-No collector, provider request, data store, API key, payment, schedule, schema, deployment configuration or arithmetic change is made. Counts, official dates, URLs, country codes and source records are not translated or relabelled. Missing dates remain excluded rather than becoming zero. Flight destinations remain distinct from passenger nationality, and observed holiday-period differences do not establish causality or sales forecasts.
+No collector, provider request, data store, API key, payment, schedule, schema, deployment target or arithmetic change is made. The exact Chinese frame URLs receive the same strict same-origin framing policy as the existing Korean frame; application pages retain DENY. Counts, official dates, URLs, country codes and source records are not translated or relabelled. Missing dates remain excluded rather than becoming zero. Flight destinations remain distinct from passenger nationality, and observed holiday-period differences do not establish causality or sales forecasts.
 
 The analysis renderer translates exact presentation literals before DOM insertion, not a post-hydration text rewrite. Numeric tokens, markup/control attributes and the static iframe control tree have parity tests. Korean feature behavior remains unchanged. A subsequent owner screenshot request also shortens gray comparison notes in both languages without removing calculation/source limitations; English and Japanese retain their prior screens. Unknown future Korean provider holiday names are explicitly labelled as Korean originals instead of receiving an invented translation.
 
@@ -39,3 +39,14 @@ The third screenshot (IMG_1717) was also inspected directly. Its holiday-color e
 ## Local pre-PR results
 
 On the integrated tree: build and typecheck pass; lint has 0 errors (24 existing warnings); 2,551 unit tests pass with test concurrency bounded to 4; all 53 rendered-HTML checks pass; secret scan passes. An unbounded local run under concurrent build load timed out in the unrelated existing GC probe; it passed in isolation and in the full bounded run without changing its 10-second assertion. Browser discovery has 1,999 unique tests in four complete disjoint shards; 22 newly added cases are discovered, not yet executed.
+
+## Initial PR CI and corrective audit
+
+PR #523, head `4f7ac3ad922baf746ffc5e59da4cf45751bfaa63`, ran normal remote CI [41090723313](https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/41090723313). Build/typecheck/secret scan, 2,551 unit cases, 53 rendered-HTML checks and five critical browser cases passed. The full 1,999-case browser suite had 42 failures (1,957 passed); the overlapping 81-case country job had five failures (76 passed).
+
+The failures exposed one genuine integration omission: the new Chinese frame was blocked by the global framing policy. The correction adds only its three exact static/normalized paths to the existing strict SAMEORIGIN CSP in both application headers and Workers asset headers. External framing and application-page framing remain forbidden. Rendered-header checks cover both locales, both serving paths and an unreviewed document path.
+
+The remaining failures were old Chinese routes that still expected country rankings inside the airport page, two old shortened-copy expectations and a new guide test whose button name omitted its visible arrow. Tests now follow the same ko/zh country-zone route and localized controls without removing numeric, source, font, keyboard or geometry assertions. The initial real browser run already passed the shared holiday-key sweep for all 50 stored destinations in both languages at 320/360/390/430px, enlarged-text wrapping, and desktop/missing-data boundaries. Chinese 320px and Korean 360px artifact screenshots were inspected directly. The corrected final head still requires fresh remote CI; this is not a deployment claim.
+
+The correction was independently reviewed read-only for header scope, unchanged assertions and exact Chinese iframe expectations. Local rebuilt rendered checks pass 53/53, affected unit/security/protected-file checks pass 64/64, typecheck passes and scoped lint has zero errors/warnings. The first protected-file run correctly rejected the newly appended asset headers; an exact added-block reverse fixture now preserves the original hash instead of replacing it. No browser/server was started locally.
+Working-tree and all 340 reachable-history revisions pass the full secret scan. Browser discovery still reports the same 1,999 tests in 152 files; no test was removed or skipped to clear failures.

@@ -32,8 +32,8 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
         ...(isStagingDeployment ? [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }] : []),
       ],
-    }, ...["/airport-period/frame.html", "/airport-period/frame", "/airport-period/frame/"].map(source => ({
-      // This public chart document is embedded by our own Korean analysis tabs.
+    }, ...["/airport-period/frame.html", "/airport-period/frame", "/airport-period/frame/", "/airport-period/frame-zh.html", "/airport-period/frame-zh", "/airport-period/frame-zh/"].map(source => ({
+      // This public chart document is embedded by our own Korean and Chinese analysis tabs.
       // Keep DENY on every application page and reject external framing here too.
       source,
       headers: [

@@ -14,12 +14,12 @@ for(const {lang,width}of cases)test(`domestic totals and individual transit evid
  await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',serviceDateKst:date,basis:'COLLECTED_FLIGHT_RECORDS',flights:rows,truncated:false,retrievedAt:stamp}}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:monthly}));await page.goto(`/${lang}/airport`);
  const domestic={ko:'국내 목적지',en:'Domestic destinations',zh:'国内目的地',ja:'国内の目的地'}[lang],transit={ko:'국내 환승편',en:'Domestic transit flight',zh:'国内中转航班',ja:'国内乗り継ぎ便'}[lang];
- if(lang==='ko')await page.goto(`/ko/airport-countries?mode=zones&date=${date}&building=T2`);
+ if(lang==='ko'||lang==='zh')await page.goto(`/${lang}/airport-countries?mode=zones&date=${date}&building=T2`);
  const month=page.getByTestId('airport-month-flights'),card=month.locator('li[data-country="KR"]');await expect(card.locator('h5')).toHaveText(domestic);await expect(card.locator('h5 img')).toHaveCount(0);await expect(card.locator('[data-period=current] strong')).toHaveText('4');await expect(month.locator('.airport-month-total strong')).toHaveText('5 → 5');await expect(card).not.toContainText(transit);
  const countries=month.getByTestId('month-list-destinationCountries');await countries.locator('summary').click();await expect(countries.locator('tbody th')).toContainText([domestic]);
  const registry=month.getByTestId('month-list-registrationCountries');await registry.locator('summary').click();await expect(registry.locator('tbody th')).toContainText([new Intl.DisplayNames([lang],{type:'region'}).of('KR')!]);await expect(registry).not.toContainText(domestic);
  // The duplicate browser is absent from the model; its full retained browser is tested on the legacy business screen.
- if(lang==='ko')await page.goto('/ko/airport');
+ if(lang==='ko'||lang==='zh')await page.goto(`/${lang}/airport`);
  await expect(page.getByTestId('departure-map').getByTestId('map-flights')).toHaveCount(0);
  await page.evaluate(()=>localStorage.setItem('koretail-business-v1',JSON.stringify({version:1,place:'airport',terminal:'T2',side:null,hours:null})));
  await page.goto(`/${lang}/business`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');

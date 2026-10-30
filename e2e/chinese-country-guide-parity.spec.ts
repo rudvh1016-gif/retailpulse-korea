@@ -63,7 +63,7 @@ test('Chinese missing monthly records do not become measured zeroes',async({page
 });
 test('Chinese More guide opens with keyboard and keeps all four locale links',async({page})=>{
  await fixtures(page);await page.goto('/zh/more');
- const guide=page.getByTestId('airport-usage-guide');await expect(guide).not.toHaveAttribute('open');await page.getByRole('button',{name:'仁川机场使用指南',exact:true}).press('Enter');await expect(guide).toHaveAttribute('open');
+ const guide=page.getByTestId('airport-usage-guide');await expect(guide).not.toHaveAttribute('open');await page.getByRole('button',{name:'仁川机场使用指南 ›',exact:true}).press('Enter');await expect(guide).toHaveAttribute('open');
  for(const path of ['/zh','/zh/airport','/zh/airport-countries','/zh/airport-prepare'])await expect(guide.locator(`a[href="${path}"]`)).toBeVisible();
  for(const item of await page.locator('.site-usage-guide > details').all())if(await item.getAttribute('open')===null)await item.locator(':scope > summary').press('Enter');
  await chineseOnly(page.locator('.site-usage-guide'));
