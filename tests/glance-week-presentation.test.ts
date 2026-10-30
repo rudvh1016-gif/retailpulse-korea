@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {createElement as h} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
@@ -17,4 +18,10 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: weekly count uni
  assert.match(missing,/①/);assert.match(missing,/2026-10-23/);assert.doesNotMatch(missing,/change-rate|0%/);
  const zero=renderToStaticMarkup(h(GlanceWeekComparison,{total:90,day:reference.day,scope:'all',reference:{...reference,passengers:{all:0,T1:0,T2:0}},kind:'people',lang}));
  assert.doesNotMatch(zero,/%/);assert.match(zero,/90/);
+});
+
+test('weekly basis keeps the same explicit small-type precedence as the existing daily-average basis',()=>{
+ const css=readFileSync('app/airport-focus-preview.css','utf8');
+ assert.match(css,/\.focus-week-basis\{display:block;font-size:11px!important;/);
+ assert.match(css,/@media\(max-width:600px\)\{[\s\S]*?\.focus-week-basis\{font-size:10px!important\}/);
 });
