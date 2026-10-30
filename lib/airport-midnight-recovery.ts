@@ -45,7 +45,7 @@ export function planAirportMidnightRecovery(nowIso: string, coverage: Coverage, 
   const targetDate = kstDayOf(nowIso);
   if (coverage.today !== targetDate) return { eligible: false, reason: 'COVERAGE_DATE_MISMATCH' };
   if (coverage.state === 'CURRENT') return { eligible: false, reason: 'ALREADY_CURRENT' };
-  if (now < Date.parse(targetDate + 'T01:15:00+09:00') || now >= Date.parse(targetDate + 'T03:00:00+09:00'))
+  if (now < Date.parse(targetDate + 'T00:00:00+09:00') || now >= Date.parse(targetDate + 'T06:00:00+09:00'))
     return { eligible: false, reason: 'OUTSIDE_FALLBACK_WINDOW' };
   if (!snapshot.complete) return { eligible: false, reason: 'WORKFLOW_READ_UNVERIFIED' };
   if (sourceBlocked) return { eligible: false, reason: 'SOURCE_BLOCKED' };

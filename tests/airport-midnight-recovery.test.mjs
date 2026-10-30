@@ -58,8 +58,8 @@ test('missing dispatch permission stops before admission even in a hypothetical 
 test('eligibility preserves grace, date, active originals, prior failed attempts and unknown reads', () => {
   const good = { complete: true, early: [], active: [] };
   for (const [now, coverage, snapshot, blocked, reason] of [
-    ['2026-10-10T16:14:59Z', MISSING, good, false, 'OUTSIDE_FALLBACK_WINDOW'],
-    ['2026-10-10T18:00:00Z', MISSING, good, false, 'OUTSIDE_FALLBACK_WINDOW'],
+
+    ['2026-10-10T21:00:00Z', MISSING, good, false, 'OUTSIDE_FALLBACK_WINDOW'],
     [NOW, { ...MISSING, today: '2026-10-10' }, good, false, 'COVERAGE_DATE_MISMATCH'],
     [NOW, CURRENT, good, false, 'ALREADY_CURRENT'],
     [NOW, MISSING, { ...good, complete: false }, false, 'WORKFLOW_READ_UNVERIFIED'],
@@ -231,4 +231,19 @@ test('run-list reads use the job token, fall back to the public read once, and n
   // The 2026-10-15 failure, now with its cause in the message.
   await assert.rejects(readAirportRunSnapshot(NOW, async () => new Response('{"message":"API rate limit exceeded"}',
     { status: 403, headers: { 'x-ratelimit-remaining': '0' } })), /workflow_read_unavailable: HTTP 403 rate limit exhausted/);
+});
+
+// Moving upstream pagination invalidates this snapshot, but a wholly new scan
+// may succeed. No partial rows or arbitrary validation failures qualify.
+test('A1 population drift alone earns a bounded fresh scan and unblocks the next day', async()=>{
+ const {shouldRetryAirport}=await import('../lib/congestion-retry.ts');
+ const detail='failureStage=FETCH failureClass=VALIDATION causeCode=A1_TODAY_POPULATION_CHANGED_PAGE_32 attempts=1 elapsedMs=0 retryExhausted=false';
+ const {db}=setup();
+ for(const [value,allowed] of [[detail,true],[detail.replace('POPULATION_CHANGED','DUPLICATE_SOURCE_ROW'),false],[detail+' failureClass=AUTH',false],[detail.replace('FETCH','STORE'),false]]){
+  db.raw.prepare("INSERT INTO source_health(source_id,status,detail,schema_version) VALUES(?,'ERROR',?,'airport-v1') ON CONFLICT(source_id) DO UPDATE SET detail=excluded.detail").run(A1_SOURCE,value);
+  assert.equal(await airportMidnightSourceBlocked(db),!allowed);
+  assert.equal(shouldRetryAirport(JSON.stringify({source:'airport_recent',status:'ERROR',detail:value})),allowed);
+ }
+ assert.equal(planAirportMidnightRecovery('2026-10-10T15:07:00Z',MISSING,{complete:true,early:[],active:[]},false).eligible,true);
+ assert.equal(planAirportMidnightRecovery('2026-10-10T19:22:00Z',MISSING,{complete:true,early:[],active:[]},false).eligible,true);
 });
