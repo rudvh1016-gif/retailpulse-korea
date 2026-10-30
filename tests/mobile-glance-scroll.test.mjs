@@ -10,7 +10,11 @@ test('glance arrows scroll the rail independently of URL selection and observe c
  assert.match(source,/aria-label="다음 메뉴 보기" aria-controls="airport-glance-tabs" disabled=\{!edges\.next\}/);
  assert.match(source,/document\.activeElement===previousButton\.current\)pendingFocus\.current='next'/);
  assert.match(source,/document\.activeElement===nextButton\.current\)pendingFocus\.current='previous'/);
- assert.match(source,/useLayoutEffect\(\(\)=>\{const button=pendingFocus[\s\S]*?button\?\.focus\(\{preventScroll:true\}\)/);
+ assert.match(source,/useLayoutEffect\(\(\)=>\{\s*const button=pendingFocus[\s\S]*?button\?\.focus\(\{preventScroll:true\}\)/);
+ assert.match(source,/strip\?\.contains\(active\)\)active\.scrollIntoView\(\{block:'nearest',inline:'nearest',behavior:'instant'\}\)/);
+ assert.match(source,/if\(keyboardNavigation\.current\)revealFocusedGlanceTab\(strip\.current\)/);
+ for(const event of ['onPointerDownCapture','onWheelCapture'])assert.ok(source.includes(event+'={()=>{keyboardNavigation.current=false;}}'));
+ assert.match(source,/const scroll=\(direction:number\)=>\{keyboardNavigation\.current=false;/);
 });
 test('arrow layout stays phone-only with touch targets and focus indication',()=>{
  const css=postcss.parse(read('app/airport-period-insights.css'));

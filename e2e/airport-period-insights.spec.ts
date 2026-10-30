@@ -261,8 +261,9 @@ for(const width of [320,390,430])test(`phone glance arrows reveal all menus with
  await page.screenshot({path:testInfo.outputPath(`phone-nav-arrow-end-${width}.png`),fullPage:true});
  for(let i=0;i<8;i++){const before=await strip.evaluate(node=>node.scrollLeft);if(before<=1)break;await previous.click();await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeLessThan(before);}await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBe(0);await expect(next).toBeEnabled();await expect(previous).toHaveCount(0);await expect(next).toBeFocused();
  // Existing swipe/trackpad scroll, selected tabs and history remain independent of the arrow buttons.
- await strip.evaluate(node=>{node.scrollLeft=120;});await expect(previous).toBeVisible();
- await buttons.first().focus();await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
+ await buttons.first().focus();await page.keyboard.press('Home');await strip.hover();await page.mouse.wheel(160,0);await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeGreaterThan(0);await expect(previous).toBeVisible();
+ await page.keyboard.press('Home');await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBe(0);await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
+ await expect.poll(()=>strip.evaluate(node=>{const selected=node.querySelector('[role=tab][aria-selected=true]')!.getBoundingClientRect(),box=node.getBoundingClientRect();return selected.left>=box.left-1&&selected.right<=box.right+1;})).toBe(true);
  await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');await expect(page.locator('.focus-report')).toBeVisible();
  await buttons.nth(1).click();await expect(buttons.nth(1)).toHaveAttribute('aria-selected','true');await page.goBack();await expect(buttons.first()).toHaveAttribute('aria-selected','true');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
