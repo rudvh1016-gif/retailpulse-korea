@@ -10,3 +10,15 @@
 .airport-insight-tabs.country-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
 .airport-insight-tabs.country-tabs button{min-width:0;text-align:center;white-space:normal;word-break:keep-all}
 .airport-period-modes{flex-wrap:wrap}
+
+/* Phones share the briefing text edge; the outer page already owns its gutter. */
+@media(max-width:700px){
+ .airport-insight-shell{padding-inline:2px}
+ .airport-insight-tabs:not(.country-tabs){padding-inline-start:0;scroll-padding-inline-start:0}
+ .airport-insight-tabs:not(.country-tabs) button:first-child{min-width:44px;padding-inline-start:0}
+ .airport-insight-tabs.country-tabs{display:flex;flex-wrap:nowrap;gap:14px;overflow-x:auto;overscroll-behavior-x:contain}
+ .airport-insight-tabs.country-tabs button{flex:0 0 auto;min-width:44px;min-height:44px;white-space:nowrap;word-break:normal;text-align:left}
+ .airport-insight-tabs.country-tabs button:first-child{padding-inline-start:0}
+ .airport-insight-tabs.country-tabs button:focus-visible{outline-offset:-2px}
+}
+@media(max-width:365px){.airport-insight-shell{padding-inline:6px}}
