@@ -1,7 +1,16 @@
 import {test,expect} from '@playwright/test';
+import type {LiveSummary} from '../app/live-signals';
+// Calendar-only fixture: no passenger, flight or observation values are invented or redated.
+const summary:LiveSummary={mode:'live-summary',todayKst:'2026-10-30',serviceDateKst:'2026-10-30',generatedAt:'2026-10-30T13:00:00Z',dayRelation:'TODAY',areas:{},sources:[],dateAvailability:{airportFlights:[],airportPassengerForecast:[],airportDepartureSchedule:[],seoulObserved:[]},airport:{
+ congestion:[],currentBusiestDepartureHallByTerminal:{},departuresTrackedToday:null,departuresTrackedTodayByTerminal:{},departuresTrackedTodayRetrievedAt:null,
+ topDepartureGate:null,topDepartureGateTerminal:null,topDepartureGateFlights:null,topDepartureGateByTerminal:{},busyDepartureGates:[],busyDepartureGatesByTerminal:{},topDepartureGateRetrievedAt:null,topDepartureGateRetrievedAtByTerminal:{},gateCoverageRatio:0,gateCoverageRatioByTerminal:{},
+ serviceDateKst:'2026-10-30',periodStartAt:null,periodEndAt:null,latestRetrievedAt:null,todayExpectedPassengersTotal:null,todayExpectedPassengersByTerminal:{},remainingExpectedPassengers:null,remainingExpectedPassengersByTerminal:{},passengerForecastRetrievedAt:null,passengerForecastRetrievedAtByTerminal:{},peakExpectedTimeBand:null,peakExpectedTimeBandByTerminal:{},peakExpectedPassengers:null,peakExpectedPassengersByTerminal:{},passengerForecastTimeline:[],passengerForecastTimelineByTerminal:{},forecastCoverage:{all:'UNAVAILABLE',byTerminal:{}},
+ arrivalForecast:{todayExpectedPassengersTotal:null,todayExpectedPassengersByTerminal:{},nextExpectedTimeBand:null,peakExpectedTimeBand:null,passengerForecastRetrievedAt:null,forecastCoverage:{all:'UNAVAILABLE',byTerminal:{}}},scheduled:[],passengerForecast:[],transferForecast:[],
+}};
 for(const width of [320,390,1440])test(`weekly official calendar separates countries and folds secondary copy ${width}`,async({page},info)=>{
+ const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error'&&message.text().includes('TypeError'))errors.push(message.text());});
  test.setTimeout(90000);await page.clock.setFixedTime(new Date('2026-10-30T13:00:00Z'));await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
- await page.route('**/api/live/summary*',route=>route.fulfill({json:{mode:'live-summary',todayKst:'2026-10-30',serviceDateKst:'2026-10-30',generatedAt:'2026-10-30T13:00:00Z',dayRelation:'TODAY',areas:{},airport:{},sources:[]}}));
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
  await page.route('**/api/airport/calendar',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
  await page.goto('/ko/airport',{waitUntil:'domcontentloaded'});
  const card=page.locator('.focus-staff-calendar');await expect(card).toContainText('이번 주 공식 일정');await expect(card).toContainText('2026-10-26–2026-11-01');
@@ -16,5 +25,5 @@ for(const width of [320,390,1440])test(`weekly official calendar separates count
  await expect(source.getByRole('link',{name:'공식 일정 ↗'}).first()).toHaveAttribute('href','https://www.mofa.gov.mm/about-myanmar/public-holidays/');
  await source.locator('summary').press('Enter');await expect(source.getByRole('link',{name:'공식 일정 ↗',includeHidden:true}).first()).toBeHidden();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- await card.getByRole('button',{name:'국가별 일정과 적용 대상 보기 ↗'}).click();await expect(page.locator('.preparation-month-grid')).toBeVisible();
+ await card.getByRole('button',{name:'국가별 일정과 적용 대상 보기 ↗'}).click();await expect(page.locator('.preparation-month-grid')).toBeVisible();expect(errors).toEqual([]);
 });
