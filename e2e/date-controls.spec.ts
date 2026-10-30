@@ -2,6 +2,52 @@ import {expectDateSelection} from './date-selection';
 import { expect, test } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
+
+for (const width of [320, 390, 430, 1440]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
+ test(`airport selector spacing and shortened rules ${lang} ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
+  await page.route('**/api/live/summary*', async route => {
+   const date = new URL(route.request().url()).searchParams.get('date') ?? SUMMARY_FIXTURE.todayKst;
+   await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
+  });
+  await page.goto(`/${lang}/airport`);
+  const groups = [
+   page.locator('#airport-data-flow'),
+   page.locator('.airport-context-nav'),
+   page.locator('.airport-date-reserved .date-nav-shortcuts'),
+  ];
+  for (const group of groups) {
+   await expect(group).toBeVisible();
+   const buttons = group.locator(':scope > button');
+   const boxes = await buttons.evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect();
+    return { left: box.left, right: box.right, height: box.height };
+   }));
+   expect(boxes.length).toBeGreaterThanOrEqual(3);
+   for (const box of boxes) expect(box.height).toBeGreaterThanOrEqual(44);
+   if (width <= 600) {
+    for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeGreaterThanOrEqual(15.5);
+    const row = await group.boundingBox(), parent = await group.evaluate(node => {
+     const rect = node.parentElement!.getBoundingClientRect();
+     return { left: rect.left, width: rect.width };
+    });
+    expect(row!.width).toBeLessThanOrEqual(parent.width + 1);
+    if (lang === 'ko' && width >= 390) {
+     expect(row!.width).toBeLessThan(parent.width - 20);
+     expect(row!.x).toBeGreaterThan(parent.left + 10);
+    }
+   }
+  }
+  const terminal = groups[0].getByRole('tab', { name: 'T1', exact: true });
+  await terminal.click(); await expect(terminal).toHaveAttribute('aria-selected', 'true');
+  const days = groups[2].locator(':scope > button');
+  await days.last().focus(); await page.keyboard.press('Enter');
+  await expect(days.last()).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  if (lang === 'ko') await page.screenshot({ path: info.outputPath(`airport-selector-spacing-${width}.png`) });
+ });
+}
 for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']) {
  test(`date controls preserve selection and touch targets at ${lang} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({width,height:900});
