@@ -9,6 +9,11 @@
   "A stored name that is not in this list is shown as region not confirmed."
  ],
  "sources": {
+  "zvartnots-official": {
+   "title": "Zvartnots official airport: EVN, ZVARTNOTS-YEREVAN; contact address Republic of Armenia",
+   "url": "https://www.zvartnots.aero/EN/index ; https://www.zvartnots.aero/EN/Content/Contact",
+   "checkedOn": "2026-10-30"
+  },
   "airportkr+iata": {
    "title": "Incheon Airport flight-status destination list (name, code) + IATA airport code search (city, airport); country reviewed by KORETAIL",
    "url": "https://www.airport.kr/ap_ko/869/subview.do ; https://www.iata.org/en/publications/directories/code-search/",
@@ -16,6 +21,7 @@
   }
  },
  "groupOf": {
+  "AM": "ASIA_OTHER",
   "JP": "JP",
   "CN": "CN",
   "TW": "HK_MO_TW",
@@ -1243,6 +1249,13 @@
    "en": "Hiroshima (Hiroshima Airport)",
    "country": "JP",
    "source": "airportkr+iata"
+  },
+  {
+   "name": "쯔바르트노츠",
+   "iata": "EVN",
+   "en": "Yerevan (Zvartnots International Airport)",
+   "country": "AM",
+   "source": "zvartnots-official"
   }
  ]
 }
