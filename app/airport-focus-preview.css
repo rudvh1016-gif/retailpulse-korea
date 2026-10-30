@@ -356,5 +356,5 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 @media(max-width:700px){
  .airport-focus-operating .glance-controls>div{justify-content:space-evenly;overflow-x:auto;scrollbar-width:none}
  .airport-focus-operating .glance-controls>div::-webkit-scrollbar{display:none}
- .airport-focus-operating .glance-controls>div button{flex:0 0 auto}
+ .airport-focus-operating .glance-controls>div button{flex:0 0 auto;min-width:44px}
 }
