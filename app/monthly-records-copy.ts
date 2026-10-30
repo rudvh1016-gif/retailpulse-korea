@@ -10,6 +10,8 @@ export const recordsCopy = {
   included: row('포함', 'included', '计入', '算入'), days: row('일', ' days', '天', '日'),
   cutoff: row('집계 마감', 'Cutoff', '统计截止', '集計締切'), none: row('집계 가능한 날 없음', 'No complete days', '无完整日期', '集計可能な日なし'),
   pending: row('집계 중 · 오늘 제외', 'In progress · today excluded', '统计中 · 不含今天', '集計中・本日を除く'),
+  chartRead: row('마우스를 올리거나 터치하면 날짜별 범위를 볼 수 있습니다. 키보드는 좌우 방향키로 이동합니다.', 'Hover or tap to read each date’s range. Use the left and right arrow keys on a keyboard.', '悬停或轻触即可查看每日区间。键盘可使用左右方向键。', 'マウスを重ねるかタッチすると日別の範囲を確認できます。キーボードは左右の矢印キーで移動します。'),
+  future: row('집계 전 · 미래 날짜', 'Not yet recorded · future date', '尚未统计 · 未来日期', '集計前・未来の日付'),
   daily: row('일별 평균 범위', 'Daily mean ranges', '每日平均区间', '日別平均の範囲'),
   note: row('24개 시간대가 모두 있는 날만 포함합니다. 빈 날은 0명이 아닙니다.', 'Only days with all 24 hourly samples count. Missing days do not mean zero people.', '仅计入24个小时样本齐全的日期。缺失不等于0人。', '24時間分が揃った日のみ算入。欠測は0人ではありません。'),
   peopleNote: row('하루 방문객 수와 구분되는 시간별 체류 인구의 평균입니다.', 'An average of hourly population present, not a daily visitor count.', '这是每小时在场人口的平均值，并非每日访客总数。', '時間ごとの滞在人口の平均です。1日の来訪者数ではありません。'),

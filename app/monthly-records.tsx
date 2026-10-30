@@ -1,12 +1,13 @@
 'use client';
 import {readStoredJson} from '../lib/read-stored-json';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import type { Lang } from './retailpulse-data';
 import {RateText} from './change-rate';
 import { comparisonValue } from '../lib/period-comparison';
 import { RECORD_AREAS, type MonthlyRecords, type RecordArea, type RecordMonth } from '../lib/monthly-records';
 import { recordText } from './monthly-records-copy';
+import { recordChartIndexAt, recordChartKeyIndex } from '../lib/monthly-record-chart';
 import './monthly-records.css';
 
 const areaNames = {
@@ -45,24 +46,79 @@ function MonthValue({ value, label, lang }: { value: RecordMonth; label: string;
 }
 function DailyRanges({ value, lang }: { value: RecordMonth; lang: Lang }) {
   const t = (key: Parameters<typeof recordText>[0]) => recordText(key, lang);
+  const id = useId();
+  const plotRef = useRef<HTMLDivElement>(null);
+  const readerRef = useRef<HTMLDivElement>(null);
+  const [reading, setReading] = useState<{ date: string | null; visible: boolean; pinned: boolean }>({ date: null, visible: false, pinned: false });
   const max = Math.max(1, ...value.days.map(day => day.max ?? 0));
+  const selectedIndex = Math.max(0, value.days.findIndex(day => day.date === reading.date));
+  const selectedDay = value.days[selectedIndex];
+  const status = selectedDay ? t(selectedDay.status === 'COMPLETE' ? 'complete' : selectedDay.status === 'IN_PROGRESS' ? 'progress' : selectedDay.status === 'PARTIAL' ? 'partial' : selectedDay.status === 'FUTURE' ? 'future' : 'missing') : t('missing');
+  const hasRange = selectedDay?.min !== null && selectedDay?.max !== null && selectedDay !== undefined;
+  const selectedValue = hasRange ? `${range(selectedDay.min, selectedDay.max, lang)} ${t('unit')}` : status;
+  const open = reading.visible && !!selectedDay;
+  const select = (index: number, pinned: boolean) => {
+    const day = value.days[index];
+    if (day) setReading(prior => prior.date === day.date && prior.visible && prior.pinned === pinned ? prior : { date: day.date, visible: true, pinned });
+  };
+  const pointerIndex = (event: PointerEvent<HTMLDivElement>) => {
+    if ((event.target as Element).closest('[role="tooltip"]')) return null;
+    const box = readerRef.current?.getBoundingClientRect();
+    return box ? recordChartIndexAt(event.clientX, box.left, box.width, value.days.length) : null;
+  };
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const index = recordChartKeyIndex(event.key, selectedIndex, value.days.length);
+    if (index === null) return;
+    event.preventDefault();
+    select(index, true);
+  };
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = (event: globalThis.PointerEvent) => {
+      if (!plotRef.current?.contains(event.target as Node)) setReading(prior => ({ ...prior, visible: false, pinned: false }));
+    };
+    const escape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') setReading(prior => ({ ...prior, visible: false, pinned: false }));
+    };
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', escape); };
+  }, [open]);
   return <div className="records-chart">
-    <p>{t('daily')} · {value.month}</p>
-    <svg viewBox="0 0 620 106" role="img" aria-label={`${t('daily')} ${value.month}. ${t('note')}`}>
-      <line x1="4" x2="616" y1="101" y2="101" stroke="#ddd" />
-      {value.days.map((day, i) => {
-        if (day.status === 'FUTURE') return null;
-        const x = 6 + i * (608 / value.days.length), width = 608 / value.days.length - 5;
-        const height = day.max === null ? 0 : Math.max(1, day.max / max * 90);
-        const minHeight = day.min === null ? 0 : day.min / max * 90;
-        return <g key={`${day.date}-${day.min}-${day.max}-${max}`}>
-          <title>{day.date}: {day.min === null ? t(day.status === 'IN_PROGRESS' ? 'progress' : day.status === 'PARTIAL' ? 'partial' : 'missing') : `${range(day.min, day.max, lang)} ${t('unit')}`}</title>
-          {day.max !== null ? <g className="chart-fill-y-svg"><rect x={x} y={100-height} width={width} height={height} fill="#c6dddd" /><rect x={x} y={100-minHeight} width={width} height={minHeight} fill="#94bfc4" /></g>
-            : <line x1={x} x2={x+width} y1="95" y2="95" stroke="#555" strokeDasharray="2 2" />}
-        </g>;
-      })}
-    </svg>
+    <p id={`${id}-title`}>{t('daily')} · {value.month}</p>
+    <div className="records-chart-plot" ref={plotRef}
+      onPointerMove={event => { if (event.pointerType !== 'mouse') return; const index = pointerIndex(event); if (index !== null) select(index, reading.pinned); }}
+      onPointerDown={event => { const index = pointerIndex(event); if (index !== null) { readerRef.current?.focus({ preventScroll: true }); select(index, true); } }}
+      onPointerLeave={event => { if (event.pointerType === 'mouse' && !reading.pinned) setReading(prior => ({ ...prior, visible: false })); }}
+      onPointerCancel={() => setReading(prior => ({ ...prior, visible: false, pinned: false }))}>
+      <div className="records-chart-reader" ref={readerRef} role="slider" tabIndex={value.days.length ? 0 : -1}
+        aria-labelledby={`${id}-title`} aria-describedby={`${id}-hint`} aria-orientation="horizontal"
+        aria-valuemin={1} aria-valuemax={Math.max(1, value.days.length)} aria-valuenow={selectedIndex + 1}
+        aria-valuetext={selectedDay ? `${selectedDay.date}: ${selectedValue}` : status}
+        onFocus={() => select(selectedIndex, true)} onBlur={() => setReading(prior => ({ ...prior, visible: false, pinned: false }))} onKeyDown={onKeyDown}>
+        <svg viewBox="0 0 620 106" aria-hidden="true">
+          <line x1="4" x2="616" y1="101" y2="101" stroke="#ddd" />
+          {value.days.map((day, i) => {
+            if (day.status === 'FUTURE') return null;
+            const x = 6 + i * (608 / value.days.length), width = 608 / value.days.length - 5;
+            const height = day.max === null ? 0 : Math.max(1, day.max / max * 90);
+            const minHeight = day.min === null ? 0 : day.min / max * 90;
+            return <g key={`${day.date}-${day.min}-${day.max}-${max}`} data-date={day.date}>
+              <title>{day.date}: {day.min === null ? t(day.status === 'IN_PROGRESS' ? 'progress' : day.status === 'PARTIAL' ? 'partial' : 'missing') : `${range(day.min, day.max, lang)} ${t('unit')}`}</title>
+              {day.max !== null ? <g className="chart-fill-y-svg"><rect x={x} y={100-height} width={width} height={height} fill="#c6dddd" /><rect x={x} y={100-minHeight} width={width} height={minHeight} fill="#94bfc4" /></g>
+                : <line x1={x} x2={x+width} y1="95" y2="95" stroke="#555" strokeDasharray="2 2" />}
+            </g>;
+          })}
+          {open && <rect className="records-chart-marker" x={4 + selectedIndex * (608 / value.days.length)} y="5" width={608 / value.days.length - 1} height="97" />}
+        </svg>
+      </div>
+      {open && <div className="records-chart-tooltip" id={`${id}-tip`} role="tooltip" style={{ left: `clamp(0px, calc(${(selectedIndex + .5) / value.days.length * 100}% - 120px), calc(100% - 240px))` }}>
+        <time dateTime={selectedDay.date}>{selectedDay.date}</time>
+        <strong>{selectedValue}</strong>
+      </div>}
+    </div>
     <div className="records-chart-dates" style={{gridTemplateColumns:`repeat(${value.days.length}, minmax(0, 1fr))`}} aria-hidden="true">{[1,7,14,21,value.days.length].map(day => <span key={day} style={{gridColumn:day}}>{day}</span>)}</div>
+    <p id={`${id}-hint`} className="records-chart-hint">{t('chartRead')}</p>
     <p>{t('note')}</p>
   </div>;
 }
