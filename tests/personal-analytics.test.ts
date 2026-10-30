@@ -45,6 +45,33 @@ test('configured analytics stays silent until consent, then uses the Google tag 
   const result=spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',script],{encoding:'utf8'});
   assert.equal(result.status,0,result.stderr);
 });
+for (const [value, marked] of [['true', true], ['false', false], ['internal', false], [null, false], ['throws', false]] as const) test(`operator marker ${value} is strictly opt-in and does not override consent`, () => {
+  const script = `
+    import assert from 'node:assert/strict';
+    process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID='G-TEST1234';
+    process.env.NEXT_PUBLIC_GA4_ENABLED='true';
+    const scripts=[];
+    globalThis.window={location:{origin:'https://koretaildata.com'},sessionStorage:{getItem:key=>{
+      assert.equal(key,'koretail-analytics-operator-v1');
+      if (${JSON.stringify(value)}==='throws') throw new Error('storage blocked');
+      return ${JSON.stringify(value)};
+    }}};
+    globalThis.document={createElement:()=>({dataset:{}}),head:{append:s=>scripts.push(s)}};
+    const {setAnalyticsConsent,trackPageView,trackPersonalEvent}=await import('./lib/personal-analytics.ts');
+    setAnalyticsConsent(false); trackPageView('/ko'); trackPersonalEvent('briefing_viewed');
+    assert.equal(scripts.length,0);
+    setAnalyticsConsent(true); trackPageView('/ko'); trackPersonalEvent('briefing_viewed');
+    const config=window.dataLayer.map(x=>Array.from(x)).find(x=>x[0]==='config')[2];
+    assert.equal(config.traffic_type,${marked ? "'internal'" : 'undefined'});
+    assert.equal(scripts.length,1);
+    setAnalyticsConsent(false);
+    const count=window.dataLayer.length;
+    trackPageView('/ko/more'); trackPersonalEvent('briefing_viewed');
+    assert.equal(window.dataLayer.length,count);
+  `;
+  const result=spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',script],{encoding:'utf8'});
+  assert.equal(result.status,0,result.stderr);
+});
 for(const enabled of [undefined,'false']) test(`measurement ID alone cannot enable collection (${enabled})`,()=>{
   const script=`
     import assert from 'node:assert/strict';
