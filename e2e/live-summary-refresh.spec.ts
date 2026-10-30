@@ -87,6 +87,7 @@ test('failed refresh retains same-date values and original collection and observ
   await expect(page.locator('.airport-brief-total')).toContainText('47,320');
   await expect(page.locator('.airport-current-brief')).toContainText('09:05 수집');
   await expect(page.locator('.airport-current-brief .airport-wait-brief')).toHaveCount(0);
+  await page.locator('.airport-checkpoints').scrollIntoViewIfNeeded();
   await expect(page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"] .checkpoint-schematic-time')).toContainText('14:06');
   await expect(page.getByTestId('summary-refresh-failed')).toHaveCount(0);
   const initialRequests = requests;
