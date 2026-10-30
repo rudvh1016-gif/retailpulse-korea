@@ -9,7 +9,7 @@ test('Today figures remain proportional to body text without changing heading ro
  assert.deepEqual(values('.airport-focus-shell .focus-report .focus-core-metric .focus-metric-total','font-size'),[{value:'24px',media:null},{value:'28px',media:'(min-width:1000px)'},{value:'20px',media:'(max-width:600px)'}]);
  assert.deepEqual(values('.airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change)','font-size').slice(-2),[{value:'16px',media:null},{value:'13px',media:'(max-width:600px)'}]);
  assert.equal(values('.airport-focus-shell .focus-report .focus-core-metric p','font-size').at(-1).value,'16px');
- assert.deepEqual(values('.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts','font-size').slice(-2),[{value:'11px',media:null},{value:'10px',media:'(max-width:600px)'}]);
+ assert.deepEqual(values('.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts','font-size').slice(-2),[{value:'11px',media:null},{value:'9px',media:'(max-width:600px)'}]);
  assert.equal(values('.airport-focus-shell .focus-report .focus-number-first-grid','gap')[0].value,'14px');
  assert.ok(!css.toString().includes('clamp(32px,3.2vw,44px)'));
 });

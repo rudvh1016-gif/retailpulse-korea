@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {completeGlanceProfile,readGlanceWeekReference} from '../lib/glance-week-reference';
+import {completeGlanceProfile,currentGlanceSnapshot,readGlanceWeekReference} from '../lib/glance-week-reference';
 import {glanceWeekChange,type GlanceWeekReference} from '../lib/glance-week-comparison';
 import {AIRPORT_SIDES_VERSION} from '../lib/airport-sides';
 import {shiftKstDay} from '../lib/kst';
@@ -17,10 +17,10 @@ const forecasts=(date=previousDay):AirportForecastAggregateRow[]=>(['T1','T2']).
  expectedPassengers:terminal==='T1'?100:50,retrievedAt:`${date}T00:00:00+09:00`,
 })));
 const transfers=(date=previousDay)=>[{terminal:'T1',serviceDate:date,expectedTransferPassengers:100},{terminal:'T2',serviceDate:date,expectedTransferPassengers:200}];
-type MockRows={forecasts?:unknown[];transfers?:unknown[];profiles?:unknown[];failed?:number};
+type MockRows={forecasts?:unknown[];transfers?:unknown[];profiles?:unknown[];scans?:unknown[];failed?:number};
 function mockDb(rows:MockRows={}){
  const queries:Array<{sql:string;values:unknown[]}>=[];
- return {queries,prepare(sql:string){return {bind(...values:unknown[]){const index=queries.length;queries.push({sql,values});return {all:async()=>({success:rows.failed!==index,results:sql.includes('airport_passenger_forecast')?rows.forecasts??forecasts():sql.includes('airport_transfer_forecast')?rows.transfers??transfers():rows.profiles??[day,previousDay].map(date=>({day:date,payload:JSON.stringify(profile(date))}))})};}};}};
+ return {queries,prepare(sql:string){return {bind(...values:unknown[]){const index=queries.length;queries.push({sql,values});return {all:async()=>({success:rows.failed!==index,results:sql.includes('airport_passenger_forecast')?rows.forecasts??forecasts():sql.includes('airport_transfer_forecast')?rows.transfers??transfers():sql.includes('FROM collector_runs c')?rows.scans??[]:rows.profiles??[day,previousDay].map(date=>({day:date,payload:JSON.stringify(profile(date))}))})};}};}};
 }
 const reference=():GlanceWeekReference=>({day,previousDay,passengers:{all:3900,T1:2500,T2:1400},flights:{all:37,T1:10,T2:20,CONCOURSE:5},selectedFlights:{all:40,T1:12,T2:21,CONCOURSE:5}});
 
@@ -139,5 +139,65 @@ test('SQLite production schema uses indexes for all exact-date reference reads',
   await readGlanceWeekReference(db as never,day);
   for(const table of ['airport_passenger_forecast','airport_transfer_forecast','airport_daily_composition'])assert.ok(plans.some(plan=>new RegExp(`SEARCH ${table} USING INDEX`).test(plan)),plans.join('\n'));
   assert.ok(plans.every(plan=>!/^SCAN airport_/.test(plan)),plans.join('\n'));
+ }finally{sqlite.close();}
+});
+
+const currentNow='2026-10-30T02:00:00Z';
+const scan=()=>({startedAt:'2026-10-30T01:00:00Z',finishedAt:'2026-10-30T01:08:00Z',status:'SUCCESS',healthStatus:'LIVE',healthRetrievedAt:'2026-10-30T01:00:00Z',
+ detail:`recent 2026-10-27..${day}; future scheduled 12 dates 2026-10-31..2026-11-01; pages 100; requests 100; population 10000; range rows 300; today source rows 90; today unique physical 40; range unique physical 120; changed rows 40; storage writes 120`});
+const currentProfile=()=>{const p=profile(day);p.profile.complete=false;return p;};
+test('today full-page scan is not confused with a day-ended operations total',()=>{
+ const result=currentGlanceSnapshot(currentProfile(),day,scan(),currentNow);
+ assert.deepEqual(result?.totals,{all:37,T1:10,T2:20,CONCOURSE:5});
+ assert.deepEqual(result?.snapshot,{day,retrievedAt:scan().startedAt,provisional:true});
+ assert.equal(completeGlanceProfile(currentProfile(),day),null,'the historical completion gate is unchanged');
+});
+test('current snapshot rejects failed, partial, legacy, stale, mismatched or future scan witnesses',()=>{
+ for(const patch of [
+  {status:'ERROR'},{healthStatus:'STALE'},{healthStatus:'ERROR'},{healthRetrievedAt:null},{healthRetrievedAt:'2026-10-29T01:00:00Z'},
+  {startedAt:'2026-10-29T01:00:00Z',healthRetrievedAt:'2026-10-29T01:00:00Z'},
+  {finishedAt:null},{finishedAt:'not-a-date'},{finishedAt:'2026-10-30T00:00:00Z'},{finishedAt:'2026-10-30T03:00:00Z'},
+  {detail:'normalized 40; changed rows 40; storage writes 120'},
+  {detail:scan().detail.replace(day,'2026-10-29')},
+  ...['0','39','41','1201','NaN','-40','40.5'].map(value=>({detail:scan().detail.replace('physical 40;','physical '+value+';')})),
+ ])assert.equal(currentGlanceSnapshot(currentProfile(),day,{...scan(),...patch},currentNow),null,JSON.stringify(patch));
+ assert.equal(currentGlanceSnapshot(currentProfile(),day,undefined,currentNow),null);
+ assert.equal(currentGlanceSnapshot(currentProfile(),day,scan(),'2026-10-30T15:00:00Z'),null,'midnight expiry');
+ for(const p of [null,{}, {...currentProfile(),profile:{...currentProfile().profile,complete:undefined}}, {...currentProfile(),profile:{...currentProfile().profile,cancelled:-1}}])assert.equal(currentGlanceSnapshot(p,day,scan(),currentNow),null);
+});
+test('today adds only one bounded indexed witness; partial history and failed witness reads stay independent',async()=>{
+ const profiles=[{day,payload:JSON.stringify(currentProfile())},{day:previousDay,payload:JSON.stringify(profile())}];
+ const db=mockDb({profiles,scans:[scan()]}),result=await readGlanceWeekReference(db as never,day,currentNow);
+ assert.equal(db.queries.length,4);assert.match(db.queries[3].sql,/LIMIT 1/);assert.match(db.queries[3].sql,/started_at>=\?/);assert.match(db.queries[3].sql,/JOIN source_health/);
+ assert.deepEqual(result.selectedFlights,result.flights);assert.equal(result.selectedFlightSnapshot?.provisional,true);
+ assert.deepEqual(glanceWeekChange(37,day,result,'all','flights',currentNow),{previous:37,delta:0,percent:0});
+ assert.equal(glanceWeekChange(38,day,result,'all','flights',currentNow),null,'UI/profile disagreement is unavailable');
+ for(const rows of [{scans:[]},{scans:[{...scan(),status:'ERROR'}]},{scans:[scan(),scan()]},{scans:[scan()],failed:3}]){
+  const value=await readGlanceWeekReference(mockDb({profiles,...rows}) as never,day,currentNow);
+  assert.equal(value.selectedFlights,null);assert.equal(value.selectedFlightSnapshot,undefined);assert.equal(value.passengers.all,3900);assert.equal(value.flights?.all,37);
+ }
+ const base=mockDb({profiles});
+ const rejecting={prepare(sql:string){return sql.includes('FROM collector_runs c')?{bind:()=>({all:async()=>{throw new Error('witness transport unavailable');}})}:base.prepare(sql);}};
+ const independent=await readGlanceWeekReference(rejecting as never,day,currentNow);assert.equal(independent.selectedFlights,null);assert.equal(independent.passengers.all,3900);
+ const incompleteBaseline=profile();incompleteBaseline.profile.complete=false;
+ const missing=await readGlanceWeekReference(mockDb({profiles:[profiles[0],{day:previousDay,payload:JSON.stringify(incompleteBaseline)}],scans:[scan()]}) as never,day,currentNow);
+ assert.equal(missing.flights,null);assert.equal(glanceWeekChange(37,day,missing,'all','flights',currentNow),null);
+ const future=await readGlanceWeekReference(mockDb({profiles}) as never,day,'2026-10-29T02:00:00Z');assert.equal(future.selectedFlights,null);
+});
+test('cached current-day snapshot expires at KST midnight and invalid clocks never fabricate a change',()=>{
+ const ref={...reference(),selectedFlightSnapshot:{day,retrievedAt:scan().startedAt,provisional:true as const}};
+ assert.ok(glanceWeekChange(40,day,ref,'all','flights',currentNow));
+ for(const now of ['2026-10-30T15:00:00Z','not-a-date','2026-10-30T00:00:00Z'])assert.equal(glanceWeekChange(40,day,ref,'all','flights',now),null);
+ for(const stamp of ['not-a-date','2026-10-29T01:00:00Z','2026-10-30T03:00:00Z'])assert.equal(glanceWeekChange(40,day,{...ref,selectedFlightSnapshot:{...ref.selectedFlightSnapshot,retrievedAt:stamp}},'all','flights',currentNow),null);
+});
+test('SQLite current-day witness seeks existing source/start and source-health indexes',async()=>{
+ const {DatabaseSync}=await import('node:sqlite');const {readFileSync,readdirSync}=await import('node:fs');const sqlite=new DatabaseSync(':memory:');
+ try{
+  for(const path of readdirSync('drizzle').filter(path=>path.endsWith('.sql')).sort())sqlite.exec(readFileSync(`drizzle/${path}`,'utf8'));
+  const plans:string[]=[];const db={prepare(sql:string){return {bind(...values:unknown[]){return {all:async()=>{plans.push(...sqlite.prepare('EXPLAIN QUERY PLAN '+sql).all(...values as never[]).map(row=>String(row.detail)));return {success:true,results:[]};}};}};}};
+  await readGlanceWeekReference(db as never,day,currentNow);
+  assert.ok(plans.some(plan=>/SEARCH c USING INDEX collector_source_start_unique/.test(plan)),plans.join('\n'));
+  assert.ok(plans.some(plan=>/SEARCH h USING INDEX/.test(plan)),plans.join('\n'));
+  assert.ok(plans.every(plan=>!/^SCAN (?:airport_|c\b|h\b)/.test(plan)),plans.join('\n'));
  }finally{sqlite.close();}
 });

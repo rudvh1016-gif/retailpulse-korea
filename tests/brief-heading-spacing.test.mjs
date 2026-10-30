@@ -16,7 +16,7 @@ test('passenger and flight figures gain one real localized heading with number-f
  visit(tree);assert.ok(figures);
  const children=figures.children.filter(node=>ts.isJsxElement(node)||ts.isJsxSelfClosingElement(node));
  assert.deepEqual(children.map(node=>(ts.isJsxElement(node)?node.openingElement:node).tagName.getText(tree)),['h3','div']);
- for(const text of ['출국객·항공편','Passengers and flights','出境旅客与航班','出国者・便数'])assert.ok(children[0].getText(tree).includes(text));
+ for(const text of ['출국객 수 (환승객 포함)','Departing passengers (incl. transfers)','出境旅客人数（含中转）','出国者数（乗継客含む）'])assert.ok(children[0].getText(tree).includes(text));
  assert.match(children[0].getText(tree),/data-heading="subsection"/);
  for(const field of ['passengers','transferPassengers','referenceSum','flights'])assert.ok(children[1].getText(tree).includes(`context.${field}`));
  const metrics=children[1].getText(tree);

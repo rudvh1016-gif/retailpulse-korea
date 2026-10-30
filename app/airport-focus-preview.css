@@ -307,6 +307,8 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 :root body :is(.focus-passenger-calculation,.focus-monthly-calculation)>p{font-size:12px;font-weight:400;line-height:1.5;margin:4px 0}
 .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{display:block;font-size:11px;font-weight:400;line-height:1.5;margin-top:2px}
 
+.airport-focus-shell .focus-report .focus-passenger-part{display:inline-block;white-space:nowrap}
+
 /* On desktop, spacing separates the next-week events and closing notes.
    Keep the card boundary and the main topic divider for orientation. */
 @media(min-width:1000px){
@@ -339,7 +341,7 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change){font-size:13px}
  .airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis){font-size:10px!important}
  :root body .airport-focus-shell .focus-report .focus-passenger-calculation>summary{font-size:11px}
- .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:10px}
+ .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:9px}
 }
 
 /* Two distinct baselines stay inside the existing metric columns. */
