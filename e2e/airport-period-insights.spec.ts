@@ -190,3 +190,59 @@ for(const width of [320,390,1440])test(`mobile airport controls and country head
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await heading.screenshot({path:info.outputPath(`country-heading-${width}.png`)});
 });
+
+// Owner mobile alignment regression: these widths straddle both phone gutters.
+for(const width of [320,360,365,390,430,600,700])test(`phone heading menu terminal and date share briefing text edge ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await records(page);
+ await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const report=page.locator('.focus-report'),tabs=page.locator('.airport-insight-tabs:not(.country-tabs)'),controls=page.locator('.glance-controls');
+ await expect(report).toBeVisible();await expect(controls.locator('.glance-date-control')).toBeVisible();
+ const edges=await page.evaluate(()=>{
+  const textLeft=(selector:string)=>{const element=document.querySelector(selector)!;const range=document.createRange();range.selectNodeContents(element);return range.getBoundingClientRect().x;};
+  return {heading:textLeft('.airport-insight-shell>.glance-heading h1'),menu:textLeft('.airport-insight-tabs:not(.country-tabs) button:first-child'),terminal:textLeft('.glance-controls>div button:first-child'),date:document.querySelector('.glance-date-control')!.getBoundingClientRect().x,report:document.querySelector('.focus-report')!.getBoundingClientRect().x+parseFloat(getComputedStyle(document.querySelector('.focus-report')!).paddingLeft)+parseFloat(getComputedStyle(document.querySelector('.focus-report')!).borderLeftWidth)};
+ });
+ for(const edge of [edges.heading,edges.menu,edges.terminal,edges.date])expect(Math.abs(edge-edges.report)).toBeLessThanOrEqual(1.5);
+ const card=(await report.boundingBox())!;expect(card.x).toBeCloseTo(8,0);expect(card.x+card.width).toBeCloseTo(width-8,0);
+ await expect(report.locator('.focus-metric-total').first()).toHaveCSS('font-size',width<=600?'20px':'24px');
+ const first=controls.locator('div>button').first();expect((await first.boundingBox())!.width).toBeGreaterThanOrEqual(44);expect((await first.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ await tabs.getByRole('tab').first().focus();await page.keyboard.press('End');await expect(tabs.getByRole('tab').last()).toBeFocused();await page.keyboard.press('Home');await expect(report).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:testInfo.outputPath(`phone-alignment-${width}.png`),fullPage:true});
+});
+for(const width of [320,360,390,430,700])test(`country phone tabs remain one reachable row ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await records(page);await page.goto('/ko/airport-countries?mode=zones&date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const tabs=page.locator('.country-tabs'),buttons=tabs.getByRole('tab');await expect(buttons).toHaveCount(3);
+ const boxes=await buttons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(node);return {y:b.y,width:b.width,height:b.height,textHeight:range.getBoundingClientRect().height,lineHeight:parseFloat(getComputedStyle(node).lineHeight)};}));
+ for(const box of boxes){expect(box.y).toBe(boxes[0].y);expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(box.textHeight).toBeLessThanOrEqual(box.lineHeight+1);}
+ await buttons.first().focus();await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
+ const last=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;expect(last.x).toBeGreaterThanOrEqual(strip.x-1);expect(last.x+last.width).toBeLessThanOrEqual(strip.x+strip.width+1);
+ await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');
+ await buttons.nth(1).click();await expect(buttons.nth(1)).toHaveAttribute('aria-selected','true');await buttons.first().click();await expect(buttons.first()).toHaveAttribute('aria-selected','true');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:testInfo.outputPath(`country-phone-row-${width}.png`),fullPage:true});
+});
+for(const lang of ['en','zh','ja'])test(`localized phone glance uses the same card text edge ${lang}`,async({page})=>{
+ await page.setViewportSize({width:390,height:1000});await records(page);await page.goto(`/${lang}?date=2026-10-19`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.locator('.focus-report')).toBeVisible();
+ const edges=await page.evaluate(()=>{const report=document.querySelector('.focus-report')!,style=getComputedStyle(report);return {date:document.querySelector('.glance-date-control')!.getBoundingClientRect().x,heading:document.querySelector('.glance-heading h1')!.getBoundingClientRect().x,report:report.getBoundingClientRect().x+parseFloat(style.paddingLeft)+parseFloat(style.borderLeftWidth)};});
+ expect(Math.abs(edges.date-edges.report)).toBeLessThanOrEqual(1.5);expect(Math.abs(edges.heading-edges.report)).toBeLessThanOrEqual(1.5);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+for(const width of [320,360,390,600])test(`airport phone date shortcuts share the terminal text edge ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await records(page);await page.goto('/ko/airport?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const dateButtons=page.locator('.airport-date-reserved .date-nav-shortcuts > button');await expect(dateButtons).toHaveCount(3);
+ const edges=await page.evaluate(()=>{const text=(selector:string)=>{const range=document.createRange();range.selectNodeContents(document.querySelector(selector)!);return range.getBoundingClientRect().x;};return {terminal:text('#airport-data-flow>button:first-child'),date:text('.airport-date-reserved .date-nav-shortcuts>button:first-child')};});
+ expect(Math.abs(edges.date-edges.terminal)).toBeLessThanOrEqual(1.5);
+ for(const button of await dateButtons.all())expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ await dateButtons.last().click();await expect(dateButtons.last()).toHaveAttribute('aria-pressed','true');await dateButtons.first().click();await expect(dateButtons.first()).toHaveAttribute('aria-pressed','true');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+for(const width of [701,1024,1440])test(`desktop keeps deployed airport gutters and country grid ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await records(page);await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.locator('.airport-insight-shell')).toHaveCSS('padding-left','24px');
+ await expect(page.locator('.airport-insight-tabs:not(.country-tabs)')).toHaveCSS('display','grid');
+ await page.screenshot({path:testInfo.outputPath(`desktop-glance-unchanged-${width}.png`),fullPage:true});
+ await page.goto('/ko/airport-countries?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.country-tabs')).toHaveCSS('display','grid');
+ const columns=await page.locator('.country-tabs').evaluate(node=>getComputedStyle(node).gridTemplateColumns.split(' ').map(Number.parseFloat));expect(columns).toHaveLength(3);expect(Math.max(...columns)-Math.min(...columns)).toBeLessThanOrEqual(1);
+ await page.screenshot({path:testInfo.outputPath(`desktop-country-unchanged-${width}.png`),fullPage:true});
+});
