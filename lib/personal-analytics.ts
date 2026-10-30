@@ -31,6 +31,12 @@ let consent: boolean | null = null;
 let initialized = false;
 let lastPage: string | null = null;
 const pending: Array<{name: EventName; params: Record<string,string>}> = [];
+// An operator may explicitly mark a single tab before analytics starts. No IP,
+// account or free-form identifier is collected. Storage failure means unmarked.
+function operatorTraffic(): boolean {
+  try { return window.sessionStorage.getItem('koretail-analytics-operator-v1') === 'true'; }
+  catch { return false; }
+}
 function init() {
   if(!measurementId || !consent || !isProductionAnalyticsPage()) return false;
   const w = window as unknown as AnalyticsWindow;
@@ -46,7 +52,7 @@ function init() {
   w.gtag('consent','default',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
   w.gtag('js',new Date());
   // Never send referrer, queries, fragments, titles, user properties or automatic page views.
-  w.gtag('config',measurementId,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,page_location:window.location.origin,page_referrer:'',page_title:'KORETAIL'});
+  w.gtag('config',measurementId,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,page_location:window.location.origin,page_referrer:'',page_title:'KORETAIL',...(operatorTraffic() ? {traffic_type:'internal'} : {})});
   const script = document.createElement('script');
   script.async = true;
   script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;

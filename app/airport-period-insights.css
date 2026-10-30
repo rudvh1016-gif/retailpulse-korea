@@ -11,6 +11,18 @@
 .airport-insight-tabs.country-tabs button{min-width:0;text-align:center;white-space:normal;word-break:keep-all}
 .airport-period-modes{flex-wrap:wrap}
 
+/* A real tap target reveals the clipped phone menu without changing tab selection. */
+.airport-insight-scroll{display:none}
+@media(max-width:700px){
+ .airport-insight-tab-nav{display:flex;align-items:stretch;gap:4px;margin-bottom:16px}
+ .airport-insight-tab-nav>.airport-insight-tabs{flex:1;min-width:0;margin-bottom:0}
+ .airport-insight-scroll{display:flex;flex:0 0 44px;align-items:center;justify-content:center;min-width:44px;min-height:48px;padding:0;border:0;border-bottom:1px solid #dce2e7;background:#fff;color:#345b7b;cursor:pointer;touch-action:manipulation}
+ .airport-insight-scroll svg{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+ .airport-insight-scroll:hover{color:#111}
+ .airport-insight-scroll:disabled{color:#a0a8ae;cursor:default}
+ .airport-insight-scroll:focus-visible{outline:2px solid #345b7b;outline-offset:-2px}
+}
+
 /* Phones share the briefing text edge; the outer page already owns its gutter. */
 @media(max-width:700px){
  .airport-insight-shell{padding-inline:2px}
