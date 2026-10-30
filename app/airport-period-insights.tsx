@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useRef,useState,useSyncExternalStore,type ReactNode,type KeyboardEvent} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore,type ReactNode,type KeyboardEvent} from 'react';
 import dynamic from 'next/dynamic';
 import type {Lang} from './retailpulse-data';
 import {AIRPORT_PERIOD_VERSION} from '../lib/airport-period-version';
@@ -38,10 +38,29 @@ function PeriodFrame({view,date}:{view:View;date?:string|null}){
  useEffect(()=>{const values=Object.fromEntries(keys.map((k,i)=>[k,rangeKey.split('/')[i]]));frame.current?.contentWindow?.postMessage({type:'koretail-insights-view',view,...(validRanges(values)?{ranges:values}:{})},location.origin);},[view,rangeKey]);
  return <iframe ref={frame} title={view==='country'?'국가별 항공편 기간 비교':'공항 항공편 기간 비교'} src={'/airport-period/frame.html?'+initial} className="airport-period-frame"/>;
 }
+function GlanceTabNavigation({view}:{view:string}){
+ const strip=useRef<HTMLDivElement>(null),previousButton=useRef<HTMLButtonElement>(null),nextButton=useRef<HTMLButtonElement>(null);
+ const [edges,setEdges]=useState({overflow:false,previous:false,next:false});
+ const pendingFocus=useRef<'previous'|'next'|null>(null);
+ useLayoutEffect(()=>{const button=pendingFocus.current==='previous'?previousButton.current:pendingFocus.current==='next'?nextButton.current:null;button?.focus({preventScroll:true});pendingFocus.current=null;},[edges]);
+ useEffect(()=>{
+  const element=strip.current;if(!element)return;
+  const measure=()=>{const overflow=element.scrollWidth>element.clientWidth+1,previous=element.scrollLeft>1,next=element.scrollLeft+element.clientWidth<element.scrollWidth-1;if(!previous&&document.activeElement===previousButton.current)pendingFocus.current='next';if(!next&&previous&&document.activeElement===nextButton.current)pendingFocus.current='previous';setEdges(old=>old.overflow===overflow&&old.previous===previous&&old.next===next?old:{overflow,previous,next});};
+  const observer=new ResizeObserver(measure);observer.observe(element);element.querySelectorAll('[role=tab]').forEach(tab=>observer.observe(tab));
+  element.addEventListener('scroll',measure,{passive:true});measure();
+  return()=>{observer.disconnect();element.removeEventListener('scroll',measure);};
+ },[]);
+ const scroll=(direction:number)=>{const element=strip.current;if(element)element.scrollBy({left:direction*Math.max(120,element.clientWidth*.8),behavior:'instant'});};
+ return <div className="airport-insight-tab-nav">
+  {edges.overflow&&edges.previous&&<button type="button" ref={previousButton} className="airport-insight-scroll" aria-label="이전 메뉴 보기" aria-controls="airport-glance-tabs" onClick={()=>scroll(-1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6"/></svg></button>}
+  <div ref={strip} id="airport-glance-tabs" className="airport-insight-tabs" role="tablist" aria-label="공항 한눈에 보기 선택">{tabs.map(([key,label],i)=><button key={key} id={'airport-insight-tab-'+key} role="tab" aria-selected={view===key} aria-controls={key==='overview'?'airport-insight-overview':'airport-insight-analysis'} tabIndex={view===key?0:-1} onClick={()=>navigate('insight',key)} onKeyDown={e=>tabKeys(e,i,tabs.length,n=>navigate('insight',tabs[n][0]))}>{label}</button>)}</div>
+  {edges.overflow&&<button type="button" ref={nextButton} className="airport-insight-scroll" aria-label="다음 메뉴 보기" aria-controls="airport-glance-tabs" disabled={!edges.next} onClick={()=>scroll(1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6"/></svg></button>}
+ </div>;
+}
 function KoreanGlance({children,date}:{children:ReactNode;date?:string|null}){
  const query=useQuery(),raw=query.get('insight'),view=tabs.some(([key])=>key===raw)?raw!:'overview';
  return <section className="airport-insight-shell" aria-label="인천공항 한눈에"><div className="glance-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>인천공항 한눈에</h1></div>
-  <div className="airport-insight-tabs" role="tablist" aria-label="공항 한눈에 보기 선택">{tabs.map(([key,label],i)=><button key={key} id={'airport-insight-tab-'+key} role="tab" aria-selected={view===key} aria-controls={key==='overview'?'airport-insight-overview':'airport-insight-analysis'} tabIndex={view===key?0:-1} onClick={()=>navigate('insight',key)} onKeyDown={e=>tabKeys(e,i,tabs.length,n=>navigate('insight',tabs[n][0]))}>{label}</button>)}</div>
+  <GlanceTabNavigation view={view}/>
   <div id="airport-insight-overview" role="tabpanel" aria-labelledby="airport-insight-tab-overview" hidden={view!=='overview'}>{children}</div>
   {view!=='overview'&&<div id="airport-insight-analysis" role="tabpanel" aria-labelledby={'airport-insight-tab-'+view}><PeriodFrame key={date??'today'} date={date} view={view as View}/></div>}
  </section>;
