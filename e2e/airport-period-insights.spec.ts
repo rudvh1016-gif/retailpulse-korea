@@ -163,7 +163,10 @@ test('소개 prioritizes airport staff and explains change symbols',async({page}
 });
 
 for(const width of [320,390,1440])test(`mobile airport controls and country heading remain compact ${width}`,async({page},info)=>{
- await page.setViewportSize({width,height:900});await records(page);await page.goto('/ko/airport');
+ await page.setViewportSize({width,height:900});await page.clock.setFixedTime(new Date(summary.generatedAt));await records(page);
+ // Return the requested service date rather than relabelling the captured past day as today.
+ await page.route('**/api/live/summary*',r=>{const date=new URL(r.request().url()).searchParams.get('date')??summary.todayKst;return r.fulfill({json:{...summary,serviceDateKst:date,dayRelation:date===summary.todayKst?'TODAY':date<summary.todayKst?'PAST':'FUTURE',airport:{...summary.airport,serviceDateKst:date}}});});
+ await page.goto('/ko/airport');
  const terminal=page.locator('#airport-data-flow > button');
  const nav=page.locator('.airport-context-nav > button');
  const days=page.locator('.airport-date-reserved .date-nav-shortcuts > button');
