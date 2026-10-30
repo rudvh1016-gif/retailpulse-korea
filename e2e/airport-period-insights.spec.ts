@@ -161,3 +161,29 @@ test('소개 prioritizes airport staff and explains change symbols',async({page}
  await expect(page.locator('.about-sections')).toContainText('파란색 +는 신장, 빨간색 △는 역신장');
  await expect(page.locator('.about-sections')).toContainText('목적지 국가는 승객 국적이 아닙니다');
 });
+
+for(const width of [320,390,1440])test(`mobile airport controls and country heading remain compact ${width}`,async({page},info)=>{
+ await page.setViewportSize({width,height:900});await records(page);await page.goto('/ko/airport');
+ const terminal=page.locator('#airport-data-flow > button');
+ const nav=page.locator('.airport-context-nav > button');
+ const days=page.locator('.airport-date-reserved .date-nav-shortcuts > button');
+ await expect(terminal).toHaveCount(4);await expect(nav).toHaveCount(5);await expect(days).toHaveCount(3);
+ if(width<=600){
+  for(const button of [...await terminal.all(),...await nav.all(),...await days.all()]){
+   expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+   await expect(button).toHaveCSS('text-align','left');
+  }
+  await expect(terminal.first()).toHaveCSS('font-size','11px');
+  await expect(nav.first()).toHaveCSS('font-size','11px');
+  await expect(days.first()).toHaveCSS('font-size','12px');
+ }
+ await days.last().click();await expect(days.last()).toHaveAttribute('aria-pressed','true');
+ await page.goto('/ko/airport-countries?date=2026-10-19');
+ const heading=page.getByTestId('daily-country-heading');await expect(heading).toBeVisible();
+ if(width<=600){
+  const lines=await heading.evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);return range.getClientRects().length});
+  expect(lines).toBe(1);
+ }
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await heading.screenshot({path:info.outputPath(`country-heading-${width}.png`)});
+});
