@@ -67,13 +67,16 @@ for(const width of [320,390,1440])test(`preparation month grid and preserved det
  await page.locator('.focus-country-filter select').selectOption('한국');
  await expect(list).toContainText('성탄절');await expect(list).not.toContainText('미얀마');
  await month.getByRole('button',{name:'10월 3일,',exact:false}).click();
- const detail=page.locator('#preparation-day-details');await expect(detail).toContainText('개천절');await expect(detail).toContainText(`공식 자료 확인 ${nationalDay.verifiedAt}`);await expect(detail.getByRole('link',{name:'공식 날짜 확인'})).toHaveAttribute('href',nationalDay.sourceURL);
+ const detail=page.locator('#preparation-day-details');await expect(detail).toContainText('개천절');await expect(detail).toContainText(`공식 자료 확인 ${nationalDay.verifiedAt}`);
+ const source=detail.locator('.focus-holiday-conditions');await expect(source).not.toHaveAttribute('open','');await expect(source.getByRole('link',{name:'공식 날짜 확인',includeHidden:true})).toBeHidden();
+ await source.locator('summary').focus();await page.keyboard.press('Enter');await expect(source.getByRole('link',{name:'공식 날짜 확인'})).toHaveAttribute('href',nationalDay.sourceURL);await expect(source.getByRole('link',{name:'공식 날짜 확인'})).toBeVisible();
+ await source.locator('summary').press('Enter');await expect(source.getByRole('link',{name:'공식 날짜 확인',includeHidden:true})).toBeHidden();
  const next=month.getByRole('button',{name:'다음 달'});await next.focus();await page.keyboard.press('Enter');
  await expect(month.getByRole('heading',{name:'2026년 11월'})).toBeVisible();await expect(detail).toBeHidden();await expect(list).toContainText('성탄절');
  await month.getByRole('button',{name:'오늘',exact:true}).click();await expect(month.getByRole('heading',{name:'2026년 10월'})).toBeVisible();
  await page.locator('.focus-country-filter select').selectOption('all');await next.click();await next.click();
  const christmas=month.getByRole('button',{name:'12월 25일,',exact:false});await expect(christmas.locator('.preparation-event-more')).toBeVisible();await christmas.click();
- await expect(detail).toContainText('한국 · 성탄절');await expect(detail.getByRole('link',{name:'공식 날짜 확인'})).toHaveCount(await detail.locator('.preparation-day-description').count());
+ await expect(detail).toContainText('한국 · 성탄절');await expect(detail.getByRole('link',{name:'공식 날짜 확인',includeHidden:true})).toHaveCount(await detail.locator('.preparation-day-description').count());
  await christmas.click();await expect(detail).toBeHidden();
  for(const control of await month.locator('.preparation-month-navigation button').all()){const box=await control.boundingBox();expect(box!.width).toBeGreaterThanOrEqual(44);expect(box!.height).toBeGreaterThanOrEqual(44);}
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
