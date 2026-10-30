@@ -39,9 +39,9 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  }
  if(width<1000){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
  const calculation=report.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
- await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size','12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
- const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size','11px');await expect(parts).toHaveCSS('font-weight','400');
- for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size','11px');await expect(basis).toHaveCSS('font-weight','400');}
+ await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size',width<=600?'11px':'12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size',width<=600?'10px':'11px');await expect(parts).toHaveCSS('font-weight','400');
+ for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size',width<=600?'10px':'11px');await expect(basis).toHaveCSS('font-weight','400');}
  const change=report.locator('.focus-comparison-change'),signed=change.locator(':scope > .glance-count-change');
  await expect(signed).toHaveAttribute('data-direction',width===320?'down':width===390?'neutral':'up');
  if(width===320){await expect(change).toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toContainText('△');await expect(change.locator('.focus-passenger-rate .change-rate')).toHaveCSS('color','rgb(161, 45, 63)');}
