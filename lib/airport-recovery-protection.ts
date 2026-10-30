@@ -6,6 +6,9 @@ export async function airportMidnightSourceBlocked(db: Pick<D1Database, 'prepare
   // A1 success persists LIVE in source_health; failure detail still vetoes it.
   // Status codes count only as httpStatus=NNN: a LIVE/STALE success detail
   // carries plain counts ("changed rows 403") that must not veto.
-  return !row || !['LIVE', 'SUCCESS', 'STALE'].includes(row.status) ||
+  // Only this fully classified pre-storage consistency failure is retryable.
+  // A fresh scan must still pass every original page/duplicate/count check.
+  const populationChanged = row?.status === 'ERROR' && /^failureStage=FETCH failureClass=VALIDATION causeCode=A1_TODAY_POPULATION_CHANGED_PAGE_[1-9]\d* attempts=1 elapsedMs=0 retryExhausted=false$/.test(row.detail ?? '');
+  return !row || (!['LIVE', 'SUCCESS', 'STALE'].includes(row.status) && !populationChanged) ||
     /\bhttpStatus=(?:401|403|406|429)\b|QUOTA|THROTTL|BLOCKED|AUTH|SCHEMA/i.test(row.detail ?? '');
 }
