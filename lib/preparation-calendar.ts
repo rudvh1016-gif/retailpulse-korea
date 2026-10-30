@@ -1,6 +1,7 @@
 import {sortCalendarEvents} from './calendar-display-order';
 import holidays from '../data/airport-focus-preview/holidays.json';
 import snapshot from '../data/airport-focus-preview/calendar-context.json';
+import majorEvents from '../data/reviewed-major-events.json';
 import {isExactDate,isExactMonth,type CalendarEvent} from './calendar-context.mjs';
 import type {CalendarReplacementScope} from './official-calendar-runtime';
 
@@ -10,8 +11,8 @@ export interface PreparationEvent {
  id:string;country:string;countryLabel:string;name:string;start:string;end:string;
  dateLabel_ko:string;scope:string;description_ko:string;cardSummary_ko:string;
  connectionStatus_ko:string;connectionNote_ko:string;restConditions_ko:string[];
- verificationMethod:string;notes:string;sourceURL:string;verifiedAt:string;
- isRepresentative?:boolean;kind:'public_holiday'|'school_break';
+ verificationMethod:string;notes:string;sourceURL:string;verifiedAt:string;displayConditions_ko?:string[];
+ isRepresentative?:boolean;kind:'public_holiday'|'school_break'|'major_event';
 }
 /** Reuse reviewed dates only. Automatic replacement is restricted to its exact
  * country/year/scope; a stale replacement must not revive superseded seed dates. */
@@ -41,7 +42,13 @@ export function preparationEvents(asOf:string,calendarEvents?:CalendarEvent[],sc
  // Preserve the owner's full descriptions while adopting a newer review of
  // the same stable event ID (for example a newly published Korean annual list).
  const refreshed=preserved.map(event=>{const newer=additional.find(row=>row.id===event.id&&row.verifiedAt>event.verifiedAt);return newer?{...event,verifiedAt:newer.verifiedAt,sourceURL:newer.sourceURL,verificationMethod:newer.verificationMethod}:event;});
- const all=[...refreshed,...additional];
+ // These reviewed event dates are deliberately separate from holiday APIs and
+ // holiday/route inference. An examination or exhibition is not a public holiday.
+ const major:PreparationEvent[]=majorEvents.events.filter(event=>event.status==='verified'&&isExactDate(event.start)&&isExactDate(event.end)&&event.start<=event.end&&isExactDate(event.verifiedAt)&&event.verifiedAt<=asOf).map(event=>({
+  ...event,kind:'major_event',isRepresentative:true,dateLabel_ko:event.start===event.end?event.start:`${event.start}~${event.end}`,
+  cardSummary_ko:'',connectionStatus_ko:'주요 일정 · 휴무 여부 별도 확인',connectionNote_ko:'시험·행사 날짜이며 전국 공통 휴무일을 뜻하지 않습니다. 출입국·항공편·매출 증감 예측이 아닙니다.',restConditions_ko:[],verificationMethod:'REVIEWED_OFFICIAL_SNAPSHOT',
+ }));
+ const all=[...refreshed,...additional,...major];
  return sortCalendarEvents(all.filter((event,index)=>all.findIndex(other=>other.id===event.id||other.country===event.country&&other.countryLabel===event.countryLabel&&other.start===event.start&&other.end===event.end&&other.name===event.name&&other.scope===event.scope)===index));
 }
 export function shiftPreparationMonth(month:string,offset:number):string {
