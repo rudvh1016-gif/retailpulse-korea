@@ -1,4 +1,5 @@
 'use client';
+import {readStoredJson} from '../lib/read-stored-json';
 import {useEffect,useId,useRef,useState} from 'react';
 import {UiLineIcon} from './ui-line-icon';
 import type {Lang} from './retailpulse-data';
@@ -15,7 +16,7 @@ export function DutyFreeMonthlyTrend({lang}:{lang:Lang}){
  const [open,setOpen]=useState(false),[data,setData]=useState<DutyFreeRecent|null>(null),[failed,setFailed]=useState(false),[active,setActive]=useState<number|null>(null),[refresh,setRefresh]=useState(0);
  useEffect(()=>{if(!open)return;const controller=new AbortController();
   const timer=setTimeout(()=>{setData(null);setFailed(false);setActive(null);setRefresh(value=>value+1);},nextKstExchangeMidnight(Date.now())-Date.now()+10);
-  fetch('/api/live/duty-free-exchange/recent',{signal:controller.signal,cache:'no-store'}).then(async response=>{if(!response.ok)throw Error('UNAVAILABLE');const value:unknown=await response.json();if(!validDutyFreeRecent(value)||value.asOfDateKst!==kstExchangeDate(Date.now()))throw Error('INVALID_DATA');if(!controller.signal.aborted)setData(value);}).catch(()=>{if(!controller.signal.aborted)setFailed(true);});
+  readStoredJson<unknown>('/api/live/duty-free-exchange/recent',{signal:controller.signal,cache:'no-store'}).then(value=>{if(!validDutyFreeRecent(value)||value.asOfDateKst!==kstExchangeDate(Date.now()))throw Error('INVALID_DATA');if(!controller.signal.aborted)setData(value);}).catch(()=>{if(!controller.signal.aborted)setFailed(true);});
   return()=>{controller.abort();clearTimeout(timer);};
  },[open,refresh]);
  const number=new Intl.NumberFormat(({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'})[lang],{minimumFractionDigits:2,maximumFractionDigits:2});

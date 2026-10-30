@@ -1,4 +1,5 @@
 "use client";
+import {readStoredJson} from '../lib/read-stored-json';
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import type { Lang } from './retailpulse-data';
@@ -40,11 +41,10 @@ function ToiletDirectory({area,lang}: {area:SeoulFacilityArea;lang:Lang}) {
   const [limit,setLimit]=useState(10);
   useEffect(()=>{
     if(!open || loaded?.area===area) return;
-    let active=true;
-    fetch(`/data/seoul-toilets/${area}.json`,{headers:{accept:'application/json'}})
-      .then(async response=>response.ok ? await response.json() as unknown : null)
+    let active=true;const controller=new AbortController();
+    readStoredJson<unknown>(`/data/seoul-toilets/${area}.json`,{headers:{accept:'application/json'},signal:controller.signal})
       .catch(()=>null).then(value=>{if(active)setLoaded({area,data:toiletSnapshot(value,area)});});
-    return ()=>{active=false;};
+    return ()=>{active=false;controller.abort();};
   },[open,area,loaded?.area]);
   const data=loaded?.area===area ? loaded.data : null;
   const rows=useMemo(()=>searchToilets(data?.rows??[],query),[data,query]);

@@ -20,8 +20,8 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    # Run 38041338089 reached the 45-minute limit during the 1,163-case
-    # integration suite. Preserve every check and allow setup and retries to finish.
+    # Preserve the existing validation and critical UI gate. The complete
+    # browser suite runs in the mandatory browser_regression matrix below.
     timeout-minutes: 75
     env:
       # Match the Playwright server so built metadata/icons remain same-origin.
@@ -86,9 +86,6 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
-      - run: npm run test:e2e
-        env:
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       - name: Save browser verification screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -100,6 +97,64 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  browser_inventory:
+    name: Browser inventory
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      shards: ${{ steps.inventory.outputs.shards }}
+    env:
+      NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
+      RPK_DEPLOYMENT_STAGE: staging
+      NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: Require complete, disjoint browser test partitions
+        id: inventory
+        run: node scripts/check-browser-shards.mjs
+
+  browser_regression:
+    name: Browser regression (${{ matrix.shard }}/${{ matrix.total }})
+    needs: [browser_inventory, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.browser_inventory.outputs.shards) }}
+    env:
+      NEXT_PUBLIC_SITE_ORIGIN: http://127.0.0.1:4173
+      PLAYWRIGHT_PRODUCTION_SERVER: "true"
+      PLAYWRIGHT_BROWSERS_PATH: .playwright-browsers
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+      RPK_DEPLOYMENT_STAGE: staging
+      NEXT_PUBLIC_ENABLE_BETA_SIGNUP: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm run e2e:install
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total }}
+      - name: Save this partition's browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-verification-shard-${{ matrix.shard }}
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
   # Focused owner-requested typography evidence, independent of the long suite.
   sitewide-heading-hierarchy:
