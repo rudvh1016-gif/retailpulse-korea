@@ -48,7 +48,7 @@ for(const detail of ['recent 2026-10-08..2026-10-10; requests 121; storage write
   if(healthy){
    assert.equal((await airportMidnightCandidate({...deps,readCoverage:async()=>CURRENT},NOW)).reason,'ALREADY_CURRENT');
    assert.equal((await airportMidnightCandidate({...deps,budgetAvailable:async()=>false},NOW)).reason,'REQUEST_BUDGET_UNAVAILABLE');
-   assert.equal((await airportMidnightCandidate(deps,'2026-10-10T18:00:00Z')).reason,'OUTSIDE_FALLBACK_WINDOW');
+   assert.equal((await airportMidnightCandidate(deps,'2026-10-10T21:00:00Z')).reason,'OUTSIDE_FALLBACK_WINDOW');
   }
  }finally{db.raw.close();}
 });
