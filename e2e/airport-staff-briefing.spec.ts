@@ -34,6 +34,8 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  const sourceBox=await briefing.locator('.staff-brief-heading').boundingBox(),timeBox=await briefing.locator('.staff-brief-grid>section').first().boundingBox();
  expect(timeBox!.y-(sourceBox!.y+sourceBox!.height)).toBeGreaterThanOrEqual(width<=700?24:16);
  const basis=briefing.locator('.staff-route-details');
+ await expect(basis.locator('summary')).toHaveCSS('font-size','12px');expect((await basis.locator('summary').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ const routeHeading=briefing.locator('.staff-brief-grid>section').nth(1).locator('h3');await expect(routeHeading).toHaveText('✓노선·휴일 준비');await expect(routeHeading.locator('.airport-flow-check')).toHaveAttribute('aria-hidden','true');await expect(routeHeading.locator('.airport-flow-check')).toHaveCSS('color','rgb(17, 17, 17)');
  await expect(basis).not.toHaveAttribute('open','');
  await expect(basis.locator('p').first()).not.toBeVisible();
  await expect(briefing.locator('.event-country-flights')).toContainText('2026-09');

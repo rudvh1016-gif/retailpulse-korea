@@ -25,7 +25,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  for(const row of await commentary.all()){await expect(row).toHaveCSS('font-size','12px');await expect(row.locator('b')).toHaveCSS('font-size','12px');}
  await expect(report.locator('.focus-selected-country-changes:not(.focus-return-context)>small').first()).toHaveCSS('font-size','11px');
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');
- await expect(flow.locator('.airport-flow-check')).toHaveCount(4);
+ await expect(flow.locator('.airport-flow-check')).toHaveCount(5);
  for(const check of await flow.locator('.airport-flow-check').all()){await expect(check).toHaveAttribute('aria-hidden','true');await expect(check).toHaveText('✓');await expect(check).toHaveCSS('font-size','11px');await expect(check).toHaveCSS('color','rgb(17, 17, 17)');}
  await expect(page.locator('h1 .airport-flow-check,h2 .airport-flow-check')).toHaveCount(0);
  if(width<=700){const a=(await flow.getByTestId('glance-key-growth').locator('small').boundingBox())!,b=(await flow.locator('.staff-brief-heading small').boundingBox())!;expect(b.y-a.y-a.height).toBeGreaterThanOrEqual(0);expect(b.y-a.y-a.height).toBeLessThanOrEqual(8);}
