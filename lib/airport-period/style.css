@@ -74,3 +74,10 @@ html{overflow-y:hidden}body{display:flow-root}
 .holiday-calendar-context[hidden]{display:none}.holiday-calendar-context>p{grid-column:1/-1;color:var(--muted);margin:0}
 .holiday-calendar-context section{border-top:1px solid var(--rule);padding-top:8px;min-width:0}.holiday-calendar-context strong{font-weight:600}.holiday-calendar-context p{margin:4px 0}.holiday-calendar-context a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 @media(max-width:600px){.holiday-calendar-context{grid-template-columns:1fr;gap:10px}}
+/* Chinese parity: retain the same layout and use the site's Chinese typeface. */
+html:lang(zh) body{font-family:'Noto Sans SC Variable',system-ui,sans-serif}
+html:lang(zh) :is(.section-heading h2,.finding h3){word-break:normal;overflow-wrap:anywhere}
+/* Owner's mobile note request: concise support copy, never clipped or hidden. */
+@media(max-width:600px){
+ .holiday-calendar-context>.holiday-period-key,.comparison-caption,.context-note,#finding-subtitle,.chart-help,.boundary,.source-line{font-size:10px;line-height:1.6}
+}

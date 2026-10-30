@@ -46,7 +46,7 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
  const frame=page.frameLocator('.airport-period-frame');
  await expect(frame.getByText('오전·오후의 변화를 쉽게 파악해보세요')).toBeVisible();
  await expect(frame.locator('#takeaway')).toContainText('기준 대비 하루 평균 출발편');
- await expect(frame.locator('#boundary')).toContainText('비중은 하루 출발편 중 각 시간대의 비율');
+ await expect(frame.locator('#boundary')).toContainText('하루 출발편 중 비중 · 예정시각 기준');
  await frame.getByLabel('기준 기간 시작일').fill('2026-09-12');await frame.getByLabel('기준 기간 종료일').fill('2026-09-18');
  await frame.getByLabel('비교 기간 시작일').fill('2026-10-01');await frame.getByLabel('비교 기간 종료일').fill('2026-10-30');
  await frame.getByRole('button',{name:'기간 적용',exact:true}).click();
@@ -127,8 +127,8 @@ for(const width of [360,1440])test(`CN holiday overlap and independent flight co
  await expect(before).toContainText('중추절');await expect(before).toContainText('2026-09-25~2026-09-27');
  await expect(before).toContainText('항공편 수집 7/7일');await expect(after).toContainText('항공편 수집 6/7일');
  await expect(before).toContainText('한국 출발지 참고');await expect(before).toContainText('추석');
- await expect(context).not.toContainText('경로의 날');await expect(context).toContainText('색은 휴일 여부를 뜻하지 않습니다');
- await expect(page.locator('#context-note')).toContainText('수집일이 부족');
+ await expect(context).not.toContainText('경로의 날');await expect(context).toContainText('회색: 기준 · 파랑: 비교 (휴일 여부와 무관)');
+ await expect(page.locator('#context-note')).toContainText('수집일 부족');
  await expect(before.getByRole('link',{name:'공식 출처'})).toHaveAttribute('href',/beijing.gov.cn/);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath(`holiday-overlap-${width}.png`),fullPage:true});
