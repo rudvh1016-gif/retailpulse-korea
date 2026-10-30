@@ -444,3 +444,8 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
  .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]{flex:0 0 auto;min-width:72px;align-items:flex-start;text-align:left;font-size:12px}
  .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time{font-size:10px}
 }
+
+/* Keep the first phone date label on the same edge as the terminal/menu text. */
+@media(max-width:600px){
+ .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:first-child{padding-inline-start:0}
+}

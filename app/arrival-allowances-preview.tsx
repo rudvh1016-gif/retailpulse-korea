@@ -28,7 +28,7 @@ export default function ArrivalAllowancesPreview({scrollOnMount=false,lang='ko'}
   return()=>{active=false;stop();window.removeEventListener('hashchange',arm);window.removeEventListener('popstate',arm);window.removeEventListener('pageshow',arm);for(const event of ['wheel','touchstart','pointerdown','keydown'])window.removeEventListener(event,stop);};
  },[scrollOnMount]);
  const [checks,setChecks]=useState<CheckStatus|null>(null);
- useEffect(()=>{const controller=new AbortController();fetch('/api/airport/allowance-status',{signal:controller.signal}).then(response=>response.ok?response.json():null).then(value=>{if(value&&Array.isArray(value.countries))setChecks(value);}).catch(()=>{});return()=>controller.abort();},[]);
+ useEffect(()=>{const controller=new AbortController();fetch('/api/airport/allowance-status',{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(15000)])}).then(response=>response.ok?response.json():null).then(value=>{if(!controller.signal.aborted&&value&&Array.isArray(value.countries))setChecks(value);}).catch(()=>{});return()=>controller.abort();},[]);
  const [countryId,setCountryId]=useState(''),[answers,setAnswers]=useState<Record<string,string>>({});
  const original=data.countries.find(item=>item.id===countryId);
  const country=original?.id==='JP'&&checks?.japan?applyJapanValues(original,checks.japan):original;

@@ -1,4 +1,5 @@
 'use client';
+import {readStoredJson} from '../lib/read-stored-json';
 import {useEffect,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {AirportCustomsNews} from './airport-customs-news';
@@ -10,7 +11,7 @@ export default function AirportCustomsNewsClient({lang,today}:{lang:Lang;today:s
  const router=useRouter(),copy=airportNewsCopy[lang];
  const [items,setItems]=useState<OfficialNews[]>([]),[state,setState]=useState<'loading'|'ready'|'error'>('loading'),[calendar,setCalendar]=useState(today),[attempt,setAttempt]=useState(0);
  useEffect(()=>{const abort=new AbortController();let active=true;
-  fetch('/api/airport/news',{signal:abort.signal,cache:'no-store'}).then(async response=>{if(!response.ok)throw Error('NEWS_UNAVAILABLE');const body=await response.json();if(body.status==='UNAVAILABLE'||!Array.isArray(body.items))throw Error('NEWS_UNAVAILABLE');
+  readStoredJson<{status:string;items:OfficialNews[];today:string}>('/api/airport/news',{signal:abort.signal,cache:'no-store'}).then(body=>{if(body.status==='UNAVAILABLE'||!Array.isArray(body.items))throw Error('NEWS_UNAVAILABLE');
    if(active){setItems(body.items.filter((item:OfficialNews)=>{try{return mayPublishNews(item);}catch{return false;}}));if(/^\d{4}-\d{2}-\d{2}$/.test(body.today))setCalendar(body.today);setState('ready');}
   }).catch(()=>{if(active)setState('error');});return()=>{active=false;abort.abort();};
  },[attempt]);

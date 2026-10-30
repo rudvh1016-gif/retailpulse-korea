@@ -338,3 +338,16 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  :root body .airport-focus-shell .focus-report .focus-passenger-calculation>summary{font-size:11px}
  .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:10px}
 }
+
+/* Match the phone briefing's inner text edge without changing its type or card. */
+@media(max-width:700px){
+ .page-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:2px}
+ .airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}
+ .airport-focus-operating .glance-preview{padding-inline:0}
+ .airport-focus-operating .glance-controls>div button:first-child{min-width:44px;padding-inline-start:0;text-align:start}
+ .airport-focus-operating .glance-controls>div button:first-child .glance-selection-rule{left:0}
+}
+@media(max-width:365px){
+ .page-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:6px}
+ .airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}
+}
