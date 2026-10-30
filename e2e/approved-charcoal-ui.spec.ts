@@ -26,7 +26,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
   await expect(band).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(band).toHaveCSS('border-top-width','0px');await expect(band).toHaveCSS('padding-left','0px');await expect(band).toHaveCSS('font-size','16px');await expect(band).toHaveCSS('font-weight','600');
   await expect(band.locator('svg.ui-line-icon')).toHaveCount(0);
  }
- await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width===320?'24px':'28px');
+ await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width===320?'20px':'28px');
  for(const sentence of await page.locator('.focus-selected-country-changes:not([aria-label])>p').all())expect((await sentence.innerText()).trim()).not.toMatch(/\.$/);
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');await expect(flow.locator('.airport-flow-item-title')).toHaveCount(5);
  for(const heading of await flow.locator('.airport-flow-item-title').all()){await expect(heading.locator('.ui-line-icon')).toHaveCount(0);await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('font-weight',lang==='zh'||lang==='ja'?'600':'700');}
@@ -50,7 +50,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
  const scope=page.getByTestId('monthly-airport-scope');await expect(scope).toHaveCount(1);await expect(scope.locator('p')).toContainText('T1 + T2');await expect(scope.locator('small')).toBeVisible();
  expect(await scope.evaluate(node=>node.previousElementSibling?.tagName)).toBe('H2');
- await page.goto(`/${lang}/airport-countries?date=${date}`);await expect(page.getByTestId('monthly-airport-scope')).toHaveCount(1);
+ await page.goto(`/${lang}/airport-countries?mode=passengers&date=${date}`);await expect(page.getByTestId('monthly-airport-scope')).toHaveCount(1);
  const countryTitle=page.locator(lang==='ko'?'.airport-country-insights>h1':'.focus-detail>h1');await expect(countryTitle).toHaveText(({ko:'국가별 흐름',en:'T1 + T2 Route-country trends',zh:'T1 + T2 航线国家趋势',ja:'T1 + T2 路線国別の推移'} as const)[lang]);
  const countryScope=page.getByTestId('monthly-airport-scope');await expect(countryScope.locator('small')).toBeVisible();if(lang==='ko')await expect(page.locator('.airport-country-insights>.country-tabs')).toBeVisible();else expect(await countryScope.evaluate(node=>node.previousElementSibling?.tagName)).toBe('H1');
  expect(await countryTitle.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

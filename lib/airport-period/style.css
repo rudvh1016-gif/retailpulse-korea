@@ -58,6 +58,12 @@ body{font-family:'KORETAIL Preview','Pretendard Variable',system-ui,sans-serif;c
 html{overflow-y:hidden}body{display:flow-root}
 .band-summary col:first-child{width:28%}.band-summary col:not(:first-child){width:36%}
 @media(max-width:600px){.range-form fieldset>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.range-form fieldset>div>span{display:none}.range-form fieldset label{display:flex;flex-direction:column;align-items:stretch;gap:4px}.range-form input[type=date]{width:100%;min-width:0;padding:7px 4px;font-size:13px;min-height:44px}.presets button,.scope button,.measure button{min-height:44px}}
+
+.scope[data-mode=country]{gap:8px;flex-wrap:wrap}
+.scope[data-mode=country] button{min-height:44px;padding:7px 13px;border:1px solid #d5dce2;border-radius:4px;color:#43515c}
+.scope[data-mode=country] button[aria-pressed=true]{border-color:#315775;color:#315775;box-shadow:inset 0 -2px #315775;font-weight:650}
+@media(hover:hover){.scope[data-mode=country] button:hover{background:#f2f5f7}}
+.country-flag{display:inline-block;vertical-align:-2px;object-fit:contain;margin-right:7px}
 @media(max-width:600px){.band-grid{gap:18px 16px}.bands-heading h4{font-size:15px}.bands-heading p{font-size:11px}.band-summary h5{font-size:15px}.band-summary time{font-size:12px}.band-summary tbody td{font-size:17px}.band-summary header{gap:4px;margin-bottom:8px}.band-changes .band-change-label,.band-changes .increase,.band-changes .decrease,.band-changes .neutral{font-size:11px}}
 /* One-date comparison stays compact on phone and keyboard accessible. */
 #today-compare-control:not([hidden]) { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:10px 0; color:#333; font-size:13px; }

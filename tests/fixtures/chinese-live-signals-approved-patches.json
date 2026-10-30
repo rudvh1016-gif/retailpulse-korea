@@ -1,0 +1,42 @@
+[
+  [
+    "import {chineseText} from '../lib/chinese-ui';\n",
+    ""
+  ],
+  [
+    "    areaValue: chineseText(lang,row.tradeAreaName.endsWith(row.tradeAreaTypeName)\n",
+    "    areaValue: row.tradeAreaName.endsWith(row.tradeAreaTypeName)\n"
+  ],
+  [
+    "      : `${row.tradeAreaName} · ${row.tradeAreaTypeName}`),\n",
+    "      : `${row.tradeAreaName} · ${row.tradeAreaTypeName}`,\n"
+  ],
+  [
+    "  const localizedOverview=chineseText(lang,event.overview);\n  const sourceOriginal=lang==='zh'&&/[\\uac00-\\ud7a3]/.test(localizedOverview??'');\n  const preview = chineseText(lang,eventPreview(event.overview));\n",
+    "  const preview = eventPreview(event.overview);\n"
+  ],
+  [
+    "        <h4>{chineseText(lang,[event.categoryName, event.title].filter(Boolean).join(\" · \"))}</h4>\n",
+    "        <h4>{[event.categoryName, event.title].filter(Boolean).join(\" · \")}</h4>\n"
+  ],
+  [
+    "      <p className=\"event-meta\">{lang==='zh'?<>{formatEventPeriod(event)}{place&&<> · <span lang={/[\\uac00-\\ud7a3]/.test(place)?'ko':undefined}>{/[\\uac00-\\ud7a3]/.test(place)?'地址原文：':''}{place}</span></>}</>:[formatEventPeriod(event), place].filter(Boolean).join(\" · \")}</p>\n",
+    "      <p className=\"event-meta\">{[formatEventPeriod(event), place].filter(Boolean).join(\" · \")}</p>\n"
+  ],
+  [
+    "      {sourceOriginal&&/[\\uac00-\\ud7a3]/.test(preview??'')&&<small lang=\"zh-CN\">官方原文（韩语）</small>}\n      {preview && <p className=\"event-preview\" lang={sourceOriginal&&/[\\uac00-\\ud7a3]/.test(preview??'')?'ko':undefined}>{preview}</p>}\n",
+    "      {preview && <p className=\"event-preview\">{preview}</p>}\n"
+  ],
+  [
+    "          <summary>{text.eventDetails[lang]}{sourceOriginal?' · 官方原文（韩语）':''}</summary>\n          <p className=\"event-overview\" lang={sourceOriginal?'ko':undefined}>{localizedOverview}</p>\n",
+    "          <summary>{text.eventDetails[lang]}</summary>\n          <p className=\"event-overview\">{event.overview}</p>\n"
+  ],
+  [
+    "    const station = chineseText(lang,formatRepresentativeStations(subway.selectedStations));\n",
+    "    const station = formatRepresentativeStations(subway.selectedStations);\n"
+  ],
+  [
+    "        <span lang={/[\\uac00-\\ud7a3]/.test(presentation.areaValue)?'ko':undefined}>{presentation.areaValue}</span>\n",
+    "        <span lang=\"ko\">{presentation.areaValue}</span>\n"
+  ]
+]

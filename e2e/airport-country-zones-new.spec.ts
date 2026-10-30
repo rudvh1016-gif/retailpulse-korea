@@ -9,6 +9,9 @@ for(const width of [320,360,390,430,1280,1440])test(`국가별 출발 구역에�
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
  await page.goto('/ko/airport-countries?date=2026-10-19');
+ await expect(page.getByRole('tab',{name:'국가별 출발 구역'})).toHaveAttribute('aria-selected','true');
+ await expect(page.getByTestId('map-zone-countries')).toBeVisible();
+ expect(await page.getByTestId('map-zone-countries').evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('[data-testid="airport-month-flights"]')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
  await page.getByRole('tab',{name:'국가별 출발 구역'}).click();
  await expect(page.getByRole('tab',{name:'국가별 출발 구역'})).toHaveAttribute('aria-selected','true');
  await expect(page.getByRole('group',{name:'출발 구역 터미널 선택'})).toBeVisible();

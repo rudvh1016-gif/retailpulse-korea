@@ -1,3 +1,4 @@
+import {koreanCompatibilitySource} from './helpers/chinese-source-compat.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import test from 'node:test';
@@ -103,14 +104,14 @@ test('scrubbing maps CSS pixels to plotted month positions, clamps margins and p
 });
 
 test('country source essentials stay visible while the full original caveats remain expandable',()=>{
- const source=readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8');
+ const source=koreanCompatibilitySource(readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8'));
  assert.match(source,/인천공항 공식 월 실적 · \{checkedAt\?`수집 \$\{kstDayOf\(checkedAt\)\}`/);
  assert.match(source,/노선 국가 기준 · 국가별 축 다름<\/small><details[^>]*><summary>자료 안내<\/summary>/);
  assert.match(source,/노선 국가 기준이며 승객 국적이 아닙니다\. 과거 실적은 향후 증가를 보장하지 않습니다\./);
 });
 
 test('every full-country monthly table is a default-closed native disclosure with its table preserved',()=>{
- const source=readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8');
+ const source=koreanCompatibilitySource(readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8'));
  assert.match(source,/full&&!loading&&<details className="focus-month-table-details"><summary>월별 수치 보기<\/summary><table className="focus-month-values">/);
  assert.match(source,/<caption className="sr-only">\{row.label\} 월별 출발 여객과 전월비<\/caption>/);
  assert.match(source,/<thead><tr><th>월<\/th><th>출발 여객<\/th><th>전월비<\/th><\/tr><\/thead><tbody>\{row.points.map/);

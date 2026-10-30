@@ -510,7 +510,10 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   function changeLanguage(next: Lang) {
     setLang(next);
-    if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);
+    if (/^\/(?:ko|en|zh|ja)(?:\/|$)/.test(window.location.pathname)) {
+      const path=window.location.pathname.replace(/^\/(?:ko|en|zh|ja)(?=\/|$)/,`/${next}`);
+      window.history.pushState({}, "", path+window.location.search+window.location.hash);
+    } else if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);
     else updateUrl(next, view, selected);
   }
 

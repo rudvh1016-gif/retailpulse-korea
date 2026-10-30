@@ -408,11 +408,18 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .airport-flow[data-chart-material="ink-silver"] .airport-flow-legend i.ahead{background:#aec5d8}
 .app .airport-view > #airport-data-flow,
 .app .airport-view > .airport-context-nav { display:flex; gap:0; border-bottom:1px solid #dce2e7; align-items:stretch; }
+.app .airport-view > #airport-data-flow { margin-bottom:0; }
+.app .airport-view > .airport-menu-label { margin:16px 0 2px; color:#586571; font-size:12px; font-weight:600; line-height:1.4; }
+.app .airport-view > .airport-section-label { margin-top:12px; }
 .app .airport-view > #airport-data-flow > button,
-.app .airport-view > .airport-context-nav > button { flex:1 1 0; min-width:0; min-height:44px; padding:10px 4px; border:0; border-bottom:1px solid transparent; color:#666; text-align:center; font-size:13px; font-weight:500; letter-spacing:0; }
+.app .airport-view > .airport-context-nav > button { flex:1 1 0; min-width:0; min-height:44px; padding:10px 4px; border:0; border-bottom:1px solid transparent; color:#46515d; text-align:center; font-size:13px; font-weight:500; letter-spacing:0; cursor:pointer; }
 .app .airport-view > #airport-data-flow > button:first-child { flex-direction:row; gap:4px; }
 .app .airport-view > #airport-data-flow > button[aria-selected="true"],
 .app .airport-view > .airport-context-nav > button[aria-current="page"] { border-bottom-color:#345b7b; color:#244967; font-weight:650; }
+@media(hover:hover){
+ .app .airport-view > #airport-data-flow > button:hover,
+ .app .airport-view > .airport-context-nav > button:hover { background:#f4f6f8; color:#244967; }
+}
 .app .airport-view > #airport-data-flow > button:focus-visible,
 .app .airport-view > .airport-context-nav > button:focus-visible { outline:2px solid #345b7b; outline-offset:-2px; }
 @media(max-width:600px){
@@ -424,3 +431,16 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 /* The illustration has unused lower canvas; pull the gate key closer without
    moving the overlaid flight values or cropping the image. */
 .airport-concept-picture[data-scene="static"]:not([data-building="all"]) { margin-bottom:calc(-1 * min(140px, 15vw)); }
+
+/* Compact, left-aligned airport controls on phones only; retain touch targets. */
+@media(max-width:600px){
+ .app .airport-view > .airport-menu-label{font-size:11px}
+ .app .airport-view > #airport-data-flow,
+ .app .airport-view > .airport-context-nav{justify-content:flex-start;gap:12px}
+ .app .airport-view > #airport-data-flow > button,
+ .app .airport-view > .airport-context-nav > button{flex:0 0 auto;min-width:44px;padding-inline:0;text-align:left;font-size:11px}
+ .app .airport-view > #airport-data-flow > button:first-child{justify-content:flex-start}
+ .app .airport-view > #airport-data-flow > button:first-child small{font-size:11px}
+ .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]{flex:0 0 auto;min-width:72px;align-items:flex-start;text-align:left;font-size:12px}
+ .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time{font-size:10px}
+}

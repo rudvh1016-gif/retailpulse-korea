@@ -180,7 +180,7 @@ for (const width of [390, 1440]) {
     await expect(jump).toBeVisible();
     await expect(jump).toHaveCSS("background-color", "rgba(255, 255, 255, 0.4)");
     await expect(jump).toHaveCSS("backdrop-filter", "blur(14px)");
-    await expect(jump).toHaveAttribute("href", "/ko/airport-countries?date=2026-10-19");
+    await expect(jump).toHaveAttribute("href", "/ko/airport-countries?mode=passengers&date=2026-10-19");
     const box = await jump.boundingBox();
     const parent = await jump.locator("..").boundingBox();
     expect(box).not.toBeNull();

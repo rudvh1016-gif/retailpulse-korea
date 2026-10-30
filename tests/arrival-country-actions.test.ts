@@ -59,9 +59,9 @@ test('Thailand separates ordinary declaration from excess alcohol surrender and 
 test('core actions follow general facts, precede disclosures, and do not invent custody entitlements',()=>{
  const source=readFileSync('app/arrival-allowances-preview.tsx','utf8');
  const core=source.indexOf('className="arrival-next-actions"');
- assert.ok(core>source.indexOf('<h4>패션·명품 등 일반물품 기준</h4>'));
- assert.ok(core<source.indexOf('<summary>화장품·향수</summary>'));
- assert.match(source,/<summary>주류·담배<\/summary>\{alcoholNotes.map/);
+ assert.ok(core>source.indexOf('chineseText(lang,"패션·명품 등 일반물품 기준")'));
+ assert.ok(core<source.indexOf('chineseText(lang,"화장품·향수")'));
+ assert.match(source,/<summary>\{chineseText\(lang,"주류·담배"\)\}<\/summary>\{alcoholNotes.map/);
  assert.match(source,/result.summary&&!actions/);
  const copy=readFileSync('lib/arrival-country-actions.ts','utf8');
  assert.doesNotMatch(copy,/180일|무료 보관|세금만 내면|다른 공항.*수령/);

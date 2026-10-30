@@ -44,3 +44,8 @@
 .share{font-size:12px;font-weight:400;color:#555}
 .name{font-size:14px;line-height:1.5}
 .unverified summary .unverifiedCount{font-size:16px;font-weight:700;color:#111;font-variant-numeric:tabular-nums}
+
+/* Keep the Korean country-departure heading compact on phones. */
+@media(max-width:600px){
+ :global(.airport-zone-countries) .heading:lang(ko){font-size:clamp(10px,3vw,12px)}
+}

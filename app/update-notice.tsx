@@ -68,7 +68,7 @@ export default function UpdateNotice({lang}:{lang:string}){
    {focusNotice&&<ReferenceChangeNotices dialog={dialog} calendarHref={focusHref('prepare')} allowanceHref={focusHref('prepare&section=arrival#arrival-allowances')} onNavigate={()=>dismiss.current(false)}/>}
    {focusNotice?(preview?previewItems:releaseItems).map(item=><section key={item.view}><div><h3>{item.title}</h3><p>{item.body}</p><small>{item.path}</small></div><a href={focusHref(item.view)} onClick={()=>dismiss.current(false)}>{item.link} →</a></section>):<>
    <section><div><h3>{c.hour}</h3><p>{c.hourBody}</p><small>{c.hourPath}</small><p className="update-notice-note">{c.hourNote}</p></div><a href={`/${locale}/airport?terminal=all#airport-hourly-comparison`} onClick={()=>dismiss.current(false)}>{c.hourLink} →</a></section>
-   <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport-countries#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
+   <section><div><h3>{c.country} <span aria-hidden="true">*</span></h3><p>{c.countryBody}</p><small>{c.countryPath}</small><p className="update-notice-note">{c.countryNote}</p></div><a href={`/${locale}/airport-countries?mode=passengers#airport-route-passengers`} onClick={()=>dismiss.current(false)}>{c.countryLink} →</a></section>
   </>}
   </div>
   <footer><button type="button" className="update-notice-week" onClick={()=>dismiss.current(true)}>{c.week}</button><button type="button" className="update-notice-close" onClick={()=>dismiss.current(false)}>{c.close}</button></footer>

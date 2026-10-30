@@ -2,7 +2,7 @@ import { getDb } from "../../../../db";
 import { CONTENT_API_ROBOTS_TAG } from "../../../../lib/crawl-policy";
 import { isValidKstDay, kstDayOf, shiftKstDay } from "../../../../lib/kst";
 import { profileOf } from "../../../../lib/airport-day-profile";
-import {storedCountryDayObservations} from "../../../../lib/airport-country-day-history";
+import {storedCountryDayObservations,storedTerminalCountryDayObservations} from "../../../../lib/airport-country-day-history";
 import { terminalDay } from "../../../../lib/airport-day-compare";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export async function readAirportDays(client: Pick<D1Database, "prepare">, date:
     if (!profile || profile.day !== row.day) { withoutProfile++; continue; }
     history.push({ T1: terminalDay(profile, "T1"), T2: terminalDay(profile, "T2") });
   }
-  return { rowsRead: rows.length, withoutProfile, history, countryDays:storedCountryDayObservations(rows) };
+  return { rowsRead: rows.length, withoutProfile, history, countryDays:storedCountryDayObservations(rows),countryDaysByTerminal:storedTerminalCountryDayObservations(rows) };
 }
 
 export async function GET(request: Request) {

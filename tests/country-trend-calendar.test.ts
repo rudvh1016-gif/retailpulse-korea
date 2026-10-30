@@ -1,3 +1,4 @@
+import {chineseText} from '../lib/chinese-ui';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -130,7 +131,7 @@ test('recent-event titles include country names for public and regional holidays
  assert.equal(calendarEventTitle({country:'US',kind:'school_break',name:'뉴욕시 공립학교 봄방학'}),'미국 봄방학');
  const source=readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8');
  assert.ok(source.includes('<CountryTrendCalendarContext row={row} events={events} asOf={asOf} lang={lang}/>'));
- assert.ok(source.includes('최근 {calendarCountryName(country)} 일정'));
+ assert.ok(source.includes('chineseText(lang,calendarCountryName(country))')&&source.includes('chineseText(lang,"최근 ")'));
  assert.ok(!source.includes('OriginCalendarContext'));
  assert.match(source,/최근 월 비교 자료가 일부 없어[^;]+<CalendarContext row=\{row\} lang=\{lang\}\/>/);
 });
@@ -300,7 +301,7 @@ test('US spring is shown only for matching actual periods; missing countries and
 
 for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: coverage states are localized and grouped evidence remains complete`,()=>{
  const cn=html({lang,row:{...row,code:'CN'}});assert.equal((cn.split('<details')[0].match(/data-vacation-group="CN"/g)??[]).length,1);
- for(const event of events.filter(item=>item.country==='CN'&&item.kind==='school_break')){assert.ok(cn.includes(event.sourceURL));assert.ok(cn.includes(event.start));assert.ok(cn.includes(event.region!));}
+ for(const event of events.filter(item=>item.country==='CN'&&item.kind==='school_break')){assert.ok(cn.includes(event.sourceURL));assert.ok(cn.includes(event.start));assert.ok(cn.includes(chineseText(lang,event.region!)));}
  const vn=html({lang,row:{...row,code:'VN'}});assert.match(vn,/data-school-break-status="NO_REVIEWED_DATA"/);
  const text=vn.match(/data-school-break-status="NO_REVIEWED_DATA">([^<]+)/)?.[1]??'';
  assert.equal(text,{ko:'방학 자료: 미확인',en:'School-break data: unverified',zh:'学校假期资料：未确认',ja:'学校休暇資料：未確認'}[lang]);

@@ -1,3 +1,4 @@
+import {chineseText} from '../lib/chinese-ui';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {sortCalendarEvents} from '../lib/calendar-display-order';
@@ -62,7 +63,7 @@ test('all localized country contexts render Korea-first country sections with ch
   const codes=[...html.matchAll(/data-calendar-country="([A-Z]{2})"/g)].map(match=>match[1]);assert.deepEqual(codes,sections.map(section=>section.country));
   if(codes.includes('KR'))assert.equal(codes[0],'KR');
   for(const section of sections){const starts=section.groups.map(group=>group.items[0].start);assert.deepEqual(starts,[...starts].sort());}
-  if(groups.some(group=>group.role==='origin'))assert.match(html,/한국 출발지 참고/);
+  if(groups.some(group=>group.role==='origin'))assert.ok(html.includes(chineseText(lang,' · 한국 출발지 참고').trim()));
  }
 });
 test('brief display sorting is after representative selection and preserves representative selection and route-flight joins',()=>{

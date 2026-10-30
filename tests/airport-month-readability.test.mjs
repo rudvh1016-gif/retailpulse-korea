@@ -8,7 +8,7 @@ const rule=selector=>{let result;css.walkRules(selector,node=>{result={...result
 test('zone comparison has a meaningful heading and keeps period and units next to the table',()=>{
  assert.match(source,/data-testid=\{zones\?'airport-month-zones'/);
  assert.match(source,/구역별 항공편 · 전월 비교/);
- assert.match(source,/row\(label,counts=>counts.sides\[key\]\)\),false,true,true/);
+ assert.match(source,/airport-zone-symbol/); assert.match(source,/counts=>counts.sides\[key\],key\)\),false,true,true/);
  assert.match(source,/일평균 편수 · 편\/일/);
  assert.match(source,/showBasis&&<span className="airport-month-basis">\{comparisonBasis\}/);
 });

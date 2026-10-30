@@ -21,10 +21,10 @@ test('China screenshot explains the repeat-entry rule without leaking ordinary a
 test('China avoids duplicate summary amounts and keeps condition references inside a disclosure',()=>{
  for(const result of country('CN').results)assert.equal(result.summary,undefined);
  const source=readFileSync('app/arrival-allowances-preview.tsx','utf8');
- const disclosure=source.indexOf('<summary>조건 상세 · 공식 근거</summary>');
+ const disclosure=source.indexOf('chineseText(lang,"조건 상세 · 공식 근거")');
  const links=source.indexOf('guidance.sourceUrls?.map');
  assert.ok(disclosure>0&&links>disclosure&&links<source.indexOf('</details>',disclosure));
- assert.match(source,/!guidance&&<p>\{country.procedures.summary\}/);
+ assert.match(source,/!guidance&&<p>\{chineseText\(lang,country.procedures.summary\)\}/);
 });
 test('China keeps residence, origin, age, gifts and uncertain frequency separate',()=>{
  assert.match(JSON.stringify(evaluateArrival(country('CN'),standard).result),/CNY 2,000/);

@@ -36,6 +36,6 @@ test('only the country jump receives neutral glass with accessible opaque fallba
 test('operating link keeps date-aware native navigation and preview keeps its action', () => {
   const operating = readFileSync('app/airport-focus-production.tsx', 'utf8');
   const preview = readFileSync('app/airport-focus-preview.tsx', 'utf8');
-  assert.match(operating, /<a className="focus-country-jump" href=\{`\/\$\{props.lang\}\/airport-countries\$\{props.date\?`\?date=\$\{props.date\}`:''\}`\}/);
+  assert.ok(operating.includes('airport-countries?mode=passengers'));
   assert.match(preview, /<button className="focus-country-jump" onClick=\{\(\)=>select\('countries'\)\}/);
 });

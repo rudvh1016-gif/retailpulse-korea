@@ -87,7 +87,7 @@ function HourBars({ lang, current, other }: { lang: Lang; current: TerminalDay; 
     <defs>{[['current','#c4e6f3','#f3fbfe'],['other','#bedbd2','#f3faf7']].map(([name,bottom,top])=><linearGradient key={name} id={`${id}-${name}`} x1="0" y1="1" x2="0" y2="0"><stop offset="0" stopColor={bottom}/><stop offset="1" stopColor={top}/></linearGradient>)}</defs>
     {[[current,'current'],[other,'other']].map(([day,name])=>(day as TerminalDay).hours.map((value,hour)=>{
       const x=hour*bar+(name==='current'?1:bar/2), y=height-value/max*height, w=bar/2-1, h=value/max*height, cap=Math.min(3,h);
-      return <g key={`${name}-${hour}`}><title>{name==='current'?copy.today[lang]:copy.thatDay[lang]} {String(hour).padStart(2,'0')}: {value}</title><rect x={x} y={y} width={w} height={h} fill={`url(#${id}-${name})`}/>{value>0&&<><path d={`M${x+w-2} ${y}h2v${h}h-2Z`} fill={name==='current'?'#9fc7d8':'#9dbdb1'}/><path d={`M${x} ${y}h${w}l-2 ${cap}h${2-w}Z`} fill="#fff" opacity=".85"/></>}</g>;
+      return <g className="chart-fill-y-svg" key={`${name}-${hour}-${value}-${max}`}><title>{name==='current'?copy.today[lang]:copy.thatDay[lang]} {String(hour).padStart(2,'0')}: {value}</title><rect x={x} y={y} width={w} height={h} fill={`url(#${id}-${name})`}/>{value>0&&<><path d={`M${x+w-2} ${y}h2v${h}h-2Z`} fill={name==='current'?'#9fc7d8':'#9dbdb1'}/><path d={`M${x} ${y}h${w}l-2 ${cap}h${2-w}Z`} fill="#fff" opacity=".85"/></>}</g>;
     }))}
     <line x1="0" x2={width} y1={height} y2={height} stroke="var(--line)"/>
     {[0, 6, 12, 18, 23].map((hour) => <text key={hour} x={hour * bar + 2} y={height + 13} fontSize={11} fill="var(--muted)">{String(hour).padStart(2, '0')}</text>)}

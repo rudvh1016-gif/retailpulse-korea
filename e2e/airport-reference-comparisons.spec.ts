@@ -29,7 +29,7 @@ test('incomplete prior month shows covered dates and never a misleading percenta
 test('holiday comparison renders fetched completed daily flight observations and sample coverage',async({page})=>{
  await fixtures(page);const date=summary.todayKst;
  await page.route('**/api/live/airport-days*',route=>route.fulfill({json:{mode:'airport-days',date,history:[],countryDays:[{country:'CN',date:'2026-10-01',value:150,complete:true,metric:'departure_flights',scope:'ALL'},{country:'CN',date:'2026-10-08',value:100,complete:true,metric:'departure_flights',scope:'ALL'}]}}));
- await page.goto('/ko/airport-countries?date=2026-10-19',{waitUntil:'domcontentloaded'});
+ await page.goto('/ko/airport-countries?mode=passengers&date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.focus-recent-calendar').filter({hasText:'국경절'})).toContainText('일평균 150편');
  await expect(page.locator('.focus-recent-calendar').filter({hasText:'국경절'})).toContainText('일평균 100편');
  await expect(page.locator('.focus-recent-calendar').filter({hasText:'국경절'})).toContainText('일부 날짜 미확인');

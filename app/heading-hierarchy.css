@@ -1,3 +1,4 @@
+@import "./chart-fill-motion.css";
 /* Owner requested a compact airport-centred usage guide, 2026-10-27. */
 :root body .site-usage-guide h2[data-heading="section"]{font-size:18px!important}
 :root body .site-usage-guide h3[data-heading="subsection"]{font-size:15px!important}

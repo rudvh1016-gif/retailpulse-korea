@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page,textScale=1){
   // The owner requested smaller guide copy; assert its exact hierarchy at both
   // normal size and 200% text enlargement, while retaining every overflow check.
   if(row.compactGuide)expect(row.size,`compact guide ${row.role}: ${row.text}`).toBe((row.role==='section'?18:15)*textScale);
-  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?18:row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?(page.viewportSize()!.width<=600?15:18):row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -115,7 +115,8 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
   for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
- await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(['✓시간·터미널','노선·휴일 준비']);
+ const staffTitles=new URL(page.url()).pathname.startsWith('/zh')?['✓时段与航站楼','航线与假期准备']:['✓시간·터미널','노선·휴일 준비'];
+ await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(staffTitles);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
 

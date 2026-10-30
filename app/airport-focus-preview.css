@@ -327,3 +327,14 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell.airport-focus-operating .focus-report{box-sizing:border-box;width:calc(100vw - 16px);margin-inline:calc(50% - 50vw + 8px);padding-inline:12px}
  .airport-focus-shell .focus-report .focus-report-lines{column-gap:28px}
 }
+
+/* Compact only the two figures and their comparison/basis on phones. */
+@media(max-width:600px){
+ :root body .airport-focus-shell .focus-report .focus-figures-title[data-heading="subsection"]{font-size:15px!important}
+ .airport-focus-shell .focus-report .focus-core-metric .focus-metric-label{font-size:13px}
+ .airport-focus-shell .focus-report .focus-core-metric .focus-metric-total{font-size:20px}
+ .airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change){font-size:13px}
+ .airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis){font-size:10px!important}
+ :root body .airport-focus-shell .focus-report .focus-passenger-calculation>summary{font-size:11px}
+ .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:10px}
+}

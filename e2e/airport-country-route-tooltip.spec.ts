@@ -16,11 +16,12 @@ async function openCountryRoute(page:Page,entry:'direct'|'navigation',mobile:boo
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:passengerStats}));
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,route=>route.abort());
- await page.goto(entry==='direct'?'/ko/airport-countries?date=2026-10-19':'/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
+ await page.goto(entry==='direct'?'/ko/airport-countries?mode=passengers&date=2026-10-19':'/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app[data-hydrated="true"]')).toBeVisible();
  if(entry==='navigation'){
   await page.locator(mobile?'.bottom-nav':'.top-nav').getByRole('link',{name:'국가별 흐름',exact:true}).click();
   await expect(page).toHaveURL(/\/ko\/airport-countries(?:\?|$)/);
+  await page.getByRole('tab',{name:'국가별 출국 여객'}).click();
  }
  await expect(page.getByRole('heading',{name:'국가별 흐름',exact:true})).toBeVisible();
  const country=page.locator('#focus-country-trends article').filter({has:page.getByRole('heading',{name:'중국',exact:true})});
