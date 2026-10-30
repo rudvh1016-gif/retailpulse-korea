@@ -38,6 +38,16 @@ for(const width of [360,390,430,1440])test(`airport production composition ${wid
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,route=>route.fulfill({json}));
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  for(const text of ['단순합계 112,403명','103,124명','9,279명'])await expect(page.locator('.focus-report-lines')).toContainText(text);
+ // Only the two user-selected metrics shrink on phones; desktop keeps its scale.
+ if(width<=600){
+  await expect(page.locator('.focus-figures-title')).toHaveCSS('font-size','15px');
+  await expect(page.locator('.focus-core-metric .focus-metric-label').first()).toHaveCSS('font-size','13px');
+  await expect(page.locator('.focus-core-metric .focus-metric-total').first()).toHaveCSS('font-size','20px');
+ }else if(width>=1000){
+  await expect(page.locator('.focus-figures-title')).toHaveCSS('font-size','18px');
+  await expect(page.locator('.focus-core-metric .focus-metric-label').first()).toHaveCSS('font-size','16px');
+  await expect(page.locator('.focus-core-metric .focus-metric-total').first()).toHaveCSS('font-size','28px');
+ }
  await expect(page.locator('.focus-selected-country-changes')).toContainText('일본행');
  await expect(page.getByRole('link',{name:'터미널·시간대 확인 ↗',exact:true})).toHaveAttribute('href','/ko/airport?date=2026-10-19');
  for(const rate of await page.locator('.focus-report-lines .change-rate').all()){

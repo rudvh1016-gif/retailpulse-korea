@@ -21,14 +21,14 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  const figuresTitle=figures.locator('h3');
  await expect(figuresTitle).toHaveText(({ko:'출국객·항공편',en:'Passengers and flights',zh:'出境旅客与航班',ja:'出国者・便数'} as Record<string,string>)[lang]);
  await expect(figuresTitle).toHaveAttribute('data-heading','subsection');
- await expect(figuresTitle).toHaveCSS('font-size','18px');
+ await expect(figuresTitle).toHaveCSS('font-size',width<=600?'15px':'18px');
  await expect(report.locator('.focus-report-date')).toHaveCSS('font-size','12px');
  const parent=report.locator('.focus-report-title > h2');
  await expect(parent).toHaveCSS('font-size','22px');await expect(parent).toHaveAttribute('data-heading','section');
  const parentSize=await parent.evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
  expect(parentSize).toBeGreaterThan(await figuresTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
- const keyNumber=report.locator('.focus-passenger-total');await expect(keyNumber).toHaveCSS('font-size',width>=1000?'28px':'24px');
- expect(await keyNumber.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(parentSize);
+ const keyNumber=report.locator('.focus-passenger-total');await expect(keyNumber).toHaveCSS('font-size',width>=1000?'28px':width<=600?'20px':'24px');
+ expect(await keyNumber.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(width<=600?await figuresTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)):parentSize);
  const topics=stack.locator(':scope > .focus-selected-country-changes');await expect(topics).toHaveCount(2);
  await page.evaluate(()=>document.fonts.ready);
  for(const heading of await report.locator('h3[data-heading="subsection"]').all()){
