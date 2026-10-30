@@ -1,0 +1,9 @@
+/* Only the small supporting text in the Chinese phone screens shown by the owner. */
+@media (max-width: 600px) {
+  html:lang(zh) .airport-focus-shell .focus-detail .monthly-airport-scope > small,
+  html:lang(zh) .airport-focus-shell .focus-detail:has(.monthly-airport-scope) > .focus-lead,
+  html:lang(zh) .airport-focus-shell .focus-country-brief > small,
+  html:lang(zh) .airport-focus-shell .focus-report .focus-report-date {
+    font-size: 10px;
+  }
+}
