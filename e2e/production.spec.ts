@@ -194,10 +194,11 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
-  // 첫 줄은 지금 시간대의 출국장 공식 예상 승객, 대기는 짧은 보조 줄.
+  // The duplicated queue block is removed here; the checkpoint model below remains.
   await expect(page.locator(".airport-current-brief")).toContainText("출국장 공식 예상 승객");
-  await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T2 출국장 1B");
-  await expect(page.locator(".airport-wait-brief")).toContainText("60+분");
+  await expect(page.locator(".airport-current-brief .airport-wait-brief")).toHaveCount(0);
+  await expect(page.locator(".airport-current-brief .passenger-scope-note > summary")).toHaveText("집계 기준 보기");
+  await expect(page.locator(".airport-summary-details > summary")).toHaveText("터미널별 상세·집계 기준 보기");
   await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
   await expect(page.locator(".airport-glance-strip, .airport-near-term, .airport-upcoming-peak")).toHaveCount(0);
@@ -455,7 +456,7 @@ test("the summary states this hour's official expected departing passengers and 
   await expect(brief.locator(".airport-glance-strip, .airport-near-term, .airport-upcoming-peak")).toHaveCount(0);
   await expect(page.locator(".airport-forecast")).toContainText("6,320");
   await expect(headline).not.toContainText("대기");
-  await expect(brief).toContainText("현재 대기 관측");
+  await expect(brief.locator(".airport-wait-brief")).toHaveCount(0);
   await expect(brief).not.toContainText("관측 출국객");
 });
 
@@ -588,8 +589,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
 
   await page.locator("#airport-data-flow").getByRole("tab", { name: "T1", exact: true }).click();
-  await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T1 출국장 P01");
-  await expect(page.locator(".airport-wait-brief")).toContainText("24분");
+  await expect(page.locator(".airport-current-brief .airport-wait-brief")).toHaveCount(0);
   await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toBeVisible();
   await expect(page.getByText("300편", { exact: true })).toBeVisible();
   await expect(page.locator('[data-overall-leader="true"] .gate-pillar').first()).toContainText("27");
@@ -599,8 +599,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await expect(page.getByText("출국장 1B", { exact: true })).toHaveCount(0);
 
   await page.locator("#airport-data-flow").getByRole("tab", { name: "T2", exact: true }).click();
-  await expect(page.locator(".airport-current-brief")).toContainText("현재 대기 관측 · T2 출국장 1B");
-  await expect(page.locator(".airport-wait-brief")).toContainText("60+분");
+  await expect(page.locator(".airport-current-brief .airport-wait-brief")).toHaveCount(0);
   await expect(page.locator(".airport-today-grid").getByText("17,220명", { exact: true })).toBeVisible();
   await expect(page.getByText("261편", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-today-grid").getByText("30,100명", { exact: true })).toHaveCount(0);
