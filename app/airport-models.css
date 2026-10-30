@@ -431,3 +431,16 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 /* The illustration has unused lower canvas; pull the gate key closer without
    moving the overlaid flight values or cropping the image. */
 .airport-concept-picture[data-scene="static"]:not([data-building="all"]) { margin-bottom:calc(-1 * min(140px, 15vw)); }
+
+/* Compact, left-aligned airport controls on phones only; retain touch targets. */
+@media(max-width:600px){
+ .app .airport-view > .airport-menu-label{font-size:11px}
+ .app .airport-view > #airport-data-flow,
+ .app .airport-view > .airport-context-nav{justify-content:flex-start;gap:12px}
+ .app .airport-view > #airport-data-flow > button,
+ .app .airport-view > .airport-context-nav > button{flex:0 0 auto;min-width:44px;padding-inline:0;text-align:left;font-size:11px}
+ .app .airport-view > #airport-data-flow > button:first-child{justify-content:flex-start}
+ .app .airport-view > #airport-data-flow > button:first-child small{font-size:11px}
+ .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]{flex:0 0 auto;min-width:72px;align-items:flex-start;text-align:left;font-size:12px}
+ .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time{font-size:10px}
+}
