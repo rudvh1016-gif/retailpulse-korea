@@ -12,19 +12,21 @@ for (const width of [320, 390, 430, 1440]) for (const lang of ['ko', 'en', 'zh',
    await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
   });
   await page.goto(`/${lang}/airport`);
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const groups = [
    page.locator('#airport-data-flow'),
    page.locator('.airport-context-nav'),
    page.locator('.airport-date-reserved .date-nav-shortcuts'),
   ];
-  for (const group of groups) {
+  for (const [index, group] of groups.entries()) {
    await expect(group).toBeVisible();
    const buttons = group.locator(':scope > button');
+   await expect(buttons).toHaveCount([4, 5, 3][index]);
    const boxes = await buttons.evaluateAll(nodes => nodes.map(node => {
     const box = node.getBoundingClientRect();
     return { left: box.left, right: box.right, height: box.height };
    }));
-   expect(boxes.length).toBeGreaterThanOrEqual(3);
+   expect(boxes).toHaveLength([4, 5, 3][index]);
    for (const box of boxes) expect(box.height).toBeGreaterThanOrEqual(44);
    if (width <= 600) {
     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeGreaterThanOrEqual(15.5);
