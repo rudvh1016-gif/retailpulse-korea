@@ -1,4 +1,5 @@
 'use client';
+import {readStoredJson} from '../lib/read-stored-json';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import type { Lang } from './retailpulse-data';
@@ -78,9 +79,7 @@ export function MonthlyRecordsView({ lang, area, onArea }: { lang: Lang; area: R
     const controller = new AbortController();
     const params = new URLSearchParams({ view: 'records', area });
     if (month) params.set('month', month);
-    fetch(`/api/live/summary?${params}`, { signal: controller.signal }).then(async result => {
-      if (!result.ok) throw new Error('records_unavailable');
-      const value = await result.json() as MonthlyRecords;
+    readStoredJson<MonthlyRecords>(`/api/live/summary?${params}`, { signal: controller.signal }).then(value => {
       // Older cached deployments or unrelated summary payloads must not masquerade as records.
       if (value.area !== area || !Array.isArray(value.current?.days) || !Array.isArray(value.previous?.days) || !value.definition || (month && value.current.month !== month)) throw new Error('records_shape');
       if (!controller.signal.aborted) { setCatalog(value); setResponse({ key: requestKey, data: value, error: false }); }

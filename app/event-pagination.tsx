@@ -1,24 +1,29 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import {readStoredJson} from '../lib/read-stored-json';
 import type { Lang } from "./retailpulse-data";
 import type { EventPresentationInput } from "../lib/event-presentation";
 
 export function useEventPagination<T extends EventPresentationInput>(initial: T[], area: string, date: string) {
   const key = `${area}/${date}`;
+  const inFlight = useRef<AbortController | null>(null);
+  useEffect(() => () => { inFlight.current?.abort(); inFlight.current = null; }, [key]);
   const [state, setState] = useState<{ key: string; rows: T[]; next: number | null; expanded: boolean; loading: boolean; failed: boolean }>({ key, rows: [], next: 0, expanded: false, loading: false, failed: false });
   if (state.key !== key) setState({ key, rows: [], next: 0, expanded: false, loading: false, failed: false });
   const current = state.key === key ? state : { key, rows: [], next: 0, expanded: false, loading: false, failed: false };
   async function more() {
-    if (current.loading || current.next === null) return;
+    if (inFlight.current || current.loading || current.next === null) return;
     const offset = current.next;
+    const controller = new AbortController();
+    inFlight.current = controller;
     setState(old => ({ ...old, loading: true, failed: false, expanded: true }));
     try {
-      const response = await fetch(`/api/live/events?area=${encodeURIComponent(area)}&date=${encodeURIComponent(date)}&offset=${offset}`);
-      if (!response.ok) throw new Error("events_unavailable");
-      const data = await response.json() as { events: T[]; nextOffset: number | null };
-      if (!Array.isArray(data.events)) throw new Error("invalid_events");
+      const data = await readStoredJson<{ events: T[]; nextOffset: number | null }>(`/api/live/events?area=${encodeURIComponent(area)}&date=${encodeURIComponent(date)}&offset=${offset}`, {signal: controller.signal});
+      if (!Array.isArray(data.events) || (data.nextOffset !== null && (!Number.isSafeInteger(data.nextOffset) || data.nextOffset <= offset))) throw new Error("invalid_events");
+      if (inFlight.current !== controller) return;
       setState(old => old.key !== key ? old : { ...old, rows: [...old.rows, ...data.events].filter((event, index, all) => all.findIndex(other => (other.contentId ?? `${other.title}/${other.eventStart}`) === (event.contentId ?? `${event.title}/${event.eventStart}`)) === index), next: data.nextOffset, loading: false });
-    } catch { setState(old => old.key !== key ? old : { ...old, loading: false, failed: true }); }
+    } catch { if (inFlight.current === controller && !controller.signal.aborted) setState(old => old.key !== key ? old : { ...old, loading: false, failed: true }); }
+    finally { if (inFlight.current === controller) inFlight.current = null; }
   }
   return { ...current, visible: current.expanded && (current.rows.length || current.next === null) ? current.rows : initial.slice(0, 3), more,
     collapse: () => setState(old => ({ ...old, expanded: false })),

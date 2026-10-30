@@ -906,14 +906,15 @@ export function FacilityDirectory({ lang, terminal }: { lang: Lang; terminal: "a
   const [loaded, setLoaded] = useState<{ key: string; rows: FacilityRow[]; hasMore: boolean; failed: boolean } | null>(null);
   useEffect(() => {
     let active = true;
-    fetch(`/api/airport/facilities?${requestKey}`, { headers: { accept: "application/json" } })
+    const controller = new AbortController();
+    fetch(`/api/airport/facilities?${requestKey}`, { headers: { accept: "application/json" }, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]) })
       .then(async (response) => {
         const json = response.ok ? await response.json() as { mode?: string; facilities?: FacilityRow[]; hasMore?: boolean } : null;
         return json && json.mode === "airport-facilities" ? { facilities: json.facilities, hasMore: json.hasMore, failed: false } : { facilities: [] as FacilityRow[], hasMore: false, failed: true };
       })
       .catch(() => ({ facilities: [] as FacilityRow[], hasMore: false, failed: true }))
       .then((payload) => { if (active) setLoaded({ key: requestKey, rows: payload.facilities ?? [], hasMore: Boolean(payload.hasMore), failed: payload.failed }); });
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
   }, [requestKey]);
 
   const state = loaded && loaded.key === requestKey ? loaded : null;
@@ -1159,10 +1160,11 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
   const trimmed = query.trim();
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     const idle = facilityId || trimmed.length < 2;
     const timer = window.setTimeout(() => {
       if (idle) { if (active) setResults(null); return; }
-      fetch(`/api/airport/facilities?q=${encodeURIComponent(trimmed)}&limit=20`, { headers: { accept: "application/json" } })
+      fetch(`/api/airport/facilities?q=${encodeURIComponent(trimmed)}&limit=20`, { headers: { accept: "application/json" }, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]) })
         .then(async (response) => {
           const json = response.ok ? await response.json() as { mode?: string; facilities?: FacilityRow[] } : null;
           return json && json.mode === "airport-facilities" ? (json.facilities ?? []) : "failed" as const;
@@ -1170,16 +1172,17 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
         .catch(() => "failed" as const)
         .then((found) => { if (active) setResults(found); });
     }, idle ? 0 : 250);
-    return () => { active = false; window.clearTimeout(timer); };
+    return () => { active = false; controller.abort(); window.clearTimeout(timer); };
   }, [trimmed, facilityId]);
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     const timer = window.setTimeout(() => {
       if (!active) return;
       setOperations(null);
       if (!facilityId) return;
-      fetch(`/api/airport/facility-operations?facilityId=${encodeURIComponent(facilityId)}`, { headers: { accept: "application/json" } })
+      fetch(`/api/airport/facility-operations?facilityId=${encodeURIComponent(facilityId)}`, { headers: { accept: "application/json" }, signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]) })
         .then(async (response) => {
           // 404 with mode "facility-not-found" is a real answer (the store does not exist); anything else that is not the brief is a failed read.
           const json = await response.json().catch(() => null) as OperationsResponse | null;
@@ -1188,7 +1191,7 @@ export function MyStoreBriefing({ lang }: { lang: Lang }) {
         .catch(() => "failed" as const)
         .then((payload) => { if (active) setOperations(payload); });
     }, 0);
-    return () => { active = false; window.clearTimeout(timer); };
+    return () => { active = false; controller.abort(); window.clearTimeout(timer); };
   }, [facilityId]);
 
   return <section className="my-store" aria-labelledby="my-store-title">
