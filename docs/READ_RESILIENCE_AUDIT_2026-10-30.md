@@ -11,6 +11,7 @@ This change preserves existing JSX, copy, styles, images, arithmetic, source dat
 1. **Unbounded auxiliary reads.** Monthly records, prediction evidence, customs news, recent FX, the Seoul toilet directory, airport facility searches and operations could remain pending without a deadline. They now have a 15-second deadline including response-body consumption, use their existing failure presentation, and cancel obsolete requests on selection change/unmount. The allowance status read has the same bound without altering its reviewed values or guidance. Existing 404 facility-operation semantics are preserved.
 2. **Prepared-month read-ahead bypassed cancellation.** The original prime fetch did not own an abort signal. Once its response headers were handed to a hook, the hook's timeout could not stop `response.json()`. Unused primes could also accumulate. Read-ahead now parses inside its own deadline, is consumed once within ten seconds, forwards selection cancellation, aborts stale/evicted requests, and holds at most eight URLs. The original three-attempt selection policy and same-key last-good behavior remain.
 3. **Event pagination identity and cursor validation.** An immediate repeated click could reuse a stale render's loading flag, and a response from an earlier visit to the same area/date could be accepted later. One in-flight controller now gates duplicate clicks and identifies the current request, with cancellation when its selection ends. A non-advancing, absent or invalid next cursor fails rather than appending rows and inviting the same page repeatedly. Existing event identity deduplication is preserved.
+4. **Repeated full-history secret scans.** The previous main CI spent 653 seconds scanning each reachable tree separately for each of five patterns. The same five expressions now share one `git grep` traversal per tree. The working tree, untracked files, all reachable revisions, binary/path exclusions, exit-on-finding and error handling remain covered. New temporary-repository tests cover every pattern, a renamed/deleted historical credential, redacted output, and the exact existing exclusions. This reduces repeated scanning; an actual CI duration is still needed before quantifying its benefit.
 
 These are reads of existing stored endpoints only. No new provider calls, schedulers, paid services or automatic retries were added.
 
@@ -19,8 +20,9 @@ These are reads of existing stored endpoints only. No new provider calls, schedu
 | Check | Result |
 | --- | --- |
 | Baseline `npm run test:unit` | 2,506 passed |
-| Final `npm run test:unit` | 2,514 passed |
+| Final `npm run test:unit` | 2,517 passed, including the three scanner regressions |
 | New deadline/read-ahead fault tests | 8 passed; stalled headers/body, cancellation, expiry, capacity, recovery |
+| Secret scanner regression tests | 3 passed; all five patterns, deleted history, redaction and preserved exclusions |
 | `node --test tests/rendered-html.test.mjs` | 53 passed |
 | `npm run build` / `npm run typecheck` | Passed |
 | `npm run lint` | 0 errors, the same 23 pre-existing warnings |
