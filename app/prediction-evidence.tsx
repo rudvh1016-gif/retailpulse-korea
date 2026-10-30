@@ -1,4 +1,5 @@
 'use client';
+import {readStoredJson} from '../lib/read-stored-json';
 import {DisclosureLabel} from './disclosure-label';
 import {useEffect,useRef,useState} from 'react';
 import styles from './prediction-view.module.css';
@@ -16,7 +17,7 @@ interface ForecastPayload {
 /** Retained evidence in Records; the removed standalone outlook is not rendered. */
 export function PredictionEvidence({lang,area}:{lang:Lang;area:AreaId}){
  const [loaded,setLoaded]=useState<{area:string;data:ForecastPayload|null}|null>(null);
- useEffect(()=>{let active=true;const controller=new AbortController();fetch(`/api/live/predictions?area=${area}`,{signal:controller.signal}).then(async response=>response.ok?await response.json() as ForecastPayload:null).catch(()=>null).then(data=>{if(active)setLoaded({area,data});});return()=>{active=false;controller.abort();};},[area]);
+ useEffect(()=>{let active=true;const controller=new AbortController();readStoredJson<ForecastPayload>(`/api/live/predictions?area=${area}`,{signal:controller.signal}).catch(()=>null).then(data=>{if(active)setLoaded({area,data});});return()=>{active=false;controller.abort();};},[area]);
  const data=loaded?.area===area?loaded.data:undefined;
  const history=useRef<HTMLDetailsElement>(null);
  useEffect(()=>{
