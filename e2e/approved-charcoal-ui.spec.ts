@@ -36,7 +36,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  for(const node of await flow.locator(':scope > a > small,.staff-brief-grid small:visible').all()){await expect(node).toHaveCSS('font-size','12px');await expect(node).toHaveCSS('font-weight','400');}
  const routeDetails=content.locator('.staff-route-details');await expect(routeDetails).not.toHaveAttribute('open','');await routeDetails.locator('summary').focus();await page.keyboard.press('Enter');await expect(routeDetails).toHaveAttribute('open','');
  for(const node of await flow.locator(':scope > a > strong b,:scope > a > strong span,.staff-brief-grid b:visible,.staff-brief-grid strong:visible').all())await expect(node).toHaveCSS('font-weight','400');
- for(const control of await content.locator('summary:visible').all()){await expect(control).toHaveCSS('font-size','14px');await expect(control).toHaveCSS('font-weight','600');}
+ for(const control of await content.locator('summary:visible').all()){const basis=await control.evaluate(node=>node.matches('.staff-route-details>summary'));await expect(control).toHaveCSS('font-size',basis?'12px':'14px');await expect(control).toHaveCSS('font-weight','600');}
  expect((await routeDetails.locator('summary').boundingBox())!.height).toBeGreaterThanOrEqual(44);
  for(const paragraph of await routeDetails.locator('p:visible').all()){await expect(paragraph).toHaveCSS('font-size','14px');await expect(paragraph).toHaveCSS('font-weight','400');}
  await routeDetails.locator('summary').focus();await page.keyboard.press('Space');await expect(routeDetails).not.toHaveAttribute('open','');

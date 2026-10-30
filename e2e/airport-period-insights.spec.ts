@@ -253,3 +253,44 @@ for(const width of [701,1024,1440])test(`desktop keeps deployed airport gutters 
  const columns=await page.locator('.country-tabs').evaluate(node=>getComputedStyle(node).gridTemplateColumns.split(' ').map(Number.parseFloat));expect(columns).toHaveLength(3);expect(Math.max(...columns)-Math.min(...columns)).toBeLessThanOrEqual(1);
  await page.screenshot({path:testInfo.outputPath(`desktop-country-unchanged-${width}.png`),fullPage:true});
 });
+
+for(const width of [320,390,430])test(`phone glance arrows reveal all menus without selecting tabs ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await records(page);
+ await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const strip=page.locator('#airport-glance-tabs'),next=page.getByRole('button',{name:'다음 메뉴 보기',exact:true}),previous=page.getByRole('button',{name:'이전 메뉴 보기',exact:true}),buttons=strip.getByRole('tab');
+ await expect(next).toBeVisible();await expect(next).toBeEnabled();await expect(previous).toHaveCount(0);
+ const url=page.url(),initial=await strip.evaluate(node=>node.scrollLeft),target=(await next.boundingBox())!;expect(target.width).toBeGreaterThanOrEqual(44);expect(target.height).toBeGreaterThanOrEqual(44);
+ await next.focus();await page.keyboard.press('Enter');await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeGreaterThan(initial);await expect(buttons.first()).toHaveAttribute('aria-selected','true');expect(page.url()).toBe(url);
+ await expect(previous).toBeVisible();const forwardOffset=await strip.evaluate(node=>node.scrollLeft);await previous.focus();await page.keyboard.press('Space');await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeLessThan(forwardOffset);
+ for(let i=0;i<8;i++){const before=await strip.evaluate(node=>node.scrollLeft);if(before<=1)break;await previous.click();await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeLessThan(before);}await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBe(0);await expect(next).toBeFocused();
+ for(let i=0;i<8;i++){const before=await strip.evaluate(node=>node.scrollLeft),remaining=await strip.evaluate(node=>node.scrollWidth-node.clientWidth-node.scrollLeft);if(remaining<=1)break;await expect(next).toBeEnabled();await next.click();await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeGreaterThan(before);}await expect(next).toBeDisabled();
+ const last=(await buttons.last().boundingBox())!,box=(await strip.boundingBox())!;expect(last.x).toBeGreaterThanOrEqual(box.x-1);expect(last.x+last.width).toBeLessThanOrEqual(box.x+box.width+1);
+ await page.screenshot({path:testInfo.outputPath(`phone-nav-arrow-end-${width}.png`),fullPage:true});
+ for(let i=0;i<8;i++){const before=await strip.evaluate(node=>node.scrollLeft);if(before<=1)break;await previous.click();await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeLessThan(before);}await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBe(0);await expect(next).toBeEnabled();await expect(previous).toHaveCount(0);await expect(next).toBeFocused();
+ // Existing swipe/trackpad scroll, selected tabs and history remain independent of the arrow buttons.
+ await buttons.first().focus();await page.keyboard.press('Home');await strip.hover();await page.mouse.wheel(160,0);await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBeGreaterThan(0);await expect(previous).toBeVisible();
+ await page.keyboard.press('Home');await expect.poll(()=>strip.evaluate(node=>node.scrollLeft)).toBe(0);await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
+ await expect.poll(()=>strip.evaluate(node=>{const selected=node.querySelector('[role=tab][aria-selected=true]')!.getBoundingClientRect(),box=node.getBoundingClientRect();return selected.left>=box.left-1&&selected.right<=box.right+1;})).toBe(true);
+ await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');await expect(page.locator('.focus-report')).toBeVisible();
+ await buttons.nth(1).click();await expect(buttons.nth(1)).toHaveAttribute('aria-selected','true');await page.goBack();await expect(buttons.first()).toHaveAttribute('aria-selected','true');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:testInfo.outputPath(`phone-nav-arrow-start-${width}.png`),fullPage:true});
+});
+test('phone glance hides arrows when all menus fit at 700px',async({page},testInfo)=>{
+ await page.setViewportSize({width:700,height:1000});await records(page);await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const strip=page.locator('#airport-glance-tabs');await expect(strip).toHaveCSS('display','flex');await expect(strip.getByRole('tab')).toHaveCount(5);
+ expect(await strip.evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);await expect(page.locator('.airport-insight-scroll')).toHaveCount(0);
+ const box=(await strip.boundingBox())!,last=(await strip.getByRole('tab').last().boundingBox())!;expect(last.x+last.width).toBeLessThanOrEqual(box.x+box.width+1);
+ await page.screenshot({path:testInfo.outputPath('phone-nav-no-overflow-700.png'),fullPage:true});
+});
+for(const width of [701,1440])test(`desktop glance arrow controls stay hidden ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await records(page);await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.locator('#airport-glance-tabs')).toHaveCSS('display','grid');await expect(page.locator('.airport-insight-scroll:visible')).toHaveCount(0);
+});
+for(const width of [390,1440])test(`empty comparison copy stays small without shrinking headings ${width}`,async({page},testInfo)=>{
+ await page.setViewportSize({width,height:1000});await records(page);await page.route('**/api/live/airport-months*',r=>r.fulfill({json:{...months,months:[],data:{...months.data,months:[]}}}));
+ await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const copy=page.locator('.focus-country-change-empty');await expect(copy).toHaveText('표시할 비교 항목이 없습니다.');await expect(copy).toHaveCSS('font-size','12px');
+ expect(await copy.evaluate(node=>parseFloat(getComputedStyle(node.previousElementSibling!).fontSize))).toBeGreaterThan(12);
+ await page.screenshot({path:testInfo.outputPath(`empty-comparison-copy-${width}.png`),fullPage:true});
+});

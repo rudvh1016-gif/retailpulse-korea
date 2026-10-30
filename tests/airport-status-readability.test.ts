@@ -53,3 +53,25 @@ test('Japanese planning summary strictly distinguishes present and absent flight
   assert.ok(html.includes(`<summary>${flights?'日程の詳細・選択日の便数参考':'日程の詳細'}</summary>`));
  }
 });
+
+
+test('country explanatory copy and source timestamp share one closed native disclosure',()=>{
+ const date='2026-10-24';
+ const map=departureMap({date,nextDate:'2026-10-25',terminal:'T1',buildingScope:'T1',window:{startMin:0,endMin:1440},rows:[{scheduledAt:date+'T10:00:00+09:00',retrievedAt:date+'T01:00:00Z',status:'scheduled',direction:'departure',terminal:'T1',airportCode:'NRT',physicalFlightId:'unpositioned',gate:null}]});
+ for(const lang of ['ko','en','zh','ja'] as const){
+  const html=renderToStaticMarkup(h(AirportZoneCountries,{map,lang,date,source:h('p',null,'2026-10-24T01:00:00Z')}));
+  const details=html.match(/<details class="prep-evidence" data-testid="country-counting-details">([\s\S]*?)<\/details>/)?.[1];
+  assert.ok(details,'closed details remains keyboard-accessible');
+  assert.match(details,/2026-10-24T01:00:00Z/);
+  assert.match(details,/data-testid="country-share-basis"/);
+  assert.ok(details.includes({ko:'승객 국적',en:'passenger nationality',zh:'旅客国籍',ja:'旅客国籍'}[lang]));
+  assert.ok(details.includes({ko:'반올림',en:'Rounded',zh:'四舍五入',ja:'丸め'}[lang]));
+  const outside=html.replace(/<details class="prep-evidence"[\s\S]*?<\/details>/,'');
+  assert.match(outside,/role="status" data-testid="country-gates-pending"/,'pending-gate warning is never folded');
+  assert.doesNotMatch(outside,/country-share-basis|2026-10-24T01:00:00Z/);
+ }
+ const source=readFileSync('app/airport-country-zones.tsx','utf8');
+ assert.doesNotMatch(source,/목적지별 출발편을 터미널과 탑승 구역에서/);
+ assert.match(source,/current.status==='FAILED'[^?]+\?<p role="status">/);
+ assert.match(source,/next.payload.retrievedAt/,'cross-midnight source timestamp remains available');
+});

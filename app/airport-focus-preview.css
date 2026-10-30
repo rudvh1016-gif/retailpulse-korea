@@ -314,6 +314,9 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report .focus-preparation-event+.focus-preparation-event{border-top:0;margin-top:12px}
 }
 
+/* Empty/loading comparison text is supporting copy, not a headline figure. */
+.airport-focus-shell .focus-report .focus-selected-country-changes>p.focus-country-change-empty{font-size:12px;line-height:1.6}
+
 /* Compact route commentary; headline figures and event cards retain their scale. */
 .airport-focus-shell .focus-report .focus-selected-country-changes>p.focus-country-change-copy{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
 .airport-focus-shell .focus-report .focus-selected-country-changes>p.focus-country-change-copy>b{font-size:inherit}

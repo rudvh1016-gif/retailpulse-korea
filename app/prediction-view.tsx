@@ -1,4 +1,5 @@
 'use client';
+import {readStoredJson} from '../lib/read-stored-json';
 import {DisclosureLabel} from './disclosure-label';
 import { useEffect,useRef,useState } from 'react';
 import styles from './prediction-view.module.css';
@@ -17,7 +18,7 @@ export function PredictionView({lang,area,onArea}:{lang:Lang;area:'myeongdong'|'
  const summary=useLiveSummary();
  const now = usePresentationClock(summary?.generatedAt ?? "");
  const [loaded,setLoaded]=useState<{area:string;data:ForecastPayload|null}|null>(null);
- useEffect(()=>{let active=true;fetch(`/api/live/predictions?area=${area}`).then(async response=>response.ok?await response.json() as ForecastPayload:null).catch(()=>null).then(data=>{if(active)setLoaded({area,data});});return()=>{active=false;};},[area]);
+ useEffect(()=>{let active=true;const controller=new AbortController();readStoredJson<ForecastPayload>(`/api/live/predictions?area=${area}`,{signal:controller.signal}).catch(()=>null).then(data=>{if(active)setLoaded({area,data});});return()=>{active=false;controller.abort();};},[area]);
  const data=loaded?.area===area?loaded.data:undefined;
  const history=useRef<HTMLDetailsElement>(null);
  useEffect(()=>{

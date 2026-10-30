@@ -41,6 +41,17 @@ for (const width of [320, 390, 430, 1440]) for (const lang of ['ko', 'en', 'zh',
     }
    }
   }
+  if (width <= 600) {
+   const labels = page.locator('.airport-view > .airport-menu-label');
+   await expect(labels).toHaveCount(2);
+   for (const label of await labels.all()) await expect(label).toHaveCSS('margin-top', '8px');
+   await expect(groups[1]).toHaveCSS('min-height', '44px');
+   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '4px');
+   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-bottom', '4px');
+  } else {
+   await expect(groups[1]).toHaveCSS('min-height', '54px');
+   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '8px');
+  }
   const terminal = groups[0].getByRole('tab', { name: 'T1', exact: true });
   await terminal.click(); await expect(terminal).toHaveAttribute('aria-selected', 'true');
   const days = groups[2].locator(':scope > button');

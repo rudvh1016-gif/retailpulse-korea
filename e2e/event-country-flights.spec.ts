@@ -16,7 +16,7 @@ async function fixture(page:Page,{partial=false,baseline='full',multiple=false}:
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{status:baseline==='missing'?'MISSING':'READY',month:'2026-10',calculatedAt:`${day}T01:00:00Z`,data:baseline==='missing'?null:{version:2,asOf:day,sidesVersion:'fixture',destinationsVersion:'fixture',months:[month]}}}));
  await page.route('**/api/airport/calendar',route=>route.fulfill({json:{status:'READY',events:multiple?[event('TH'),event('JP')]:[event('TH','2026-10-23')],sources:[],calendarReplacementScopes:[{country:'TH',year:2026,scope:'national'}],checkedAt:'2026-10-21'}}));
 }
-for(const lang of ['ko','en','zh','ja'])test(`event country beats largest unrelated delta and localizes changes ${lang}`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'])test(`event country beats largest unrelated delta and localizes changes ${lang}`,async({page},info)=>{
  await page.setViewportSize({width:390,height:1000});await fixture(page);await page.goto(`/${lang}?date=${day}`);
  const event=page.locator('.staff-holiday-event');await expect(event).toContainText('TH fixture holiday');
  const metric=event.locator('.event-country-flights');await expect(metric).toHaveAttribute('data-country','TH');await expect(metric).toHaveAttribute('data-flight-day',day);
@@ -26,7 +26,11 @@ for(const lang of ['ko','en','zh','ja'])test(`event country beats largest unrela
   return dates?.tagName==='P'&&dates.querySelector('time')?.getAttribute('datetime')==='2026-10-23'&&dates.nextElementSibling?.classList.contains('event-country-flights');
  })).toBe(true);
  await expect(event.locator('time')).toHaveAttribute('datetime','2026-10-23');
- const details=page.locator('.staff-route-details');await expect(details).not.toHaveAttribute('open','');await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');await expect(details).toContainText('18.5');await page.keyboard.press('Enter');await expect(details).not.toHaveAttribute('open','');
+ await expect(metric.locator('.event-flight-baseline')).toBeVisible();await expect(metric.locator('.event-flight-baseline')).toContainText('18.5');
+ const details=page.locator('.staff-route-details');await expect(details).not.toHaveAttribute('open','');await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');
+ await expect(details.locator('.event-flight-basis')).toContainText('2026-09-01–2026-09-30');await expect(details.locator('.staff-route-sample')).toContainText('30');await expect(details).not.toContainText('18.5');
+ await page.locator('.airport-staff-briefing').screenshot({path:info.outputPath(`concise-event-${lang}.png`)});
+ await page.keyboard.press('Enter');await expect(details).not.toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test('multiple Today event countries each receive their own flight comparison and preserve neutral zero',async({page})=>{

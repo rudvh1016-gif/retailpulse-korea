@@ -24,7 +24,13 @@ export function briefHoliday(event:BriefHoliday,lang:Lang){return {
  scope:briefHolidayText(event.scope,lang),
  meaning:briefHolidayText(event.meaning_ko||event.scope,lang),
 };}
-export function briefReturnText(event:BriefHoliday,lang:Lang){
+export function briefReturnText(event:BriefHoliday,lang:Lang,compact=false){
+ if(compact){
+  const country=briefCountryName(event.country,event.countryLabel,lang),end=`${Number(event.end.slice(5,7))}/${Number(event.end.slice(8))}`;
+  const code=event.countryLabel==='괌'?'GU':event.countryLabel==='사이판'?'MP':event.country;
+  const japaneseCountry=event.countryLabel==='하와이'?'ハワイ':event.countryLabel==='사이판'?'サイパン':/^[A-Z]{2}$/.test(code)?new Intl.DisplayNames(['ja'],{type:'region'}).of(code)??country:country;
+  return lang==='en'?`${end}: holiday ends · Return planning: check Incheon → ${country} departures`:lang==='zh'?`${end}假期结束 · 返程准备：确认仁川→${country}出发航班`:lang==='ja'?`${end} 祝日終了 · 帰国準備：仁川→${japaneseCountry}の出発便を確認`:`${end} 휴일 종료 · 귀국 준비: 인천→${country} 출발편 확인`;
+ }
  if(lang!=='en'&&lang!=='zh')return returnPlanningText(event);
  const label=briefHoliday(event,lang),end=`${Number(event.end.slice(5,7))}/${Number(event.end.slice(8))}`;
  return lang==='en'?`${end}: ${label.name} ends · Return planning: check Incheon → ${label.country} departures`:`${end} ${label.name}结束 · 返程准备：确认仁川→${label.country}出发航班`;
