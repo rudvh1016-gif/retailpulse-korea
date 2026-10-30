@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react';
 import type {Lang} from './retailpulse-data';
 import type {DepartureMap} from '../lib/airport-departure-map';
 import {zoneCountries,type ZoneCountry} from '../lib/airport-zone-countries';
@@ -14,7 +15,7 @@ const flagEmoji=(country:string)=>/^[A-Z]{2}$/.test(country)
  ? String.fromCodePoint(...[...country].map(letter=>letter.charCodeAt(0)-65+0x1f1e6))
  : null;
 
-export function AirportZoneCountries({map,lang,basis,date,isToday=false}:{map:DepartureMap;lang:Lang;basis?:string;date:string;isToday?:boolean}) {
+export function AirportZoneCountries({map,lang,basis,source,date,isToday=false}:{map:DepartureMap;lang:Lang;basis?:string;source?:ReactNode;date:string;isToday?:boolean}) {
  const flights=map.buildingScope?map.flights:map.flights.filter(f=>f.building===map.terminal);
  const zones=zoneCountries(flights);
  const unverified=zones.find(zone=>zone.side==='UNVERIFIED');
@@ -41,9 +42,14 @@ export function AirportZoneCountries({map,lang,basis,date,isToday=false}:{map:De
  };
  return <section id="airport-zone-countries" className="airport-zone-countries" data-testid="map-zone-countries">
   <h4 className={styles.heading} data-testid="daily-country-heading">{isToday?{ko:'오늘의 국가별 출발편',en:'Today’s departures by destination country',zh:'今日各目的地国家出发航班',ja:'今日の行き先国別出発便'}[lang]:{ko:`${date} 국가별 출발편`,en:`${date} departures by destination country`,zh:`${date} 各目的地国家出发航班`,ja:`${date} 行き先国別出発便`}[lang]} · {windowText(map.window,lang)}</h4>
-  <p className="prep-note">{{ko:'목적지 국가·항공편 수 기준 · 승객 국적 아님',en:'Destination countries and flight counts · not passenger nationality',zh:'目的地国家及航班数量 · 非旅客国籍',ja:'行き先国・便数基準 · 旅客国籍ではありません'}[lang]}</p>
-  <details className="prep-evidence"><summary>{{ko:'집계 기준',en:'Counting basis',zh:'统计口径',ja:'集計基準'}[lang]}</summary><p className="prep-note">{{ko:'선택 날짜·시간의 물리적 출발편 기준. 구역 비중은 선택 전체 편수, 국가 비중은 해당 구역 전체 편수(목적지 미정 포함)를 분모로 합니다. 항공사 등록국가·승객 국적·사람 수가 아닙니다. 상위 3위와 동률 전원을 표시합니다.',en:'Physical departures for the selected date and time. Zone shares use all selected flights; country shares use all flights in that zone, including unknown destinations. These are not airline registration, passenger nationality or people counts. Top three ranks include all ties.',zh:'按所选日期和时间的实际出发航班。分区占比以全部所选航班为分母；国家占比以该区全部航班（含目的地未定）为分母。目的地国家不等于航司注册国、旅客国籍或人数。前三名包含所有并列。',ja:'選択した日付・時間の物理的出発便。エリア比率の分母は選択全便、国別比率の分母は目的地未定を含むそのエリアの全便です。目的地国は航空会社登録国・旅客国籍・人数ではありません。上位3位と同数を全て表示。'}[lang]}</p>{basis&&<p className="prep-note">{basis}</p>}</details>
-  <p className="prep-note" data-testid="country-share-basis">{zoneShareCopy[lang].country} {zoneShareCopy[lang].rounding}</p>
+  <details className="prep-evidence" data-testid="country-counting-details">
+   <summary>{source?{ko:'집계 기준·수집 시각',en:'Counting basis & collection time',zh:'统计口径与采集时间',ja:'集計基準・収集日時'}[lang]:{ko:'집계 기준',en:'Counting basis',zh:'统计口径',ja:'集計基準'}[lang]}</summary>
+   <p className="prep-note">{{ko:'선택 날짜·시간의 목적지별 출발편 기준 · 승객 국적·사람 수 아님. 상위 3위와 동률을 표시합니다.',en:'Departures by destination for the selected date and time, not passenger nationality or people counts. Top three ranks include ties.',zh:'按所选日期和时间的目的地出发航班统计，非旅客国籍或人数。显示前三名及并列。',ja:'選択日時の行き先別出発便が基準です。旅客国籍・人数ではありません。上位3位と同数を表示します。'}[lang]}</p>
+   <p className="prep-note">{{ko:'구역 비율: 선택한 전체 출발편 기준, 위치 미확인 포함.',en:'Zone shares: all selected departures, including unverified locations.',zh:'区域比例：所选全部出发航班，包括位置未确认的航班。',ja:'区域の割合：位置未確認を含む選択した全出発便が基準です。'}[lang]}</p>
+   <p className="prep-note" data-testid="country-share-basis">{zoneShareCopy[lang].country} {zoneShareCopy[lang].rounding}</p>
+   {basis&&<p className="prep-note">{basis}</p>}
+   {source}
+  </details>
   {gatesPending&&<p className="prep-note" role="status" data-testid="country-gates-pending">{zoneShareCopy[lang].gatesPending}</p>}
   <div className="airport-zone-country-grid">{!gatesPending&&zones.filter(zone=>zone.side!=='UNVERIFIED').map(zone=>{
    const known=zone.countries.filter(item=>item.country!==null);

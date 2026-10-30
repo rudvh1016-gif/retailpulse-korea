@@ -53,6 +53,15 @@ test('country labels retain regional identity and Korean remains byte-for-byte o
  assert.equal(briefText('ko','원문','English','中文'),'원문');
  assert.equal(briefHolidayText('Unreviewed source wording','en'),'Unreviewed source wording');
 });
+
+test('compact return checkpoints omit repeated event names without widening territory labels',()=>{
+ const event=seed[0];
+ for(const [countryLabel,name] of [['하와이','ハワイ'],['사이판','サイパン'],['괌','グアム']]){
+  const text=briefReturnText({...event,country:'US',countryLabel},'ja',true);
+  assert.ok(text.includes(name));assert.ok(!text.includes('アメリカ合衆国'));
+ }
+ for(const lang of ['ko','en','zh','ja'] as const)assert.ok(!briefReturnText({...event,name:'UNIQUE_EVENT_NAME'},lang,true).includes('UNIQUE_EVENT_NAME'));
+});
 test('production and preview thread locale into the complete brief; no font or style changes are needed',()=>{
  for(const file of ['app/airport-focus-production.tsx','app/airport-focus-preview.tsx'])assert.match(readFileSync(file,'utf8'),/<OverviewHeadline lang=\{lang\} context=/);
  const source=readFileSync('app/airport-focus-preview.tsx','utf8').split('function PreparationBrief(')[1].split('export default function AirportFocusPreview')[0];

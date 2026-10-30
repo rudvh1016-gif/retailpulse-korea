@@ -33,9 +33,9 @@ function comparisonText(route:StaffRouteChange,day:string,lang:Lang,number:Intl.
  const month=compact?compactMonth(route.month,day,lang):route.month,mean=compact?'':number.format(route.mean);
  return lang==='en'?`vs ${month} daily average${compact?'':` ${mean} flights`}`:lang==='zh'?`较${month}日均${compact?'':`${mean}班`}`:lang==='ja'?`${month}の1日平均${compact?'':`${mean}便`}比`:`${month} 일평균${compact?'':` ${mean}편`} 대비`;
 }
-function HolidayDates({event}:{event:BriefHoliday}){
- const crossYear=event.start.slice(0,4)!==event.end.slice(0,4);
- const label=(date:string)=>(crossYear?date:date.slice(5)).replaceAll('-','/');
+function HolidayDates({event,day}:{event:BriefHoliday;day:string}){
+ const showYear=event.start.slice(0,4)!==event.end.slice(0,4)||event.start.slice(0,4)!==day.slice(0,4);
+ const label=(date:string)=>(showYear?date:date.slice(5)).replaceAll('-','/');
  return <><time dateTime={event.start}>{label(event.start)}</time>{event.end!==event.start&&<>–<wbr/><time dateTime={event.end}>{label(event.end)}</time></>}</>;
 }
 
@@ -53,17 +53,16 @@ export function StaffRouteHoliday({route,event,flights,day,lang,children}:{route
   {!event&&<>{route?<p className="staff-route-metric" data-country={route.country}><b>{routeText(route,lang,number)}</b> · {comparisonText(route,day,lang,number,true)} <span className="staff-route-rate"><ChangeRate value={route.percent} lang={lang}/></span></p>:<p>{text.routePending}</p>}</>}
   {event&&label?<div className="staff-holiday-event" data-country={event.country}>
    <h4>{/^[A-Z]{2}$/.test(event.country)&&<span aria-hidden="true" style={{display:'inline-block',verticalAlign:'-2px',marginRight:6}}><CountryFlag code={event.country} size={18}/></span>}{countryName(event.country,event.countryLabel,lang)} {label.name}</h4>
-   <p><HolidayDates event={event}/>{scope&&<> · <span className="staff-holiday-scope">{scope}</span></>}</p>
+   <p><HolidayDates event={event} day={day}/>{scope&&<> · <span className="staff-holiday-scope">{scope}</span></>}</p>
    <EventCountryFlights country={event.country} label={event.countryLabel} context={context} lang={lang}/>
   </div>:<p>{text.eventPending}</p>}
   <details className="staff-route-details">
    <summary>{text.details}</summary>
-   {!event&&route&&<p data-country={route.country}>{day} · {text.routeBasis} · {routeText(route,lang,number)} · {comparisonText(route,day,lang,number,false)} <ChangeRate value={route.percent} lang={lang}/> <span className="staff-route-sample">({route.days}{lang==='en'?' days':lang==='ko'?'일':'日'})</span></p>}
-   {event&&<EventCountryFlightBasis country={event.country} label={event.countryLabel} context={context} lang={lang}/>}
+   {!event&&route&&<p data-country={route.country}>{day} · {text.routeBasis} · {comparisonText(route,day,lang,number,false)} <span className="staff-route-sample">({route.days}{lang==='en'?' days':lang==='ko'?'일':'日'})</span></p>}
+   {event&&<EventCountryFlightBasis country={event.country} label={event.countryLabel} context={context} lang={lang} eventForecastNote/>}
    {event&&label&&<div data-country={event.country}>
-    <p>{event.start}{event.end!==event.start?`–${event.end}`:''} · {briefHoliday(event,lang).name}</p>
-    <p>{label.scope}</p>
-    <p>{briefReturnText(event,lang)}.</p>
+    {label.scope!==scope&&<p>{label.scope}</p>}
+    <p>{briefReturnText(event,lang,true)}.</p>
     <small>{text.verified} {event.verifiedAt} · <a href={event.sourceURL} target="_blank" rel="noreferrer">{text.source}</a></small>
    </div>}
    {children}

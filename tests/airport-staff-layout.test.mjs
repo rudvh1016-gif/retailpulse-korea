@@ -30,7 +30,7 @@ test('merged detail body keeps the two requested topics and source context',()=>
  assert.match(routeHoliday,/공식 일정 확인/);
  assert.match(routeHoliday,/\{event\.verifiedAt\}/);
  assert.match(routeHoliday,/href=\{event\.sourceURL\}/);
- assert.deepEqual([...briefing.matchAll(/<h3 data-heading="subsection" className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"\/>(.*?)<\/h3>/g)].map(match=>match[1]),['<span className="airport-flow-check" aria-hidden="true">✓</span>시간·터미널','노선·휴일 준비']);
+ assert.deepEqual([...briefing.matchAll(/<h3 data-heading="subsection" className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"\/>(.*?)<\/h3>/g)].map(match=>match[1]),['<span className="airport-flow-check" aria-hidden="true">✓</span>시간·터미널','<span className="airport-flow-check" aria-hidden="true">✓</span>노선·휴일 준비']);
  for(const text of ['선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님','노선 국가 기준'])assert.ok((briefing+routeHoliday+read('../app/event-country-flights.tsx')).includes(text));
  for(const path of ['/airport${suffix}','/airport-countries${suffix}'])assert.ok(briefing.includes(path));
  assert.doesNotMatch(briefing,/품목별 확인|패션·명품|화장품·향수|주류·담배/);
@@ -56,4 +56,13 @@ test('peak briefing reuses the existing departures and localizes zone counts wit
 
 test('gate summary emphasis changes only the full-line weight, not body typography',()=>{
  assert.match(styles,/\.airport-staff-briefing \.staff-gate-summary strong\{font-size:inherit;font-weight:700\}/);
+});
+
+test('mobile source timestamp leaves one extra spacing step before the time-terminal check block',()=>{
+ assert.match(styles,/\.staff-brief-heading\{margin-top:0;margin-bottom:24px;padding-top:0\}/);
+});
+
+test('requested holiday basis control is smaller while preserving its native touch target',()=>{
+ assert.match(styles,/\.staff-route-details>summary\{font-size:12px;line-height:1\.7\}/);
+ assert.match(styles,/\.staff-route-details>summary\{min-height:44px/);
 });
