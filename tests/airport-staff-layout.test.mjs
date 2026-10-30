@@ -57,3 +57,7 @@ test('peak briefing reuses the existing departures and localizes zone counts wit
 test('gate summary emphasis changes only the full-line weight, not body typography',()=>{
  assert.match(styles,/\.airport-staff-briefing \.staff-gate-summary strong\{font-size:inherit;font-weight:700\}/);
 });
+
+test('mobile source timestamp leaves one extra spacing step before the time-terminal check block',()=>{
+ assert.match(styles,/\.staff-brief-heading\{margin-top:0;margin-bottom:24px;padding-top:0\}/);
+});

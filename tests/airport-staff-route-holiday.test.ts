@@ -21,7 +21,8 @@ test('event dates precede its own country metrics without unrelated Taiwan data'
  for(const fact of ['선택일 2026-10-22','공항 전체','태국행','16편','2026-09월 전체 수집분 일평균 18.5편 대비','△ 2.5편','△ 13%','10/23'])assert.ok(visible.includes(fact),fact);
  assert.doesNotMatch(visible,/대만|90편|귀국 준비|공식 일정 확인|국적|특수금융기관/);
  assert.equal((html.match(/<details/g)??[]).length,1);assert.match(details,/^ class="staff-route-details">/);
- for(const fact of ['2026-09 18.5편','30일','금융기관·특수금융기관','귀국 준비','2026-10-21','https://example.test/th','노선 국가 기준','Preserved school-calendar context'])assert.ok(details.includes(fact),fact);
+ for(const fact of ['2026-09-01–2026-09-30','30일','금융기관·특수금융기관','귀국 준비','2026-10-21','https://example.test/th','노선 국가 기준','Preserved school-calendar context'])assert.ok(details.includes(fact),fact);
+ assert.doesNotMatch(details,/18\.5편|Chulalongkorn|2026-10-22|공항 전체|change-rate/,'visible facts must not be repeated in the disclosure');
  assert.equal(JSON.stringify({flights,event}),before);
 });
 test('sample-day parentheses remain a no-wrap inline group in every locale',()=>{
@@ -36,6 +37,8 @@ test('single dates collapse once, multi-day and cross-year ranges retain both en
   assert.equal((visible.match(/<time /g)??[]).length,2);assert.ok(plain(visible).includes(expected));
   assert.ok(html.includes(`dateTime="${start}"`));assert.ok(html.includes(`dateTime="${end}"`));
  }
+ const nextYear=render({day:'2026-12-29',event:{...event,start:'2027-01-01',end:'2027-01-01'}}).split('<details')[0];
+ assert.match(nextYear,/2027\/01\/01/);assert.equal((nextYear.match(/<time /g)??[]).length,1);
 });
 
 test('institutional and partial applicability stays visible without duplicate bold financial scope',()=>{
@@ -46,7 +49,7 @@ test('institutional and partial applicability stays visible without duplicate bo
  }
  for(const scope of ['13:00 이후 적용 범위 확인 중','지정 지역만 적용']){
   const html=render({event:{...event,name:'검증된 일정',type:'public_holiday',calendarScope:'regional',scope}});
-  assert.ok(html.split('<details')[0].includes(scope));assert.ok(html.split('<details')[1].includes(scope));
+  assert.ok(html.split('<details')[0].includes(scope));assert.ok(!html.split('<details')[1].includes(scope));
  }
  const bankPartial=render({event:{...event,type:'bank_holiday',scope:'금융기관 · 13:00 이후 적용'}});
  assert.match(bankPartial.split('<details')[0],/금융기관 · 13:00 이후 적용/);
@@ -59,7 +62,7 @@ test('official Thai upcoming event still uses the selected day, not the future h
  const bank=official.events.find((e:{id:string})=>e.id===event.id);assert.ok(bank);
  const upcoming=planningHolidays(mergeBriefHolidays([], [bank]),'2026-10-22','2026-10-29','2026-10-21',new Map([['대만',90]]),1)[0];
  const html=render({event:upcoming});assert.match(html,/data-flight-day="2026-10-22"/);assert.doesNotMatch(html,/data-flight-day="2026-10-23"|기간과 맞물려/);
- assert.match(html,/증감 원인이 확인된 것은 아닙니다/);
+ assert.match(html,/선택일 항공편 참고 · 행사일 예측 아님 · 증감 원인 미확인/);
 });
 
 test('all four locales preserve numbers, country keys, source evidence and closed controls',()=>{
@@ -72,7 +75,7 @@ test('all four locales preserve numbers, country keys, source evidence and close
   assert.ok(visible.includes(scopes[lang]));assert.ok(visible.includes(directions[lang]));
   assert.doesNotMatch(visible,/data-country="TW"/);assert.match(visible,/data-country="TH"/);
   assert.match(details,/^ class="staff-route-details">/);assert.ok(details.includes(summaries[lang]));
-  assert.match(details,/2026-09/);assert.match(details,/18\.5/);assert.match(details,/2026-10-21/);assert.match(details,/https:\/\/example.test\/th/);
+  assert.match(details,/2026-09-01–2026-09-30/);assert.doesNotMatch(details,/18\.5/);assert.match(details,/2026-10-21/);assert.match(details,/https:\/\/example.test\/th/);
  }
  // Untranslated source wording is preserved rather than guessed, matching the existing localization contract.
  assert.match(render({lang:'ja'}),/Chulalongkorn 国王|Chulalongkorn 국왕/);

@@ -31,6 +31,8 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  const flowBox=await flow.boundingBox(),briefingBox=await briefing.boundingBox();
  expect(briefingBox!.width).toBeCloseTo(flowBox!.width,0);
  await expect(briefing.locator('.staff-brief-heading small')).toHaveCSS('font-size','11px');
+ const sourceBox=await briefing.locator('.staff-brief-heading').boundingBox(),timeBox=await briefing.locator('.staff-brief-grid>section').first().boundingBox();
+ expect(timeBox!.y-(sourceBox!.y+sourceBox!.height)).toBeGreaterThanOrEqual(width<=700?24:16);
  const basis=briefing.locator('.staff-route-details');
  await expect(basis).not.toHaveAttribute('open','');
  await expect(basis.locator('p').first()).not.toBeVisible();
@@ -42,6 +44,9 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  if(dates.length===2)expect(dates[0].date).not.toBe(dates[1].date);
  await basis.locator('summary').focus();await page.keyboard.press('Enter');
  await expect(basis).toHaveAttribute('open','');await expect(basis).toContainText('노선 국가 기준');await expect(briefing).not.toContainText('노선 국가를 고객 국적으로');await expect(briefing).not.toContainText('귀국객 집중을 확정한 예측');
+ await expect(basis).toContainText('행사일 예측 아님 · 증감 원인 미확인');
+ await expect(basis.locator('.event-flight-basis')).not.toContainText('2026-10-19');
+ await expect(basis.locator('.change-rate')).toHaveCount(0);
  await expect(basis.locator('.staff-route-sample')).toHaveCSS('white-space','nowrap');
  await page.keyboard.press('Enter');await expect(basis).not.toHaveAttribute('open','');
  const changeBlock=page.locator('.focus-report .focus-selected-country-changes').first();
