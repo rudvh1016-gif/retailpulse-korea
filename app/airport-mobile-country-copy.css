@@ -1,0 +1,6 @@
+.focus-country-change-short{display:none}
+@media(max-width:700px){
+ .airport-focus-shell .focus-report .focus-country-change-copy:has(.focus-country-change-short){font-size:clamp(10px,2.8vw,11px)}
+ .focus-country-change-full{display:none}
+ .focus-country-change-short{display:inline}
+}
