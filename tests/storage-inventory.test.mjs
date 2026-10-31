@@ -241,7 +241,13 @@ test("the usage diagnostic reads Cloudflare's counters and one bounded collector
   const workflow = readFileSync(".github/workflows/measure-read-budget.yml", "utf8");
   assert.doesNotMatch(script, /\b(INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|DROP\s+TABLE|ALTER\s+TABLE|CREATE\s+(TABLE|INDEX))\b/i);
   const d1Statements = script.match(/database\.prepare\(/g) ?? [];
-  assert.equal(d1Statements.length, 1, "one statement of its own; the rest are the routes' own readers");
+  assert.equal(d1Statements.length, 3, "one ledger read and exactly one before/after pair; remaining reads use actual route readers");
+  assert.match(script, /database\.prepare\(baselineSql\)\.bind\(todayKst\)\.all\(\)/);
+  assert.match(script, /database\.prepare\(AIRPORT_SQL\)\.bind\(todayKst\)\.all\(\)/);
+  const forecastSql = readFileSync('lib/today-answer.ts', 'utf8').match(/const AIRPORT_SQL = `([^`]+)`/)[1];
+  assert.match(forecastSql, /^SELECT[\s\S]*target_date = \?[\s\S]*LIMIT 96$/);
+  assert.doesNotMatch(forecastSql, /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE)\b/);
+  assert.match(script, /equivalentRows: normalized\(before.results\) === normalized\(after.results\)/);
   assert.match(script, /FROM operational_usage_daily WHERE day >= \? ORDER BY day, source_id/, "a primary-key range read");
   for (const route of ["flights", "airport-days", "airport-months"]) {
     const source = readFileSync(`app/api/live/${route}/route.ts`, "utf8");

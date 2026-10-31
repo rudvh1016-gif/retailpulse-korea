@@ -16,8 +16,9 @@
  * Safety properties, all load-bearing:
  *   - D1 sees one bounded primary-key range SELECT on the collectors' ledger
  *     and one uncached replay of each airport read API (the routes' own
- *     exported readers, SELECT only). Nothing writes, and no data provider is
- *     called.
+ *     exported readers, SELECT only), plus a single before/after pair of the
+ *     96-row single-day forecast read. Nothing writes or retries, and no data
+ *     provider is called.
  *   - Analytics calls read Cloudflare's own counters; they do not touch D1.
  *   - No secret is printed. Tokens are named only by their variable names,
  *     errors are reduced to safe characters, and statement text is the SQL
@@ -30,6 +31,7 @@ import { readFlightsForDate } from "../app/api/live/flights/route";
 import { readAirportDays } from "../app/api/live/airport-days/route";
 import { readAirportMonths } from "../app/api/live/airport-months/route";
 import { resolveProductionDatabaseConfig } from "./production-database";
+import { AIRPORT_SQL } from "../lib/today-answer";
 
 const API = "https://api.cloudflare.com/client/v4";
 const FREE_DAILY_ROWS_READ = 5_000_000;
@@ -359,6 +361,25 @@ for (const [name, run] of [
   }
 }
 report.routeCosts = routeCosts;
+// One bounded before/after pair for the existing single-day aggregate seek.
+// No schema mutation, collection, or retries. An intervening collector change
+// makes equality inconclusive rather than justifying repeated diagnostic reads.
+try {
+  const baselineSql = AIRPORT_SQL.replace(' INDEXED BY airport_passenger_forecast_month_idx', '');
+  const before = await database.prepare(baselineSql).bind(todayKst).all();
+  const after = await database.prepare(AIRPORT_SQL).bind(todayKst).all();
+  if (!before.success || !after.success) throw new Error('forecast_comparison_read_failed');
+  const normalized = (rows: unknown[]) => JSON.stringify(rows.map(row => JSON.stringify(row)).sort());
+  report.forecastSeekComparison = {
+    basis: 'OFFICIAL_QUERY_META', day: todayKst,
+    equivalentRows: normalized(before.results) === normalized(after.results),
+    before: { rowsRead: num(before.meta?.rows_read), rowsWritten: num(before.meta?.rows_written), returned: before.results.length },
+    after: { rowsRead: num(after.meta?.rows_read), rowsWritten: num(after.meta?.rows_written), returned: after.results.length },
+    caveat: 'Sequential SELECTs; differing rows mean inconclusive, not a correctness pass.',
+  };
+} catch (error) {
+  report.forecastSeekComparison = { basis: 'UNAVAILABLE', reason: safeError(error) };
+}
 console.log("\nOFFICIAL_QUERY_META cost of one uncached call (the route's own reader)");
 for (const row of routeCosts) console.log(`  ${String(row.route).padEnd(40)} statements ${row.statements} rowsRead ${row.rowsRead} rowsWritten ${row.rowsWritten} ${JSON.stringify(Object.fromEntries(Object.entries(row).filter(([key]) => !["route", "basis", "statements", "rowsRead", "rowsWritten", "unmeasured"].includes(key))))}`);
 

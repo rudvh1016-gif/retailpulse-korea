@@ -27,11 +27,14 @@ export interface AnswerClient {
   batch(statements: unknown[]): Promise<Array<{ results?: unknown[] }>>;
 }
 
-const AIRPORT_SQL = `SELECT terminal, direction, is_aggregate AS isAggregate,
+// The time-first ORDER BY otherwise makes SQLite walk all day components via
+// target_idx. The existing month index seeks only departure aggregates; keep
+// the original order/limit, accepting a tiny sort rather than extra D1 reads.
+export const AIRPORT_SQL = `SELECT terminal, direction, is_aggregate AS isAggregate,
     target_date AS targetDate, time_band_raw AS timeBandRaw,
     target_start_at AS targetStartAt, target_end_at AS targetEndAt,
     expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt
-  FROM airport_passenger_forecast
+  FROM airport_passenger_forecast INDEXED BY airport_passenger_forecast_month_idx
   WHERE direction = 'departure' AND is_aggregate = 1 AND target_date = ?
   ORDER BY target_start_at, terminal LIMIT 96`;
 
