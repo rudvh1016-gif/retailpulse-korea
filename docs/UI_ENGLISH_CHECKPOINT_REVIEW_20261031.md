@@ -23,3 +23,9 @@ English interactive inventory found no visible Korean in nine major airport scen
 September recovery findings and actual comparison periods are recorded in `SEPTEMBER_PASSENGER_COVERAGE_20261031.md`. GA detailed-view setup and daily delivery still require the existing authorized Analytics/session and scheduler; this local work does not claim reports were delivered.
 
 Windows checkout note: initial source assertions and immutable SQL/news hashes failed because Git expanded canonical LF bytes to CRLF. The isolated checkout was normalized back to canonical LF and its local `core.autocrlf` disabled. This does not change repository content. Updated tests reflect requested tilde ranges and English feature parity; the historical weekday test now fixes its clock so today's date cannot add the current-day witness query unpredictably.
+
+## Subsequent local menu and return-planning request
+
+The narrow-screen T1 main-building button moves 8px left while retaining its button size and all later button positions. Measured Korean text gaps at 320/390px are approximately 29.6px and 28.7px; desktop retains equal 32px gaps. Top margin changes from 2px to 0 on phones and from 12px to 8px on desktop. Verified 44px mobile button targets, no horizontal overflow and terminal selection after initialization.
+
+Removed only the return-planning sentence beginning “공식 휴일 종료일 기준입니다.” and its corresponding English/Chinese rendering. Existing events, dates, source links and individual disclosures remain. Six return-planning browser cases and 17 relevant unit cases passed. The reference Library image could not be materialized: the supported transfer helper reached attribute application but Windows Python has no `os.setxattr`. Actual local menu screenshots were inspected instead. No protected-gate changes or remote posting were retried.

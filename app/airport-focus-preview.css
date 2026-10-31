@@ -372,12 +372,14 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 }
 
 /* Phone terminal choices start flush left with compact, readable spacing. */
+.airport-focus-operating .glance-controls{margin-top:8px}
 @media(max-width:700px){
- .airport-focus-operating .glance-controls{margin-top:2px;padding-bottom:0;row-gap:4px}
+ .airport-focus-operating .glance-controls{margin-top:0;padding-bottom:0;row-gap:4px}
  .airport-focus-operating .glance-controls>div{justify-content:flex-start;gap:8px;overflow-x:auto;scrollbar-width:none}
  .airport-focus-operating .glance-controls>div::-webkit-scrollbar{display:none}
  .airport-focus-operating .glance-controls>div button{flex:0 0 auto;min-width:44px;padding-block:4px;padding-inline:6px}
  .airport-focus-operating .glance-controls>div button:first-child{padding-inline-start:0}
+ .airport-focus-operating .glance-controls>div button:nth-child(2){margin-inline-start:-8px;margin-inline-end:8px}
  .airport-focus-operating .glance-controls>div button .glance-selection-rule{left:6px;right:6px}
  .airport-focus-operating .glance-controls>div button:first-child .glance-selection-rule{left:0}
 }
