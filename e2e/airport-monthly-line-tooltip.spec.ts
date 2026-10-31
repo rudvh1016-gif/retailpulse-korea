@@ -5,16 +5,20 @@ import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
 
-async function openCharts(page:Page,path='/ko/airport-focus-preview'){
+async function openCharts(page:Page,path='/ko/airport-countries?mode=passengers&date=2026-10-19'){
  await page.clock.setFixedTime(new Date(summary.generatedAt));
  await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
- await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:passengerStats}));
+ await page.route('**/api/live/airport-passenger-stats*',route=>{
+  const requested=new URL(route.request().url()).searchParams.get('month')??'2026-09',month=requested==='2026-10'?'2026-09':requested,prior=new Date(month+'-01T00:00:00Z');prior.setUTCMonth(prior.getUTCMonth()-1);const previousMonth=prior.toISOString().slice(0,7);
+  const observation=(selected:string)=>({...passengerStats.current.ROUTE_COUNTRY_PASSENGERS,month:selected,rows:passengerStats.current.ROUTE_COUNTRY_PASSENGERS.rows.map(row=>({...row,departures:metrics.trends.find(trend=>trend.label===row.label)?.points.find(point=>point.month===selected)?.departures??row.departures}))});
+  return route.fulfill({json:{...passengerStats,month,previousMonth,current:{...passengerStats.current,ROUTE_COUNTRY_PASSENGERS:observation(month)},previous:{...passengerStats.previous,ROUTE_COUNTRY_PASSENGERS:observation(previousMonth)}}});
+ });
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,route=>route.abort());
  await page.goto(path,{waitUntil:'domcontentloaded'});
- await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
- await expect(page.locator('.focus-interactive-line-chart')).toHaveCount(3);
+ await expect(page.locator('#focus-country-trends')).toBeVisible();await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
+ await expect(page.locator('.focus-interactive-line-chart')).toHaveCount(12);
 }
 
 test('hover and keyboard show the actual value for every month, including May',async({page},info)=>{
@@ -110,9 +114,9 @@ test.describe('phone and tablet taps',()=>{
   await chart.locator('figcaption').tap();await expect(chart.getByRole('tooltip')).toHaveCount(0);
  });
 
- test('production home China chart responds between August and September on touch',async({page},info)=>{
+ test('country-detail China chart responds between August and September on touch',async({page},info)=>{
   await page.setViewportSize({width:390,height:900});await page.emulateMedia({reducedMotion:'reduce'});
-  await openCharts(page,'/ko?date=2026-10-19');
+  await openCharts(page);
   const china=page.locator('#focus-country-trends article').filter({has:page.getByRole('heading',{name:'중국',exact:true})});
   await expect(china.locator('.focus-trend-value')).toContainText('601,273');
   const chart=china.locator('.focus-interactive-line-chart');await chart.scrollIntoViewIfNeeded();

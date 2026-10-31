@@ -113,7 +113,7 @@ test('partially visible vertical bars observe the fixed plot, not their own chan
     const original=Element.prototype.animate;
     Element.prototype.animate=function(...args) {
       const animation=original.apply(this,args);
-      if(this.matches('.airport-month-chart svg > g')) { animation.pause(); animation.currentTime=225; }
+      if(this.matches('.airport-month-chart svg > g')) { animation.pause(); animation.currentTime=600; }
       return animation;
     };
   });
@@ -132,7 +132,7 @@ test('partially visible vertical bars observe the fixed plot, not their own chan
     const animation=el.getAnimations().find(a=>!('animationName' in a)&&a.playState==='paused');
     if(!animation)return null;
     const half=el.getBoundingClientRect(),scale=new DOMMatrix(getComputedStyle(el).transform).d;
-    animation.currentTime=450;
+    animation.currentTime=1200;
     const final=el.getBoundingClientRect();
     animation.play();
     return {scale,bottom:half.bottom,finalBottom:final.bottom};

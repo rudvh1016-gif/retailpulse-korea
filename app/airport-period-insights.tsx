@@ -78,9 +78,11 @@ export function AirportGlanceInsights({lang,...props}:{lang:Lang;children:ReactN
 function LocalizedCountries({children,date,lang}:{children:ReactNode;date?:string|null;lang:Lang}){
  const t=(value:string)=>airportAnalysisText(lang,value);
  const query=useQuery(),mode=query.get('mode')==='flights'?'flights':query.get('mode')==='passengers'?'passengers':'zones',monthly=query.get('period')==='monthly';
+ const countryStrip=useRef<HTMLDivElement>(null);
+ useLayoutEffect(()=>revealFocusedGlanceTab(countryStrip.current),[mode]);
  const labels=[['zones','국가별 출발 구역'],['passengers','국가별 출국 여객'],['flights','국가별 항공편']] as const;
  return <section className="airport-insight-shell airport-country-insights"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{t('국가별 흐름')}</h1>
-  <div role="tablist" className="airport-insight-tabs country-tabs" aria-label={t('국가별 흐름 보기 선택')}>{labels.map(([id,label],i)=><button key={id} id={'country-flow-tab-'+id} role="tab" tabIndex={mode===id?0:-1} aria-selected={mode===id} aria-controls={'country-flow-'+id} onClick={()=>navigate('mode',id)} onKeyDown={e=>tabKeys(e,i,labels.length,n=>navigate('mode',labels[n][0]))}>{t(label)}</button>)}</div>
+  <div ref={countryStrip} role="tablist" className="airport-insight-tabs country-tabs" aria-label={t('국가별 흐름 보기 선택')}>{labels.map(([id,label],i)=><button key={id} id={'country-flow-tab-'+id} role="tab" tabIndex={mode===id?0:-1} aria-selected={mode===id} aria-controls={'country-flow-'+id} onClick={()=>navigate('mode',id)} onKeyDown={e=>tabKeys(e,i,labels.length,n=>navigate('mode',labels[n][0]))}>{t(label)}</button>)}</div>
   <p className="airport-period-basis">{t(mode==='passengers'?'공항 전체 공식 월 실적 · 명':mode==='flights'?'터미널별 출발편 비교 · 편/일':'터미널별 국가·구역 출발편')}<br/>{t('노선의 목적지 국가 기준 · 승객 국적 아님')}</p>
   <div id="country-flow-passengers" role="tabpanel" aria-labelledby="country-flow-tab-passengers" hidden={mode!=='passengers'}>{children}</div>
   {mode==='flights'&&<div id="country-flow-flights" role="tabpanel" aria-labelledby="country-flow-tab-flights"><div className="airport-period-modes" role="group" aria-label={t('항공편 비교 방식')}><button aria-pressed={!monthly} onClick={()=>navigate('period','custom')}>{t('기간 직접 비교')}</button><button aria-pressed={monthly} onClick={()=>navigate('period','monthly')}>{t('터미널별 월 집계')}</button></div>{monthly?<CountryFlights lang={lang} date={date??null}/>:<PeriodFrame key={lang+':'+(date??'today')} lang={lang} view="country" date={date}/>}</div>}

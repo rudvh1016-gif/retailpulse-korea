@@ -1,7 +1,7 @@
 import type {Lang} from '../app/retailpulse-data';
-import holidayTranslations from './brief-holiday-translations.json';
-import translations from './chinese-ui.json';
-import english from './english-ui.json';
+import holidayTranslations from './brief-holiday-translations.json' with {type:'json'};
+import translations from './chinese-ui.json' with {type:'json'};
+import english from './english-ui.json' with {type:'json'};
 
 // Presentation-only lookup. Canonical Korean source fields and join keys remain unchanged.
 // Numbered placeholders preserve the original value, date, unit and precision.

@@ -1,4 +1,6 @@
 import {test,expect,type Locator} from '@playwright/test';
+import {chineseText} from '../lib/chinese-ui';
+const englishExpected=(value:string)=>chineseText('en',value.replace(/(중추절|여름방학)(?= \d{4}-)/g,word=>chineseText('en',word)));
 import calendar from '../data/airport-focus-preview/calendar-context.json' with {type:'json'};
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
@@ -64,7 +66,7 @@ for(const lang of ['ko','en','zh','ja'])for(const motion of ['reduce','no-prefer
  await page.goto(`/${lang}/airport-countries?mode=passengers&date=2026-10-19`);
  const context=page.locator('.focus-trend-context[data-country="CN"] .focus-calendar-context');
  const details=context.getByTestId('monthly-calendar-reference'),toggle=details.locator('summary');
- const local=(ko:string,zh:string)=>lang==='zh'?zh:ko;
+ const local=(ko:string,zh:string)=>lang==='zh'?zh:lang==='en'?englishExpected(ko):ko;
  const qualificationText=local('일정 참고 · 증감 원인 단정 불가 · 한국 일정은 출발지 기준','日程参考 · 不能断定增减原因 · 韩国日程按出发地提供');
  const qualification=context.getByText(qualificationText,{exact:true});
  await expect(toggle).toHaveText(({ko:'일정 근거',en:'Comparison-period calendar · official sources',zh:'比较期间日程 · 官方依据',ja:'比較期間の日程・公式根拠'} as Record<string,string>)[lang]);
@@ -132,7 +134,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test.descr
 
  await page.goto(`/${lang}/airport-countries?mode=passengers`,{waitUntil:'domcontentloaded'});
  const cn=context('CN'),jp=context('JP');await cn.scrollIntoViewIfNeeded();
- const local=(ko:string,zh:string)=>lang==='zh'?zh:ko;
+ const local=(ko:string,zh:string)=>lang==='zh'?zh:lang==='en'?englishExpected(ko):ko;
  await expect(cn.locator('[data-vacation-group="CN"]')).toHaveCount(1);
  const members=cn.locator('.focus-vacation-period');await expect(members).toHaveCount(2);
  await expect(members.nth(0)).toContainText('2026-07-01 ~ 2026-08-31');await expect(members.nth(0)).toContainText(local('상하이 초·중등학교','上海市中小学'));

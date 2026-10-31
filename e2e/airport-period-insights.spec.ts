@@ -142,7 +142,7 @@ test('failed calendar leaves flights visible and says unknown, never no holidays
  await expect(page.locator('#holiday-calendar-context')).not.toContainText('조정 휴무 없음');
 });
 test('More explains airport roles with compact type and notice links match the release',async({page})=>{
- await page.goto('/ko/more');const guide=page.locator('.site-usage-guide');
+ await page.goto('/ko/more');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const guide=page.locator('.site-usage-guide');
  await expect(guide.locator('h2')).toHaveText('누가, 어떻게 쓰면 좋을까요?');
  await expect(guide.locator('p').first()).toHaveCSS('font-size','13px');
  const airportGuideButton=page.locator('.more-section-links').getByRole('button',{name:'인천공항 이용 방법'});
@@ -226,7 +226,7 @@ for(const width of [320,360,390,430,700])test(`country phone tabs remain one rea
  const boxes=await buttons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(node);return {y:b.y,width:b.width,height:b.height,textHeight:range.getBoundingClientRect().height,lineHeight:parseFloat(getComputedStyle(node).lineHeight)};}));
  for(const box of boxes){expect(box.y).toBe(boxes[0].y);expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(box.textHeight).toBeLessThanOrEqual(box.lineHeight+1);}
  await buttons.first().focus();await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
- const last=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;expect(last.x).toBeGreaterThanOrEqual(strip.x-1);expect(last.x+last.width).toBeLessThanOrEqual(strip.x+strip.width+1);
+ await expect.poll(async()=>{const last=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;return Math.max(strip.x-last.x,last.x+last.width-strip.x-strip.width);}).toBeLessThanOrEqual(1);
  await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');
  await buttons.nth(1).click();await expect(buttons.nth(1)).toHaveAttribute('aria-selected','true');await buttons.first().click();await expect(buttons.first()).toHaveAttribute('aria-selected','true');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

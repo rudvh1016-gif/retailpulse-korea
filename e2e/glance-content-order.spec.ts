@@ -1,10 +1,11 @@
 import {test,expect} from '@playwright/test';
-for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${lang} trends are final glance content at ${width}px`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,1440])test(`${lang} current checkpoints are final glance content at ${width}px`,async({page})=>{
  await page.setViewportSize({width,height:900});
  await page.goto(`/${lang}`,{waitUntil:'domcontentloaded'});
- const tail=page.locator('.glance-preview > .glance-overview-extras');
+ const tail=page.locator('.glance-preview > .home-checkpoint-waits');
  await expect(tail).toHaveCount(1);
- await expect(tail.locator('#focus-country-trends')).toHaveCount(1);
+ await expect(tail.locator('#focus-country-trends')).toHaveCount(0);
+ await expect(tail.locator('h2')).toHaveCount(1);
  await tail.scrollIntoViewIfNeeded();
  const order=await tail.evaluate(element=>{
   const siblings=[...element.parentElement!.children];const index=siblings.indexOf(element);
