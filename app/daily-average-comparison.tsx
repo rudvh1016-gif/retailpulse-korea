@@ -1,8 +1,9 @@
 import {ChangeRate,CountChange} from './change-rate';
 import type {Lang} from './retailpulse-data';
+import type {ReactNode} from 'react';
 
 /** Presentation only: callers supply the unchanged, unrounded comparison. */
-export function DailyAverageComparison({basis,mean,delta,percent,lang,marker,unit='flights'}:{marker?:string;basis:string;mean:number;delta:number;percent:number|null;lang:Lang;unit?:'flights'|'people'}){
+export function DailyAverageComparison({basis,mean,delta,percent,lang,marker,unit='flights'}:{marker?:string;basis:ReactNode;mean:number;delta:number;percent:number|null;lang:Lang;unit?:'flights'|'people'}){
  const t=(ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
  const number=new Intl.NumberFormat(lang,{maximumFractionDigits:unit==='people'?0:1});
  const countUnit=unit==='flights'?t('편',' flights','班','便'):t('명',' people','人','人');

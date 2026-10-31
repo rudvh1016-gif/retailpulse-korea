@@ -23,7 +23,7 @@ export function observeChartFillVisibility() {
     if (!refresh && target.getAnimations?.().some(animation => 'animationName' in animation && String(animation.animationName).startsWith('chart-fill-') && animation.playState === 'running')) return;
     stop(target);
     const scale = target.matches(vertical) ? 'scaleY(0)' : 'scaleX(0)';
-    const animation = target.animate([{transform:scale},{transform:'none'}], {duration:450,easing:'ease-out'});
+    const animation = target.animate([{transform:scale},{transform:'none'}], {duration:1200,easing:'cubic-bezier(0.22, 0.61, 0.36, 1)'});
     active.set(target, animation);
     const finished = () => { if (active.get(target) === animation) active.delete(target); };
     animation.onfinish = finished;

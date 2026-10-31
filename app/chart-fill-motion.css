@@ -8,20 +8,20 @@
       .airport-month-compare-track > span, .history-bars li > i,
       .compare-bars div > i, .airport-gate-bar, .flight-side-distribution) {
     transform-origin: left center;
-    animation: chart-fill-horizontal 450ms ease-out;
+    animation: chart-fill-horizontal 1200ms cubic-bezier(0.22, 0.61, 0.36, 1);
   }
   /* SVG fill-box is required so each mark grows from its own baseline. */
   @supports (transform-box: fill-box) {
     .chart-fill-x-svg {
       transform-box: fill-box;
       transform-origin: left center;
-      animation: chart-fill-horizontal 450ms ease-out;
+      animation: chart-fill-horizontal 1200ms cubic-bezier(0.22, 0.61, 0.36, 1);
     }
     .chart-fill-y-svg,
     .airport-month-chart svg > g {
       transform-box: fill-box;
       transform-origin: center bottom;
-      animation: chart-fill-vertical 450ms ease-out;
+      animation: chart-fill-vertical 1200ms cubic-bezier(0.22, 0.61, 0.36, 1);
     }
   }
 }

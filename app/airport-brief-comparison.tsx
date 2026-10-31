@@ -1,7 +1,7 @@
 import {useId,type ReactNode} from 'react';
 import type {PassengerReferenceMonth} from '../lib/passenger-reference-month';
 import {passengerReferenceDailyChange} from '../lib/passenger-reference-comparison';
-import {comparisonBasisLabel} from '../lib/comparison-basis';
+import {ComparisonBasisText} from './comparison-basis-text';
 import type {Lang} from './retailpulse-data';
 import {ChangeRate,CountChange} from './change-rate';
 const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
@@ -13,10 +13,10 @@ export function PassengerBriefComparison({total,day,baseline,parts,marker,pendin
  const missing=baseline?.missingDates.length??0;
  return <div className="focus-passenger-comparison">{change
   ?<>
-   <p className="focus-passenger-comparison-core"><span className="focus-comparison-basis">{comparisonBasisLabel({month:baseline!.month,
+   <p className="focus-passenger-comparison-core"><span className="focus-comparison-basis"><ComparisonBasisText data={{month:baseline!.month,
     includedDays:baseline!.observedDays?.map(row=>row.date)??Array.from({length:change.baselineDays},(_,i)=>`${baseline!.month}-${String(i+1).padStart(2,'0')}`),
     through:change.observedDaysOnly?[...baseline!.observedDays!].map(row=>row.date).sort().at(-1):baseline!.end,
-    provenance:'forecast'},lang)} {number.format(change.mean)}{t('명 대비 ',' people compared with: ','人相比：','人比：')}</span>{' '}<span className="focus-comparison-change">{marker&&`${marker} `}
+    provenance:'forecast'}} lang={lang}/> {number.format(change.mean)}{t('명 대비 ',' people compared with: ','人相比：','人比：')}</span>{' '}<span className="focus-comparison-change">{marker&&`${marker} `}
     <CountChange integer delta={change.delta} format={value=>number.format(value)} lang={lang} unit={t('명/일',' people/day','人/天','人/日')}/>{' '}
     {change.delta>0?t('증가','increase','增加','増加'):change.delta<0?t('감소','decrease','减少','減少'):t('차이 없음','no change','无变化','変化なし')}{' '}
     {change.percent===null?<span className="focus-passenger-zero-basis">{t('기준값 0명 · 증감률 계산 불가','Zero baseline · percentage change unavailable','基准值为0人 · 无法计算变化率','基準値0人 · 増減率は算出不可')}</span>:<span className="focus-passenger-rate">(<ChangeRate value={change.percent} lang={lang}/>)</span>}

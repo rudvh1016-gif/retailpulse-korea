@@ -392,3 +392,10 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report .focus-preparation-brief .focus-preparation-events{margin-bottom:0}
  .airport-focus-shell .focus-report .focus-preparation-brief>.focus-planning-basis{margin-top:4px}
 }
+
+/* Emphasize only the comparison period; keep successful Korean bases on one line. */
+.airport-focus-shell .focus-report :is(.focus-week-basis,.focus-comparison-basis,.daily-comparison-basis) strong{font-weight:700}
+@media(min-width:701px){
+ .airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis):has(>.comparison-period):lang(ko),
+ .airport-focus-shell .focus-report .focus-week-basis:lang(ko):has(>strong){white-space:nowrap;overflow-wrap:normal}
+}
