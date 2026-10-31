@@ -33,7 +33,7 @@ for(const width of [360,1440])test(`Chinese core screens, calendar details, allo
  await page.goto('/zh?date=2026-10-19');await expect(page.locator('.focus-report-lines')).toContainText('103,124');
  await page.locator('#focus-holidays').scrollIntoViewIfNeeded();await expect(page.locator('#focus-holidays')).toContainText('各国');await noKoreanUI(page);
  await page.screenshot({path:info.outputPath(`zh-home-${width}.png`),fullPage:true});
- await page.goto('/zh/airport-countries?date=2026-10-19');await expect(page.locator('.focus-trend-grid article')).toHaveCount(12);
+ await page.goto('/zh/airport-countries?mode=passengers&date=2026-10-19');await expect(page.locator('.focus-trend-grid article')).toHaveCount(12);
  for(const disclosure of await page.locator('.focus-month-table-details').all())await disclosure.locator('summary').click();
  const point=page.locator('.focus-month-target').last();await point.scrollIntoViewIfNeeded();await point.click();await expect(page.getByRole('tooltip')).toBeVisible();await expect(page.getByRole('tooltip')).not.toContainText(/[가-힣]/);
  await noKoreanUI(page);await page.screenshot({path:info.outputPath(`zh-countries-${width}.png`),fullPage:true});

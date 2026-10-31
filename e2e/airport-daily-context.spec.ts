@@ -13,11 +13,11 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [390,1280])t
  await page.route('**/api/live/flights*',r=>{const selected=new URL(r.request().url()).searchParams.get('date')??date;return r.fulfill({json:{mode:'live-flights',flights:[{...row('main','T1','1','NRT'),direction:'departure',scheduledAt:selected+'T10:00:00+09:00'}],truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}});});
  await page.goto(`/${lang}/airport?terminal=T1`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page.getByTestId('departure-preparation')).toHaveCount(0);
- if(lang==='ko')await page.goto(`/ko/airport-countries?mode=zones&date=${date}&building=T1`);
+ if(lang==='ko'||lang==='zh')await page.goto(`/${lang}/airport-countries?mode=zones&date=${date}&building=T1`);
  const monthly=page.getByTestId('airport-month-flights');await expect(monthly.getByTestId('destination-daily-changes').locator('li[data-country=JP]')).toHaveCount(1);await expect(monthly.getByTestId('destination-daily-changes').locator('li[data-country=CN]')).toHaveCount(0);
  const heading=page.getByTestId('daily-country-heading');await expect(heading).toContainText(({ko:'오늘의',en:'Today',zh:'今日',ja:'今日'})[lang]);
- if(lang==='ko')await page.getByRole('group',{name:'출발 구역 터미널 선택'}).getByRole('button',{name:'탑승동',exact:true}).click();else await page.getByRole('tab',{name:({ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})[lang],exact:true}).click();
+ if(lang==='ko'||lang==='zh')await page.getByRole('group',{name:lang==='zh'?'选择出发区域航站楼':'출발 구역 터미널 선택'}).getByRole('button',{name:lang==='zh'?'卫星厅':'탑승동',exact:true}).click();else await page.getByRole('tab',{name:({ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})[lang],exact:true}).click();
  await expect(monthly.getByTestId('destination-daily-changes').locator('li[data-country=CN]')).toHaveCount(1);await expect(monthly.getByTestId('destination-daily-changes').locator('li[data-country=JP]')).toHaveCount(0);
- if(lang==='ko')await page.getByLabel('날짜',{exact:true}).fill('2026-08-30');else await chooseDate(page,'2026-08-30');await expect(page.getByTestId('daily-country-heading')).toContainText('2026-08-30');
+ if(lang==='ko'||lang==='zh')await page.getByLabel(lang==='zh'?'日期':'날짜',{exact:true}).fill('2026-08-30');else await chooseDate(page,'2026-08-30');await expect(page.getByTestId('daily-country-heading')).toContainText('2026-08-30');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
 });

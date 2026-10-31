@@ -29,7 +29,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,1280]){
   await page.setViewportSize({width,height:1000});await blockOtherApis(page);
   await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
   for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,route=>route.fulfill({json}));
-  await page.goto(lang==='ko'?'/ko/airport-countries?mode=zones&date=2026-10-19&building=all':`/${lang}/airport?date=2026-10-19`);
+  await page.goto((lang==='ko'||lang==='zh')?`/${lang}/airport-countries?mode=zones&date=2026-10-19&building=all`:`/${lang}/airport?date=2026-10-19`);
   const month=page.getByTestId('airport-month-flights');
   await month.scrollIntoViewIfNeeded();await boundary(month,12,12);
   const countries=month.getByTestId('destination-daily-changes');

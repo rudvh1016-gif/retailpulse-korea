@@ -33,11 +33,17 @@ const copy = {
   },
   zh: {
     title: "适合谁用，怎么用？",
-    intro: "KORETAIL以仁川机场航班、旅客趋势与出行准备为中心。首尔地区参考资料可在独立页面查看。",
-    uses: [["机场及免税店员工", "选择航站楼，同时查看预计出境人数、高峰时段、出发航班与出境区等候，准备工作与休息安排。"], ["首尔门店经营者", "结合地区当前人口、境内消费者刷卡、天气及活动，并使用门店页面的业态检查清单准备开店。"], ["游客及旅游咨询人员", "查看目的地当前拥挤、官方预测与天气；旅游咨询页面汇集各地区的咨询资料。"]],
-    methodTitle: "如何理解数字", method: "按地区、日期和航站楼整理机构公布的资料。当前观测、官方预测与历史实绩并不相同。预计旅客不是排队人数，境内消费者刷卡不是外国人消费或全部销售额。仅在范围与时段可比时计算变化。",
-    updateTitle: "何时更新？", updates: "首尔人口、刷卡与机场排队约每15分钟尝试采集，机场预计旅客每小时采集，航班和活动按各自定期计划采集。月度、季度资料在机构发布后更新。机构更新与本站采集不是同一时间，请同时查看观测与采集时刻。",
-    limit: "来源延迟或故障可能推迟更新。保留最近确认的值及时间，缺失资料显示无法确认。请勿仅凭数字判断销售或现场工作量。",
+    intro: "为仁川机场工作人员提供今日状况与近期变化。先在机场一览查看今天，需要了解变化时再比较时段。首尔地区资料仍可从更多页面查看。",
+    uses: [
+      ["销售与餐饮门店员工", "在机场一览选择工作航站楼和日期。查看当天的出发航班、预计人数与等候情况，了解未来1、3、6小时哪些区域和目的地的出发航班较多。"],
+      ["营业与现场管理人员", "在机场一览的比较标签中设置基准期和比较期的起止日期。按日均值查看时段、周末与航站楼差异，在各国趋势中分别查看月度旅客实绩和航班变化。"],
+      ["旅客咨询与机场运营人员", "在机场现状查看时段、航站楼与等候情况。在提前准备查看各国节假日和目的地入境免税额度，向旅客提供建议前请确认官方来源及核实日期。"],
+    ],
+    methodTitle: "如何理解数字",
+    method: "+表示增加，△表示减少。两段时期长度不同时，比较实际计入天数的日均值，而非总量。缺失日期不按0计算，请同时查看计入天数。占比下降不一定代表航班数减少。各国出境旅客为全机场官方月度实绩，与航班的逐日比较、各航站楼月度汇总范围不同。目的地国家不代表乘客国籍。请区分当前观测、官方预测和历史实绩，不要将航班数解读为门店客流或销售额。",
+    updateTitle: "何时能看到新资料？",
+    updates: "机场等候、预计人数和航班资料在各自定期采集后更新。时段比较仅使用已保存的完整记录，月度旅客资料在机场公社发布后更新。请同时查看页面的基准时间、采集时间和计入日期。",
+    limit: "资料缺失时显示无法确认。节假日前后的差异不能证明是节假日造成的。公开资料仅供了解情况，不预测销售额、适当人员配置或库存数量。",
   },
   ja: {
     title: "誰が、どう使うと便利ですか？",
@@ -67,18 +73,18 @@ export function SiteUsageGuide({ lang }: { lang: Lang }) {
   return <section className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 data-heading="section" id="site-usage-title"><span className="heading-marker" aria-hidden="true"/>{t.title}</h2>
     <p>{t.intro}</p>
-    {lang==='ko'&&<details id="airport-usage-guide" data-testid="airport-usage-guide"><summary style={disclosureStyle}>인천공항 이용 방법</summary>
+    {(lang==='ko'||lang==='zh')&&<details id="airport-usage-guide" data-testid="airport-usage-guide"><summary style={disclosureStyle}>{lang==='zh'?'仁川机场使用指南':'인천공항 이용 방법'}</summary>
       <dl>
-        <div><dt><a href="/ko">공항한눈에</a></dt><dd>오늘 예상 인원·출발편을 확인하고, 두 기간의 시간대·요일·터미널 변화를 비교합니다</dd></div>
-        <div><dt><a href="/ko/airport">공항현황</a></dt><dd>근무 터미널을 선택해 출국장 대기와 시간대별 출발편을 확인합니다</dd></div>
-        <div><dt><a href="/ko/airport-countries">국가별 흐름</a></dt><dd>공항 전체의 국가별 월 여객과 터미널별 항공편 변화를 각각 확인합니다</dd></div>
-        <div><dt><a href="/ko/airport-prepare">미리 준비</a></dt><dd>국가별 휴일과 도착국 반입 면세한도를 확인합니다</dd></div>
+        <div><dt><a href={`/${lang}`}>{lang==='zh'?'机场一览':'공항한눈에'}</a></dt><dd>{lang==='zh'?'查看今天的预计人数与出发航班，比较两段时期的时段、星期与航站楼变化':'오늘 예상 인원·출발편을 확인하고, 두 기간의 시간대·요일·터미널 변화를 비교합니다'}</dd></div>
+        <div><dt><a href={`/${lang}/airport`}>{lang==='zh'?'机场现状':'공항현황'}</a></dt><dd>{lang==='zh'?'选择工作航站楼，查看出境大厅等候和各时段出发航班':'근무 터미널을 선택해 출국장 대기와 시간대별 출발편을 확인합니다'}</dd></div>
+        <div><dt><a href={`/${lang}/airport-countries`}>{lang==='zh'?'各国趋势':'국가별 흐름'}</a></dt><dd>{lang==='zh'?'分别查看全机场各国月度旅客人数与各航站楼航班变化':'공항 전체의 국가별 월 여객과 터미널별 항공편 변화를 각각 확인합니다'}</dd></div>
+        <div><dt><a href={`/${lang}/airport-prepare`}>{lang==='zh'?'提前准备':'미리 준비'}</a></dt><dd>{lang==='zh'?'查看各国节假日与目的地入境免税额度':'국가별 휴일과 도착국 반입 면세한도를 확인합니다'}</dd></div>
       </dl>
     </details>}
     <details data-testid="usage-examples"><summary style={disclosureStyle}>{examples}</summary>
       <dl>{t.uses.map(([who, how]) => <div key={who}><dt>{who}</dt><dd>{how}</dd></div>)}</dl>
     </details>
-    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{t.methodTitle}</h3><details data-testid="usage-method"><summary style={disclosureStyle}>{{ko:'집계 기준 보기',en:'Counting methodology',zh:'查看统计口径',ja:'集計基準を見る'}[lang]}</summary><ReadingParagraphs text={t.method}/></details><p>{lang==='ko'?'한눈에의 예상 인원은 출국장 예고와 별도 환승 예고의 단순 합계입니다. 출국장 예고에는 내·외국인 구분이 없습니다.':<>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</>}</p><p>{passengerCopy.noSum[lang]}</p>
+    <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{t.methodTitle}</h3><details data-testid="usage-method"><summary style={disclosureStyle}>{{ko:'집계 기준 보기',en:'Counting methodology',zh:'查看统计口径',ja:'集計基準を見る'}[lang]}</summary><ReadingParagraphs text={t.method}/></details><p>{lang==='ko'?'한눈에의 예상 인원은 출국장 예고와 별도 환승 예고의 단순 합계입니다. 출국장 예고에는 내·외국인 구분이 없습니다.':lang==='zh'?'机场一览中的预计人数为出境大厅预告与另列中转预告的简单合计。出境大厅预告不区分韩国人与外国人。':<>{passengerCopy.scope[lang]} · {passengerCopy.limitation[lang]}</>}</p><p>{passengerCopy.noSum[lang]}</p>
     <details data-testid="usage-updates"><summary style={disclosureStyle}>{t.updateTitle}</summary>
       <ReadingParagraphs text={t.updates}/>
     </details>

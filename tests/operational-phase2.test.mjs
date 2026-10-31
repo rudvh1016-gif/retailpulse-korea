@@ -188,6 +188,16 @@ approvedCanonicalPatches["app/airport-live-signals.tsx"] = [[
 ]];
 // Exact owner-requested Chinese presentation exceptions; all other bytes stay locked.
 approvedCanonicalPatches["app/live-signals.tsx"]=JSON.parse(readFileSync("tests/fixtures/chinese-live-signals-approved-patches.json","utf8"));
+// Owner-requested Chinese parity for the airport guide/About/More only. Reverse
+// these exact reviewed hunks before checking the unchanged canonical hashes.
+for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtures/chinese-guide-parity-approved-patches.json","utf8")))){
+ approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+}
+// The Chinese chart document needs the existing strict same-origin policy on
+// only its exact asset paths. Keep the canonical bytes/hash otherwise intact.
+for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtures/chinese-frame-headers-approved-patches.json","utf8")))){
+ approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+}
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');
