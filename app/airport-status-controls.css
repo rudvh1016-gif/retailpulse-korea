@@ -49,6 +49,7 @@
     max-width: 100%;
     flex: 0 1 auto;
     gap: clamp(16px, 4.5vw, 20px);
-    margin-inline: auto;
+    margin-inline: 0;
+    background-color: #f3f6f8;
   }
 }

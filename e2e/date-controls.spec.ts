@@ -47,9 +47,9 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
     if (index < 2) {
      expect(row!.width).toBeCloseTo(parent.width, 1);
      expect(row!.x).toBeCloseTo(parent.left, 1);
-    } else if (lang === 'ko' && width >= 390) {
-     expect(row!.width).toBeLessThan(parent.width - 20);
-     expect(row!.x).toBeGreaterThan(parent.left + 10);
+    } else {
+     expect(row!.x).toBeCloseTo(parent.left, 1);
+     await expect(group).toHaveCSS('background-color', 'rgb(243, 246, 248)');
     }
    }
   }
