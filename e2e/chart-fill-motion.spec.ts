@@ -61,6 +61,10 @@ for (const reduced of [false, true]) test(`history filter updates existing bars 
   await page.evaluate(()=>{const original=Element.prototype.animate; (window as unknown as {fillCalls:number}).fillCalls=0; Element.prototype.animate=function(...args) { if(this.matches('.history-bars i')) (window as unknown as {fillCalls:number}).fillCalls++; return original.apply(this,args); };});
   await history.getByRole('button',{name:'ARRIVALS'}).click();
   await expect.poll(async()=>await bars.evaluateAll(nodes=>nodes.map(node=>(node as HTMLElement).style.width))).not.toEqual(widths);
+  // Refreshes outside the viewport stay pending until the fixed row is visible.
+  // Clicking ARRIVALS can leave its bars below the fold.
+  await bars.first().locator('..').scrollIntoViewIfNeeded();
+  await expect(bars.first().locator('..')).toBeInViewport();
   if (reduced) await expect.poll(()=>page.evaluate(()=>(window as unknown as {fillCalls:number}).fillCalls)).toBe(0);
   else await expect.poll(()=>page.evaluate(()=>(window as unknown as {fillCalls:number}).fillCalls)).toBeGreaterThan(0);
   await expect(history.locator('.history-bars b').first()).not.toBeEmpty();

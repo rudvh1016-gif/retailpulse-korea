@@ -49,6 +49,14 @@ test('chart fill visibility controller', async t => {
     e.mutation[0].callback([{target:e.bar,attributeName:'style'}]); assert.equal(e.calls.length,1);
     e.mutation[0].callback([{target:e.bar,attributeName:'style'}]); assert.equal(e.calls.length,2); assert.equal(e.calls[0].cancelled,true);
   }));
+  await t.test('offscreen value refresh waits for visibility and is consumed only once',()=>scenario(e=>{
+    e.intersection[0].enter(e.bar,false);
+    e.mutation[0].callback([{target:e.bar,attributeName:'style'}]);
+    assert.equal(e.calls.length,0);
+    e.intersection[0].enter(e.bar); assert.equal(e.calls.length,1);
+    e.intersection[0].enter(e.bar,false); e.intersection[0].enter(e.bar);
+    assert.equal(e.calls.length,1);
+  }));
   await t.test('a delayed viewport entry gets the full reveal even while mount CSS is running',()=>scenario(e=>{
     e.bar.cssRunning=true; e.intersection[0].enter(e.bar,false); e.intersection[0].enter(e.bar); assert.equal(e.calls.length,1);
   }));
