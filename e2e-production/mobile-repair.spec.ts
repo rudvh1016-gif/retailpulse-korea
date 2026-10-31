@@ -211,7 +211,8 @@ for(const width of [320,360,390,430,600,700,1440]) test(`production glance compa
   const geometry=await buttons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,height:b.height,width:b.width,clipped:node.scrollWidth>node.clientWidth};}));
   const bounds=(await row.boundingBox())!;
   expect(geometry[0].left).toBeCloseTo(bounds.x,1);
-  for(const box of geometry){expect(box.height).toBeGreaterThanOrEqual(44);expect(box.width).toBeGreaterThanOrEqual(44);expect(box.clipped).toBe(false);}
+  for(const box of geometry){expect(box.height).toBeGreaterThanOrEqual(44);if(phone)expect(box.width).toBeGreaterThanOrEqual(44);expect(box.clipped).toBe(false);}
+  if(!phone)for(const button of await buttons.all()){await expect(button).toHaveCSS('padding-left','13px');await expect(button).toHaveCSS('padding-right','13px');}
   for(let i=1;i<geometry.length;i++)expect(geometry[i].left-geometry[i-1].right).toBeCloseTo(phone?8:6,1);
   expect(geometry[3].right).toBeLessThanOrEqual(bounds.x+bounds.width+1);
   if(phone)await expect(buttons.first()).toHaveCSS('padding-left','0px');
