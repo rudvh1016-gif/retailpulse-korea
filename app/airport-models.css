@@ -1,3 +1,5 @@
+@import "./airport-status-controls.css";
+
 .airport-gate-model, .airport-concept-model { color: #000; font-variant-numeric: tabular-nums; }
 .airport-summary-reserved { min-height: 100vh; }
 /* Checkpoint identities stay grouped by terminal; each card uses the same data-free scene. */

@@ -192,19 +192,26 @@ for(const width of [320,390,1440])test(`mobile airport controls and country head
 });
 
 // Owner mobile alignment regression: these widths straddle both phone gutters.
-for(const width of [320,360,365,390,430,600,700])test(`phone heading menu terminal and date share briefing text edge ${width}`,async({page},testInfo)=>{
+for(const width of [320,360,365,390,430,600,700])test(`phone heading menu and date share briefing text edge while terminals are balanced ${width}`,async({page},testInfo)=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await records(page);
  await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const report=page.locator('.focus-report'),tabs=page.locator('.airport-insight-tabs:not(.country-tabs)'),controls=page.locator('.glance-controls');
  await expect(report).toBeVisible();await expect(controls.locator('.glance-date-control')).toBeVisible();
  const edges=await page.evaluate(()=>{
   const textLeft=(selector:string)=>{const element=document.querySelector(selector)!;const range=document.createRange();range.selectNodeContents(element);return range.getBoundingClientRect().x;};
-  return {heading:textLeft('.airport-insight-shell>.glance-heading h1'),menu:textLeft('.airport-insight-tabs:not(.country-tabs) button:first-child'),terminal:textLeft('.glance-controls>div button:first-child'),date:document.querySelector('.glance-date-control')!.getBoundingClientRect().x,report:document.querySelector('.focus-report')!.getBoundingClientRect().x+parseFloat(getComputedStyle(document.querySelector('.focus-report')!).paddingLeft)+parseFloat(getComputedStyle(document.querySelector('.focus-report')!).borderLeftWidth)};
+  return {heading:textLeft('.airport-insight-shell>.glance-heading h1'),menu:textLeft('.airport-insight-tabs:not(.country-tabs) button:first-child'),date:document.querySelector('.glance-date-control')!.getBoundingClientRect().x,report:document.querySelector('.focus-report')!.getBoundingClientRect().x+parseFloat(getComputedStyle(document.querySelector('.focus-report')!).paddingLeft)+parseFloat(getComputedStyle(document.querySelector('.focus-report')!).borderLeftWidth)};
  });
- for(const edge of [edges.heading,edges.menu,edges.terminal,edges.date])expect(Math.abs(edge-edges.report)).toBeLessThanOrEqual(1.5);
+ for(const edge of [edges.heading,edges.menu,edges.date])expect(Math.abs(edge-edges.report)).toBeLessThanOrEqual(1.5);
  const card=(await report.boundingBox())!;expect(card.x).toBeCloseTo(8,0);expect(card.x+card.width).toBeCloseTo(width-8,0);
  await expect(report.locator('.focus-metric-total').first()).toHaveCSS('font-size',width<=600?'20px':'24px');
- const first=controls.locator('div>button').first();expect((await first.boundingBox())!.width).toBeGreaterThanOrEqual(44);expect((await first.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ const terminalButtons=controls.locator('div>button');await expect(terminalButtons).toHaveCount(4);
+ const terminalRow=controls.locator('div[role=group]');const row=(await terminalRow.boundingBox())!;
+ const boxes=await terminalButtons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,width:b.width,height:b.height};}));
+ for(const box of boxes){expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(box.top).toBe(boxes[0].top);}
+ const spaces=[boxes[0].left-row.x,...boxes.slice(1).map((b,i)=>b.left-boxes[i].right),row.x+row.width-boxes[3].right];
+ expect(Math.max(...spaces)-Math.min(...spaces)).toBeLessThanOrEqual(3);
+ await terminalButtons.last().click();await expect(terminalButtons.last()).toHaveAttribute('aria-pressed','true');
+ await terminalButtons.first().click();await expect(terminalButtons.first()).toHaveAttribute('aria-pressed','true');
  await tabs.getByRole('tab').first().focus();await page.keyboard.press('End');await expect(tabs.getByRole('tab').last()).toBeFocused();await page.keyboard.press('Home');await expect(report).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath(`phone-alignment-${width}.png`),fullPage:true});
@@ -228,11 +235,11 @@ for(const lang of ['en','zh','ja'])test(`localized phone glance uses the same ca
  expect(Math.abs(edges.date-edges.report)).toBeLessThanOrEqual(1.5);expect(Math.abs(edges.heading-edges.report)).toBeLessThanOrEqual(1.5);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
-for(const width of [320,360,390,600])test(`airport phone date shortcuts share the terminal text edge ${width}`,async({page})=>{
+for(const width of [320,360,390,600])test(`airport phone terminal and date rows are balanced ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});await records(page);await page.goto('/ko/airport?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const dateButtons=page.locator('.airport-date-reserved .date-nav-shortcuts > button');await expect(dateButtons).toHaveCount(3);
- const edges=await page.evaluate(()=>{const text=(selector:string)=>{const range=document.createRange();range.selectNodeContents(document.querySelector(selector)!);return range.getBoundingClientRect().x;};return {terminal:text('#airport-data-flow>button:first-child'),date:text('.airport-date-reserved .date-nav-shortcuts>button:first-child')};});
- expect(Math.abs(edges.date-edges.terminal)).toBeLessThanOrEqual(1.5);
+ const rows=await page.evaluate(()=>['#airport-data-flow','.airport-date-reserved .date-nav-shortcuts'].map(selector=>{const el=document.querySelector(selector)!,rect=el.getBoundingClientRect(),parent=el.parentElement!.getBoundingClientRect();return {center:rect.left+rect.width/2,parentCenter:parent.left+parent.width/2,width:rect.width,parentWidth:parent.width};}));
+ for(const row of rows){expect(Math.abs(row.center-row.parentCenter)).toBeLessThanOrEqual(1.5);expect(row.width).toBeLessThanOrEqual(row.parentWidth+1);}
  for(const button of await dateButtons.all())expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await dateButtons.last().click();await expect(dateButtons.last()).toHaveAttribute('aria-pressed','true');await dateButtons.first().click();await expect(dateButtons.first()).toHaveAttribute('aria-pressed','true');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

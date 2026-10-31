@@ -1,0 +1,54 @@
+/* Equal-width phone menu slots keep the first text at the page edge.
+   Desktop and the existing date-shortcut spacing remain unchanged. */
+@media (max-width: 600px) {
+  :root body .app .airport-view > #airport-data-flow,
+  :root body .app .airport-view > .airport-context-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+    gap: 0;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  :root body .app .airport-view > .airport-context-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  :root body .app .airport-view > #airport-data-flow > button,
+  :root body .app .airport-view > .airport-context-nav > button {
+    min-width: 0;
+    width: 100%;
+    padding-inline: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Reduce the menu stack, not the minimum tappable size of its choices. */
+  :root body .app .airport-view > .airport-menu-label {
+    margin-block: 8px 2px;
+  }
+  :root body .app .airport-view > .airport-context-nav {
+    min-height: 44px;
+  }
+  :root body .app .airport-view .airport-date-reserved .date-nav {
+    padding-block: 4px;
+  }
+
+  :root body .app .airport-view > #airport-data-flow {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  :root body .app .airport-view > #airport-data-flow::-webkit-scrollbar {
+    display: none;
+  }
+
+  :root body .app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts {
+    width: max-content;
+    max-width: 100%;
+    flex: 0 1 auto;
+    gap: clamp(16px, 4.5vw, 20px);
+    margin-inline: auto;
+  }
+}

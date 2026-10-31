@@ -371,6 +371,13 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}
 }
 
+/* Balance the four glance terminal choices across phones only. */
+@media(max-width:700px){
+ .airport-focus-operating .glance-controls>div{justify-content:space-evenly;overflow-x:auto;scrollbar-width:none}
+ .airport-focus-operating .glance-controls>div::-webkit-scrollbar{display:none}
+ .airport-focus-operating .glance-controls>div button{flex:0 0 auto;min-width:44px}
+}
+
 /* On phones remove only the redundant rule directly under the selected-country note. */
 @media(max-width:700px){
  .airport-focus-shell .focus-report .focus-selected-country-changes:not(.focus-return-context){border-bottom:0}

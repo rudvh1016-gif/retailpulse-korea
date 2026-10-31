@@ -2,6 +2,77 @@ import {expectDateSelection} from './date-selection';
 import { expect, test } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
+
+for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
+ test(`airport selector equal slots and date spacing ${lang} ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
+  await page.route('**/api/live/summary*', async route => {
+   const date = new URL(route.request().url()).searchParams.get('date') ?? SUMMARY_FIXTURE.todayKst;
+   await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
+  });
+  await page.goto(`/${lang}/airport`);
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  const groups = [
+   page.locator('#airport-data-flow'),
+   page.locator('.airport-context-nav'),
+   page.locator('.airport-date-reserved .date-nav-shortcuts'),
+  ];
+  for (const [index, group] of groups.entries()) {
+   await expect(group).toBeVisible();
+   const buttons = group.locator(':scope > button');
+   await expect(buttons).toHaveCount([4, 5, 3][index]);
+   const boxes = await buttons.evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect();
+    return { left: box.left, right: box.right, width: box.width, height: box.height, scrollWidth: node.scrollWidth, clientWidth: node.clientWidth };
+   }));
+   expect(boxes).toHaveLength([4, 5, 3][index]);
+   for (const box of boxes) expect(box.height).toBeGreaterThanOrEqual(44);
+   if (width <= 600) {
+    if (index < 2) {
+     for (const box of boxes) {
+      expect(box.width).toBeCloseTo(boxes[0].width, 1);
+      expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth + 1);
+     }
+     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeCloseTo(0, 1);
+     for (const button of await buttons.all()) await expect(button).toHaveCSS('text-align', 'left');
+    } else {
+     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeGreaterThanOrEqual(15.5);
+    }
+    const row = await group.boundingBox(), parent = await group.evaluate(node => {
+     const rect = node.parentElement!.getBoundingClientRect();
+     return { left: rect.left, width: rect.width };
+    });
+    expect(row!.width).toBeLessThanOrEqual(parent.width + 1);
+    if (index < 2) {
+     expect(row!.width).toBeCloseTo(parent.width, 1);
+     expect(row!.x).toBeCloseTo(parent.left, 1);
+    } else if (lang === 'ko' && width >= 390) {
+     expect(row!.width).toBeLessThan(parent.width - 20);
+     expect(row!.x).toBeGreaterThan(parent.left + 10);
+    }
+   }
+  }
+  if (width <= 600) {
+   const labels = page.locator('.airport-view > .airport-menu-label');
+   await expect(labels).toHaveCount(2);
+   for (const label of await labels.all()) await expect(label).toHaveCSS('margin-top', '8px');
+   await expect(groups[1]).toHaveCSS('min-height', '44px');
+   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '4px');
+   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-bottom', '4px');
+  } else {
+   await expect(groups[1]).toHaveCSS('min-height', '54px');
+   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '8px');
+  }
+  const terminal = groups[0].getByRole('tab', { name: 'T1', exact: true });
+  await terminal.click(); await expect(terminal).toHaveAttribute('aria-selected', 'true');
+  const days = groups[2].locator(':scope > button');
+  await days.last().focus(); await page.keyboard.press('Enter');
+  await expect(days.last()).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  if (lang === 'ko') await page.screenshot({ path: info.outputPath(`airport-selector-spacing-${width}.png`) });
+ });
+}
 for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']) {
  test(`date controls preserve selection and touch targets at ${lang} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({width,height:900});

@@ -27,11 +27,12 @@ for (const lang of ['ko','en','zh','ja'] as const) for (const width of [360,390,
       await expect(button.locator('time')).toHaveAttribute('datetime',/\d{4}-\d{2}-\d{2}/);
     }
     const boxes=await dates.locator('button').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
-    // Owner-approved airport-only pills: 6px gaps, no surrounding rectangle.
-    await expect(dates).toHaveCSS('gap','6px');
+    // Mobile uses the owner-requested wider spacing; desktop remains 6px.
+    const expectedGap=width<=600?Math.max(16,Math.min(width*.045,20)):6;
+    expect(parseFloat(await dates.evaluate(el=>getComputedStyle(el).gap))).toBeCloseTo(expectedGap,2);
     await expect(dates).toHaveCSS('border-top-width','0px');
     for(let i=1;i<boxes.length;i++) {
-      expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(6,0);
+      expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(expectedGap,1);
       expect(boxes[i].top).toBeCloseTo(boxes[0].top,0);
     }
     await dates.locator('button').nth(2).focus(); await page.keyboard.press('Enter');

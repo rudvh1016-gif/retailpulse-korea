@@ -15,7 +15,8 @@ for(const width of [320,390,430,820,1280])for(const contrast of ['no-preference'
  const days=page.locator('.airport-view .airport-date-reserved .date-nav-shortcuts > button');
  const group=page.locator('.airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts');
  await expect(group).toHaveAttribute('role','group');
- await expect(group).toHaveCSS('gap','6px');
+ const expectedGap=width<=600?Math.max(16,Math.min(width*.045,20)):6;
+ expect(parseFloat(await group.evaluate(el=>getComputedStyle(el).gap))).toBeCloseTo(expectedGap,2);
  for(const side of ['top','right','left'])await expect(group).toHaveCSS(`border-${side}-width`,'0px');
  await expect(group).toHaveCSS('border-bottom-width','1px');
  await expect(group).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
@@ -23,7 +24,7 @@ for(const width of [320,390,430,820,1280])for(const contrast of ['no-preference'
  await expect(group).toHaveCSS('box-shadow','none');
  const boxes=await days.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom};}));
  expect(boxes).toHaveLength(3);
- for(let i=1;i<boxes.length;i++){expect(boxes[i].x-boxes[i-1].right).toBeCloseTo(6,0);expect(boxes[i].y).toBeCloseTo(boxes[0].y,0);}
+ for(let i=1;i<boxes.length;i++){expect(boxes[i].x-boxes[i-1].right).toBeCloseTo(expectedGap,1);expect(boxes[i].y).toBeCloseTo(boxes[0].y,0);}
  await expect(days).toHaveCount(3);
  for(const target of [news,...await days.all()]){
   await expect(target).toBeVisible();await expect(target).toHaveCSS('box-shadow','none');await expect(target).toHaveCSS('border-radius','0px');
