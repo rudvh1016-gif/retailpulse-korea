@@ -24,6 +24,8 @@ export const DUTY_FREE_CACHE_PATH = "/api/live/duty-free-exchange";
  * midnight, and `no-store` for its degraded answer.
  */
 export const FLIGHTS_CACHE_PATH = "/api/live/flights";
+/** Stored immutable forecast evidence; route already permits 120 s shared freshness. */
+export const PREDICTIONS_CACHE_PATH = "/api/live/predictions";
 /** Public prepared projections; their routes retain the existing 300/3600 s TTL. */
 export const AIRPORT_MONTH_CACHE_PATHS = ["/api/live/airport-months", "/api/live/airport-passenger-stats"] as const;
 
@@ -41,5 +43,5 @@ const CACHEABLE_METHODS = new Set(["GET", "HEAD"]);
  */
 export function shouldRouteToSummaryCache(method: string, pathname: string): boolean {
   if (!CACHEABLE_METHODS.has(method.toUpperCase())) return false;
-  return pathname === SUMMARY_CACHE_PATH || pathname === DUTY_FREE_CACHE_PATH || pathname === "/api/live/duty-free-exchange/monthly" || pathname === FLIGHTS_CACHE_PATH || AIRPORT_MONTH_CACHE_PATHS.some(path => path === pathname);
+  return pathname === SUMMARY_CACHE_PATH || pathname === DUTY_FREE_CACHE_PATH || pathname === "/api/live/duty-free-exchange/monthly" || pathname === FLIGHTS_CACHE_PATH || pathname === PREDICTIONS_CACHE_PATH || AIRPORT_MONTH_CACHE_PATHS.some(path => path === pathname);
 }
