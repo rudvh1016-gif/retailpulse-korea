@@ -1,3 +1,4 @@
+import {expectMobileTerminalTextSpacing} from '../e2e-support/glance-terminal-contract';
 import {test,expect,type Page} from '@playwright/test';
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
@@ -209,9 +210,9 @@ for(const width of [320,360,365,390,430,600,700])test(`phone heading menu and da
  const boxes=await terminalButtons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,width:b.width,height:b.height};}));
  for(const box of boxes){expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(box.top).toBe(boxes[0].top);}
  expect(boxes[0].left).toBeCloseTo(row.x,1);
- for(let i=1;i<boxes.length;i++)expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(8,1);
+ for(let i=1;i<boxes.length;i++)expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(0,1);
  expect(boxes[3].right).toBeLessThanOrEqual(row.x+row.width+1);
- await expect(controls).toHaveCSS('margin-top','2px');await expect(controls).toHaveCSS('padding-bottom','0px');await expect(controls).toHaveCSS('row-gap','4px');
+ await expect(controls).toHaveCSS('margin-top','0px');await expect(controls).toHaveCSS('padding-bottom','0px');await expect(controls).toHaveCSS('row-gap','0px');
  await expect(terminalButtons.first()).toHaveCSS('padding-left','0px');
  for(const button of await terminalButtons.all())expect(await button.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
  await terminalButtons.last().click();await expect(terminalButtons.last()).toHaveAttribute('aria-pressed','true');
@@ -255,6 +256,12 @@ for(const width of [701,1024,1440])test(`desktop keeps deployed airport gutters 
  const controls=page.locator('.airport-focus-operating .glance-controls');
  await expect(controls).toHaveCSS('margin-top','12px');await expect(controls).toHaveCSS('padding-bottom','8px');
  await expect(controls.locator(':scope > div[role=group]')).toHaveCSS('gap','6px');
+ const terminalButtons=controls.locator(':scope > div[role=group] > button');
+ for(const button of await terminalButtons.all()){
+  await expect(button).toHaveCSS('padding-left','13px');await expect(button).toHaveCSS('padding-right','13px');
+  expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);expect(await button.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+ }
+ for(const index of [3,0]){await terminalButtons.nth(index).click();await expect(terminalButtons.nth(index)).toHaveAttribute('aria-pressed','true');await expect(terminalButtons.nth(index).locator('.glance-selection-rule')).toHaveCSS('left','9px');}
  await page.screenshot({path:testInfo.outputPath(`desktop-glance-unchanged-${width}.png`),fullPage:true});
  await page.goto('/ko/airport-countries?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.country-tabs')).toHaveCSS('display','grid');
  const columns=await page.locator('.country-tabs').evaluate(node=>getComputedStyle(node).gridTemplateColumns.split(' ').map(Number.parseFloat));expect(columns).toHaveLength(3);expect(Math.max(...columns)-Math.min(...columns)).toBeLessThanOrEqual(1);
@@ -300,4 +307,16 @@ for(const width of [390,1440])test(`empty comparison copy stays small without sh
  const copy=page.locator('.focus-country-change-empty');await expect(copy).toHaveText('표시할 비교 항목이 없습니다.');await expect(copy).toHaveCSS('font-size','12px');
  expect(await copy.evaluate(node=>parseFloat(getComputedStyle(node.previousElementSibling!).fontSize))).toBeGreaterThan(12);
  await page.screenshot({path:testInfo.outputPath(`empty-comparison-copy-${width}.png`),fullPage:true});
+});
+
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,360,390,393,430])test(`visible terminal text spacing ${lang} ${width}`,async({page},info)=>{
+ await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});await records(page);
+ await page.goto(`/${lang}?date=2026-10-19`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const buttons=page.locator('.airport-focus-operating .glance-controls > div[role=group] > button');
+ const evidence=[];
+ for(const index of [0,1,2,3,0]){await buttons.nth(index).click();await expect(buttons.nth(index)).toHaveAttribute('aria-pressed','true');evidence.push(await expectMobileTerminalTextSpacing(page));}
+ console.info('TERMINAL_TEXT_GEOMETRY',JSON.stringify({lang,width,...evidence[0]}));
+ await info.attach('visible-text-geometry',{body:JSON.stringify(evidence,null,2),contentType:'application/json'});
+ await page.screenshot({path:info.outputPath(`visible-terminal-${lang}-${width}.png`)});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

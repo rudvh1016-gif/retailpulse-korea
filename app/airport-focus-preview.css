@@ -371,14 +371,16 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}
 }
 
-/* Phone terminal choices start flush left with compact, readable spacing. */
+/* Equal visible-text gaps, not equal button-box gaps; keep real 44px targets. */
 @media(max-width:700px){
- .airport-focus-operating .glance-controls{margin-top:2px;padding-bottom:0;row-gap:4px}
- .airport-focus-operating .glance-controls>div{justify-content:flex-start;gap:8px;overflow-x:auto;scrollbar-width:none}
+ .airport-insight-shell .airport-insight-tab-nav{margin-bottom:4px}
+ .airport-focus-operating .glance-preview{padding-top:0}
+ .airport-focus-operating .glance-controls{margin-top:0;padding-bottom:0;row-gap:0}
+ .airport-focus-operating .glance-controls>div{justify-content:flex-start;gap:0;overflow-x:auto;scrollbar-width:none}
  .airport-focus-operating .glance-controls>div::-webkit-scrollbar{display:none}
- .airport-focus-operating .glance-controls>div button{flex:0 0 auto;min-width:44px;padding-block:4px;padding-inline:6px}
+ .airport-focus-operating .glance-controls>div button{flex:0 0 auto;min-width:44px;padding-block:4px;padding-inline:0 32px;text-align:left;white-space:nowrap}
  .airport-focus-operating .glance-controls>div button:first-child{padding-inline-start:0}
- .airport-focus-operating .glance-controls>div button .glance-selection-rule{left:6px;right:6px}
+ .airport-focus-operating .glance-controls>div button .glance-selection-rule{left:0;right:32px}
  .airport-focus-operating .glance-controls>div button:first-child .glance-selection-rule{left:0}
 }
 

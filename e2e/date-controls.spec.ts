@@ -49,7 +49,7 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
      expect(row!.x).toBeCloseTo(parent.left, 1);
     } else {
      expect(row!.x).toBeCloseTo(parent.left, 1);
-     await expect(group).toHaveCSS('background-color', 'rgb(243, 246, 248)');
+     await expect(group).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     }
    }
   }
@@ -69,8 +69,27 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
   const days = groups[2].locator(':scope > button');
   await days.last().focus(); await page.keyboard.press('Enter');
   await expect(days.last()).toHaveAttribute('aria-pressed', 'true');
+  for (const button of await days.all()) {
+   const selected = await button.getAttribute('aria-pressed') === 'true';
+   if (width <= 600) {
+    await expect(button).toHaveCSS('background-color', selected ? 'rgb(52, 91, 123)' : 'rgb(96, 117, 139)');
+    await expect(button).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(button.locator('time')).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expect(button).toHaveCSS('padding-left', '10px');
+    if (selected) {await expect(button).toHaveCSS('border-bottom-color', 'rgb(255, 255, 255)');await expect(button.locator(':scope > span')).toHaveCSS('text-decoration-line', 'underline');}
+    const contrast = await button.evaluate(el => {
+     const rgb = getComputedStyle(el).backgroundColor.match(/\d+/g)!.slice(0,3).map(Number);
+     const linear = rgb.map(value => {const n=value/255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4;});
+     return 1.05/(linear[0]*.2126+linear[1]*.7152+linear[2]*.0722+.05);
+    });
+    expect(contrast).toBeGreaterThanOrEqual(4.5);
+   } else {
+    await expect(button).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    if (selected) await expect(button).toHaveCSS('border-bottom-color', 'rgb(52, 91, 123)');
+   }
+  }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-  if (lang === 'ko') await page.screenshot({ path: info.outputPath(`airport-selector-spacing-${width}.png`) });
+  await page.screenshot({ path: info.outputPath(`airport-selector-spacing-${lang}-${width}.png`) });
  });
 }
 for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']) {

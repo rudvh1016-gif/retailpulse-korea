@@ -50,6 +50,28 @@
     flex: 0 1 auto;
     gap: clamp(16px, 4.5vw, 20px);
     margin-inline: 0;
-    background-color: #f3f6f8;
+    background-color: transparent;
+  }
+}
+
+/* Owner-requested per-day phone fills. Keep the group transparent and preserve
+   system forced colours; white text contrast is 4.76:1 (selected 7.17:1). */
+@media (max-width: 600px) and (forced-colors: none) {
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] {
+    padding-inline: 10px;
+    background: #60758b;
+    color: #fff;
+  }
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time {
+    color: #fff;
+  }
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"] {
+    background: #345b7b;
+    border-bottom-color: #fff;
+  }
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"] > span {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
 }
