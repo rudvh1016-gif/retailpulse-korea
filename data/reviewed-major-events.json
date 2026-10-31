@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "checkedOn": "2026-10-30",
+  "automaticCollectionEnabled": false,
+  "purpose": "미리 준비 달력용 검토된 시험·대형 행사 날짜. 공휴일 API·혼잡·여객 예측에 사용하지 않습니다.",
+  "dateConvention": "현지 달력 날짜, 종료일 포함. D-day는 기존 한국 날짜 기준.",
+  "events": [
+    {
+      "id": "KR-2026-11-19-csat",
+      "country": "KR",
+      "countryLabel": "한국",
+      "name": "2027학년도 대학수학능력시험",
+      "start": "2026-11-19",
+      "end": "2026-11-19",
+      "scope": "전국 시험 · 수험생·시험장 대상",
+      "description_ko": "교육부가 발표한 2027학년도 수능 시험일입니다. 전국 공휴일이나 시험 뒤 여행 기간으로 표시하지 않습니다.",
+      "sourceURL": "https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=294&boardSeq=100526&lev=0&m=020402&opType=N&s=moe&statusYN=W",
+      "sourceAuthority": "교육부",
+      "notes": "항공기 운항·교통 대책의 시간과 대상은 별도 공식 공고를 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30"
+    },
+    {
+      "id": "CN-SH-2026-11-05-ciie",
+      "country": "CN",
+      "countryLabel": "중국",
+      "name": "제9회 중국 국제수입박람회",
+      "start": "2026-11-05",
+      "end": "2026-11-10",
+      "scope": "상하이 국가전시컨벤션센터 · 전시 참가자·참관객 대상",
+      "description_ko": "상하이에서 열리는 국제 무역 전시회입니다. 중국 전국 휴무나 모든 중국 노선의 수요 증가를 뜻하지 않습니다.",
+      "sourceURL": "https://english.shanghai.gov.cn/en-Latest-WhatsNew/20260915/b894b1c527a84bf693216ed3d1d336e4.html",
+      "sourceAuthority": "상하이시 정부",
+      "notes": "개인 참관 가능일은 11월 8~10일이며 사전 등록·심사가 필요합니다. 전체 전시 기간과 구분합니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "displayConditions_ko": [
+        "개인 참관 가능일은 11월 8~10일이며 사전 등록·심사가 필요합니다. 전체 전시 기간과 구분합니다."
+      ]
+    },
+    {
+      "id": "US-2026-11-03-general-election",
+      "country": "US",
+      "countryLabel": "미국",
+      "name": "2026년 연방 총선거",
+      "start": "2026-11-03",
+      "end": "2026-11-03",
+      "scope": "연방 선거일 · 주·지역별 선거 운영",
+      "description_ko": "미국 연방선거위원회가 안내한 정기 연방 총선거일입니다. 투표 시간·장소와 휴무 여부는 주·지역별로 확인해야 합니다.",
+      "sourceURL": "https://www.fec.gov/introduction-campaign-finance/election-results-and-voting-information/",
+      "sourceAuthority": "미국 연방선거위원회(FEC)",
+      "notes": "전국 공통 연방 휴무일이나 항공편·여객 증가를 뜻하지 않습니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30"
+    },
+    {
+      "id": "JP-2027-01-16-common-test",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "2027년도 대학입학 공통테스트",
+      "start": "2027-01-16",
+      "end": "2027-01-17",
+      "scope": "전국 시험 · 해당 응시자·시험장 대상",
+      "description_ko": "일본 대학입시센터가 발표한 본시험 일정입니다. 공휴일·전국 방학이 아니며 시험 이후 여행 수요를 확정하지 않습니다.",
+      "sourceURL": "https://www.dnc.ac.jp/kyotsu/shiken_jouhou/r9/index.html",
+      "sourceAuthority": "독립행정법인 대학입시센터(DNC)",
+      "notes": "1월 23~24일의 추가·재시험과 본시험을 구분합니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "displayConditions_ko": [
+        "1월 23~24일의 추가·재시험과 본시험을 구분합니다."
+      ]
+    },
+    {
+      "id": "TW-2027-01-22-gsat",
+      "country": "TW",
+      "countryLabel": "대만",
+      "name": "116학년도 학과능력측험(학측)",
+      "start": "2027-01-22",
+      "end": "2027-01-24",
+      "scope": "전국 시험 · 해당 응시자·시험장 대상",
+      "description_ko": "대만 대학입학고시센터의 학과능력측험 시험 일정입니다. 민국 116년은 서기 2027년이며 공휴일·전국 방학을 뜻하지 않습니다.",
+      "sourceURL": "https://www.ceec.edu.tw/files/file_pool/1/0q215602074068375626/116%E5%AD%B8%E5%B9%B4%E5%BA%A6%E8%80%83%E8%A9%A6%E9%87%8D%E8%A6%81%E8%A9%A6%E5%8B%99%E6%97%A5%E6%9C%9F.pdf",
+      "sourceAuthority": "대학입학고시센터(CEEC)",
+      "notes": "공식 시험 중요일정 PDF의 시험 행과 공립학교 공지를 대조했습니다. 등록 기간·분과측험과 구분합니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30"
+    },
+    {
+      "id": "HK-2027-01-17-marathon",
+      "country": "HK",
+      "countryLabel": "홍콩",
+      "name": "2027 홍콩 마라톤",
+      "start": "2027-01-17",
+      "end": "2027-01-17",
+      "scope": "홍콩 대회 구간 · 참가자·관람객 대상",
+      "description_ko": "홍콩 정부 행사표에 공표된 국제 도로 달리기 대회입니다. 홍콩 전체 휴무일이나 한국 노선 여객 증가를 뜻하지 않습니다.",
+      "sourceURL": "https://cms.brandhk.gov.hk/en/mega-event/what%27s-on-in-hong-kong?cat=Standard+Chartered+Hong+Kong+Marathon+2027",
+      "sourceAuthority": "홍콩특별행정구 정부 Brand Hong Kong",
+      "notes": "대회 참가 조건과 교통 안내는 주최 측의 최신 공식 공고를 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30"
+    },
+    {
+      "id": "KR-2027-11-18-csat",
+      "country": "KR",
+      "countryLabel": "한국",
+      "name": "2028학년도 대학수학능력시험",
+      "start": "2027-11-18",
+      "end": "2027-11-18",
+      "scope": "전국 시험 · 수험생·시험장 대상",
+      "description_ko": "교육부가 발표한 2028학년도 수능 시험일입니다. 시험 시행 연도는 2027년이며 전국 공휴일이나 시험 뒤 여행 기간이 아닙니다.",
+      "sourceURL": "https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=294&boardSeq=103512&lev=0&m=020402&s=moe",
+      "sourceAuthority": "교육부",
+      "notes": "세부 시행계획과 교통·항공 대책은 이후 공식 공고를 따릅니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30"
+    }
+  ]
+}

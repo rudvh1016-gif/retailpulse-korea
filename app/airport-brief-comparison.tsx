@@ -6,7 +6,7 @@ import type {Lang} from './retailpulse-data';
 import {ChangeRate,CountChange} from './change-rate';
 const number=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
 
-export function PassengerBriefComparison({total,day,baseline,parts,lang='ko'}:{total:number|null;day:string;baseline?:PassengerReferenceMonth|null;lang?:Lang;parts?:ReactNode}){
+export function PassengerBriefComparison({total,day,baseline,parts,marker,pending=false,lang='ko'}:{pending?:boolean;marker?:string;total:number|null;day:string;baseline?:PassengerReferenceMonth|null;lang?:Lang;parts?:ReactNode}){
  const t=(ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
  const basisId=useId(),partsId=useId();
  const change=passengerReferenceDailyChange(total,day,baseline);
@@ -16,7 +16,7 @@ export function PassengerBriefComparison({total,day,baseline,parts,lang='ko'}:{t
    <p className="focus-passenger-comparison-core"><span className="focus-comparison-basis">{comparisonBasisLabel({month:baseline!.month,
     includedDays:baseline!.observedDays?.map(row=>row.date)??Array.from({length:change.baselineDays},(_,i)=>`${baseline!.month}-${String(i+1).padStart(2,'0')}`),
     through:change.observedDaysOnly?[...baseline!.observedDays!].map(row=>row.date).sort().at(-1):baseline!.end,
-    provenance:'forecast'},lang)} {number.format(change.mean)}{t('명 대비 ',' people compared with: ','人相比：','人比：')}</span>{' '}<span className="focus-comparison-change">
+    provenance:'forecast'},lang)} {number.format(change.mean)}{t('명 대비 ',' people compared with: ','人相比：','人比：')}</span>{' '}<span className="focus-comparison-change">{marker&&`${marker} `}
     <CountChange integer delta={change.delta} format={value=>number.format(value)} lang={lang} unit={t('명/일',' people/day','人/天','人/日')}/>{' '}
     {change.delta>0?t('증가','increase','增加','増加'):change.delta<0?t('감소','decrease','减少','減少'):t('차이 없음','no change','无变化','変化なし')}{' '}
     {change.percent===null?<span className="focus-passenger-zero-basis">{t('기준값 0명 · 증감률 계산 불가','Zero baseline · percentage change unavailable','基准值为0人 · 无法计算变化率','基準値0人 · 増減率は算出不可')}</span>:<span className="focus-passenger-rate">(<ChangeRate value={change.percent} lang={lang}/>)</span>}
@@ -39,7 +39,7 @@ export function PassengerBriefComparison({total,day,baseline,parts,lang='ko'}:{t
      `予報の単純合計 ${number.format(change.baselineTotal!)}人 ÷ ${change.baselineDays}日 · ${change.missingDays}日未確認 · 月全体の平均ではありません`)}</p>}
    </details>
   </>
-  :<p className="focus-passenger-comparison-core">{t('전월 일평균 대비: ','Compared with the previous-month daily average: ','与上个月有数据日期的日均值相比：','前月の日平均比：')}{total===null?t('선택일 단순합계 확인 중','Checking the selected-day sum','正在确认所选日期简单合计','選択日の単純合計を確認中'):baseline&&baseline.status!=='COMPLETE'?t(`${baseline.expectedDays}일 중 ${baseline.completeDays}일 합산자료 확인 · ${missing}일 미확인 · 비교 보류`,`${baseline.completeDays} of ${baseline.expectedDays} days confirmed · ${missing} days unconfirmed · comparison withheld`,`${baseline.expectedDays}天中已确认${baseline.completeDays}天合计资料 · ${missing}天未确认 · 暂不比较`,`${baseline.expectedDays}日中${baseline.completeDays}日の合計を確認 · ${missing}日未確認 · 比較保留`):t('같은 기준의 비교자료 확인 중','Checking data on the same basis','正在确认相同口径的对比资料','同じ基準の比較資料を確認中')}</p>}
+  :<p className="focus-passenger-comparison-core">{marker&&<span className="focus-comparison-unavailable">{marker} {pending?t('비교자료 확인 중','Checking comparison','正在确认对比资料','比較資料を確認中'):t('비교 불가','Comparison unavailable','无法比较','比較不可')}</span>}<span className={marker?'focus-comparison-basis':undefined}>{t('전월 일평균 대비: ','Compared with the previous-month daily average: ','与上个月有数据日期的日均值相比：','前月の日平均比：')}{total===null?t('선택일 단순합계 확인 중','Checking the selected-day sum','正在确认所选日期简单合计','選択日の単純合計を確認中'):baseline&&baseline.status!=='COMPLETE'?t(`${baseline.expectedDays}일 중 ${baseline.completeDays}일 합산자료 확인 · ${missing}일 미확인 · 비교 보류`,`${baseline.completeDays} of ${baseline.expectedDays} days confirmed · ${missing} days unconfirmed · comparison withheld`,`${baseline.expectedDays}天中已确认${baseline.completeDays}天合计资料 · ${missing}天未确认 · 暂不比较`,`${baseline.expectedDays}日中${baseline.completeDays}日の合計を確認 · ${missing}日未確認 · 比較保留`):t('같은 기준의 비교자료 확인 중','Checking data on the same basis','正在确认相同口径的对比资料','同じ基準の比較資料を確認中')}</span></p>}
  {!change&&parts&&<p className="focus-passenger-parts">{parts}</p>}
  </div>;
 }
