@@ -43,3 +43,6 @@
 - 브라우저 4개 새 사례(320/390/1440px, 자료 없음) discovery 성공. 기본 번들이 없고 정상 다운로드도 실패했다. 시스템 Chromium은 로컬 socket EPERM으로 페이지가 열리기 전에 종료했다. 정식 권한 실행도 환경 초기화 오류로 시작하지 못했다. 실제 E2E/픽셀 검증은 **차단**, 통과로 표기하지 않는다.
 - 초기 병렬검사의 자원 종료 및 로딩 표시 회귀는 복구했다. 순차 build와 서버 HTML 검사로 로딩 회귀를 재검증했다. 테스트를 삭제하거나 assertion을 약화하지 않았다.
 - 비밀정보 검사는 전체 원격 ref 갱신 후 재실행 결과를 최종 PR에 기록한다. 얕은 원본 checkout의 shallow 경계가 로컬 복사에 누락된 문제는 원본의 실제 Git shallow 메타데이터를 보존하여 복구했다. 검사 스크립트·패턴·도달 가능한 ref를 줄이지 않았다.
+
+## 2026-10-31 owner follow-up
+The original post-day-only selected-flight gate above is retained for historical days but superseded for a fully witnessed current-day schedule snapshot. See `GLANCE_CURRENT_SCHEDULE_COMPARISON_2026-10-31.md` for its stricter scan/health/population/visible-count requirements and provisional schedule label. The original implementation's data boundary must not be mistaken for an upstream outage.

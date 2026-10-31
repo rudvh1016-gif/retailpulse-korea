@@ -94,14 +94,17 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const loaded=useFlights(day||null),clock=usePresentationClock(summary?.generatedAt??'1970-01-01T00:00:00Z');
  const month=day.slice(0,7),previousMonth=month?previousFlightMonth(month):'',monthRequest=usePreparedMonth<MonthReply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,day);
  const referenceMonth=usePreparedMonth<{status:string;month:string;data:Record<ReferenceScope,PassengerReferenceMonth>|null}>(previousMonth,`/api/live/passenger-reference?month=${encodeURIComponent(previousMonth)}`,overviewHeading?previousMonth:'',month);
- const weekReference=usePreparedMonth<{status:string;month:string;data:GlanceWeekReference|null}>(day,`/api/live/glance-week-reference?date=${encodeURIComponent(day)}`,overviewHeading?month:'',day);
  const payload=loaded?.status==='OK'?loaded.payload:null;
+ // Recheck the stored scan witness when the already-shared flight read refreshes.
+ const weekReference=usePreparedMonth<{status:string;month:string;data:GlanceWeekReference|null}>(day,`/api/live/glance-week-reference?date=${encodeURIComponent(day)}`,overviewHeading&&loaded!==undefined?month:'',`${day}:${payload?.generatedAt??''}:${payload?.basis??''}`);
  // Until the first summary and flight requests settle (always, in the server HTML) nothing is known yet:
  // the glance tiles below say "checking", never "no verified data" or a zero. The passenger tile waits on the summary alone.
  const settling=summary===undefined||(Boolean(day)&&loaded===undefined);
  const pendingText=settling?c.loading:null;
  const ready=Boolean(payload&&!payload.truncated&&(payload.retrievedAt||payload.flights.length));
  const data=useMemo(()=>ready&&payload?glanceFlights(day,payload.flights,scope):null,[ready,payload,day,scope]);
+ const rawWeekReference=weekReference.reply?.data;
+ const safeWeekReference=rawWeekReference?.selectedFlightSnapshot&&payload?.basis!=='COLLECTED_FLIGHT_RECORDS'?{...rawWeekReference,selectedFlights:null,selectedFlightSnapshot:undefined}:rawWeekReference;
  const storedCurrent=monthRequest.reply?.data?.months.find(row=>row.month===month),storedPrevious=monthRequest.reply?.data?.months.find(row=>row.month===previousMonth);
  const current=scope==='T1'?mainBuildingMonth(storedCurrent):storedCurrent,previous=scope==='T1'?mainBuildingMonth(storedPrevious):storedPrevious;
  const monthScope=scope==='all'?'ALL':scope,ranking=glanceCountryRanking(current,previous,monthScope),declines=glanceCountryDeclines(current,previous,monthScope),comparable=glanceComparableCountries(current,previous,monthScope)>0,growth=ranking[0]??null;
@@ -196,7 +199,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   {!hideTitle&&<div className="glance-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{c.title}</h1>{!published&&<small>{c.preview}</small>}</div>}
   <div className="glance-controls"><div role="group" aria-label={ui.terminal}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button key={value} aria-label={value==='all'?c.all:value==='CONCOURSE'?c.concourse:value} aria-pressed={scope===value} onClick={()=>chooseScope(value)}>{value==='all'?c.all:value==='T1'?mainLabel:value==='CONCOURSE'?c.concourse:value}{scope===value&&<i className="glance-selection-rule" aria-hidden="true"/>}</button>)}</div><label className="glance-date-control">{c.date}<input name="airport-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)setDate(event.target.value);}}/></label><button className="glance-today" data-current={date===null} onClick={()=>setDate(null)}>{c.today}</button><span>KST</span></div>
   <p className="glance-shared-note" data-testid="glance-shared-processing">{sharedNote}</p>
-  {overviewHeading?.({comparisonPending:settling||referenceMonth.pending||monthRequest.pending,weekPending:weekReference.pending||settling,weekReference:weekReference.reply?.data?.day===day?weekReference.reply.data:null,eventFlights,passengerBaseline:referenceMonth.reply?.data?.[scope==='all'?'all':forecastTerminal]??null,selectedCountryChanges,day,scope,flights:data?.total??null,passengers:forecastPassengers,transferPassengers,referenceSum:referenceSum?.total??null,flightComparison:dailyComparison,flightBaseline})}
+  {overviewHeading?.({comparisonPending:settling||referenceMonth.pending||monthRequest.pending,weekPending:weekReference.pending||settling,weekReference:safeWeekReference?.day===day?safeWeekReference:null,eventFlights,passengerBaseline:referenceMonth.reply?.data?.[scope==='all'?'all':forecastTerminal]??null,selectedCountryChanges,day,scope,flights:data?.total??null,passengers:forecastPassengers,transferPassengers,referenceSum:referenceSum?.total??null,flightComparison:dailyComparison,flightBaseline})}
   <section className="glance-insights" aria-label={overviewHeading?undefined:ui.summary} aria-labelledby={overviewHeading?'airport-staff-briefing-title':undefined}>
    {!hideRepeatedPassengerSummary&&<div className="glance-passenger-pair">
    <a className="glance-passengers" href={targets.forecast} data-testid="glance-key-passengers"><span>{todayLabel?pc.today:pc.selected}</span><strong>{forecastPassengers!==null?`${integer.format(forecastPassengers)}${pc.people}`:forecastCoverage==='PARTIAL'?pc.partial:summary===undefined?c.loading:ic.unavailable}</strong><small>{dayText} · {forecastScope} · {pc.basis} · {pc.collected} {summary===undefined?stampHold:stamp(forecastAt)}</small></a>

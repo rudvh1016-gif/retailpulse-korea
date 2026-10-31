@@ -115,6 +115,253 @@
       "notes": "세부 시행계획과 교통·항공 대책은 이후 공식 공고를 따릅니다.",
       "status": "verified",
       "verifiedAt": "2026-10-30"
+    },
+    {
+      "id": "CN-GZ-2026-10-31-canton-fair-phase3",
+      "country": "CN",
+      "countryLabel": "중국",
+      "name": "Canton Fair 제140회 3기",
+      "start": "2026-10-31",
+      "end": "2026-11-04",
+      "scope": "광저우 중국수출입상품교역회 전시장 · 무역전시 · 등록 구매자·출품사 대상",
+      "description_ko": "광저우에서 열리는 Canton Fair 가을 전시 3기입니다.",
+      "sourceURL": "https://www.mofcom.gov.cn/zwjg/jmxw/md/art/2026/art_784ba2c67efa4c66b430a26ad084ade8.html",
+      "sourceAuthority": "중국 상무부·주페루 경제상무처",
+      "notes": "해외 구매자는 사전 등록·배지 발급 절차를 확인하세요. 1·2기와 교체 휴장일은 포함하지 않습니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "trade_exhibition",
+      "displayConditions_ko": [
+        "해외 구매자는 사전 등록·배지 발급 절차를 확인하세요. 1·2기와 교체 휴장일은 포함하지 않습니다."
+      ]
+    },
+    {
+      "id": "JP-FUK-2026-11-08-sumo",
+      "country": "JP",
+      "countryLabel": "일본",
+      "name": "2026 후쿠오카 11월 스모 대회",
+      "start": "2026-11-08",
+      "end": "2026-11-22",
+      "scope": "후쿠오카 국제센터 · 스포츠 · 입장권 소지 관람객 대상",
+      "description_ko": "후쿠오카 국제센터에서 열리는 11월 스모 대회입니다.",
+      "sourceURL": "https://www.crossroadfukuoka.jp/en/event/10397",
+      "sourceAuthority": "후쿠오카현 관광연맹·일본스모협회 공식 판매처",
+      "notes": "2026-10-30 확인 당시 공식 판매처는 전일 매진·당일권 미판매로 안내합니다. 최신 입장 안내를 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "2026-10-30 확인 당시 공식 판매처는 전일 매진·당일권 미판매로 안내합니다. 최신 입장 안내를 확인하세요."
+      ]
+    },
+    {
+      "id": "US-LAS-2026-11-19-f1",
+      "country": "US",
+      "countryLabel": "미국",
+      "name": "2026 라스베이거스 F1 그랑프리",
+      "start": "2026-11-19",
+      "end": "2026-11-21",
+      "scope": "라스베이거스 스트립 경주장 · 모터스포츠 · 해당 일자·구역 입장권 필요",
+      "description_ko": "라스베이거스 스트립 경주장에서 열리는 F1 대회입니다.",
+      "sourceURL": "https://www.f1lasvegasgp.com/2026/",
+      "sourceAuthority": "Las Vegas Grand Prix 공식 주최자",
+      "notes": "단일일 티켓과 여러 날 패키지를 구분하세요. 일부 구역은 매진될 수 있어 최신 판매 조건을 확인해야 합니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "단일일 티켓과 여러 날 패키지를 구분하세요. 일부 구역은 매진될 수 있어 최신 판매 조건을 확인해야 합니다."
+      ]
+    },
+    {
+      "id": "US-LAS-2027-01-06-ces",
+      "country": "US",
+      "countryLabel": "미국",
+      "name": "CES 2027",
+      "start": "2027-01-06",
+      "end": "2027-01-09",
+      "scope": "라스베이거스 LVCC 등 공식 행사장 · 기술전시 · 18세 이상 관련 업계 관계자",
+      "description_ko": "라스베이거스에서 열리는 소비자기술 산업 전시회입니다.",
+      "sourceURL": "https://www.ces.tech/about-ces/about-ces/",
+      "sourceAuthority": "Consumer Technology Association(CTA)·CES",
+      "notes": "일반인 공개행사가 아닙니다. 업계 자격 증빙과 등록 승인이 필요하며 행사별 입장 조건을 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "trade_exhibition",
+      "displayConditions_ko": [
+        "일반인 공개행사가 아닙니다. 업계 자격 증빙과 등록 승인이 필요하며 행사별 입장 조건을 확인하세요."
+      ]
+    },
+    {
+      "id": "VN-HAN-2026-11-07-heritage-marathon",
+      "country": "VN",
+      "countryLabel": "베트남",
+      "name": "2026 하노이 헤리티지 마라톤",
+      "start": "2026-11-07",
+      "end": "2026-11-08",
+      "scope": "하노이 대회 구간 · 도로 달리기 · 등록 참가자 대상",
+      "description_ko": "하노이에서 열리는 헤리티지 마라톤 대회입니다.",
+      "sourceURL": "https://hanoi.vietnamheritagemarathon.com/en/the-race/",
+      "sourceAuthority": "Standard Chartered Hanoi Marathon Heritage Race 공식 주최자",
+      "notes": "공식 Race Date는 11월 7~8일입니다. 11월 6~8일 엑스포와 구분하며 출발·도착 지점과 종목별 세부 일정은 최신 공고를 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "공식 Race Date는 11월 7~8일입니다. 11월 6~8일 엑스포와 구분하며 출발·도착 지점과 종목별 세부 일정은 최신 공고를 확인하세요."
+      ]
+    },
+    {
+      "id": "TH-PAT-2026-11-27-fireworks",
+      "country": "TH",
+      "countryLabel": "태국",
+      "name": "2026 파타야 국제불꽃축제",
+      "start": "2026-11-27",
+      "end": "2026-11-28",
+      "scope": "촌부리 파타야비치 · 관광축제 · 현장 방문객 대상",
+      "description_ko": "파타야비치에서 열리는 국제불꽃축제입니다.",
+      "sourceURL": "https://www.tatnews.org/2026/10/november-event-and-calendar/",
+      "sourceAuthority": "태국관광청(TAT)",
+      "notes": "태국관광청이 발표한 날짜·장소입니다. 관람 구역·운영 시간·입장 조건은 최신 행사 공고를 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "tourism_festival",
+      "displayConditions_ko": [
+        "태국관광청이 발표한 날짜·장소입니다. 관람 구역·운영 시간·입장 조건은 최신 행사 공고를 확인하세요."
+      ]
+    },
+    {
+      "id": "TW-TPE-2026-12-20-marathon",
+      "country": "TW",
+      "countryLabel": "대만",
+      "name": "2026 타이베이 마라톤",
+      "start": "2026-12-20",
+      "end": "2026-12-20",
+      "scope": "타이베이 대회 구간 · 도로 달리기 · 등록 참가자 대상",
+      "description_ko": "타이베이시민광장에서 출발하는 마라톤 대회입니다.",
+      "sourceURL": "https://www.taipeicitymarathon.com/REGULATION202612.php",
+      "sourceAuthority": "타이베이시 정부·대회 공식 경기규정",
+      "notes": "풀코스 종점은 타이베이육상경기장, 하프 종점은 난징동로 4단입니다. 12월 19일 아침 달리기 행사와 구분합니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "풀코스 종점은 타이베이육상경기장, 하프 종점은 난징동로 4단입니다. 12월 19일 아침 달리기 행사와 구분합니다."
+      ]
+    },
+    {
+      "id": "SG-2026-12-04-international-marathon",
+      "country": "SG",
+      "countryLabel": "싱가포르",
+      "name": "2026 싱가포르 국제마라톤",
+      "start": "2026-12-04",
+      "end": "2026-12-06",
+      "scope": "싱가포르 종목별 대회 구간 · 도로 달리기 · 등록 참가자 대상",
+      "description_ko": "싱가포르 국제마라톤의 전체 대회 주말 일정입니다.",
+      "sourceURL": "https://singaporeinternationalmarathon.com/",
+      "sourceAuthority": "BYD Singapore International Marathon 공식 주최자",
+      "notes": "전체 대회는 12월 4~6일, BYD 풀코스는 12월 6일입니다. 풀코스는 확인 당시 매진이며 종목별 장소·참가 조건을 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "전체 대회는 12월 4~6일, BYD 풀코스는 12월 6일입니다. 풀코스는 확인 당시 매진이며 종목별 장소·참가 조건을 확인하세요."
+      ]
+    },
+    {
+      "id": "AU-MEL-2027-01-11-australian-open",
+      "country": "AU",
+      "countryLabel": "호주",
+      "name": "2027 호주오픈",
+      "start": "2027-01-11",
+      "end": "2027-01-31",
+      "scope": "Melbourne Park · 테니스 · 경기·행사별 입장권 필요",
+      "description_ko": "Melbourne Park에서 열리는 호주오픈 테니스 대회입니다.",
+      "sourceURL": "https://ausopen.com/articles/news/australian-open-2027-dates-announced",
+      "sourceAuthority": "Australian Open 공식 주최자",
+      "notes": "전체 행사는 1월 11~31일입니다. 오프닝 위크 1월 11~16일과 본선 1월 17~31일을 구분합니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "전체 행사는 1월 11~31일입니다. 오프닝 위크 1월 11~16일과 본선 1월 17~31일을 구분합니다."
+      ]
+    },
+    {
+      "id": "CA-AB-2026-12-26-world-juniors",
+      "country": "CA",
+      "countryLabel": "캐나다",
+      "name": "2027 세계주니어 아이스하키선수권",
+      "start": "2026-12-26",
+      "end": "2027-01-05",
+      "scope": "에드먼턴·레드디어 경기장 · 아이스하키 · 경기 입장권 필요",
+      "description_ko": "앨버타주 에드먼턴과 레드디어에서 열리는 세계주니어 아이스하키 대회입니다.",
+      "sourceURL": "https://www.hockeycanada.ca/en-ca/news/alberta-to-host-world-juniors-2027-wjc",
+      "sourceAuthority": "Hockey Canada·IIHF",
+      "notes": "본대회만 포함하며 사전 평가전은 제외합니다. Rogers Place와 Marchant Crane Centrium의 경기별 입장 안내를 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "본대회만 포함하며 사전 평가전은 제외합니다. Rogers Place와 Marchant Crane Centrium의 경기별 입장 안내를 확인하세요."
+      ]
+    },
+    {
+      "id": "PH-CEB-2027-01-10-marathon",
+      "country": "PH",
+      "countryLabel": "필리핀",
+      "name": "2027 세부 마라톤",
+      "start": "2027-01-10",
+      "end": "2027-01-10",
+      "scope": "세부 SM Seaside City Cebu Grounds·CCLEX 구간 · 도로 달리기 · 등록 참가자 대상",
+      "description_ko": "세부에서 열리는 마라톤 대회입니다.",
+      "sourceURL": "https://www.cebumarathon.com.ph/raceinfo",
+      "sourceAuthority": "Cebu Marathon 공식 주최자",
+      "notes": "공식 출발·도착 장소는 SM Seaside City Cebu Grounds입니다. 종목별 코스를 확인하며 시눌룩 축제 전체 기간으로 확대하지 않습니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "공식 출발·도착 장소는 SM Seaside City Cebu Grounds입니다. 종목별 코스를 확인하며 시눌룩 축제 전체 기간으로 확대하지 않습니다."
+      ]
+    },
+    {
+      "id": "MY-PEN-2026-12-13-bridge-marathon",
+      "country": "MY",
+      "countryLabel": "말레이시아",
+      "name": "2026 페낭브리지 국제마라톤",
+      "start": "2026-12-13",
+      "end": "2026-12-13",
+      "scope": "페낭 제2대교 대회 구간 · 도로 달리기 · 등록 참가자 대상",
+      "description_ko": "페낭 제2대교에서 열리는 국제마라톤 대회입니다.",
+      "sourceURL": "https://system.penangmarathon.gov.my/register/?a=aa4eYP29dTIygVrEVF3GWOpK0NBtHw4kbmnSuWR4Tl6%2Fc%3D",
+      "sourceAuthority": "페낭브리지 국제마라톤 정부 공식 등록 안내",
+      "notes": "정부 공식 등록 안내의 12월 13일을 확인했습니다. 참가 조건·출발 시간·종목별 장소는 최신 대회 안내를 확인하세요.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "sport",
+      "displayConditions_ko": [
+        "정부 공식 등록 안내의 12월 13일을 확인했습니다. 참가 조건·출발 시간·종목별 장소는 최신 대회 안내를 확인하세요."
+      ]
+    },
+    {
+      "id": "HK-2026-12-04-clockenflap",
+      "country": "HK",
+      "countryLabel": "홍콩",
+      "name": "2026 클로켄플랩 음악·예술축제",
+      "start": "2026-12-04",
+      "end": "2026-12-06",
+      "scope": "홍콩 센트럴 하버프런트 이벤트 스페이스 · 음악·예술축제 · 입장 조건 적용",
+      "description_ko": "홍콩 센트럴 해안 행사장에서 열리는 음악·예술축제입니다.",
+      "sourceURL": "https://www.clockenflap.com/2026-press-release-6th-oct",
+      "sourceAuthority": "Clockenflap 공식 주최자",
+      "notes": "입장권이 필요하며 3세 미만은 보호자 티켓 조건에 따라 무료입니다. 16세 미만은 18세 초과 보호자 동반이 필요합니다.",
+      "status": "verified",
+      "verifiedAt": "2026-10-30",
+      "category": "music_arts_festival",
+      "displayConditions_ko": [
+        "입장권이 필요하며 3세 미만은 보호자 티켓 조건에 따라 무료입니다. 16세 미만은 18세 초과 보호자 동반이 필요합니다."
+      ]
     }
   ]
 }

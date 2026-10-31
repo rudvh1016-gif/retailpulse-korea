@@ -21,7 +21,9 @@ for(const width of [390,1440])test(`reviewed major events keep exact scope, date
   const event=reviewed.events.find(e=>e.id===id)!;
   await filter.selectOption(event.countryLabel);
   const day=month.locator(`time[datetime="${event.start}"]`).locator('..');
-  await expect(day).toContainText(event.name);await day.click();
+  const shortNames:Record<string,string>={'KR-2026-11-19-csat':'수능','CN-SH-2026-11-05-ciie':'수입박람회','US-2026-11-03-general-election':'총선'};
+  const chip=day.locator('.preparation-event-chip').filter({hasText:shortNames[id]});
+  await expect(chip).toHaveAttribute('title',event.name);await expect(chip.locator('span').last()).toHaveText(shortNames[id]);await day.click();
   await expect(detail).toContainText(event.scope);await expect(detail).toContainText(event.description_ko.split(/[.!?]/)[0]);
   const source=detail.locator('details');await expect(source).not.toHaveAttribute('open','');await expect(source.getByRole('link')).toBeHidden();await source.locator('summary').focus();await page.keyboard.press('Enter');await expect(source.getByRole('link')).toBeVisible();
   await expect(detail).toContainText(`공식 자료 확인 ${today}`);

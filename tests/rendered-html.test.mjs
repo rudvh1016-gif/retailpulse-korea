@@ -1133,8 +1133,8 @@ test("server HTML never claims missing data or zero events before data loads", a
   assert.doesNotMatch(home, /국가 전체 보기 \(0\)/, "no false zero country count");
   // Stop at the next briefing topic, not the first nested metric/comparison div.
   const comparison = home.match(/class="focus-report-lines"[\s\S]*?(?=<div class="focus-selected-country-stack">)/)?.[0] ?? "";
-  assert.match(comparison,/예상 출국객 확인 중/);
-  assert.match(comparison,/예상 환승객 확인 중/);
+  assert.match(comparison,/출국 확인 중/);
+  assert.match(comparison,/환승 확인 중/);
   assert.match(comparison,/단순합계 확인 중/);
   assert.match(comparison,/<b class="focus-passenger-total focus-metric-total">\s*확인 중<\/b>/);
   assert.match(comparison,/<p class="focus-metric-label">출발 예정편<\/p><p><b class="focus-metric-total">확인 중<\/b>/);
