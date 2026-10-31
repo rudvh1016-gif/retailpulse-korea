@@ -366,3 +366,8 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .page-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:6px}
  .airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}
 }
+
+/* On phones remove only the redundant rule directly under the selected-country note. */
+@media(max-width:700px){
+ .airport-focus-shell .focus-report .focus-selected-country-changes:not(.focus-return-context){border-bottom:0}
+}
