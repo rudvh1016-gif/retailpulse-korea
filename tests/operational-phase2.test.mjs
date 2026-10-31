@@ -180,6 +180,12 @@ const approvedCanonicalPatches={
     ]
   ]
 };
+// Owner removed this duplicate queue observation only from the airport detail summary.
+// Reverse exactly this single prop before checking the unchanged protected-file hash.
+approvedCanonicalPatches["app/airport-live-signals.tsx"] = [[
+  '<AirportAtAGlance summary={summary} lang={lang} terminal={terminal} showCrowding={false} flow={',
+  '<AirportAtAGlance summary={summary} lang={lang} terminal={terminal} flow={'
+]];
 // Exact owner-requested Chinese presentation exceptions; all other bytes stay locked.
 approvedCanonicalPatches["app/live-signals.tsx"]=JSON.parse(readFileSync("tests/fixtures/chinese-live-signals-approved-patches.json","utf8"));
 // Owner-requested Chinese parity for the airport guide/About/More only. Reverse

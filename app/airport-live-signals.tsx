@@ -441,7 +441,7 @@ export function AirportTodaySummary({ lang, terminal = "all", date = null }: { l
         INSIDE the brief to land between the limitation note and the at-a-glance
         grid. Passing it as a slot keeps a single component and a single DOM
         order; the personal home renders the same brief with no chart. */}
-    <AirportAtAGlance summary={summary} lang={lang} terminal={terminal} flow={
+    <AirportAtAGlance summary={summary} lang={lang} terminal={terminal} showCrowding={false} flow={
     <section className="airport-detail-section airport-forecast" aria-labelledby="airport-forecast-title">
       <div className="airport-detail-head"><div><p className="eyebrow">OFFICIAL FORECAST · {scopeLabel}</p><h3 data-heading="subsection" id="airport-forecast-title"><span className="heading-marker" aria-hidden="true"/>{airportTodayText.forecastTitle[lang]}</h3></div><p>{airportTodayText.forecastOnly[lang]}</p></div>
       <p className="flow-note">{flowCoverageSentence(lang, summary.serviceDateKst, scopeLabel, timeline)}{isForecastPartial ? ` ${airportTodayText.partialBody[lang]}` : ''}</p>
