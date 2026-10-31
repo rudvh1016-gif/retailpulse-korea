@@ -1,6 +1,10 @@
 {
   "app/live-signals.tsx": [
     [
+      "  return end && end !== start ? `${start} ~ ${end}` : start;",
+      "  return end && end !== start ? `${start}\\u2013${end}` : start;"
+    ],
+    [
       "  const day = new Intl.DateTimeFormat(airportLocale(lang), {\n    timeZone: \"Asia/Seoul\", year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n  }).format(parsed);\n  return `${day} 00:00 ~ 23:59 KST`;\n}\n\nexport function formatKstBand(start: string, end: string): string {\n  const clock = (value: string) => new Intl.DateTimeFormat(\"en-GB\", {\n    timeZone: \"Asia/Seoul\", hour: \"2-digit\", minute: \"2-digit\", hour12: false,\n  }).format(new Date(value));\n  return `${clock(start)} ~ ${clock(end)} KST`;\n}\n\n/** \"9월 5일 22:43\" — enough for a reader to see how far behind collection is. */\n",
       "  const day = new Intl.DateTimeFormat(airportLocale(lang), {\n    timeZone: \"Asia/Seoul\", year: \"numeric\", month: \"2-digit\", day: \"2-digit\",\n  }).format(parsed);\n  return `${day} 00:00–23:59 KST`;\n}\n\nexport function formatKstBand(start: string, end: string): string {\n  const clock = (value: string) => new Intl.DateTimeFormat(\"en-GB\", {\n    timeZone: \"Asia/Seoul\", hour: \"2-digit\", minute: \"2-digit\", hour12: false,\n  }).format(new Date(value));\n  return `${clock(start)}–${clock(end)} KST`;\n}\n\n/** \"9월 5일 22:43\" — enough for a reader to see how far behind collection is. */\n"
     ],

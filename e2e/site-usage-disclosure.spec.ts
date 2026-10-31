@@ -101,7 +101,7 @@ for(const lang of ['ko','en','zh','ja'])for(const motion of ['reduce','no-prefer
  await toggle.tap();await expect(details).not.toHaveAttribute('open','');
  await toggle.tap();await expect(details).toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- await toggle.focus();await page.keyboard.press('Space');await expect(details).not.toHaveAttribute('open','');
+ await toggle.press('Space');await expect(details).not.toHaveAttribute('open','');
  await expect(qualification).toBeVisible();
 });
 

@@ -1521,7 +1521,7 @@ function formatEventPeriod(event: { eventStart: string; eventEnd: string | null 
   const start = short(event.eventStart);
   if (!start) return "";
   const end = event.eventEnd ? short(event.eventEnd) : "";
-  return end && end !== start ? `${start}\u2013${end}` : start;
+  return end && end !== start ? `${start} ~ ${end}` : start;
 }
 
 /**
