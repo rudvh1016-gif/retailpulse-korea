@@ -19,7 +19,7 @@ for(const width of [320,390,430,820,1280])for(const contrast of ['no-preference'
  expect(parseFloat(await group.evaluate(el=>getComputedStyle(el).gap))).toBeCloseTo(expectedGap,2);
  for(const side of ['top','right','left'])await expect(group).toHaveCSS(`border-${side}-width`,'0px');
  await expect(group).toHaveCSS('border-bottom-width','1px');
- await expect(group).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+ await expect(group).toHaveCSS('background-color',width<=600?'rgb(243, 246, 248)':'rgba(0, 0, 0, 0)');
  await expect(group).toHaveCSS('background-image','none');
  await expect(group).toHaveCSS('box-shadow','none');
  const boxes=await days.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom};}));
