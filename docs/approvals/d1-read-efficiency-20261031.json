@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-10-31T01:52:00Z",
+  "authorizationEvidence": {
+    "ownerRequest": "끝나고 배포해. 그리고 데이터베이스 무료 일일 조회 한도를 줄일 수 있는 방법을 찾아서 해결해.",
+    "scope": "Reduce unnecessary D1 reads without changing valid values, features, schedules, schema, security settings or paid services. Protected changes: fail-closed prediction cache admission with injectable response tests; skip unused future raw-flight comparisons.",
+    "keepProtectedListAndEnforcement": true
+  },
+  "baseCommit": "bfe488d059850bf70d545f3b04ecd2b3fc66bf63",
+  "protectedChanges": [
+    {
+      "file": "app/api/live/predictions/route.ts",
+      "previous": "b82f003bd3d77c293a379c4dbd0bf5e2aa449b19e54a65119ef2e4f291cdfced",
+      "approved": "5d588989ba41d1887b30ba25ff6ed2d42ea7afbe203f96fb2cc8d3735f480c3e",
+      "exactUnifiedDiff": "diff --git a/app/api/live/predictions/route.ts b/app/api/live/predictions/route.ts\nindex 8651388d..50c585c4 100644\n--- a/app/api/live/predictions/route.ts\n+++ b/app/api/live/predictions/route.ts\n@@ -4,10 +4,13 @@ import { POPULATION_MODEL } from '../../../../lib/population-predictions';\n import { CONTENT_API_ROBOTS_TAG } from '../../../../lib/crawl-policy';\n export const dynamic='force-dynamic';\n export async function GET(request:Request) {\n+  return predictionsResponse(request);\n+}\n+export async function predictionsResponse(request:Request,resolveClient=async()=>(await getDb()).$client,now=()=>new Date().toISOString()) {\n   const area=new URL(request.url).searchParams.get('area')??'myeongdong';\n-  if(!['myeongdong','hongdae','seongsu','itaewon'].includes(area)) return Response.json({error:'invalid_area'},{status:400,headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG}});\n+  if(!['myeongdong','hongdae','seongsu','itaewon'].includes(area)) return Response.json({error:'invalid_area'},{status:400,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});\n   try {\n-    const db=(await getDb()).$client, today=kstDayOf(new Date().toISOString()), tomorrow=shiftKstDay(today,1);\n+    const db=await resolveClient(), today=kstDayOf(now()), tomorrow=shiftKstDay(today,1);\n     const [run,coverage,records]=await Promise.all([\n       db.prepare('SELECT payload FROM forecast_runs WHERE area=? AND target_date=?').bind(area,tomorrow).first<{payload:string}>(),\n       db.prepare('SELECT payload FROM area_data_coverage WHERE area=?').bind(area).first<{payload:string}>(),\n@@ -16,7 +19,8 @@ export async function GET(request:Request) {\n         WHERE p.area=? AND p.model_version=? AND p.target_at>=? AND p.target_at<? ORDER BY p.target_at DESC LIMIT 168`)\n         .bind(area,POPULATION_MODEL,shiftKstDay(today,-7),tomorrow).all(),\n     ]);\n+    if(records.success===false)throw new Error('PREDICTION_RECORDS_READ_FAILED');\n     return Response.json({area,targetDate:tomorrow,run:run?JSON.parse(run.payload):null,coverage:coverage?JSON.parse(coverage.payload):null,records:records.results??[],\n-      generatedAt:new Date().toISOString()},{headers:{'cache-control':'public, max-age=60, s-maxage=120','x-robots-tag':CONTENT_API_ROBOTS_TAG}});\n+      generatedAt:now()},{headers:{'cache-control':'public, max-age=60, s-maxage=120','x-robots-tag':CONTENT_API_ROBOTS_TAG}});\n   } catch { return Response.json({error:'prediction_data_unavailable'},{status:503,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}}); }\n }\n"
+    },
+    {
+      "file": "app/api/live/summary/route.ts",
+      "previous": "96727d7ade580d6a59fa3bcd438a242dae54316060ea259c7d74de40dfee1f3e",
+      "approved": "3212210bb09138e2d59db890a1ce73cfa9ea5045888e7183368272b797ff1e4d",
+      "exactUnifiedDiff": "diff --git a/app/api/live/summary/route.ts b/app/api/live/summary/route.ts\nindex 5c295a7b..538772b6 100644\n--- a/app/api/live/summary/route.ts\n+++ b/app/api/live/summary/route.ts\n@@ -500,7 +500,10 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary\n       ...(previousMonthDays.length ? [client.prepare(monthRangeSql(previousMonthDays.length)).bind(...previousMonthDays)] : []),\n     ],\n \n-    historicalFlightCounts: [7, 28].map((days) => client.prepare(\n+    // Future selections deliberately have no collected flightRows. Their\n+    // flightRecords comparison is therefore always null below: do not scan\n+    // two historical days for a value that cannot be published.\n+    historicalFlightCounts: (dayRelation === 'FUTURE' ? [] : [7, 28]).map((days) => client.prepare(\n       `SELECT ? AS baselineDate, terminal, COUNT(*) AS flights FROM\n         (SELECT DISTINCT physical_flight_id, terminal FROM airport_flights\n          WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?\n"
+    }
+  ]
+}
