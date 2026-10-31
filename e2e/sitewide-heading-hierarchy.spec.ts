@@ -110,12 +110,13 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  if(width>700){
   expect(rows[0].y).toBeCloseTo(rows[1].y,0);expect(rows[1].y).toBeCloseTo(rows[2].y,0);
   expect(rows[3].y).toBeCloseTo(rows[4].y,0);expect(rows[3].x).toBeCloseTo(rows[0].x,0);
-  expect(rows[3].width).toBeCloseTo(rows[4].width,0);expect(rows[4].x).toBeGreaterThan(rows[3].x+rows[3].width);
+  expect(rows[3].width).toBeCloseTo(rows[0].width,0);expect(rows[4].x).toBeCloseTo(rows[1].x,0);expect(rows[4].width).toBeGreaterThan(rows[3].width);
  }else{
   for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
- const staffTitles=new URL(page.url()).pathname.startsWith('/zh')?['✓时段与航站楼','✓航线与假期准备']:['✓시간·터미널','✓노선·휴일 준비'];
+ const locale=new URL(page.url()).pathname.split('/')[1];
+ const staffTitles=locale==='zh'?['✓时段与航站楼','✓航线与假期准备']:locale==='en'?['✓Times and terminals','✓Route and holiday planning']:['✓시간·터미널','✓노선·휴일 준비'];
  await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(staffTitles);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
