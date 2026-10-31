@@ -26,7 +26,9 @@ for(const width of [390,1280])test(`white airport ground and restrained action s
  await expect(news).toHaveCSS('background-color','rgb(255, 255, 255)');
  await expect(news).toHaveCSS('border-radius','0px');await expect(news).toHaveCSS('box-shadow','none');
  const selectedDay=page.locator('.date-nav-shortcuts button[aria-pressed=true]');
- await expect(selectedDay).toHaveCSS('background-color','rgb(255, 255, 255)');await expect(selectedDay).toHaveCSS('border-radius','0px');await expect(selectedDay).toHaveCSS('box-shadow','none');
+ await expect(selectedDay).toHaveCSS('background-color',width<=600?'rgb(52, 91, 123)':'rgb(255, 255, 255)');
+ if(width<=600){await expect(selectedDay).toHaveCSS('color','rgb(255, 255, 255)');await expect(selectedDay.locator('time')).toHaveCSS('color','rgb(255, 255, 255)');}
+ await expect(selectedDay).toHaveCSS('border-radius','0px');await expect(selectedDay).toHaveCSS('box-shadow','none');
  await expect(page.getByTestId('date-calendar-trigger')).toHaveCount(0);
  await expectWhiteGround(page.locator('.airport-view .view-intro'));
  const sections=page.locator('.airport-context-nav button');

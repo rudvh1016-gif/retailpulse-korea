@@ -315,6 +315,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,360,390,393,430]
  const buttons=page.locator('.airport-focus-operating .glance-controls > div[role=group] > button');
  const evidence=[];
  for(const index of [0,1,2,3,0]){await buttons.nth(index).click();await expect(buttons.nth(index)).toHaveAttribute('aria-pressed','true');evidence.push(await expectMobileTerminalTextSpacing(page));}
+ console.info('TERMINAL_TEXT_GEOMETRY',JSON.stringify({lang,width,...evidence[0]}));
  await info.attach('visible-text-geometry',{body:JSON.stringify(evidence,null,2),contentType:'application/json'});
  await page.screenshot({path:info.outputPath(`visible-terminal-${lang}-${width}.png`)});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
