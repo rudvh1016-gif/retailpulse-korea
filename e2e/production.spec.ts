@@ -474,10 +474,10 @@ test("remaining expected departures is shown for a complete day and withheld for
   await expect(page.locator(".airport-current-brief .airport-near-term")).toHaveCount(0);
 
   // Two different times sit on this one card: the window the sum covers
-  // (14:00–24:00) and the moment the forecast was fetched (09:05). Both used
+  // (14:00 ~ 24:00) and the moment the forecast was fetched (09:05). Both used
   // to read as "기준", so the same number appeared to be dated twice.
   const remainingCard = page.locator(".airport-remaining");
-  await expect(remainingCard).toContainText("14:00–24:00 KST 공식 예상 승객 합계");
+  await expect(remainingCard).toContainText("14:00 ~ 24:00 KST 공식 예상 승객 합계");
   await expect(remainingCard).toContainText("09:05 수집");
   await expect(remainingCard).not.toContainText("09:05 기준");
   // Midnight closes today, so it is written 24:00 and never 00:00.
@@ -990,7 +990,7 @@ test("the passenger-flow figure uses the section width on desktop and the whole 
 });
 
 /**
- * The fixture's clock is 05:10Z = 14:10 KST, inside the 14:00–15:00 band.
+ * The fixture's clock is 05:10Z = 14:10 KST, inside the 14:00 ~ 15:00 band.
  * Today shows a marker there; a past or future service date shows none,
  * because no "now" exists inside a day the clock is not in.
  */
@@ -1026,7 +1026,7 @@ test("the current-time marker appears on today's chart only", async ({ page }) =
 
 test("the facility directory browses official stores and never claims a store is open now", async ({ page }) => {
   const facilities = [
-    { facilityId: "1", nameKo: "신라면세점", nameEn: "Shilla Duty Free", nameZh: "新罗免税店", nameJa: "新羅免税店", facilityItem: "화장품", largeCategory: "면세점", mediumCategory: "화장품", smallCategory: "향수", categoryGroup: "DUTY_FREE", terminal: "T1", floor: "3층", dutyArea: "DUTY_FREE", arrivalDeparture: "DEPARTURE", locationRaw: "제1여객터미널 3층 면세지역 27번 게이트 부근", locationEn: "T1 3F airside near Gate 27", businessHoursRaw: "07:00~21:00", goodsBrands: "화장품/향수", phone: "032-000-0000", retrievedAt: "2026-09-03T00:00:00.000Z" },
+    { facilityId: "1", nameKo: "신라면세점", nameEn: "Shilla Duty Free", nameZh: "新罗免税店", nameJa: "新羅免税店", facilityItem: "화장품", largeCategory: "면세점", mediumCategory: "화장품", smallCategory: "향수", categoryGroup: "DUTY_FREE", terminal: "T1", floor: "3층", dutyArea: "DUTY_FREE", arrivalDeparture: "DEPARTURE", locationRaw: "제1여객터미널 3층 면세지역 27번 게이트 부근", locationEn: "T1 3F airside near Gate 27", businessHoursRaw: "07:00 ~ 21:00", goodsBrands: "화장품/향수", phone: "032-000-0000", retrievedAt: "2026-09-03T00:00:00.000Z" },
     { facilityId: "2", nameKo: "온누리약국", nameEn: "Onnuri Pharmacy", nameZh: null, nameJa: null, facilityItem: "의약품", largeCategory: "약국", mediumCategory: null, smallCategory: null, categoryGroup: "PHARMACY", terminal: "T1", floor: "1층", dutyArea: "GENERAL", arrivalDeparture: "ARRIVAL", locationRaw: "제1여객터미널 1층 입국장", locationEn: null, businessHoursRaw: null, goodsBrands: null, phone: null, retrievedAt: "2026-09-03T00:00:00.000Z" },
   ];
   await page.route("**/api/airport/facilities*", async (route) => {
@@ -1045,7 +1045,7 @@ test("the facility directory browses official stores and never claims a store is
   await expect(directory.locator(".facility-card")).toHaveCount(1);
   await expect(directory.locator(".facility-card").first()).toContainText("신라면세점");
   await expect(directory.locator(".facility-card").first()).toContainText("제1여객터미널 3층 면세지역 27번 게이트 부근");
-  await expect(directory.locator(".facility-card").first()).toContainText("07:00~21:00");
+  await expect(directory.locator(".facility-card").first()).toContainText("07:00 ~ 21:00");
   // Published hours, never a real-time "open now" claim.
   await expect(directory).toContainText("공식 영업시간 기준");
   await expect(directory).not.toContainText(/지금 영업|영업 중|OPEN NOW/i);

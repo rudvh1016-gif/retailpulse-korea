@@ -28,7 +28,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
 test('01xx current interval is shown separately from next, and published zero survives',async({page})=>{
  const data=structuredClone(SUMMARY_FIXTURE) as LiveSummary;data.generatedAt='2026-10-09T16:02:00Z';data.todayKst=data.serviceDateKst='2026-10-10';data.dayRelation='TODAY';
  data.airport.passengerForecastTimelineByTerminal={T2:[{targetStartAt:'2026-10-10T01:00:00+09:00',targetEndAt:'2026-10-10T02:00:00+09:00',expectedPassengers:0},{targetStartAt:'2026-10-10T02:00:00+09:00',targetEndAt:'2026-10-10T03:00:00+09:00',expectedPassengers:4}]};
- await page.clock.setFixedTime(new Date(data.generatedAt));await page.route('**/api/live/summary*',routeSummary(data));await page.goto('/ko/airport');const card=page.locator('.terminal-brief-card[data-terminal="T2"]');await expect(card.locator('[data-metric="current"]')).toContainText('01:00–02:00');await expect(card.locator('[data-metric="current"]')).toContainText('0명');await expect(card.locator('[data-metric="next"]')).toContainText('02:00–03:00');
+ await page.clock.setFixedTime(new Date(data.generatedAt));await page.route('**/api/live/summary*',routeSummary(data));await page.goto('/ko/airport');const card=page.locator('.terminal-brief-card[data-terminal="T2"]');await expect(card.locator('[data-metric="current"]')).toContainText('01:00 ~ 02:00');await expect(card.locator('[data-metric="current"]')).toContainText('0명');await expect(card.locator('[data-metric="next"]')).toContainText('02:00 ~ 03:00');
 });
 
 test('consumption means name the observed window unit, common bins and retained dates',async({page})=>{

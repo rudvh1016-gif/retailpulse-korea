@@ -25,7 +25,7 @@ test('copying puts the same dated text on the clipboard without a new data reque
   expect(copied).toContain('[KORETAIL]');
   expect(copied).toContain('2026-08-31 (월) · 명동');
   expect(copied).toContain('/ko/business?date=2026-08-31');
-  expect(copied).toContain('17:00–18:00');
+  expect(copied).toContain('17:00 ~ 18:00');
   expect(copied).toContain('지금 핵심');expect(copied.replace('지금 핵심','')).not.toContain('지금');await share.locator('summary').click();expect(copied.replaceAll('\r\n','\n')).toBe(await share.getByTestId('share-preview').innerText());
   expect(requests()).toBe(before);
 });

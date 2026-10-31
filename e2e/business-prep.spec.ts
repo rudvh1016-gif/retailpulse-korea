@@ -8,7 +8,7 @@ import type { PrepWeatherRow } from '../lib/business-prep';
 // SUMMARY_FIXTURE is 2026-08-31 14:10 KST. Myeongdong has an official
 // "busy" band at 17:00 (issued 14:00), a 60% rain hour at 18:00 and two
 // official events running that day; the airport's T1 timeline has one
-// official band, 15:00–16:00, 3,500 departures.
+// official band, 15:00 ~ 16:00, 3,500 departures.
 
 async function open(page: Page, lang = 'ko', width = 390) {
   await page.setViewportSize({ width, height: 900 });
@@ -33,9 +33,9 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
     await expect(actions.nth(1)).toHaveAttribute('data-rule', 'RAIN');
     await expect(actions.nth(2)).toHaveAttribute('data-rule', 'EVENT');
     // The forecast covers one hour of the day; the rest is said out loud.
-    await expect(prep.locator('.prep-coverage').first()).toContainText('17:00–18:00');
+    await expect(prep.locator('.prep-coverage').first()).toContainText('17:00 ~ 18:00');
     await expect(prep.getByTestId('prep-status')).toHaveCount(0);
-    await expect(actions.nth(0)).toContainText('17:00–18:00');
+    await expect(actions.nth(0)).toContainText('17:00 ~ 18:00');
     // Every action can be checked by hand.
     await actions.nth(0).locator('summary').click();
     await expect(actions.nth(0).locator('dl')).toContainText(prepCopy.limit[lang]);
@@ -70,7 +70,7 @@ test('saved hours narrow the briefing and survive a reload', async ({ page }) =>
   await prep.getByLabel(prepCopy.open.ko).selectOption('10:00');
   await prep.getByLabel(prepCopy.closeTime.ko).selectOption('16:00');
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
-  await expect(prep.getByTestId('prep-hours')).toHaveText('10:00–16:00');
+  await expect(prep.getByTestId('prep-hours')).toHaveText('10:00 ~ 16:00');
   // 17:00 and 18:00 are after closing: only the date-wide event remains, and
   // the hours themselves are reported as not judgeable, never "no change".
   const actions = prep.getByTestId('prep-actions').locator('> li');
@@ -79,7 +79,7 @@ test('saved hours narrow the briefing and survive a reload', async ({ page }) =>
   await expect(prep.getByTestId('prep-status')).toHaveText(statusLine('INSUFFICIENT', 'ko'));
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  await expect(page.getByTestId('business-prep').getByTestId('prep-hours')).toHaveText('10:00–16:00');
+  await expect(page.getByTestId('business-prep').getByTestId('prep-hours')).toHaveText('10:00 ~ 16:00');
   const stored = await page.evaluate(() => localStorage.getItem('koretail-business-v1'));
   expect(JSON.parse(stored ?? 'null')).toEqual({ version: 1, place: 'area', terminal: 'T1', side: null, hours: { open: '10:00', close: '16:00' } });
 });
@@ -92,7 +92,7 @@ test('hours past midnight are labelled and a first visit saves nothing', async (
   await prep.getByLabel(prepCopy.open.ko).selectOption('23:00');
   await prep.getByLabel(prepCopy.closeTime.ko).selectOption('02:00');
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
-  await expect(prep.getByTestId('prep-hours')).toHaveText(`23:00–02:00 (${prepCopy.crossesMidnight.ko})`);
+  await expect(prep.getByTestId('prep-hours')).toHaveText(`23:00 ~ 02:00 (${prepCopy.crossesMidnight.ko})`);
 });
 
 test('an unreadable or foreign saved value falls back to the whole day', async ({ page }) => {
@@ -114,7 +114,7 @@ test('blocked storage keeps the chosen hours for the visit and says so', async (
   await prep.getByLabel(prepCopy.open.ko).selectOption('09:00');
   await prep.getByLabel(prepCopy.closeTime.ko).selectOption('21:00');
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
-  await expect(prep.getByTestId('prep-hours')).toHaveText('09:00–21:00');
+  await expect(prep.getByTestId('prep-hours')).toHaveText('09:00 ~ 21:00');
   await expect(prep.getByText(prepCopy.storageBlocked.ko)).toBeVisible();
 });
 
@@ -125,7 +125,7 @@ test('the airport tab briefs a terminal and keeps the area tabs and guide consis
   const actions = prep.getByTestId('prep-actions').locator('> li');
   await expect(actions).toHaveCount(1);
   await expect(actions.first()).toHaveAttribute('data-rule', 'AIRPORT_PEAK');
-  await expect(actions.first()).toContainText('15:00–16:00');
+  await expect(actions.first()).toContainText('15:00 ~ 16:00');
   await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
   await expect(page.locator('#store-industry-guide, #airport-industry-guide')).toHaveAttribute('id', 'airport-industry-guide');
   // Terminal choice lives in the conditions.
@@ -133,7 +133,7 @@ test('the airport tab briefs a terminal and keeps the area tabs and guide consis
   await prep.getByLabel('T2').check();
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
   await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T2');
-  await expect(prep.getByTestId('prep-actions').locator('> li').first()).toContainText('16:00–17:00');
+  await expect(prep.getByTestId('prep-actions').locator('> li').first()).toContainText('16:00 ~ 17:00');
   // Back to an area: the area graph returns and the airport choice is not left behind.
   await page.locator('.business-view .area-tabs').getByRole('tab', { name: '홍대' }).click();
   await expect(prep.getByTestId('prep-place')).toHaveText('홍대');
@@ -170,7 +170,7 @@ for (const width of [320, 390, 430]) {
     page.on('pageerror', error => errors.push(error.message));
     const prep = await open(page, 'ko', width);
     await expect(prep).toHaveAttribute('data-place', 'area');
-    await expect(prep.locator('[data-fact="CROWD_MAX"] .prep-fact-value')).toContainText('17:00–18:00');
+    await expect(prep.locator('[data-fact="CROWD_MAX"] .prep-fact-value')).toContainText('17:00 ~ 18:00');
     await expect(prep.locator('[data-fact="RAIN_MAX"] .prep-fact-value')).toContainText('60%');
     await expect(prep.locator('[data-fact="EVENTS"] .prep-fact-value')).toHaveText('2건');
     const imageCount = await prep.locator('.signal-scene img').count();

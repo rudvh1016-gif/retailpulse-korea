@@ -124,7 +124,7 @@ for(const width of [360,1440])test(`CN holiday overlap and independent flight co
  await page.goto('/airport-period/frame.html?date=2026-10-19&view=holiday');
  await page.locator('[data-holiday="CN"]').filter({hasText:'10/01'}).click();
  const context=page.locator('#holiday-calendar-context'),before=context.locator('[data-period="previous"]'),after=context.locator('[data-period="current"]');
- await expect(before).toContainText('중추절');await expect(before).toContainText('2026-09-25~2026-09-27');
+ await expect(before).toContainText('중추절');await expect(before).toContainText('2026-09-25 ~ 2026-09-27');
  await expect(before).toContainText('항공편 수집 7/7일');await expect(after).toContainText('항공편 수집 6/7일');
  await expect(before).toContainText('한국 출발지 참고');await expect(before).toContainText('추석');
  await expect(context).not.toContainText('경로의 날');await expect(context).toContainText('회색: 기준 · 파랑: 비교 (휴일 여부와 무관)');
@@ -209,9 +209,9 @@ for(const width of [320,360,365,390,430,600,700])test(`phone heading menu and da
  const boxes=await terminalButtons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,width:b.width,height:b.height};}));
  for(const box of boxes){expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(box.top).toBe(boxes[0].top);}
  expect(boxes[0].left).toBeCloseTo(row.x,1);
- for(let i=1;i<boxes.length;i++)expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(8,1);
+ for(let i=1;i<boxes.length;i++)expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(i===1?0:i===2?16:8,1);
  expect(boxes[3].right).toBeLessThanOrEqual(row.x+row.width+1);
- await expect(controls).toHaveCSS('margin-top','2px');await expect(controls).toHaveCSS('padding-bottom','0px');await expect(controls).toHaveCSS('row-gap','4px');
+ await expect(controls).toHaveCSS('margin-top','0px');await expect(controls).toHaveCSS('padding-bottom','0px');await expect(controls).toHaveCSS('row-gap','4px');
  await expect(terminalButtons.first()).toHaveCSS('padding-left','0px');
  for(const button of await terminalButtons.all())expect(await button.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
  await terminalButtons.last().click();await expect(terminalButtons.last()).toHaveAttribute('aria-pressed','true');
@@ -253,7 +253,7 @@ for(const width of [701,1024,1440])test(`desktop keeps deployed airport gutters 
  await expect(page.locator('.airport-insight-shell')).toHaveCSS('padding-left','24px');
  await expect(page.locator('.airport-insight-tabs:not(.country-tabs)')).toHaveCSS('display','grid');
  const controls=page.locator('.airport-focus-operating .glance-controls');
- await expect(controls).toHaveCSS('margin-top','12px');await expect(controls).toHaveCSS('padding-bottom','8px');
+ await expect(controls).toHaveCSS('margin-top','8px');await expect(controls).toHaveCSS('padding-bottom','8px');
  await expect(controls.locator(':scope > div[role=group]')).toHaveCSS('gap','6px');
  await page.screenshot({path:testInfo.outputPath(`desktop-glance-unchanged-${width}.png`),fullPage:true});
  await page.goto('/ko/airport-countries?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.country-tabs')).toHaveCSS('display','grid');

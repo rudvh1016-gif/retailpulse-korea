@@ -26,7 +26,7 @@ function fiveDays(missing = false) {
     previous.completeDays = values.length;
     previous.total = 480_000 * share;
     month.change = missing ? null : {
-      baselineAt: '2026-08-01~2026-08-05',
+      baselineAt: '2026-08-01 ~ 2026-08-05',
       minPercent: (506_000 - 480_000) / 480_000 * 100,
       maxPercent: (506_000 - 480_000) / 480_000 * 100,
     };

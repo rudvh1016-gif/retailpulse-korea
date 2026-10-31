@@ -64,7 +64,7 @@ test('until the notice condition is met, hall sides are withheld and point to th
   await expect(sides.getByTestId('gates-partial')).toHaveText(sidesCopy.sideCountsNote.ko);
   // So the fact names its own scope and is never "the east side's busiest hour"…
   const facts = prep.getByTestId('prep-facts');
-  await expect(facts).toContainText('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00–16:00 · 2편 (위치 미확인 1편 제외, 그중 같은 시간 0편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다)');
+  await expect(facts).toContainText('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00 ~ 16:00 · 2편 (위치 미확인 1편 제외, 그중 같은 시간 0편 · 동편 전체의 가장 많은 시간은 아직 알 수 없습니다)');
   await expect(facts).not.toContainText('탑승구 기준 출발편이 가장 많은 시간');
   // …and it never becomes a staffing or stock action; the general checklist stays.
   await expect(prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"]')).toHaveCount(0);
@@ -79,7 +79,7 @@ test('with the hall split published: sides add up, hours never split a band, and
   const west = 200 * 24;
   await expect(sides.getByTestId('halls-sides')).toContainText(`동편 ${east.toLocaleString('ko-KR')}명 · 서편 ${west.toLocaleString('ko-KR')}명`);
   await expect(sides.getByTestId('halls-compare')).toContainText(`T1 ${(east + west).toLocaleString('ko-KR')}명 (하루 전체)`);
-  // 09:30–18:00: 10–17 whole, 09–10 shown apart and never halved.
+  // 09:30 ~ 18:00: 10–17 whole, 09–10 shown apart and never halved.
   const inside = Array.from({ length: 8 }, (_, i) => 300 + 2 * (10 + i)).reduce((a, b) => a + b, 0);
   await expect(sides.getByTestId('halls-hours')).toContainText(`영업시간 안: ${inside.toLocaleString('ko-KR')}명`);
   await expect(sides.getByTestId('halls-hours')).toContainText('경계 시간대 09–10시 318');
@@ -115,7 +115,7 @@ test('the staff share names the date, terminal, side, expectation basis and flig
   expect(text).toContain('2026-08-31 (월) · 인천공항 T1 동편');
   expect(text).toContain('동편 출국장 예상 이용객이 가장 많은 시간');
   // The copy text carries the same partial scope as the screen (and the PNG, which renders the same lines).
-  expect(text).toContain('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00–16:00 · 2편 (위치 미확인 1편 제외');
+  expect(text).toContain('위치가 확인된 동편 탑승구 항공편 중 가장 많은 시간 15:00 ~ 16:00 · 2편 (위치 미확인 1편 제외');
   expect(text).not.toContain('탑승구 기준 출발편이 가장 많은 시간');
   expect(text).toContain(sidesCopy.notice.ko);
   expect(text).toContain('인천공항 운항 정보 (탑승구 기준 출발편)');
@@ -124,8 +124,8 @@ test('the staff share names the date, terminal, side, expectation basis and flig
 test('the whole terminal counts every flight, unknown sides included, and keeps the flight action', async ({ page }) => {
   const prep = await open(page, { side: null as unknown as string });
   await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1');
-  // 15:00–16:00 has A, B, C (east, east, west) — the unverified 17:00 flight is still in the terminal's day.
-  await expect(prep.getByTestId('prep-facts')).toContainText('탑승구 기준 출발편이 가장 많은 시간 15:00–16:00 · 3편 (터미널 전체)');
+  // 15:00 ~ 16:00 has A, B, C (east, east, west) — the unverified 17:00 flight is still in the terminal's day.
+  await expect(prep.getByTestId('prep-facts')).toContainText('탑승구 기준 출발편이 가장 많은 시간 15:00 ~ 16:00 · 3편 (터미널 전체)');
   await expect(prep.getByTestId('airport-sides').getByTestId('gates-areas')).toContainText('T1 본관 5편');
   const gate = prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"]');
   await expect(gate).toContainText('예정 출발 시각 기준');

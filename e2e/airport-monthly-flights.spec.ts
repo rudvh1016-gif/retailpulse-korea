@@ -45,7 +45,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await page.goto((lang==='ko'||lang==='zh')?`/${lang}/airport-countries?mode=zones&date=2026-10-10&building=all`:`/${lang}/airport`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
  const includedDates=section.locator('details').filter({has:page.locator('.airport-month-period')}),includedSummary=includedDates.locator(':scope > summary');
  await includedSummary.click();await expect(includedDates).toHaveAttribute('open','');await expect(includedDates.locator('.airport-month-period').first()).toBeVisible();
- await expect(includedDates).toContainText('2026-09-01–2026-09-30');await expect(includedDates).toContainText('2/30');await expect(includedDates).toContainText('1/9');
+ await expect(includedDates).toContainText('2026-09-01 ~ 2026-09-30');await expect(includedDates).toContainText('2/30');await expect(includedDates).toContainText('1/9');
  await includedSummary.click();
  await expect(section).toContainText('+200%');
  await expect(section.getByTestId('destination-daily-changes')).toBeVisible();

@@ -198,8 +198,8 @@ for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtur
 for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtures/chinese-frame-headers-approved-patches.json","utf8")))){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }
-// Owner explicitly approved these six files' reviewed date-range/English UI
-// changes. Reverse their exact unique hunks; retain all original hashes/crons.
+// Owner explicitly approved the six reviewed date-range/English UI files and
+// two SEO description edits. Reverse exact unique hunks; retain hashes/crons.
 for(const [file,patches] of Object.entries(JSON.parse(readFileSync('tests/fixtures/ui-localization-20261031-approved-patches.json','utf8')))){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }

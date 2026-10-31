@@ -140,7 +140,7 @@ test('the copied text carries the date, window, filter and limits', async ({ pag
   await map.getByTestId('map-groups').getByRole('button', { name: '일본' }).click();
   await map.getByTestId('map-copy').click();
   const text = await page.evaluate(() => navigator.clipboard.readText());
-  expect(text).toContain('2026-08-31 T2 · 14:10–17:10');
+  expect(text).toContain('2026-08-31 T2 · 14:10 ~ 17:10');
   expect(text).toContain('목적지 필터: 일본');
   expect(text).toContain('확인된 항공편 기준');
   expect(text).toContain('항공편 수이며 사람 수나 매장 방문객이 아닙니다.');
