@@ -92,7 +92,7 @@ test('upcoming summaries keep dates and trends visible while preserving evidence
   assert.ok(renderToStaticMarkup(h(PreparationEvent,{event:unknown})).split('<details')[0].includes(scope));
  }
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
- assert.match(source,/휴일 종료 기준 · 귀국객 예측 아님/);
+ assert.doesNotMatch(source,/휴일 종료 기준 · 귀국객 예측 아님|Holiday end dates · Not a return-traveler forecast|按假期结束日期 · 非返程客流预测|祝日終了日が基準 · 帰国客の予測ではありません/);
  assert.match(source,/className="focus-planning-basis"/);assert.match(source,/short\(weekStart\).*short\(weekEnd\)/);assert.doesNotMatch(source,/monthlyTrend|const months=/);
  assert.doesNotMatch(source,/<p>\{describe\(/);
 });
