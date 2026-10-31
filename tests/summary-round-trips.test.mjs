@@ -420,3 +420,22 @@ test('a selected past Seoul day returns its own retained observations and baseli
     assert.equal(future.areas.seongsu.realtime,null);assert.deepEqual(future.areas.seongsu.observedSeries,[]);
   } finally { database.close(); }
 });
+test('future selections skip both unused raw flight history scans; present and past keep them',async()=>{
+ const {database,databasePath}=openDatabase('unused-future-history');
+ try {
+  seed(database);
+  for(const delta of [-1,0,1,7]){
+   const clock=clockFor(),serviceDate=shiftKstDay(clock.kstToday,delta);
+   Object.assign(clock,{serviceDate,dayRelation:relateKstDay(serviceDate,clock.kstToday),dayStartAt:kstDayBounds(serviceDate).startAt});
+   const client=new LocalD1Database(database),prepared=[];
+   const prepare=client.prepare.bind(client);
+   client.prepare=sql=>{prepared.push(sql);return prepare(sql);};
+   const response=await summarizeLiveSummary(client,clock),body=await response.json();
+   const counts=prepared.filter(sql=>sql.includes('AS baselineDate'));
+   assert.equal(counts.length,delta>0?0:2);
+   assert.equal(client.trips.length,1);
+   if(delta>0)for(const scope of ['all','T1','T2'])for(const days of [7,28])assert.equal(body.airport.periodComparisons[scope][days].flightRecords,null);
+   assert.equal(body.readStatus.status,'COMPLETE');
+  }
+ } finally {database.close();unlinkSync(databasePath);}
+});

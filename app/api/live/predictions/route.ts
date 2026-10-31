@@ -4,10 +4,13 @@ import { POPULATION_MODEL } from '../../../../lib/population-predictions';
 import { CONTENT_API_ROBOTS_TAG } from '../../../../lib/crawl-policy';
 export const dynamic='force-dynamic';
 export async function GET(request:Request) {
+  return predictionsResponse(request);
+}
+export async function predictionsResponse(request:Request,resolveClient=async()=>(await getDb()).$client,now=()=>new Date().toISOString()) {
   const area=new URL(request.url).searchParams.get('area')??'myeongdong';
-  if(!['myeongdong','hongdae','seongsu','itaewon'].includes(area)) return Response.json({error:'invalid_area'},{status:400,headers:{'x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+  if(!['myeongdong','hongdae','seongsu','itaewon'].includes(area)) return Response.json({error:'invalid_area'},{status:400,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
   try {
-    const db=(await getDb()).$client, today=kstDayOf(new Date().toISOString()), tomorrow=shiftKstDay(today,1);
+    const db=await resolveClient(), today=kstDayOf(now()), tomorrow=shiftKstDay(today,1);
     const [run,coverage,records]=await Promise.all([
       db.prepare('SELECT payload FROM forecast_runs WHERE area=? AND target_date=?').bind(area,tomorrow).first<{payload:string}>(),
       db.prepare('SELECT payload FROM area_data_coverage WHERE area=?').bind(area).first<{payload:string}>(),
@@ -16,7 +19,8 @@ export async function GET(request:Request) {
         WHERE p.area=? AND p.model_version=? AND p.target_at>=? AND p.target_at<? ORDER BY p.target_at DESC LIMIT 168`)
         .bind(area,POPULATION_MODEL,shiftKstDay(today,-7),tomorrow).all(),
     ]);
+    if(records.success===false)throw new Error('PREDICTION_RECORDS_READ_FAILED');
     return Response.json({area,targetDate:tomorrow,run:run?JSON.parse(run.payload):null,coverage:coverage?JSON.parse(coverage.payload):null,records:records.results??[],
-      generatedAt:new Date().toISOString()},{headers:{'cache-control':'public, max-age=60, s-maxage=120','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+      generatedAt:now()},{headers:{'cache-control':'public, max-age=60, s-maxage=120','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
   } catch { return Response.json({error:'prediction_data_unavailable'},{status:503,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}}); }
 }

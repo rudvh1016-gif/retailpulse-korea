@@ -500,7 +500,10 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       ...(previousMonthDays.length ? [client.prepare(monthRangeSql(previousMonthDays.length)).bind(...previousMonthDays)] : []),
     ],
 
-    historicalFlightCounts: [7, 28].map((days) => client.prepare(
+    // Future selections deliberately have no collected flightRows. Their
+    // flightRecords comparison is therefore always null below: do not scan
+    // two historical days for a value that cannot be published.
+    historicalFlightCounts: (dayRelation === 'FUTURE' ? [] : [7, 28]).map((days) => client.prepare(
       `SELECT ? AS baselineDate, terminal, COUNT(*) AS flights FROM
         (SELECT DISTINCT physical_flight_id, terminal FROM airport_flights
          WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ?
