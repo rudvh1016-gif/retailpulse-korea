@@ -17,6 +17,14 @@
 
 .airport-staff-briefing .staff-gate-summary strong{font-size:inherit;font-weight:700}
 
+/* Only the terminal names carry color; counts and zone names keep their ink. */
+.airport-staff-briefing .staff-gate-summary .staff-terminal-label{display:inline-block;white-space:nowrap;margin-inline-end:4px}
+.airport-staff-briefing .staff-terminal-label[data-terminal=T1]{color:#a12d3f}
+.airport-staff-briefing .staff-terminal-label[data-terminal=T2]{color:#2457a6}
+.airport-staff-briefing .staff-terminal-label[data-terminal=CONCOURSE]{color:#17675b}
+.airport-staff-briefing p.staff-gate-summary{margin-bottom:12px}
+@media(forced-colors:active){.airport-staff-briefing .staff-terminal-label{color:CanvasText!important}}
+
 .airport-staff-briefing .staff-route-rate,.airport-staff-briefing .staff-route-sample{display:inline-block;white-space:nowrap}
 .airport-staff-briefing .staff-route-details>summary{min-height:44px;box-sizing:border-box;padding:11px 0;touch-action:manipulation}
 .airport-staff-briefing .staff-route-details>summary:focus-visible{outline:2px solid var(--navy,#24272c);outline-offset:3px}
@@ -34,6 +42,10 @@
 .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>strong{display:block}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>small{display:block;margin-top:4px}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid{column-gap:24px}
+@media(min-width:701px){
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section:nth-child(2){grid-column:2/-1}
+}
 @media(max-width:700px){
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-staff-briefing{padding-top:0}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid{row-gap:24px}
