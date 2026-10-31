@@ -57,16 +57,26 @@ for(const lang of ['ko','zh'] as const)test(`short major labels preserve old ele
  await expect(month.locator('h3').first()).toContainText('10');
  await expect(async()=>{if((await month.locator('h3').first().innerText()).includes('10'))await month.getByRole('button',{name:lang==='ko'?'다음 달':'下个月',exact:true}).click();await expect(month.locator('h3').first()).toContainText('11',{timeout:500});}).toPass();
  const cases=lang==='ko'?
-  [['한국','2026-11-19','수능','2027학년도 대학수학능력시험'],['미국','2026-11-03','총선','2026년 연방 총선거'],['일본','2026-11-03','문화의 날','문화의 날']]:
-  [['한국','2026-11-19','韩国高考','2027学年度韩国大学修学能力考试'],['미국','2026-11-03','大选','2026年美国联邦大选'],['일본','2026-11-03','文化日','文化日']];
- for(const [country,date,shortName,fullName] of cases){
+  [['한국','2026-11-19','수능','2027학년도 대학수학능력시험','2026-11-19','한국'],['미국','2026-11-03','총선','2026년 연방 총선거','2026-11-03','미국'],['일본','2026-11-03','문화의 날','문화의 날','11/3(화)','일본']]:
+  [['한국','2026-11-19','韩国高考','2027学年度韩国大学修学能力考试','2026-11-19','韩国'],['미국','2026-11-03','大选','2026年美国联邦大选','2026-11-03','美国'],['일본','2026-11-03','文化日','文化日','11/3(周二)','日本']];
+ for(const [country,date,shortName,fullName,visibleDate,countryName] of cases){
   await filter.selectOption(country);
   const day=month.locator(`time[datetime="${date}"]`).locator('..');
   const chip=day.locator('.preparation-event-chip').filter({hasText:shortName});
   await expect(chip).toHaveAttribute('title',fullName);await expect(chip.locator('span').last()).toHaveText(shortName);
   const accessibleBefore=await day.getAttribute('aria-label');
-  await day.click();await expect(detail).toContainText(fullName);await expect(detail).toContainText(date);
+  await day.click();await expect(detail).toBeVisible();
+  // The exact civil date belongs to the section's accessible name; preserved
+  // holiday copy can use a localized visible date instead of ISO text.
+  await expect(detail).toHaveAttribute('aria-label',lang==='ko'?`${date} 일정`:`${date}日程`);
+  const officialName=detail.locator('.preparation-day-description > strong').filter({hasText:fullName});
+  await expect(officialName).toHaveCount(1);
+  await expect(officialName).toHaveText(`${countryName} · ${fullName}`);
+  await expect(officialName.locator('..').locator(':scope > p').nth(1)).toHaveText(visibleDate);
   const count=await detail.locator('.preparation-day-description > strong').count();
+  expect(count).toBeGreaterThan(0);
+  const monthNumber=Number(date.slice(5,7)),dayNumber=Number(date.slice(8));
+  await expect(detail.locator('h4')).toHaveText(lang==='ko'?`${monthNumber}월 ${dayNumber}일 · ${count}개 일정`:`${monthNumber}月${dayNumber}日 · ${count}项日程`);
   expect(accessibleBefore).toContain(`${count}개 일정`); // Preserve the existing day-label wording and actual count in both locales.
   await expect(day).toHaveAttribute('aria-label',accessibleBefore!);
  }
