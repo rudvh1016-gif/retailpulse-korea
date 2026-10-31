@@ -1,0 +1,230 @@
+{
+  "workflowRun": "https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/41156980792",
+  "commit": "bfe488d059850bf70d545f3b04ecd2b3fc66bf63",
+  "generatedAt": "2026-10-31T01:47:28.410Z",
+  "windowDays": 7,
+  "daily": {
+    "basis": "OFFICIAL_ANALYTICS",
+    "token": "CLOUDFLARE_API_TOKEN",
+    "rows": [
+      {
+        "date": "2026-10-24",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 2003124,
+        "rowsWritten": 53011,
+        "readQueries": 33086,
+        "writeQueries": 14708
+      },
+      {
+        "date": "2026-10-25",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 2773239,
+        "rowsWritten": 52313,
+        "readQueries": 40354,
+        "writeQueries": 14653
+      },
+      {
+        "date": "2026-10-26",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 3663557,
+        "rowsWritten": 51511,
+        "readQueries": 42449,
+        "writeQueries": 14213
+      },
+      {
+        "date": "2026-10-27",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 1384409,
+        "rowsWritten": 51358,
+        "readQueries": 31600,
+        "writeQueries": 14270
+      },
+      {
+        "date": "2026-10-28",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 5143340,
+        "rowsWritten": 52429,
+        "readQueries": 54643,
+        "writeQueries": 14771
+      },
+      {
+        "date": "2026-10-29",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 1568857,
+        "rowsWritten": 52219,
+        "readQueries": 31526,
+        "writeQueries": 14506
+      },
+      {
+        "date": "2026-10-30",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 4622061,
+        "rowsWritten": 52426,
+        "readQueries": 49270,
+        "writeQueries": 14628
+      },
+      {
+        "date": "2026-10-31",
+        "database": "retailpulse-korea-production (a86b7e71, production binding)",
+        "rowsRead": 152724,
+        "rowsWritten": 2736,
+        "readQueries": 4571,
+        "writeQueries": 1059
+      }
+    ]
+  },
+  "routeCosts": [
+    {
+      "route": "/api/live/flights?date=today",
+      "basis": "OFFICIAL_QUERY_META",
+      "statements": 1,
+      "rowsRead": 1109,
+      "rowsWritten": 0,
+      "unmeasured": 0,
+      "flights": 553,
+      "dataBasis": "COLLECTED_FLIGHT_RECORDS"
+    },
+    {
+      "route": "/api/live/flights?date=yesterday",
+      "basis": "OFFICIAL_QUERY_META",
+      "statements": 1,
+      "rowsRead": 1096,
+      "rowsWritten": 0,
+      "unmeasured": 0,
+      "flights": 546,
+      "dataBasis": "COLLECTED_FLIGHT_RECORDS"
+    },
+    {
+      "route": "/api/live/airport-days?date=today",
+      "basis": "OFFICIAL_QUERY_META",
+      "statements": 1,
+      "rowsRead": 63,
+      "rowsWritten": 0,
+      "unmeasured": 0,
+      "rowsReturned": 63
+    },
+    {
+      "route": "/api/live/airport-months?month=this",
+      "basis": "OFFICIAL_QUERY_META",
+      "statements": 1,
+      "rowsRead": 63,
+      "rowsWritten": 0,
+      "unmeasured": 0,
+      "status": "READY",
+      "rowsReturned": 63
+    }
+  ],
+  "highestReadStatements": {
+    "basis": "OFFICIAL_ANALYTICS",
+    "token": "CLOUDFLARE_API_TOKEN",
+    "window": {
+      "name": "yesterday_utc",
+      "start": "2026-10-30",
+      "end": "2026-10-30"
+    },
+    "rows": [
+      {
+        "calls": 607,
+        "rowsRead": 683309,
+        "rowsWritten": 0,
+        "rowsReturned": 1821,
+        "durationMs": 721.7118999999998,
+        "sql": "SELECT ? AS baselineDate, terminal, COUNT(*) AS flights FROM (SELECT DISTINCT physical_flight_id, terminal FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? AND physical_flight_id IS NOT NULL LIMIT ?) GROUP BY terminal"
+      },
+      {
+        "calls": 225,
+        "rowsRead": 337500,
+        "rowsWritten": 0,
+        "rowsReturned": 324000,
+        "durationMs": 539.2707,
+        "sql": "SELECT terminal, target_date AS targetDate, target_start_at AS targetStartAt, target_end_at AS targetEndAt, expected_passengers AS expectedPassengers, 'departure' AS direction, 1 AS isAggregate FROM airport_passenger_forecast WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ORDER BY target_date, terminal, target_start_at LIMIT ?"
+      },
+      {
+        "calls": 55,
+        "rowsRead": 286730,
+        "rowsWritten": 0,
+        "rowsReturned": 1532,
+        "durationMs": 1206.9106000000002,
+        "sql": "SELECT substr(observed_at,1,10) AS day,MIN(observed_at) AS firstAt,MAX(observed_at) AS latestAt, COUNT(DISTINCT substr(observed_at,12,2)) AS hours, GROUP_CONCAT(DISTINCT CASE WHEN CAST(substr(observed_at,15,2) AS INTEGER)<15 AND population_min IS NOT NULL AND population_max IS NOT NULL AND population_min>=0 AND population_max>=population_min AND julianday(retrieved_at)<=julianday(?) THEN substr(observed_at,12,2)||':'||schema_version END) AS eligible FROM seoul_realtime_area WHERE area=? AND source_id='SEOUL_CITYDATA_PPLTN' AND observed_at>=? AND observed_at<? AND quality_status='VALID' AND rec"
+      },
+      {
+        "calls": 275,
+        "rowsRead": 252863,
+        "rowsWritten": 0,
+        "rowsReturned": 46200,
+        "durationMs": 280.00849999999997,
+        "sql": "SELECT p.target_at AS targetAt,p.value AS predicted,p.created_at AS createdAt,o.actual_value AS actual,o.event_at AS actualAt FROM predictions p LEFT JOIN outcomes o ON o.prediction_id=p.prediction_id AND o.quality_status='VALID' AND o.source_id='SEOUL_CITYDATA_PPLTN' AND o.actual_unit='estimated_people_midpoint' WHERE p.area=? AND p.model_version=? AND p.target_at>=? AND p.target_at<? ORDER BY p.target_at DESC LIMIT ?"
+      },
+      {
+        "calls": 145,
+        "rowsRead": 224743,
+        "rowsWritten": 0,
+        "rowsReturned": 215760,
+        "durationMs": 372.12270000000007,
+        "sql": "SELECT terminal, target_date AS targetDate, target_start_at AS targetStartAt, target_end_at AS targetEndAt, expected_passengers AS expectedPassengers, 'departure' AS direction, 1 AS isAggregate FROM airport_passenger_forecast WHERE direction = 'departure' AND is_aggregate = 1 AND target_date IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ORDER BY target_date, terminal, target_start_at LIMIT ?"
+      },
+      {
+        "calls": 454,
+        "rowsRead": 196582,
+        "rowsWritten": 0,
+        "rowsReturned": 21792,
+        "durationMs": 232.94509999999997,
+        "sql": "SELECT terminal, direction, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw, target_start_at AS targetStartAt, target_end_at AS targetEndAt, expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt FROM airport_passenger_forecast WHERE direction = 'departure' AND is_aggregate = 1 AND target_date = ? ORDER BY target_start_at, terminal LIMIT ?"
+      },
+      {
+        "calls": 308,
+        "rowsRead": 181694,
+        "rowsWritten": 0,
+        "rowsReturned": 88704,
+        "durationMs": 874.6405000000001,
+        "sql": "SELECT terminal, direction, is_aggregate AS isAggregate, target_date AS targetDate, time_band_raw AS timeBandRaw, target_start_at AS targetStartAt, target_end_at AS targetEndAt, expected_passengers AS expectedPassengers, retrieved_at AS retrievedAt FROM airport_passenger_forecast f WHERE f.direction IN ('departure', 'arrival') AND f.is_aggregate = 1 AND f.target_date IN (?, ?, ?) ORDER BY target_date DESC, direction, target_start_at, terminal LIMIT ?"
+      },
+      {
+        "calls": 151,
+        "rowsRead": 144974,
+        "rowsWritten": 0,
+        "rowsReturned": 72234,
+        "durationMs": 400.2798000000001,
+        "sql": "SELECT physical_flight_id AS physicalFlightId, flight_number AS flightNumber, airline_code AS airlineCode, airport_code AS airportCode, direction, terminal, gate, aircraft_subtype AS aircraftSubtype, aircraft_reg_no AS aircraftRegNo, checkin_counter AS checkinCounter, status, scheduled_at AS scheduledAt, retrieved_at AS retrievedAt FROM airport_flights WHERE direction IN ('departure', 'arrival') AND scheduled_at >= ? AND scheduled_at < ? ORDER BY scheduled_at, flight_number LIMIT ?"
+      },
+      {
+        "calls": 316,
+        "rowsRead": 131294,
+        "rowsWritten": 0,
+        "rowsReturned": 131209,
+        "durationMs": 392.95430000000005,
+        "sql": "SELECT physical_flight_id AS physicalFlightId, terminal, gate, retrieved_at AS retrievedAt, flight_number AS operatingFlight, scheduled_at AS scheduledAt, status FROM airport_flights WHERE direction = 'departure' AND scheduled_at >= ? AND scheduled_at < ? AND ? <> 'FUTURE' LIMIT ?"
+      },
+      {
+        "calls": 398,
+        "rowsRead": 123778,
+        "rowsWritten": 0,
+        "rowsReturned": 60496,
+        "durationMs": 336.55320000000006,
+        "sql": "SELECT * FROM (SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode, trade_area_name AS tradeAreaName, industry_name AS industryName, sales_amount AS salesAmount, retrieved_at AS retrievedAt FROM seoul_estimated_sales WHERE area = ? AND quarter_code = (SELECT MAX(quarter_code) FROM seoul_estimated_sales WHERE area = ?) ORDER BY sales_amount DESC) UNION ALL SELECT * FROM (SELECT area, quarter_code AS quarterCode, trade_area_code AS tradeAreaCode, trade_area_name AS tradeAreaName, industry_name AS industryName, sales_amount AS salesAmount, retrieved_at AS retrievedAt FROM s"
+      },
+      {
+        "calls": 594,
+        "rowsRead": 109890,
+        "rowsWritten": 0,
+        "rowsReturned": 6534,
+        "durationMs": 154.54940000000002,
+        "sql": "SELECT name FROM sqlite_master WHERE (type='table' AND name IN ('operational_incidents','operational_incident_events','operational_recovery_attempts','operational_source_state','operational_usage_daily')) OR (type='trigger' AND name='operational_event_fold') OR (type='index' AND name IN ('operational_incident_source_idx','operational_event_incident_idx','operational_attempt_budget_idx','operational_attempt_execution_idx','operational_attempt_inflight_idx'))"
+      },
+      {
+        "calls": 117,
+        "rowsRead": 89112,
+        "rowsWritten": 0,
+        "rowsReturned": 8821,
+        "durationMs": 180.49170000000004,
+        "sql": "SELECT facility_id AS facilityId, name_ko AS nameKo, name_en AS nameEn, name_zh AS nameZh, name_ja AS nameJa, facility_item AS facilityItem, large_category AS largeCategory, medium_category AS mediumCategory, small_category AS smallCategory, category_group AS categoryGroup, terminal, floor, duty_area AS dutyArea, arrival_departure AS arrivalDeparture, location_raw AS locationRaw, location_en AS locationEn, business_hours_raw AS businessHoursRaw, goods_brands AS goodsBrands, phone, retrieved_at AS retrievedAt FROM airport_facility WHERE terminal = ? ORDER BY name_ko LIMIT ? OFFSET ?"
+      }
+    ]
+  },
+  "caveats": [
+    "UTC daily buckets; today is partial.",
+    "SQL does not expose bound values.",
+    "Official Analytics may lag; diagnostic replay is separate official query meta.",
+    "Collector ledger is only a measured lower bound, not the account total."
+  ]
+}

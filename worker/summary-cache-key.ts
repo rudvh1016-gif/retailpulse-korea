@@ -27,7 +27,7 @@
  * `tests/summary-cache-key.test.mjs` runs the real route on the original and the
  * reduced URL and requires the same answer.
  */
-import { AIRPORT_MONTH_CACHE_PATHS } from "./summary-cache-routing";
+import { AIRPORT_MONTH_CACHE_PATHS, PREDICTIONS_CACHE_PATH } from "./summary-cache-routing";
 import { kstDayOf, isValidKstDay } from "../lib/kst";
 import { RECORD_AREAS } from '../lib/monthly-records';
 
@@ -43,6 +43,14 @@ function validMonth(value: string | null): string | null {
  * so `?date=bad&date=2026-09-01` is "today" here just as it is in the route.
  */
 export function canonicalSummaryUrl(url: URL, now = new Date()): string {
+  if (url.pathname === PREDICTIONS_CACHE_PATH) {
+    // The route reads the first area only, defaulting only when it is absent.
+    // Preserve invalid/empty selections as 400, never another area's evidence.
+    const query = new URLSearchParams({ area: url.searchParams.get('area') ?? 'myeongdong' });
+    // Both tomorrow's forecast and the seven-day outcome window change at midnight.
+    query.set('_kstDay', kstDayOf(now.toISOString()));
+    return `${url.origin}${url.pathname}?${query}`;
+  }
   if (AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) {
     // Both routes read only the first month. Preserve even invalid/empty input:
     // unlike summary, these routes return 400 rather than defaulting it.
@@ -101,7 +109,7 @@ export function canonicalSummaryRequest(request: Request, url: URL): Request {
   // D1 read either: the route's own response header is the freshness contract.
   // Prepared month reads similarly use browser no-store, with an existing
   // shared TTL on READY and no-store on missing/error responses.
-  const dropped = (url.pathname === '/api/live/flights' || AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) ? ["authorization", "cache-control", "pragma"] : ["authorization"];
+  const dropped = (url.pathname === '/api/live/flights' || url.pathname === PREDICTIONS_CACHE_PATH || AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) ? ["authorization", "cache-control", "pragma"] : ["authorization"];
   if (canonical === url.href && !dropped.some((name) => request.headers.has(name))) return request;
   const headers = new Headers(request.headers);
   for (const name of dropped) headers.delete(name);
