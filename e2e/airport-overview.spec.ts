@@ -137,10 +137,13 @@ test('real model and route countries survive without the zone passenger estimate
   await expect(reference).toHaveCount(0);await expect(slot.getByTestId('airport-reference-pillars')).toHaveCount(0);
   for(const id of ['split-estimate','split-shares','flight-split'])await expect(page.getByTestId('overview-T1').getByTestId(id)).toHaveCount(0);
   await expect(slot.getByTestId('airport-concept-model')).toBeVisible();
-  await expect(slot.getByTestId('map-zone-countries')).toBeVisible();
+  await expect(slot.getByTestId('map-zone-countries')).toHaveCount(0);
+  await expect(slot.getByRole('link',{name:'Departures by country and zone ↗'})).toBeVisible();
   const order=await slot.getByTestId('departure-map').evaluate(node=>Array.from(node.children).map(child=>child.getAttribute('data-testid')));
   expect(order.indexOf('airport-top-reference')).toBe(-1);
-  expect(order.indexOf('airport-month-flights')).toBeLessThan(order.indexOf('map-zone-countries'));
+  expect(order.indexOf('airport-month-flights')).toBeGreaterThanOrEqual(0);
+  await page.goto(`/en/airport-countries?mode=zones&date=${DATE}&building=all`);
+  await expect(page.getByTestId('map-zone-countries')).toBeVisible();
 });
 test('time and terminal controls retain real flight views while the removed estimate stays absent', async ({page})=>{
  await open(page,{lang:'en'});const map=page.getByTestId('departure-map'),reference=page.getByTestId('airport-top-reference');await expect(reference).toHaveCount(0);
@@ -154,6 +157,7 @@ for (const width of [320, 390, 430]) {
   test(`real country evidence stays readable and keyboard reachable at ${width}px`, async ({ page }) => {
     await open(page, { lang: 'en', width });
     await expect(page.getByTestId('airport-top-reference')).toHaveCount(0);
+    await page.goto(`/en/airport-countries?mode=zones&date=${DATE}&building=all`);
     const reference = page.getByTestId('map-zone-countries');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await reference.locator('details.prep-evidence > summary').first().focus();

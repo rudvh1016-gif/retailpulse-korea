@@ -73,12 +73,12 @@ export function SiteUsageGuide({ lang }: { lang: Lang }) {
   return <section className="site-usage-guide" aria-labelledby="site-usage-title">
     <h2 data-heading="section" id="site-usage-title"><span className="heading-marker" aria-hidden="true"/>{t.title}</h2>
     <p>{t.intro}</p>
-    {(lang==='ko'||lang==='zh')&&<details id="airport-usage-guide" data-testid="airport-usage-guide"><summary style={disclosureStyle}>{lang==='zh'?'仁川机场使用指南':'인천공항 이용 방법'}</summary>
+    {(lang==='ko'||lang==='zh'||lang==='en')&&<details id="airport-usage-guide" data-testid="airport-usage-guide"><summary style={disclosureStyle}>{lang==='zh'?'仁川机场使用指南':lang==='en'?'Incheon Airport usage guide':'인천공항 이용 방법'}</summary>
       <dl>
-        <div><dt><a href={`/${lang}`}>{lang==='zh'?'机场一览':'공항한눈에'}</a></dt><dd>{lang==='zh'?'查看今天的预计人数与出发航班，比较两段时期的时段、星期与航站楼变化':'오늘 예상 인원·출발편을 확인하고, 두 기간의 시간대·요일·터미널 변화를 비교합니다'}</dd></div>
-        <div><dt><a href={`/${lang}/airport`}>{lang==='zh'?'机场现状':'공항현황'}</a></dt><dd>{lang==='zh'?'选择工作航站楼，查看出境大厅等候和各时段出发航班':'근무 터미널을 선택해 출국장 대기와 시간대별 출발편을 확인합니다'}</dd></div>
-        <div><dt><a href={`/${lang}/airport-countries`}>{lang==='zh'?'各国趋势':'국가별 흐름'}</a></dt><dd>{lang==='zh'?'分别查看全机场各国月度旅客人数与各航站楼航班变化':'공항 전체의 국가별 월 여객과 터미널별 항공편 변화를 각각 확인합니다'}</dd></div>
-        <div><dt><a href={`/${lang}/airport-prepare`}>{lang==='zh'?'提前准备':'미리 준비'}</a></dt><dd>{lang==='zh'?'查看各国节假日与目的地入境免税额度':'국가별 휴일과 도착국 반입 면세한도를 확인합니다'}</dd></div>
+        <div><dt><a href={`/${lang}`}>{lang==='zh'?'机场一览':lang==='en'?'Airport at a glance':'공항한눈에'}</a></dt><dd>{lang==='zh'?'查看今天的预计人数与出发航班，比较两段时期的时段、星期与航站楼变化':lang==='en'?'Check forecast people and departures, then compare hours, weekdays and terminals across two periods.':'오늘 예상 인원·출발편을 확인하고, 두 기간의 시간대·요일·터미널 변화를 비교합니다'}</dd></div>
+        <div><dt><a href={`/${lang}/airport`}>{lang==='zh'?'机场现状':lang==='en'?'Airport status':'공항현황'}</a></dt><dd>{lang==='zh'?'选择工作航站楼，查看出境大厅等候和各时段出发航班':lang==='en'?'Select a terminal to check departure-hall waits and hourly departures.':'근무 터미널을 선택해 출국장 대기와 시간대별 출발편을 확인합니다'}</dd></div>
+        <div><dt><a href={`/${lang}/airport-countries`}>{lang==='zh'?'各国趋势':lang==='en'?'Route-country trends':'국가별 흐름'}</a></dt><dd>{lang==='zh'?'分别查看全机场各国月度旅客人数与各航站楼航班变化':lang==='en'?'View airport-wide monthly passengers by country separately from terminal flight changes.':'공항 전체의 국가별 월 여객과 터미널별 항공편 변화를 각각 확인합니다'}</dd></div>
+        <div><dt><a href={`/${lang}/airport-prepare`}>{lang==='zh'?'提前准备':lang==='en'?'Prepare ahead':'미리 준비'}</a></dt><dd>{lang==='zh'?'查看各国节假日与目的地入境免税额度':lang==='en'?'Check country holidays and destination arrival allowances.':'국가별 휴일과 도착국 반입 면세한도를 확인합니다'}</dd></div>
       </dl>
     </details>}
     <details data-testid="usage-examples"><summary style={disclosureStyle}>{examples}</summary>

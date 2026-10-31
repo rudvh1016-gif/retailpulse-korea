@@ -134,8 +134,8 @@ for (const lang of ["ko", "en", "zh", "ja"] as const) {
       await expect(mtd).toContainText(mtdCopy.previous[lang]);
       await expect(mtd).toContainText("42,120");           // 13 x 3,240
       await expect(mtd).toContainText("+11%");
-      await expect(mtd).toContainText("9/1–9/13");
-      await expect(mtd).toContainText("8/1–8/13");
+      await expect(mtd).toContainText("9/1 ~ 9/13");
+      await expect(mtd).toContainText("8/1 ~ 8/13");
 
       // The cumulative line is GONE (owner decision, 2026-09-15) and must stay
       // gone: no polyline, no end dot, and no legend that existed only to tell

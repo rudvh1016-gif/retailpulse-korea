@@ -113,10 +113,10 @@ test("event copy uses only official allowlisted facts and always carries the ope
   }, "ko");
 
   assert.equal(officialEventPeriod({ eventStart: "2026-09-04", eventEnd: "2026-09-04" }), "2026-09-04");
-  assert.equal(officialEventPeriod({ eventStart: "2026-09-01", eventEnd: "2026-09-07" }), "2026-09-01 – 2026-09-07");
+  assert.equal(officialEventPeriod({ eventStart: "2026-09-01", eventEnd: "2026-09-07" }), "2026-09-01 ~ 2026-09-07");
   assert.deepEqual(copy.split("\n"), [
     `행사명: ${sourceTitle}`,
-    "공식 행사기간: 2026-09-01 – 2026-09-07",
+    "공식 행사기간: 2026-09-01 ~ 2026-09-07",
     "주소: 서울특별시 중구 명동길 1 · 광장 2층",
     "공식 안내: https://example.org/official-event",
     "출처: 한국관광공사",

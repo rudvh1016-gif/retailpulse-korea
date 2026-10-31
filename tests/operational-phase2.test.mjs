@@ -198,6 +198,11 @@ for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtur
 for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtures/chinese-frame-headers-approved-patches.json","utf8")))){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }
+// Owner explicitly approved the six reviewed date-range/English UI files and
+// two SEO description edits. Reverse exact unique hunks; retain hashes/crons.
+for(const [file,patches] of Object.entries(JSON.parse(readFileSync('tests/fixtures/ui-localization-20261031-approved-patches.json','utf8')))){
+ approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+}
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

@@ -57,7 +57,7 @@ const AirportCheckpointSchematic = lazy(() => import('./airport-checkpoint-defer
  */
 function formatRemainingWindow(remaining: NonNullable<RemainingForecast>): string {
   const end = formatKstClock(remaining.toAt);
-  return `${formatKstClock(remaining.fromAt)}–${end === "00:00" ? "24:00" : end} KST`;
+  return `${formatKstClock(remaining.fromAt)} ~ ${end === "00:00" ? "24:00" : end} KST`;
 }
 
 /**
@@ -104,10 +104,10 @@ const arrivalSectionText = {
 function flowCoverageSentence(lang: Lang, serviceDate: string, scope: string, timeline: ForecastBand[]): string {
   if (!timeline.length) return `${serviceDate} ${scope} · ${airportTodayText.unavailable[lang]}`;
   const end = formatKstClock(timeline.at(-1)!.targetEndAt);
-  const span = `${formatKstClock(timeline[0].targetStartAt)}–${end === "00:00" ? "24:00" : end}`;
+  const span = `${formatKstClock(timeline[0].targetStartAt)} ~ ${end === "00:00" ? "24:00" : end}`;
   const count = timeline.length;
   return contextText(lang,
-    `${serviceDate} ${scope} 기준, ${span.replace("–", "부터 ")}까지 ${count}개 시간대를 확인했습니다.`,
+    `${serviceDate} ${scope} 기준, ${span.replace(" ~ ", "부터 ")}까지 ${count}개 시간대를 확인했습니다.`,
     `${serviceDate}, ${scope}: ${count} hourly bands confirmed, ${span} KST.`,
     `${serviceDate} ${scope}：已确认${span}（KST）的${count}个时段。`,
     `${serviceDate} ${scope}：${span}（KST）の${count}個の時間帯を確認しました。`);
@@ -1277,11 +1277,11 @@ function MyStoreSnapshot({ lang, operations }: { lang: Lang; operations: Operati
           </div>)}
           {brief.nextBand && <div>
             <dt>{myStoreText.nextBand[lang]}</dt>
-            <dd>{bandClock(brief.nextBand.targetStartAt, lang)}–{bandClock(brief.nextBand.targetEndAt, lang)} · {count(brief.nextBand.expectedPassengers)}{myStoreText.passengersUnit[lang]}</dd>
+            <dd>{bandClock(brief.nextBand.targetStartAt, lang)} ~ {bandClock(brief.nextBand.targetEndAt, lang)} · {count(brief.nextBand.expectedPassengers)}{myStoreText.passengersUnit[lang]}</dd>
           </div>}
           {brief.nextPeak && <div>
             <dt>{myStoreText.nextPeak[lang]}</dt>
-            <dd>{bandClock(brief.nextPeak.targetStartAt, lang)}–{bandClock(brief.nextPeak.targetEndAt, lang)} · {count(brief.nextPeak.expectedPassengers)}{myStoreText.passengersUnit[lang]}</dd>
+            <dd>{bandClock(brief.nextPeak.targetStartAt, lang)} ~ {bandClock(brief.nextPeak.targetEndAt, lang)} · {count(brief.nextPeak.expectedPassengers)}{myStoreText.passengersUnit[lang]}</dd>
           </div>}
           {brief.checkpoint && <div>
             <dt>{myStoreText.checkpoint[lang]}</dt>

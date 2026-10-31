@@ -57,7 +57,7 @@ test('both locales expose the same glance and country controls while English and
   const ko=render('ko'),zh=render('zh');
   assert.equal((zh.match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?5:3);
   assert.deepEqual(attrs(zh),attrs(ko));assert.doesNotMatch(zh.replace(/<script[^>]*>[\s\S]*?<\/script>/g,''),hangul);
-  assert.equal(render('en'),'<p>Existing content</p>');assert.equal(render('ja'),'<p>Existing content</p>');
+  assert.equal((render('en').match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?5:3);assert.doesNotMatch(render('en'),hangul);assert.equal(render('ja'),'<p>Existing content</p>');
  }
  const source=read('app/airport-period-insights.tsx');
  assert.match(source,/lang==='zh'\?'frame-zh\.html':'frame\.html'/);

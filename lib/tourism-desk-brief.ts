@@ -152,7 +152,7 @@ function forecastBand(input: NonNullable<TourismDeskInput["crowdForecast"]>, lan
     : input.dayOffset === "TOMORROW"
       ? { ko: "내일", en: "tomorrow", zh: "明天", ja: "明日" }[lang]
       : day(input.targetAt, lang);
-  return `${when} ${startText}–${endText}`;
+  return `${when} ${startText} ~ ${endText}`;
 }
 
 type SubwayComparisonKind = "sameWeekdayLastWeek" | "recentSevenDayAverage" | "previousDay";

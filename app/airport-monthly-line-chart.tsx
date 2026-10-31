@@ -105,7 +105,7 @@ export default function MonthlyLineChart({row,lang='ko'}:{row:FocusTrend;lang?:L
     aria-describedby={activeMonth===point.month?tooltipId:undefined}
     onPointerEnter={event=>{if(event.pointerType!=='touch'&&!drag.current)setActiveMonth(point.month);}}
     onFocus={()=>setActiveMonth(point.month)} onClick={()=>{setActiveMonth(point.month);setPinned(true);}}
-    onKeyDown={event=>move(event,index)}><span className="sr-only">{chineseText(lang,monthLabel(point.month))}{chineseText(lang," 여객 수 확인")}</span></button>)}
+    onKeyDown={event=>move(event,index)}><span className="sr-only">{chineseText(lang,monthLabel(point.month))}{lang==='en'?' passenger count':chineseText(lang," 여객 수 확인")}</span></button>)}
    {active&&<div id={tooltipId} role="tooltip" className="focus-month-tooltip"
     style={{left:`clamp(8px, calc(${x(activeIndex)/width*100}% - 76px), calc(100% - 160px))`,top:`max(0px, calc(${(active.departures===null?100:y(active.departures))/height*100}% - 38px))`}}>{chineseText(lang,readout(active))}</div>}
   </div>

@@ -29,6 +29,29 @@ const day='2026-10-19';
 const selectedFlights=Object.fromEntries((['all','T1','CONCOURSE','T2'] as GlanceScope[]).map(scope=>[scope,glanceFlights(day,flights.flights,scope).total]));
 // Synthetic comparison values; source fixtures do not prove historical completion.
 const reference={day,previousDay:'2026-10-12',passengers:{all:110000,T1:60000,T2:50000},selectedFlights,flights:{all:selectedFlights.all+10,T1:selectedFlights.T1+2,CONCOURSE:selectedFlights.CONCOURSE+1,T2:selectedFlights.T2+7}};
+
+for(const width of [320,390,1440])test(`exact collected periods and emphasized weekday remain readable at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await fixtures(page);
+ const observedDays=Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+9).padStart(2,'0')}`,departures:90000,transfers:10000}));
+ const baseline={month:'2026-09',start:'2026-09-01',end:'2026-09-30',status:'PARTIAL',expectedDays:30,completeDays:22,mean:null,missingDates:Array.from({length:8},(_,i)=>`2026-09-0${i+1}`),observedDays};
+ await page.route('**/api/live/passenger-reference*',route=>route.fulfill({json:{status:'READY',month:'2026-09',data:{all:baseline,T1:baseline,T2:baseline}}}));
+ await page.goto(`/ko?date=${day}`,{waitUntil:'domcontentloaded'});
+ const report=page.locator('.focus-report'),basis=report.locator('.focus-passenger-comparison .focus-comparison-basis');
+ await expect(basis.locator('strong')).toHaveText('9/9 ~ 9/30 (수집 22일)');
+ await expect(basis).not.toContainText('MTD');
+ await report.locator('.focus-passenger-calculation>summary').click();
+ for(const note of await report.locator('.focus-passenger-calculation>p').all())await expect(note).toHaveCSS('font-size','11px');
+ await expect(report.locator('.focus-preparation-brief>.focus-planning-basis')).toHaveCount(0);
+ await expect(report.locator('.focus-preparation-brief .focus-planning-link')).toHaveCount(0);
+ for(const row of await report.locator('.focus-week-basis').all()){
+  await expect(row.locator('strong')).toHaveText('지난주 같은 요일');await expect(row).not.toContainText('공항 전체');
+ }
+ for(const row of await report.locator('.focus-core-metric :is(.focus-week-basis,.focus-comparison-basis,.daily-comparison-basis)').all()){
+  const geometry=await row.evaluate(comparisonTextGeometry);expect(geometry.overflow).toEqual([]);
+ }
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await page.screenshot({path:`test-results/comparison-period-${width}.png`,fullPage:false});
+});
 async function fixtures(page:Page){
  await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,route=>route.fulfill({json}));

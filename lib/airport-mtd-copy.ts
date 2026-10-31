@@ -70,7 +70,7 @@ export const mtdCopy = {
 /** "2026-09-01"~"2026-09-13" -> "9/1–9/13": the same digits in every locale. */
 export function shortRange(start: string, end: string): string {
   const short = (date: string) => `${Number(date.slice(5, 7))}/${Number(date.slice(8, 10))}`;
-  return `${short(start)}–${short(end)}`;
+  return `${short(start)} ~ ${short(end)}`;
 }
 
 export function shortDay(date: string): string {

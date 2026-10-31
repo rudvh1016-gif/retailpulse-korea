@@ -124,7 +124,7 @@ for(const width of [360,1440])test(`CN holiday overlap and independent flight co
  await page.goto('/airport-period/frame.html?date=2026-10-19&view=holiday');
  await page.locator('[data-holiday="CN"]').filter({hasText:'10/01'}).click();
  const context=page.locator('#holiday-calendar-context'),before=context.locator('[data-period="previous"]'),after=context.locator('[data-period="current"]');
- await expect(before).toContainText('중추절');await expect(before).toContainText('2026-09-25~2026-09-27');
+ await expect(before).toContainText('중추절');await expect(before).toContainText('2026-09-25 ~ 2026-09-27');
  await expect(before).toContainText('항공편 수집 7/7일');await expect(after).toContainText('항공편 수집 6/7일');
  await expect(before).toContainText('한국 출발지 참고');await expect(before).toContainText('추석');
  await expect(context).not.toContainText('경로의 날');await expect(context).toContainText('회색: 기준 · 파랑: 비교 (휴일 여부와 무관)');
@@ -142,7 +142,7 @@ test('failed calendar leaves flights visible and says unknown, never no holidays
  await expect(page.locator('#holiday-calendar-context')).not.toContainText('조정 휴무 없음');
 });
 test('More explains airport roles with compact type and notice links match the release',async({page})=>{
- await page.goto('/ko/more');const guide=page.locator('.site-usage-guide');
+ await page.goto('/ko/more');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const guide=page.locator('.site-usage-guide');
  await expect(guide.locator('h2')).toHaveText('누가, 어떻게 쓰면 좋을까요?');
  await expect(guide.locator('p').first()).toHaveCSS('font-size','13px');
  const airportGuideButton=page.locator('.more-section-links').getByRole('button',{name:'인천공항 이용 방법'});
@@ -209,9 +209,9 @@ for(const width of [320,360,365,390,430,600,700])test(`phone heading menu and da
  const boxes=await terminalButtons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,width:b.width,height:b.height};}));
  for(const box of boxes){expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(box.top).toBe(boxes[0].top);}
  expect(boxes[0].left).toBeCloseTo(row.x,1);
- for(let i=1;i<boxes.length;i++)expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(8,1);
+ for(let i=1;i<boxes.length;i++)expect(boxes[i].left-boxes[i-1].right).toBeCloseTo(i===1?0:i===2?16:8,1);
  expect(boxes[3].right).toBeLessThanOrEqual(row.x+row.width+1);
- await expect(controls).toHaveCSS('margin-top','2px');await expect(controls).toHaveCSS('padding-bottom','0px');await expect(controls).toHaveCSS('row-gap','4px');
+ await expect(controls).toHaveCSS('margin-top','0px');await expect(controls).toHaveCSS('padding-bottom','0px');await expect(controls).toHaveCSS('row-gap','4px');
  await expect(terminalButtons.first()).toHaveCSS('padding-left','0px');
  for(const button of await terminalButtons.all())expect(await button.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
  await terminalButtons.last().click();await expect(terminalButtons.last()).toHaveAttribute('aria-pressed','true');
@@ -226,7 +226,7 @@ for(const width of [320,360,390,430,700])test(`country phone tabs remain one rea
  const boxes=await buttons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(node);return {y:b.y,width:b.width,height:b.height,textHeight:range.getBoundingClientRect().height,lineHeight:parseFloat(getComputedStyle(node).lineHeight)};}));
  for(const box of boxes){expect(box.y).toBe(boxes[0].y);expect(box.width).toBeGreaterThanOrEqual(44);expect(box.height).toBeGreaterThanOrEqual(44);expect(box.textHeight).toBeLessThanOrEqual(box.lineHeight+1);}
  await buttons.first().focus();await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');
- const last=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;expect(last.x).toBeGreaterThanOrEqual(strip.x-1);expect(last.x+last.width).toBeLessThanOrEqual(strip.x+strip.width+1);
+ await expect.poll(async()=>{const last=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;return Math.max(strip.x-last.x,last.x+last.width-strip.x-strip.width);}).toBeLessThanOrEqual(1);
  await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');
  await buttons.nth(1).click();await expect(buttons.nth(1)).toHaveAttribute('aria-selected','true');await buttons.first().click();await expect(buttons.first()).toHaveAttribute('aria-selected','true');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
@@ -253,7 +253,7 @@ for(const width of [701,1024,1440])test(`desktop keeps deployed airport gutters 
  await expect(page.locator('.airport-insight-shell')).toHaveCSS('padding-left','24px');
  await expect(page.locator('.airport-insight-tabs:not(.country-tabs)')).toHaveCSS('display','grid');
  const controls=page.locator('.airport-focus-operating .glance-controls');
- await expect(controls).toHaveCSS('margin-top','12px');await expect(controls).toHaveCSS('padding-bottom','8px');
+ await expect(controls).toHaveCSS('margin-top','8px');await expect(controls).toHaveCSS('padding-bottom','8px');
  await expect(controls.locator(':scope > div[role=group]')).toHaveCSS('gap','6px');
  await page.screenshot({path:testInfo.outputPath(`desktop-glance-unchanged-${width}.png`),fullPage:true});
  await page.goto('/ko/airport-countries?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.country-tabs')).toHaveCSS('display','grid');

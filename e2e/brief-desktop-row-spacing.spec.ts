@@ -43,7 +43,8 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  expect(await disclosures.count()).toBeGreaterThan(0);
  await expect(future.locator(':scope > div > small')).toHaveCount(0);
  await expect(future.locator('.focus-preparation-events')).toHaveCSS('margin-bottom',width<=700?'0px':'5px');
- await expect(future.locator(':scope > .focus-planning-basis')).toHaveCSS('margin-top',width<=700?'4px':'8px');
+ await expect(future.locator(':scope > .focus-planning-basis')).toHaveCount(0);
+ await expect(future.locator('.focus-planning-link')).toHaveCount(0);
  const heights:number[]=[],leftTops:number[][]=[];
  for(const expanded of [true,false]){
   for(const disclosure of await disclosures.all()){
@@ -125,7 +126,8 @@ for(const width of [390,1440])for(const count of [0,1,2])test(`return planning k
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
  await page.route('**/api/airport/calendar*',r=>r.fulfill({json:{status:'PARTIAL',events:['TH','PH'].slice(0,count).map(country=>({id:'return-layout-'+country,country,name:'Synthetic return holiday '+country,kind:'public_holiday',status:'verified',scope:'national',start:'2026-10-19',end:'2026-10-19',verifiedAt:'2026-10-01',sourceURL:'https://example.test/return-layout'})),calendarReplacementScopes:[],sources:[],checkedAt:null}}));
  await page.goto('/ko?date=2026-10-19');const group=page.locator('.focus-return-context');await expect(group).toHaveCount(count?1:0);if(!count)return;
- const cards=group.locator('.focus-return-events>.focus-preparation-event');await expect(cards).toHaveCount(count);
+  await expect(group.locator(':scope > small')).toHaveCount(0);
+  const cards=group.locator('.focus-return-events>.focus-preparation-event');await expect(cards).toHaveCount(count);
  for(const card of await cards.all()){
   await expect(card.locator('h4')).toBeVisible();await expect(card.locator('time').first()).toHaveAttribute('datetime','2026-10-19');
   const details=card.locator('.focus-event-details');await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');await expect(details.getByRole('link')).toHaveAttribute('href','https://example.test/return-layout');

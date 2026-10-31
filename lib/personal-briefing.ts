@@ -35,7 +35,7 @@ export function buildPersonalBrief(summary: LiveSummary | null | undefined, p: P
     if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && finite(passengers)) add('passengers',pc('expectedDepartures',lang),num(passengers),pc('forecast',lang),at ?? undefined);
     const peak = all ? a.peakExpectedTimeBand : a.peakExpectedTimeBandByTerminal?.[p.terminal];
     const peakFrom = peak ? clock(peak.targetStartAt) : '', peakTo = peak ? clock(peak.targetEndAt) : '';
-    if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && peak && kstDay(peak.targetStartAt)===date && peakFrom && peakTo) add('crowding',pc('peak',lang),`${peakFrom}–${peakTo}`,`${pc('forecast',lang)} · KST`,at ?? undefined,finite(peak.expectedPassengers)?[`${num(peak.expectedPassengers)}${pc('peopleUnit',lang)}`]:undefined);
+    if (p.terminal !== 'CONCOURSE' && coverage === 'COMPLETE' && peak && kstDay(peak.targetStartAt)===date && peakFrom && peakTo) add('crowding',pc('peak',lang),`${peakFrom} ~ ${peakTo}`,`${pc('forecast',lang)} · KST`,at ?? undefined,finite(peak.expectedPassengers)?[`${num(peak.expectedPassengers)}${pc('peopleUnit',lang)}`]:undefined);
     // Scope counters start at zero even when the date has no collected flights.
     // A real whole-airport count is the evidence gate before exposing any scope.
     const flights = !finite(a.departuresTrackedToday) ? null : p.terminal === 'CONCOURSE' ? a.flightScope?.CONCOURSE : all ? a.departuresTrackedToday : a.departuresTrackedTodayByTerminal?.[p.terminal];

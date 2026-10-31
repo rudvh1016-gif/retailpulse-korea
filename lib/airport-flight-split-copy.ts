@@ -173,7 +173,7 @@ export function flightSentence(s: SplitCore, lang: Lang): string {
 
 /** One hour of the comparison, kept short enough for a phone. The shares are of the confirmed east + west flights. */
 export function hourBody(h: SplitHour, lang: Lang): string {
-  const span = lang === "en" ? `${hh(h.hour)}:00–${hh(h.hour + 1)}:00` : `${hh(h.hour)}–${hh(h.hour + 1)}${row("시", "", "时", "時")[lang]}`;
+  const span = lang === "en" ? `${hh(h.hour)}:00 ~ ${hh(h.hour + 1)}:00` : `${hh(h.hour)} ~ ${hh(h.hour + 1)}${row("시", "", "时", "時")[lang]}`;
   const east = lang === "en" ? "E" : lang === "ko" ? "동" : lang === "zh" ? "东" : "東";
   const west = lang === "en" ? "W" : lang === "ko" ? "서" : lang === "zh" ? "西" : "西";
   const shares = h.eastPct !== null && h.westPct !== null ? ` (${east} ${h.eastPct}% · ${west} ${h.westPct}%)` : "";

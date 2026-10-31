@@ -3,7 +3,7 @@ import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
-for(const width of [390,1440])test(`one airport-flow section joins key metrics and staff details ${width}`,async({page},info)=>{
+for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins key metrics and staff details ${width}`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
@@ -35,6 +35,17 @@ for(const width of [390,1440])test(`one airport-flow section joins key metrics a
  expect(timeBox!.y-(sourceBox!.y+sourceBox!.height)).toBeGreaterThanOrEqual(width<=700?24:16);
  const basis=briefing.locator('.staff-route-details');
  await expect(basis.locator('summary')).toHaveCSS('font-size','12px');expect((await basis.locator('summary').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ const routeSection=briefing.locator('.staff-brief-grid>section').nth(1);
+ const upper=await flow.getByTestId('glance-key-upcoming').boundingBox(),lower=await routeSection.boundingBox();
+ if(width>700)expect(lower!.x).toBeCloseTo(upper!.x,1);
+ else {const first=await briefing.locator('.staff-brief-grid>section').first().boundingBox();expect(lower!.x).toBeCloseTo(first!.x,1);expect(lower!.y).toBeGreaterThan(first!.y+first!.height);}
+ const labels=briefing.locator('.staff-terminal-label');expect(await labels.count()).toBeGreaterThan(0);
+ const colors={T1:'rgb(161, 45, 63)',T2:'rgb(36, 87, 166)',CONCOURSE:'rgb(23, 103, 91)'};
+ for(const label of await labels.all()){
+  const terminal=await label.getAttribute('data-terminal') as keyof typeof colors;
+  await expect(label).toHaveCSS('color',colors[terminal]);await expect(label).toHaveCSS('white-space','nowrap');
+  await expect(label.locator('..').locator('..')).toHaveCSS('margin-bottom','12px');
+ }
  const routeHeading=briefing.locator('.staff-brief-grid>section').nth(1).locator('h3');await expect(routeHeading).toHaveText('✓노선·휴일 준비');await expect(routeHeading.locator('.airport-flow-check')).toHaveAttribute('aria-hidden','true');await expect(routeHeading.locator('.airport-flow-check')).toHaveCSS('color','rgb(17, 17, 17)');
  await expect(basis).not.toHaveAttribute('open','');
  await expect(basis.locator('p').first()).not.toBeVisible();

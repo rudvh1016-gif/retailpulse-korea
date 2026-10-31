@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {airportTaxRefundLocations,taxRefundEvidence,taxRefundVisuals} from '../lib/airport-tax-refund-guide';
 test('T2 conflicting official positions remain source-specific without a chosen coordinate',()=>{
  const rows=airportTaxRefundLocations.filter(r=>r.terminal==='T2'&&r.securitySide==='AFTER_SECURITY');
- assert.deepEqual(rows.map(r=>[r.source,r.points,r.deskHours]),[['AIRPORT_GUIDE',['253','250'],'07:00–21:30'],['AIRPORT_FACILITIES',['249','270'],null],['KTO',['225','249','274'],'07:30–21:30']]);
+ assert.deepEqual(rows.map(r=>[r.source,r.points,r.deskHours]),[['AIRPORT_GUIDE',['253','250'],'07:00 ~ 21:30'],['AIRPORT_FACILITIES',['249','270'],null],['KTO',['225','249','274'],'07:30 ~ 21:30']]);
  assert.ok(rows.every(r=>r.conflicting&&!('coordinates' in r)));
 });
 test('registration kiosk hours never imply customs staffing and concourse has no fabricated gate',()=>{

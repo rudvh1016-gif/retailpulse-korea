@@ -100,7 +100,7 @@ const PROVIDER_FONT_FACILITY = {
   arrivalDeparture: "DEPARTURE",
   locationRaw: "제1여객터미널 客家旅番福第階 ∙",
   locationEn: "T1 3F airside",
-  businessHoursRaw: "매일 07:00~21:00 ∙ 福",
+  businessHoursRaw: "매일 07:00 ~ 21:00 ∙ 福",
   goodsBrands: "여행·면세 ∙ 福",
   phone: "032-000-0000",
   retrievedAt: "2026-09-04T00:00:00.000Z",

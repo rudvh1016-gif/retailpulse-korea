@@ -28,7 +28,7 @@ for(const lang of ['ko','en','zh','ja'])test(`event country beats largest unrela
  await expect(event.locator('time')).toHaveAttribute('datetime','2026-10-23');
  await expect(metric.locator('.event-flight-baseline')).toBeVisible();await expect(metric.locator('.event-flight-baseline')).toContainText('18.5');
  const details=page.locator('.staff-route-details');await expect(details).not.toHaveAttribute('open','');await details.locator('summary').focus();await page.keyboard.press('Enter');await expect(details).toHaveAttribute('open','');
- await expect(details.locator('.event-flight-basis')).toContainText('2026-09-01–2026-09-30');await expect(details.locator('.staff-route-sample')).toContainText('30');await expect(details).not.toContainText('18.5');
+ await expect(details.locator('.event-flight-basis')).toContainText('2026-09-01 ~ 2026-09-30');await expect(details.locator('.staff-route-sample')).toContainText('30');await expect(details).not.toContainText('18.5');
  await page.locator('.airport-staff-briefing').screenshot({path:info.outputPath(`concise-event-${lang}.png`)});
  await page.keyboard.press('Enter');await expect(details).not.toHaveAttribute('open','');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

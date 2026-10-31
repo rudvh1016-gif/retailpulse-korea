@@ -1042,6 +1042,11 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
     {eyebrow:'02 · AIRPORT',title:'어떤 정보를 볼 수 있나요?',body:'한눈에에서 예상 인원과 출발편을 확인하고 시간대·요일·터미널·연휴 전후를 비교합니다. 공항현황은 대기와 출발편, 국가별 흐름은 목적지별 여객과 항공편, 미리 준비는 휴일과 반입 안내를 제공합니다.'},
     {eyebrow:'03 · READING',title:'숫자와 색은 어떻게 읽나요?',body:'파란색 +는 신장, 빨간색 △는 역신장입니다. 비교 기간·단위·포함 날짜를 함께 확인하세요. 표시 숫자는 반올림하며 계산은 원래 값으로 합니다.'},
     {eyebrow:'04 · LIMITS',title:'자료를 볼 때 주의할 점',body:'예상은 실제 인원이나 매출이 아닙니다. 목적지 국가는 승객 국적이 아닙니다. '+passengerCopy.limitation.ko+' '+passengerCopy.noSum.ko+' 자료가 없을 때는 확인 불가로 표시합니다.'},
+  ] : lang === 'en' ? [
+    {eyebrow:'01 · KORETAIL',title:'Who is KORETAIL for?',body:'Airport retail and food-service staff, sales managers and on-site teams can check today’s Incheon Airport conditions and changing trends. Seoul-area reference data remains available.'},
+    {eyebrow:'02 · AIRPORT',title:'What can I check?',body:'At a glance shows forecast people and departures, with comparisons by hour, weekday, terminal and holiday period. Airport status covers waits and departures; route-country trends covers destination passengers and flights; Prepare ahead provides holidays and arrival guidance.'},
+    {eyebrow:'03 · READING',title:'How should I read the numbers and colors?',body:'A blue + means an increase; a red △ means a decrease. Check the period, unit and included dates together. Displays are rounded, while calculations use original values.'},
+    {eyebrow:'04 · LIMITS',title:'What are the limits?',body:'Forecasts are not actual people counts or sales. Destination countries are not passenger nationalities. '+passengerCopy.limitation.en+' '+passengerCopy.noSum.en+' Missing data is shown as unavailable.'},
   ] : lang === 'zh' ? [
     {eyebrow:'01 · KORETAIL',title:'面向哪些人？',body:'帮助仁川机场销售、餐饮员工及营业、现场管理人员了解机场今天的状况和近期变化。也可继续查看首尔地区资料。'},
     {eyebrow:'02 · AIRPORT',title:'可以查看哪些信息？',body:'机场一览提供预计人数与出发航班，并比较时段、星期、航站楼和节假日前后变化。机场现状提供等候与出发航班，各国趋势提供按目的地分类的旅客及航班资料，提前准备提供节假日与入境携带物品指南。'},
@@ -1054,7 +1059,7 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
       <div className="view-intro">
         <div>
           <p className="eyebrow">ABOUT KORETAIL</p>
-          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "인천공항의 흐름을\n한눈에", en: "Official data only,\nexactly as published", zh: "仁川机场趋势\n一览", ja: "公式データだけを、\nありのままに" })}</h1>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "인천공항의 흐름을\n한눈에", en: "Incheon Airport trends\nat a glance", zh: "仁川机场趋势\n一览", ja: "公式データだけを、\nありのままに" })}</h1>
           <p>{localText(lang, { ko: "인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.", en: "KORETAIL combines Korea and Retail, focusing on Incheon Airport flights, passenger trends and travel preparation, with source dates and references.", zh: "KORETAIL 由 Korea 与 Retail 组合而成，以仁川机场航班、旅客趋势与出行准备为中心，并标明资料日期和来源。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。仁川空港のフライト・旅客動向・旅行準備を中心に、資料の日付と出典を案内します。" })}</p>
         </div>
       </div>

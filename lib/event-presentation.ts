@@ -90,7 +90,7 @@ export function officialEventPeriod(event: Pick<EventPresentationInput, "eventSt
   const start = cleanCopyField(event.eventStart);
   if (!start) return null;
   const end = cleanCopyField(event.eventEnd);
-  return !end || end === start ? start : `${start} – ${end}`;
+  return !end || end === start ? start : `${start} ~ ${end}`;
 }
 
 const COPY_TEXT: Record<EventPresentationLang, {

@@ -138,7 +138,7 @@ export function minuteOfDay(date: string, scheduledAt: unknown): number | null {
 
 export function windowLabel(window: MapWindow): string {
   const clock = (minute: number) => `${pad(Math.floor((minute % 1440) / 60))}:${pad(minute % 60)}`;
-  return `${clock(window.startMin)}–${window.endMin === 1440 ? "24:00" : clock(window.endMin)}${window.endMin > 1440 ? " (+1)" : ""}`;
+  return `${clock(window.startMin)} ~ ${window.endMin === 1440 ? "24:00" : clock(window.endMin)}${window.endMin > 1440 ? " (+1)" : ""}`;
 }
 
 /** Newest row per physical flight, like summarizeGateSides; cancelled ones are dropped here and counted by it. */

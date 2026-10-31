@@ -18,7 +18,7 @@ const locale = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" } as const;
 const num = (value: number, lang: Lang) => new Intl.NumberFormat(locale[lang], { maximumFractionDigits: 1 }).format(value);
 const percent = (value: number, lang: Lang) => new Intl.NumberFormat(locale[lang], { maximumFractionDigits: 0 }).format(value);
 const fl = (value: number, lang: Lang) => lang === "en" ? `${num(value, lang)} ${value === 1 ? "flight" : "flights"}` : `${num(value, lang)}${({ ko: "편", zh: "班", ja: "便" } as const)[lang]}`;
-const hourSpan = (hour: number, lang: Lang) => lang === "en" ? `${String(hour).padStart(2, "0")}:00–${String(hour + 1).padStart(2, "0")}:00` : `${String(hour).padStart(2, "0")}–${String(hour + 1).padStart(2, "0")}${({ ko: "시", zh: "时", ja: "時" } as const)[lang]}`;
+const hourSpan = (hour: number, lang: Lang) => lang === "en" ? `${String(hour).padStart(2, "0")}:00 ~ ${String(hour + 1).padStart(2, "0")}:00` : `${String(hour).padStart(2, "0")} ~ ${String(hour + 1).padStart(2, "0")}${({ ko: "시", zh: "时", ja: "時" } as const)[lang]}`;
 
 export function dayLabel(day: string, lang: Lang): string {
   const weekday = new Intl.DateTimeFormat(locale[lang], { weekday: "short", timeZone: "Asia/Seoul" }).format(new Date(`${day}T12:00:00+09:00`));
@@ -66,10 +66,10 @@ export const dayCopy = {
       `選択日 ${date} · 比較できる過去の記録はありません。`,
     )[lang];
     return row(
-      `선택일 ${date} · 과거 기록 ${from}~${to} 중 비교 가능한 ${count}일을 출발편 수와 시간대 분포 등으로 비교했습니다. 같은 요일만 고른 것은 아닙니다.`,
+      `선택일 ${date} · 과거 기록 ${from} ~ ${to} 중 비교 가능한 ${count}일을 출발편 수와 시간대 분포 등으로 비교했습니다. 같은 요일만 고른 것은 아닙니다.`,
       `Selected ${date} · ${count} comparable days from ${from} to ${to}, ranked by flight counts, hourly spread and other available signals. The days need not share a weekday.`,
       `所选日期 ${date} · 比较 ${from} 至 ${to} 之间 ${count} 天可用记录的航班数、时段分布等；不只选同一星期。`,
-      `選択日 ${date} · ${from}〜${to}の比較可能な${count}日を便数・時間帯の分布などで比較しました。同じ曜日だけを選んだものではありません。`,
+      `選択日 ${date} · ${from} ~ ${to}の比較可能な${count}日を便数・時間帯の分布などで比較しました。同じ曜日だけを選んだものではありません。`,
     )[lang];
   },
   radarTitle: row("오늘 달라진 것", "What is different today", "今天的不同之处", "今日違うこと"),

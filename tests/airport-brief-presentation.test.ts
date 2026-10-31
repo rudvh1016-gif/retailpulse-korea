@@ -53,7 +53,7 @@ test('planning date weekdays follow each civil date in every supported language 
    process.env.TZ=zone;
    for(const [lang,first,last] of [['ko','일요일','월요일'],['en','Sunday','Monday'],['zh','星期日','星期一'],['ja','日曜日','月曜日']] as const){
     const html=renderToStaticMarkup(h(PreparationEvent,{event,lang}));
-    assert.ok(html.includes(`11/01<small class="focus-event-weekday">(${first})</small></time>–<wbr/><time`),zone);
+    assert.ok(html.includes(`11/01<small class="focus-event-weekday">(${first})</small></time> ~ <wbr/><time`),zone);
     assert.ok(html.includes(`11/02<small class="focus-event-weekday">(${last})`),zone);
     assert.equal((html.match(/<time /g)||[]).length,2);
    }
@@ -93,7 +93,7 @@ test('upcoming summaries keep dates and trends visible while preserving evidence
  }
  const source=readFileSync('app/airport-focus-preview.tsx','utf8');
  assert.doesNotMatch(source,/휴일 종료 기준 · 귀국객 예측 아님|Holiday end dates · Not a return-traveler forecast|按假期结束日期 · 非返程客流预测|祝日終了日が基準 · 帰国客の予測ではありません/);
- assert.match(source,/className="focus-planning-basis"/);assert.match(source,/short\(weekStart\).*short\(weekEnd\)/);assert.doesNotMatch(source,/monthlyTrend|const months=/);
+ assert.doesNotMatch(source,/className="focus-planning-basis"|className="focus-planning-link"/);assert.match(source,/short\(weekStart\).*short\(weekEnd\)/);assert.doesNotMatch(source,/monthlyTrend|const months=/);
  assert.doesNotMatch(source,/<p>\{describe\(/);
 });
 
@@ -104,12 +104,12 @@ test('daily-average core stays concise with closed basis and directional count i
  for(const lang of ['ko','en','zh','ja'] as const)for(const total of [60000,61000,59000]){
   const html=renderToStaticMarkup(h(PassengerBriefComparison,{total,day:'2026-10-21',baseline:observed,lang}));
   const core=html.split('<details')[0],basis=html.split('<details')[1];
-  assert.doesNotMatch(core,/1,320,000/);assert.match(core,/60,000/);assert.match(core,/2026-09/);
+  assert.doesNotMatch(core,/1,320,000/);assert.match(core,/60,000/);assert.match(core,/9\/22 MTD/);
   assert.match(core,/data-direction="(?:up|down|neutral)"/);
   assert.match(core,total===61000?/\+1,000/:total===59000?/△ 1,000/:/0/);
   assert.match(basis,/^ class="focus-passenger-calculation">/);assert.match(basis,/1,320,000/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
-  if(lang==='ko')assert.match(core,/2026-09월-22일 MTD 예보 일평균 60,000명 대비/);
+  if(lang==='ko')assert.match(core,/9\/22 MTD<\/strong> 예보 일평균 60,000명 대비/);
  }
  const css=readFileSync('app/airport-focus-preview.css','utf8');
  assert.match(css,/focus-passenger-calculation>summary[^}]*min-height:44px/);

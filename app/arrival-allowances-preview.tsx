@@ -39,7 +39,7 @@ export default function ArrivalAllowancesPreview({scrollOnMount=false,lang='ko'}
  const actions=country&&result?arrivalCountryActions(country.id,answers):undefined;
  const resultNotes=country&&result?arrivalResultNotes(country.id,answers,result.notes):[];
  const alcoholNotes=country&&result?arrivalAlcoholNotes(country.id,result.notes):[];
- return <section className="arrival-allowances" id="arrival-allowances" lang={lang==='zh'?'zh':'ko'} aria-labelledby="arrival-allowances-title">
+ return <section className="arrival-allowances" id="arrival-allowances" lang={lang==='ja'?'ko':lang} aria-labelledby="arrival-allowances-title">
   <div className="focus-section-heading"><div><h2 data-heading="section" id="arrival-allowances-title"><span className="heading-marker" aria-hidden="true"/>{chineseText(lang,"도착국 반입 면세한도")}</h2><p>{chineseText(lang,"구매 한도가 아닌, 도착지 입국 시 적용되는 기준입니다.")}</p></div></div>
   <label className="arrival-filter">{chineseText(lang,"도착 국가·지역")}<select aria-label={chineseText(lang,"도착 국가·지역")} value={countryId} onChange={event=>{setCountryId(event.target.value);setAnswers({});}}><option value="">{chineseText(lang,"선택하세요")}</option>{data.countries.map(item=><option key={item.id} value={item.id}>{chineseText(lang,item.name)}</option>)}</select></label>
   {!country&&<ArrivalReviewedOverview lang={lang} countries={data.countries}/>}

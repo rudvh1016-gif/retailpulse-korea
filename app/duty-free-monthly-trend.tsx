@@ -49,7 +49,7 @@ export function DutyFreeMonthlyTrend({lang}:{lang:Lang}){
      </svg>
     </div>
     <p id={`${id}-readout`} className="duty-free-month-readout" aria-live="polite">{active===null?words.choose:label(active)}</p>
-    <figcaption>{data.start} – {data.end} KST · {data.observedDays}/7 · KRW / USD{data.missingDates.length?` · ${data.missingDates.length} ${({ko:'일 누락',en:'days missing',zh:'天缺失',ja:'日欠測'})[lang]}`:''}</figcaption>
+    <figcaption>{data.start} ~ {data.end} KST · {data.observedDays}/7 · KRW / USD{data.missingDates.length?` · ${data.missingDates.length} ${({ko:'일 누락',en:'days missing',zh:'天缺失',ja:'日欠測'})[lang]}`:''}</figcaption>
    </figure>}
    {data&&<details className="prep-note duty-free-recent-source"><summary><span>{words.source}<span data-disclosure-meta> · {data.observedDays}/7</span></span></summary><p>{words.note}</p><a href={data.sourceUrl} target="_blank" rel="noreferrer">Shilla · USD/KRW</a><ul>{data.days.map(row=><li key={row.date}>{row.date} · {row.krwPerUsd===null?words.missing:number.format(row.krwPerUsd)+' KRW / USD'}{row.verifiedAt&&<small> · {row.verifiedAt} · {row.dateEvidence}</small>}</li>)}</ul></details>}
   </div>}

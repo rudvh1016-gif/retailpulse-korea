@@ -495,14 +495,14 @@ export function formatKstServicePeriod(serviceDate: string, lang: Lang): string 
   const day = new Intl.DateTimeFormat(airportLocale(lang), {
     timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
   }).format(parsed);
-  return `${day} 00:00–23:59 KST`;
+  return `${day} 00:00 ~ 23:59 KST`;
 }
 
 export function formatKstBand(start: string, end: string): string {
   const clock = (value: string) => new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false,
   }).format(new Date(value));
-  return `${clock(start)}–${clock(end)} KST`;
+  return `${clock(start)} ~ ${clock(end)} KST`;
 }
 
 /** "9월 5일 22:43" — enough for a reader to see how far behind collection is. */
@@ -673,7 +673,7 @@ function formatForecastHour(value: string): string {
   const start = new Date(value);
   if (Number.isNaN(start.getTime())) return "";
   const end = new Date(start.getTime() + 3_600_000);
-  return `${formatKstClock(start.toISOString())}–${formatKstClock(end.toISOString())}`;
+  return `${formatKstClock(start.toISOString())} ~ ${formatKstClock(end.toISOString())}`;
 }
 
 /**
@@ -1521,7 +1521,7 @@ function formatEventPeriod(event: { eventStart: string; eventEnd: string | null 
   const start = short(event.eventStart);
   if (!start) return "";
   const end = event.eventEnd ? short(event.eventEnd) : "";
-  return end && end !== start ? `${start}\u2013${end}` : start;
+  return end && end !== start ? `${start} ~ ${end}` : start;
 }
 
 /**

@@ -5,7 +5,7 @@ import { weekCopy } from '../lib/week-copy';
 import { reviewCopy } from '../lib/review-copy';
 
 // The fixture moved to 2026-09-28 (a Monday): China's National Day holiday
-// (10/01–10/07, State Council notice) falls inside the week ahead.
+// (10/01 ~ 10/07, State Council notice) falls inside the week ahead.
 const WEEK = { ...SUMMARY_FIXTURE, generatedAt: '2026-09-28T05:10:00Z', todayKst: '2026-09-28', serviceDateKst: '2026-09-28', dayRelation: 'TODAY', holidays: [] };
 
 async function open(page: Page, payload: unknown = WEEK, path = '/ko/business', lang = 'ko') {
@@ -21,11 +21,11 @@ test('the week ahead shows official holidays once, labels what is unknown, and h
   const prep = await open(page);
   const week = prep.getByTestId('week-ahead');
   // Counted per country: KASI's months are missing in this fixture, so Korea is unknown, not zero.
-  await expect(week.locator('summary').first()).toHaveText('이번 주 준비 (09/28–10/04) · 한국 공휴일 미확인 · 중국 공휴일 4일 · 행사 0건');
+  await expect(week.locator('summary').first()).toHaveText('이번 주 준비 (09/28 ~ 10/04) · 한국 공휴일 미확인 · 중국 공휴일 4일 · 행사 0건');
   await week.locator('summary').first().click();
   const october = week.locator('.prep-week-days > li').nth(3);
   await expect(october).toContainText('10/01 (목)');
-  await expect(october).toContainText('확정 일정 중국 공휴일 · 국경절 (国庆节) 10/01–10/07');
+  await expect(october).toContainText('확정 일정 중국 공휴일 · 국경절 (国庆节) 10/01 ~ 10/07');
   await expect(week.locator('.prep-week-days > li').first()).toContainText('오늘');
   await expect(week.getByTestId('week-korean-unavailable')).toHaveText(weekCopy.koreanUnavailable.ko);
   await expect(week.getByTestId('week-no-events')).toHaveText(weekCopy.noEvents.ko);

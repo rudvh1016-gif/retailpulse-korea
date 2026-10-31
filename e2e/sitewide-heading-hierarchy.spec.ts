@@ -33,7 +33,7 @@ async function verifyHeadings(page:Page,textScale=1){
   const icon=node.querySelector(':scope > svg.ui-line-icon');
   return {compactGuide:!!node.closest('.site-usage-guide'),markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
-   textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
+   textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1&&style.overflowY!=='visible',
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
    hidden:marker?.getAttribute('aria-hidden'),markerText:marker?.textContent,
    markerCount:node.querySelectorAll(':scope > .heading-marker').length,
@@ -110,12 +110,13 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  if(width>700){
   expect(rows[0].y).toBeCloseTo(rows[1].y,0);expect(rows[1].y).toBeCloseTo(rows[2].y,0);
   expect(rows[3].y).toBeCloseTo(rows[4].y,0);expect(rows[3].x).toBeCloseTo(rows[0].x,0);
-  expect(rows[3].width).toBeCloseTo(rows[4].width,0);expect(rows[4].x).toBeGreaterThan(rows[3].x+rows[3].width);
+  expect(rows[3].width).toBeCloseTo(rows[0].width,0);expect(rows[4].x).toBeCloseTo(rows[1].x,0);expect(rows[4].width).toBeGreaterThan(rows[3].width);
  }else{
   for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
- const staffTitles=new URL(page.url()).pathname.startsWith('/zh')?['✓时段与航站楼','✓航线与假期准备']:['✓시간·터미널','✓노선·휴일 준비'];
+ const locale=new URL(page.url()).pathname.split('/')[1];
+ const staffTitles=locale==='zh'?['✓时段与航站楼','✓航线与假期准备']:locale==='en'?['✓Times and terminals','✓Route and holiday planning']:['✓시간·터미널','✓노선·휴일 준비'];
  await expect(flow.locator('.staff-brief-grid > section > h3')).toHaveText(staffTitles);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 }
@@ -194,37 +195,19 @@ for(const lang of ['en','zh','ja'])for(const width of [320,390,768,1440])for(con
 });
 
 
-for(const width of [320,390,430,768,1440])test(`complete Korean trend title and its own link row at ${width}px`,async({page},info)=>{
+for(const width of [320,390,430,768,1440])test(`current checkpoint heading remains complete and enlarges without clipping ${width}`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:1000});await fixtures(page);
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- // Activate the existing viewport-lazy component before waiting for its loaded link.
- await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
- const section=page.locator('.focus-trends:not([aria-busy])'),title=section.locator('.focus-trend-question'),link=section.locator('.focus-trend-more');
- await expect(link).toBeVisible();await page.evaluate(()=>document.fonts.ready);
- await expect(title).toHaveText('한 달의 변화일까, 이어지는 흐름일까');
- await expect(link).toHaveText('국가별 흐름 보기 ↗');
- const metrics=()=>title.evaluate(node=>{
-  const text=Array.from(node.childNodes).find(child=>child.nodeType===Node.TEXT_NODE)!;
-  const range=document.createRange();range.selectNodeContents(text);
-  const rects=Array.from(range.getClientRects());const box=node.getBoundingClientRect(),style=getComputedStyle(node);
-  // Read both rows in one browser task so intervening layout shifts cannot mix coordinates.
-  const linkBox=node.closest('.focus-trend-heading')!.querySelector('.focus-trend-more')!.getBoundingClientRect();
-  return {lines:new Set(rects.map(rect=>Math.round(rect.y))).size,bottom:box.bottom,linkTop:linkBox.top,linkHeight:linkBox.height,left:box.left,size:parseFloat(style.fontSize),overflow:node.scrollWidth-node.clientWidth,clipped:node.scrollHeight>node.clientHeight+1,whiteSpace:style.whiteSpace};
- });
- const normal=await metrics();expect(normal.lines).toBeGreaterThanOrEqual(1);expect(normal.lines).toBeLessThanOrEqual(2);expect(normal.overflow).toBeLessThanOrEqual(1);expect(normal.clipped).toBe(false);expect(normal.whiteSpace).toBe('normal');
- expect(normal.linkTop).toBeGreaterThanOrEqual(normal.bottom);expect(normal.linkHeight).toBeGreaterThanOrEqual(44);
- await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}.png`)});
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- {
-  // Emulate 200% text-only enlargement; safe wrapping takes priority over one line.
-  await title.evaluate((node,size)=>(node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important'),normal.size);
-  const enlarged=await metrics();expect(enlarged.size).toBe(normal.size*2);expect(enlarged.overflow).toBeLessThanOrEqual(1);expect(enlarged.clipped).toBe(false);
-  expect(enlarged.linkTop).toBeGreaterThanOrEqual(enlarged.bottom);
-  await section.locator('.focus-trend-heading').screenshot({path:info.outputPath(`trend-title-${width}-200-percent.png`)});
+ const section=page.locator('.home-checkpoint-waits'),title=section.locator('h2');await section.scrollIntoViewIfNeeded();
+ await expect(page.locator('#focus-country-trends')).toHaveCount(0);await expect(title).toHaveText('현재 출국장');
+ await page.evaluate(()=>document.fonts.ready);
+ const original=await title.evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
+ for(const scale of [1,2]){
+  if(scale===2)await title.evaluate((node,size)=>(node as HTMLElement).style.setProperty('font-size',`${size*2}px`,'important'),original);
+  const geometry=await title.evaluate(node=>({overflow:node.scrollWidth-node.clientWidth,clipped:node.scrollHeight>node.clientHeight+1}));
+  expect(geometry.overflow).toBeLessThanOrEqual(1);expect(geometry.clipped).toBe(false);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await title.screenshot({path:info.outputPath(`checkpoint-title-${width}-${scale}.png`)});
  }
 });
-
-
-

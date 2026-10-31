@@ -383,14 +383,14 @@ function formatKstDateTime(value: string, lang: Lang): string {
 function formatKstBand(start: string, end: string, lang: Lang): string {
   const startDate = new Date(start);
   const endDate = new Date(end);
-  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return `${start} – ${end}`;
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) return `${start} ~ ${end}`;
   const day = new Intl.DateTimeFormat(localeFor(lang), {
     timeZone: "Asia/Seoul", year: "numeric", month: "short", day: "numeric",
   }).format(startDate);
   const clock = (value: Date) => new Intl.DateTimeFormat(localeFor(lang), {
     timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false,
   }).format(value);
-  return `${day} ${clock(startDate)}–${clock(endDate)} KST`;
+  return `${day} ${clock(startDate)} ~ ${clock(endDate)} KST`;
 }
 
 function weatherInput(rows: readonly GuideWeatherRow[]): WeatherGuideInput | null {

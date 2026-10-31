@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {chineseText} from '../lib/chinese-ui';
 test.use({storageState:{cookies:[],origins:[]}});
 // Notices may arrive after navigation; dismiss through the real UI before an obstructed action.
 test.beforeEach(async({page})=>{
@@ -45,13 +46,13 @@ test('small manual review date remains distinct from newer collection attempts a
  }
 });
 
-// Route coverage only: Chinese uses reviewed translations; other locales retain the Korean guidance.
+// Route coverage: English/Chinese use reviewed translations; Japanese retains Korean guidance.
 for(const locale of ['ko','en','zh','ja'])test(`${locale}: condition guidance switches without carrying another country's answers`,async({page})=>{
  await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[{id:'CN',state:'CHECK_UNAVAILABLE',accessReviewRequired:true,lastSuccessfulCheckAt:null,lastCheckedAt:'2026-10-21T00:00:00Z',nextCheckAt:'2026-10-22T00:00:00Z'}]}}));
  await page.goto(`/${locale}/airport-prepare`,{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- const text=(ko:string,zh:string)=>locale==='zh'?zh:ko;
- const section=page.locator('#arrival-allowances');await expect(section).toHaveAttribute('lang',locale==='zh'?'zh':'ko');
+ const text=(ko:string,zh:string)=>locale==='zh'?zh:locale==='en'?chineseText('en',ko):ko;
+ const section=page.locator('#arrival-allowances');await expect(section).toHaveAttribute('lang',locale==='ja'?'ko':locale);
  await section.getByLabel(text('도착 국가·지역','入境国家与地区'),{exact:true}).selectOption('CN');
  for(const [label,value] of [[text('여행·물품 구분','旅行及物品类别'),'ordinary'],[text('통상 거주지 (국적과 다름)','通常居住地（不同于国籍）'),'visitor'],[text('중국 본토 직전 출발지','进入中国大陆前的出发地'),'korea'],[text('나이','年龄'),'adult'],[text('이번 입국을 포함한 15일 이내 중국 본토 입국','包括本次入境在内，15天内进入中国大陆的次数'),'frequent']])await section.getByLabel(label,{exact:true}).selectOption(value);
  await expect(section.locator('.arrival-condition-guidance')).toContainText(text('15일 내 반복 입국','15天内多次入境'));await expect(section.locator('.arrival-condition-guidance')).toContainText(text('적색통로','红色通道'));await expect(section.locator('.arrival-result dl')).toHaveCount(0);

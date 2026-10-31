@@ -24,7 +24,7 @@ export function breakUnits(text: string): string[] {
     }
   }
   if (word) units.push(word);
-  return units;
+  return units.join("\u0000").replace(/(\d{1,2}:\d{2}) \u0000~ \u0000(\d{1,2}:\d{2})/g,"$1 ~ $2").split("\u0000");
 }
 
 export function wrapText(text: string, maxWidth: number, measure: (value: string) => number): string[] {

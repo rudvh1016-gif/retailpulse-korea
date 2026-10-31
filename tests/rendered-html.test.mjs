@@ -1101,7 +1101,7 @@ for (const locale of ["ko", "en", "zh", "ja"]) {
     assert.ok(meta("description").length > 5);
     assert.equal(meta("og:title"), "KORETAIL");
     assert.equal(meta("twitter:title"), "KORETAIL");
-    assert.equal(meta("og:description"), "인천공항 출발·도착 항공편, 시간대별 예상 여객과 국가별 여객 추이, 환율·입국 면세 정보를 확인하세요. 자료별 기준일과 출처를 함께 제공합니다.");
+    assert.equal(meta("og:description"), "인천공항 시간대별 예상 여객과 출발편 집중시간, 국가별 여객 흐름, 주요 휴일과 도착국 면세한도를 확인하세요. 날짜·터미널별로 비교하며 공식 출처와 자료 기준일을 함께 봅니다.");
     assert.equal(meta("twitter:description"), meta("og:description"));
     for (const key of ["og:image", "twitter:image"]) {
       const url = new URL(meta(key));

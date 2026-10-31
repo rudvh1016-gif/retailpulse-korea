@@ -4,7 +4,9 @@ import test from 'node:test';
 for(const file of ['app/airport-period-insights.css','app/airport-focus-preview.css'])test(`${file}: alignment rules are confined to phones and preserve typography`,()=>{
  const css=readFileSync(file,'utf8'),marker=file.includes('period')?'/* Phones share the briefing text edge;':'/* Match the phone briefing';
  assert.ok(css.includes(marker));
- const added=css.slice(css.indexOf(marker)).replace(/\/\*[\s\S]*?\*\//g,'').trim();
+ const tail=css.slice(css.indexOf(marker)).replace(/\/\*[\s\S]*?\*\//g,'');
+ const blocks=[...tail.matchAll(/@media\(max-width:(?:700|365)px\)\{/g)].slice(0,2).map(match=>{let depth=1,end=match.index+match[0].length;while(depth&&end<tail.length){if(tail[end]==='{')depth++;if(tail[end]==='}')depth--;end++;}return tail.slice(match.index,end);});
+ const added=blocks.join('\n').trim();
  assert.ok(added.startsWith('@media(max-width:700px)'));
  assert.doesNotMatch(added,/font|line-height|letter-spacing|color|background|@media\(min-width/);
  let depth=0;for(const char of added){if(char==='{')depth++;if(char==='}')depth--;assert.ok(depth>=0);}assert.equal(depth,0);

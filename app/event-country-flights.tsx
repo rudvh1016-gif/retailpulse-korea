@@ -38,5 +38,5 @@ export function EventCountryFlightBasis(props:Props & {eventForecastNote?:boolea
  // Keep only the extra evidence here: route definition and actual included dates.
  const reference=({ko:'선택일 항공편 참고 · 행사일 예측 아님',en:'Selected-day flights · not an event-day forecast',zh:'所选日期航班参考 · 非活动日期预测',ja:'選択日の便数参考・行事日の予測ではありません'} as const)[props.lang];
  const association=({ko:'증감 원인 미확인',en:'Cause of change unconfirmed',zh:'变化原因未确认',ja:'増減の原因は未確認'} as const)[props.lang];
- return <><p className="event-flight-basis" data-country={metric.country}>{text.basis} · {text.scheduled}{metric.mean!==null&&<> · {metric.start}–{metric.end} <span className="staff-route-sample">({sample})</span>{metric.partial&&<> · {text.notMonth}</>}</>}</p><p className="event-flight-note">{props.eventForecastNote&&<>{reference} · </>}{association}</p></>;
+ return <><p className="event-flight-basis" data-country={metric.country}>{text.basis} · {text.scheduled}{metric.mean!==null&&<> · {metric.start} ~ {metric.end} <span className="staff-route-sample">({sample})</span>{metric.partial&&<> · {text.notMonth}</>}</>}</p><p className="event-flight-note">{props.eventForecastNote&&<>{reference} · </>}{association}</p></>;
 }

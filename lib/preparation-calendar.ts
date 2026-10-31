@@ -49,7 +49,7 @@ export function preparationEvents(asOf:string,calendarEvents?:CalendarEvent[],sc
   cardSummary_ko:'',connectionStatus_ko:'주요 일정 · 휴무 여부 별도 확인',connectionNote_ko:'시험·행사 날짜이며 전국 공통 휴무일을 뜻하지 않습니다. 출입국·항공편·매출 증감 예측이 아닙니다.',restConditions_ko:[],verificationMethod:'REVIEWED_OFFICIAL_SNAPSHOT',
  }));
  const all=[...refreshed,...additional,...major];
- return sortCalendarEvents(all.filter((event,index)=>all.findIndex(other=>other.id===event.id||other.country===event.country&&other.countryLabel===event.countryLabel&&other.start===event.start&&other.end===event.end&&other.name===event.name&&other.scope===event.scope)===index));
+ return sortCalendarEvents(all.filter((event,index)=>all.findIndex(other=>other.id===event.id||other.country===event.country&&other.countryLabel===event.countryLabel&&other.start===event.start&&other.end===event.end&&other.name===event.name&&other.scope===event.scope)===index)).map(event=>({...event,dateLabel_ko:event.dateLabel_ko.replace(/(\d{4}-\d{2}-\d{2})\s*[~–]\s*(\d{4}-\d{2}-\d{2})/g,'$1 ~ $2')}));
 }
 export function shiftPreparationMonth(month:string,offset:number):string {
  if(!isExactMonth(month))throw new RangeError('Expected YYYY-MM');

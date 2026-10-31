@@ -16,8 +16,8 @@ test("the week names China's National Day once per day it covers, with its offic
   const october = week.days.find((day) => day.date === "2026-10-01");
   const holiday = october.items.find((item) => item.kind === "HOLIDAY");
   assert.deepEqual([holiday.label, holiday.country, holiday.name, holiday.start, holiday.end], ["CONFIRMED", "CN", "国庆节", "2026-10-01", "2026-10-07"]);
-  assert.equal(weekItemLine(holiday, "ko"), "중국 공휴일 · 국경절 (国庆节) 10/01–10/07");
-  assert.equal(weekItemLine(holiday, "zh"), "中国假日 · 国庆节 10/01–10/07");
+  assert.equal(weekItemLine(holiday, "ko"), "중국 공휴일 · 국경절 (国庆节) 10/01 ~ 10/07");
+  assert.equal(weekItemLine(holiday, "zh"), "中国假日 · 国庆节 10/01 ~ 10/07");
   assert.equal(week.days.filter((day) => day.weekend).map((day) => day.date).join(), "2026-10-03,2026-10-04");
 });
 
@@ -71,14 +71,14 @@ test("a Chinese holiday on the service date becomes a prep action, a working day
 
 test("the headline counts holidays per country and never turns missing Korean data into zero", () => {
   const unknown = buildWeekAhead(summary(), place, "2026-09-28");
-  assert.equal(weekHeadline(unknown, "ko"), "이번 주 준비 (09/28–10/04) · 한국 공휴일 미확인 · 중국 공휴일 4일 · 행사 0건");
-  assert.equal(weekHeadline(unknown, "en"), "The week ahead (09/28–10/04) · Korean holidays not yet known · China: 4 holiday day(s) · 0 event(s)");
+  assert.equal(weekHeadline(unknown, "ko"), "이번 주 준비 (09/28 ~ 10/04) · 한국 공휴일 미확인 · 중국 공휴일 4일 · 행사 0건");
+  assert.equal(weekHeadline(unknown, "en"), "The week ahead (09/28 ~ 10/04) · Korean holidays not yet known · China: 4 holiday day(s) · 0 event(s)");
   const checked = buildWeekAhead(summary({ holidays: [
     { month: "2026-09", days: [], retrievedAt: "x" },
     { month: "2026-10", days: [{ date: "2026-10-03", name: "개천절" }], retrievedAt: "x" },
   ] }), place, "2026-09-28");
-  assert.equal(weekHeadline(checked, "ko"), "이번 주 준비 (09/28–10/04) · 한국 공휴일 1일 · 중국 공휴일 4일 · 행사 0건");
+  assert.equal(weekHeadline(checked, "ko"), "이번 주 준비 (09/28 ~ 10/04) · 한국 공휴일 1일 · 중국 공휴일 4일 · 행사 0건");
   const quiet = buildWeekAhead(summary({ todayKst: "2026-11-09", holidays: [{ month: "2026-11", days: [], retrievedAt: "x" }] }), place, "2026-11-09");
-  assert.equal(weekHeadline(quiet, "ko"), "이번 주 준비 (11/09–11/15) · 확인된 공휴일 없음 · 행사 0건");
-  assert.equal(weekHeadline(buildWeekAhead(summary(), { kind: "airport", terminal: "T1" }, "2026-09-28"), "zh"), "本周准备（09/28–10/04）· 韩国假日未确认 · 中国假日 4 天");
+  assert.equal(weekHeadline(quiet, "ko"), "이번 주 준비 (11/09 ~ 11/15) · 확인된 공휴일 없음 · 행사 0건");
+  assert.equal(weekHeadline(buildWeekAhead(summary(), { kind: "airport", terminal: "T1" }, "2026-09-28"), "zh"), "本周准备（09/28 ~ 10/04）· 韩国假日未确认 · 中国假日 4 天");
 });

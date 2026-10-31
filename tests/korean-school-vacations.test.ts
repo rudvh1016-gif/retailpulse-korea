@@ -47,6 +47,6 @@ test('visible context labels the school example, dates, scope, source and non-ca
  assert.ok(!html.includes('내리숲초등학교'));
  assert.equal(renderToStaticMarkup(createElement(KoreanVacationContext,{day:'2026-10-20',asOf})), '');
  const winter=renderToStaticMarkup(createElement(KoreanVacationContext,{day:'2027-01-01',asOf}));
- assert.ok(winter.includes('겨울방학 2027-01-01–2027-02-28'));
+ assert.ok(winter.includes('겨울방학 2027-01-01 ~ 2027-02-28'));
  assert.ok(!winter.includes('직전 월'));
 });

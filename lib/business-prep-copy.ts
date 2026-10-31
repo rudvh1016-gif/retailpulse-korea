@@ -136,13 +136,13 @@ export function prepTime(iso: string, serviceDate: string, lang: PrepLang): stri
 }
 
 export function prepSpan(startAt: string, endAt: string, serviceDate: string, lang: PrepLang): string {
-  return `${prepTime(startAt, serviceDate, lang)}–${prepTime(endAt, serviceDate, lang)}`;
+  return `${prepTime(startAt, serviceDate, lang)} ~ ${prepTime(endAt, serviceDate, lang)}`;
 }
 
 export function hoursLabel(hours: BusinessHours | null, lang: PrepLang): string {
   if (!hours || hours.open === hours.close) return prepCopy.wholeDay[lang];
   const late = hours.close < hours.open ? ` (${prepCopy.crossesMidnight[lang]})` : "";
-  return `${hours.open}–${hours.close}${late}`;
+  return `${hours.open} ~ ${hours.close}${late}`;
 }
 
 function number(value: number, lang: PrepLang): string {

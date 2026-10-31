@@ -22,7 +22,7 @@ test('airport starts compact, explains unmatched flights and expands truthful ne
  await expect(page.locator('.airport-today-grid')).not.toBeVisible();
  await page.locator('.airport-summary-details > summary').click();
  await expect(page.locator('.airport-today-grid')).toBeVisible();
- await expect(page.locator('.terminal-brief-card').first()).toContainText('15:00–16:00');
+ await expect(page.locator('.terminal-brief-card').first()).toContainText('15:00 ~ 16:00');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBeTruthy();
 });
 

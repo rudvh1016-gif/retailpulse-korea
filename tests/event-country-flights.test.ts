@@ -72,10 +72,10 @@ test('folded flight basis adds exact coverage without repeating adjacent metrics
  for(const lang of ['ko','en','zh','ja'] as const){
   const context=eventFlights({scope:'T2',baseline:{...flightBaseline(),scopes:{...flightBaseline().scopes,T2:flightBaseline().scopes.ALL}}});
   const html=renderToStaticMarkup(h(EventCountryFlightBasis,{country:'TH',label:'태국',context,lang,eventForecastNote:true}));
-  assert.match(html,/2026-09-01–2026-09-30/);assert.match(html,/30/);
+  assert.match(html,/2026-09-01 ~ 2026-09-30/);assert.match(html,/30/);
   assert.doesNotMatch(html,/2026-10-22|T2|18\.5|13%|change-rate/);
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
  }
  const partial=renderToStaticMarkup(h(EventCountryFlightBasis,{country:'TH',label:'태국',context:eventFlights({baseline:flightBaseline({TH:10},2,'2026-08')}),lang:'ko',eventForecastNote:true}));
- for(const fact of ['2026-08-01–2026-08-02','포함일 2/31일','월전체 평균 아님','행사일 예측 아님','증감 원인 미확인'])assert.ok(partial.includes(fact),fact);
+ for(const fact of ['2026-08-01 ~ 2026-08-02','포함일 2/31일','월전체 평균 아님','행사일 예측 아님','증감 원인 미확인'])assert.ok(partial.includes(fact),fact);
 });

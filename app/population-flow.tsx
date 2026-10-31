@@ -97,7 +97,7 @@ export function PopulationFlowChart({points,lang,now,copy}:{points:FlowPoint[];l
   <div className="flow-notes">
    {observed.length===1&&<p className="flow-note">{copy.noHistory[lang]}</p>}
    {!observed.length&&<p className="flow-note">{copy.missing[lang]}</p>}
-   {forecasts.length?<p className="flow-note">{copy.forecast[lang]} · {kstStamp(forecasts[0].at)}–{kstStamp(forecasts.at(-1)!.at)} KST<br/>{[...new Set(forecasts.map(point=>point.issuedAt?`${copy.issued[lang]} ${kstStamp(point.issuedAt)} KST`:copy.unknownIssue[lang]))].join(' · ')}</p>:<p className="flow-note">{copy.noForecast[lang]}</p>}
+   {forecasts.length?<p className="flow-note">{copy.forecast[lang]} · {kstStamp(forecasts[0].at)} ~ {kstStamp(forecasts.at(-1)!.at)} KST<br/>{[...new Set(forecasts.map(point=>point.issuedAt?`${copy.issued[lang]} ${kstStamp(point.issuedAt)} KST`:copy.unknownIssue[lang]))].join(' · ')}</p>:<p className="flow-note">{copy.noForecast[lang]}</p>}
   </div>
   {!!points.length&&<details className="flow-material-note"><summary>{copy.details[lang]}</summary><p>{words.guide[lang]}</p><p>{words.gaps[lang]}</p><p>{copy.rangeNote[lang]}</p><p>{copy.source[lang]}</p>
    <div className="flow-table-wrap"><table><thead><tr><th scope="col">{words.time[lang]}</th><th scope="col">{words.kind[lang]}</th><th scope="col">{words.range[lang]}</th></tr></thead><tbody>{points.map(point=><tr key={key(point)}><th scope="row">{kstStamp(point.time)}</th><td>{copy[point.kind==='forecast'?'forecast':'observed'][lang]}</td><td>{peopleRange(point,lang)}{unit}</td></tr>)}</tbody></table></div>

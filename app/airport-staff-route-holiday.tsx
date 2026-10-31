@@ -36,7 +36,7 @@ function comparisonText(route:StaffRouteChange,day:string,lang:Lang,number:Intl.
 function HolidayDates({event,day}:{event:BriefHoliday;day:string}){
  const showYear=event.start.slice(0,4)!==event.end.slice(0,4)||event.start.slice(0,4)!==day.slice(0,4);
  const label=(date:string)=>(showYear?date:date.slice(5)).replaceAll('-','/');
- return <><time dateTime={event.start}>{label(event.start)}</time>{event.end!==event.start&&<>–<wbr/><time dateTime={event.end}>{label(event.end)}</time></>}</>;
+ return <><time dateTime={event.start}>{label(event.start)}</time>{event.end!==event.start&&<> ~ <wbr/><time dateTime={event.end}>{label(event.end)}</time></>}</>;
 }
 
 /** Event first; flight metrics resolve only this event country on the selected flight date. */

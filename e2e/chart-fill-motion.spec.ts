@@ -24,7 +24,7 @@ for (const width of [390, 1440]) for (const reduced of [false, true]) {
     expect(motion.width).toBe('90%');
     expect(motion.name).toBe(reduced?'none':'chart-fill-horizontal');
     if(!reduced) {
-      const motionAtHalf=await bar.evaluate(el=>{(el as HTMLElement).style.animationName='none'; getComputedStyle(el).animationName; (el as HTMLElement).style.removeProperty('animation-name'); getComputedStyle(el).animationName; const a=el.getAnimations()[0]; a.pause(); a.currentTime=225; const half=el.getBoundingClientRect(); const scale=new DOMMatrix(getComputedStyle(el).transform).a; a.currentTime=450; const final=el.getBoundingClientRect(); return {scale,left:half.left,finalLeft:final.left};});
+      const motionAtHalf=await bar.evaluate(el=>{(el as HTMLElement).style.animationName='none'; getComputedStyle(el).animationName; (el as HTMLElement).style.removeProperty('animation-name'); getComputedStyle(el).animationName; const animations=el.getAnimations(); const a=animations.find(a=>'animationName' in a)??animations[0]; animations.filter(other=>other!==a).forEach(other=>other.cancel()); a.pause(); a.currentTime=600; const half=el.getBoundingClientRect(); const scale=new DOMMatrix(getComputedStyle(el).transform).a; a.currentTime=1200; const final=el.getBoundingClientRect(); return {scale,left:half.left,finalLeft:final.left};});
       expect(motionAtHalf.scale).toBeGreaterThan(0); expect(motionAtHalf.scale).toBeLessThan(1); expect(motionAtHalf.left).toBeCloseTo(motionAtHalf.finalLeft,1);
       await expect(first.locator('.route-month-total')).toHaveText(['1,000','900']);
     }
@@ -43,7 +43,7 @@ test('vertical bars grow from their own baseline while gaps and labels remain un
   const chart=page.getByTestId('airport-mtd').locator('.airport-month-chart');
   const bar=chart.locator('svg > g').first();
   await expect(bar).toBeAttached();
-  const state=await bar.evaluate(el=>{(el as SVGElement).style.animationName='none'; getComputedStyle(el).animationName; (el as SVGElement).style.removeProperty('animation-name'); getComputedStyle(el).animationName; const a=el.getAnimations()[0]; if(!a) return null; a.pause(); a.currentTime=225; const box=(el as SVGGraphicsElement).getBBox(); const matrix=new DOMMatrix(getComputedStyle(el).transform); const half=el.getBoundingClientRect(); a.currentTime=450; const final=el.getBoundingClientRect(); return {scale:matrix.d, boxHeight:box.height, bottom:half.bottom, finalBottom:final.bottom, value:el.querySelector('.airport-month-bar')?.getAttribute('data-value')};});
+  const state=await bar.evaluate(el=>{(el as SVGElement).style.animationName='none'; getComputedStyle(el).animationName; (el as SVGElement).style.removeProperty('animation-name'); getComputedStyle(el).animationName; const a=el.getAnimations()[0]; if(!a) return null; a.pause(); a.currentTime=600; const box=(el as SVGGraphicsElement).getBBox(); const matrix=new DOMMatrix(getComputedStyle(el).transform); const half=el.getBoundingClientRect(); a.currentTime=1200; const final=el.getBoundingClientRect(); return {scale:matrix.d, boxHeight:box.height, bottom:half.bottom, finalBottom:final.bottom, value:el.querySelector('.airport-month-bar')?.getAttribute('data-value')};});
   expect(state).not.toBeNull(); expect(state!.scale).toBeGreaterThan(0); expect(state!.scale).toBeLessThan(1); expect(state!.boxHeight).toBeGreaterThan(0); expect(state!.bottom).toBeCloseTo(state!.finalBottom,1); expect(state!.value).not.toBeNull();
 });
 
@@ -113,7 +113,7 @@ test('partially visible vertical bars observe the fixed plot, not their own chan
     const original=Element.prototype.animate;
     Element.prototype.animate=function(...args) {
       const animation=original.apply(this,args);
-      if(this.matches('.airport-month-chart svg > g')) { animation.pause(); animation.currentTime=225; }
+      if(this.matches('.airport-month-chart svg > g')) { animation.pause(); animation.currentTime=600; }
       return animation;
     };
   });
@@ -132,7 +132,7 @@ test('partially visible vertical bars observe the fixed plot, not their own chan
     const animation=el.getAnimations().find(a=>!('animationName' in a)&&a.playState==='paused');
     if(!animation)return null;
     const half=el.getBoundingClientRect(),scale=new DOMMatrix(getComputedStyle(el).transform).d;
-    animation.currentTime=450;
+    animation.currentTime=1200;
     const final=el.getBoundingClientRect();
     animation.play();
     return {scale,bottom:half.bottom,finalBottom:final.bottom};

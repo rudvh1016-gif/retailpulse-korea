@@ -158,9 +158,9 @@ test("flights whose building is unknown are in neither scope: left out of the di
 test("hourly lines carry counts, shares and the unconfirmed ones", () => {
   const rows = [...many(8, "T2", "274", "08:10"), ...many(4, "T2", "231", "08:40"), ...many(11, "T2", "274", "09:10"), ...many(7, "T2", "231", "09:20"), flight("T2", "228", "09:30"), ...many(6, "T2", "274", "10:00"), ...many(12, "T2", "231", "10:05")];
   const split = flightSplitOf(day(rows), "T2", "COLLECTED_FLIGHT_RECORDS", null);
-  assert.equal(hourBody(split.hours[0], "ko"), "08–09시 · 합계 12편 · 동 8편 / 서 4편 (동 67% · 서 33%)");
-  assert.equal(hourBody(split.hours[1], "ko"), "09–10시 · 합계 19편 · 동 11편 / 서 7편 (동 61% · 서 39%) · 미확인 1편");
-  assert.equal(hourBody(split.hours[2], "en"), "10:00–11:00 · total 18 flights · E 6 flights / W 12 flights (E 33% · W 67%)");
+  assert.equal(hourBody(split.hours[0], "ko"), "08 ~ 09시 · 합계 12편 · 동 8편 / 서 4편 (동 67% · 서 33%)");
+  assert.equal(hourBody(split.hours[1], "ko"), "09 ~ 10시 · 합계 19편 · 동 11편 / 서 7편 (동 61% · 서 39%) · 미확인 1편");
+  assert.equal(hourBody(split.hours[2], "en"), "10:00 ~ 11:00 · total 18 flights · E 6 flights / W 12 flights (E 33% · W 67%)");
   assert.equal(split.expected, null, "no terminal-wide figure → no estimate");
 });
 
