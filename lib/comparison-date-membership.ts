@@ -7,7 +7,7 @@ export function comparisonDateMembership(values:readonly string[],showYear=false
  for(let i=0;i<dates.length;i++){
   const first=dates[i];let last=first;
   while(i+1<dates.length&&Date.parse(dates[i+1]+'T00:00:00Z')-Date.parse(last+'T00:00:00Z')===86_400_000){last=dates[++i];}
-  groups.push(first===last?label(first):`${label(first)}–${label(last)}`);
+  groups.push(first===last?label(first):`${label(first)} ~ ${label(last)}`);
  }
  return groups.join(', ');
 }

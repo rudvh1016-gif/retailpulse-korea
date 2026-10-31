@@ -9,7 +9,7 @@ import {passengerCopy} from '../lib/passenger-copy';
 for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: optional examples and long methodology explanations collapse, not truth boundaries`,()=>{
  const html=renderToStaticMarkup(h(SiteUsageGuide,{lang}));
  const details=html.match(/<details\b[^>]*>[\s\S]*?<\/details>/g)??[];
- assert.equal(details.length,lang==='ko'||lang==='zh'?4:3);
+ assert.equal(details.length,lang==='ja'?3:4);
  for(const detail of details){assert.doesNotMatch(detail.split('>')[0],/\bopen\b/);assert.match(detail,/<summary style="min-height:44px;box-sizing:border-box;padding:12px 0;cursor:pointer">/);}
  const examples=details.find(detail=>detail.includes('data-testid="usage-examples"'));
  const method=details.find(detail=>detail.includes('data-testid="usage-method"'));
@@ -17,7 +17,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: optional example
  assert.ok(examples);assert.equal((examples.match(/<dt>/g)??[]).length,3);
  assert.ok(method);assert.match(method,/<p>/);
  assert.ok(updates);assert.match(updates,/<p>/);
- if(lang==='ko'||lang==='zh'){const airport=details.find(detail=>detail.includes('data-testid="airport-usage-guide"'));assert.ok(airport);assert.equal((airport.match(/<dt>/g)??[]).length,4);}
+ if(lang!=='ja'){const airport=details.find(detail=>detail.includes('data-testid="airport-usage-guide"'));assert.ok(airport);assert.equal((airport.match(/<dt>/g)??[]).length,4);}
  const visible=html.replace(/<details\b[^>]*>[\s\S]*?<\/details>/g,'');
  if(lang==='ko'){
   assert.ok(visible.includes('출국장 예고와 별도 환승 예고의 단순 합계'));

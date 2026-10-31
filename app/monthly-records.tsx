@@ -159,7 +159,7 @@ export function MonthlyRecordsView({ lang, area, onArea }: { lang: Lang; area: R
       {(!data.change || data.current.includedDays !== data.current.expectedDays || data.previous.includedDays !== data.previous.expectedDays || data.current.includedDays !== data.previous.includedDays) && <p className="records-note">{t(data.change ? 'comparing' : 'unavailableCompare')}</p>}
       <DailyRanges value={data.current} lang={lang} />
       <details className="records-details"><summary>{t('details')}</summary><p>{t('method')}</p><p>{t('comparisonMethod')}</p>
-        <p>{t('stored')}: {data.availableFrom && data.availableThrough ? `${data.availableFrom} – ${data.availableThrough} KST` : '—'}. {t('storedNote')}</p>
+        <p>{t('stored')}: {data.availableFrom && data.availableThrough ? `${data.availableFrom} ~ ${data.availableThrough} KST` : '—'}. {t('storedNote')}</p>
         <p>{t('calculated')} · <a href="https://data.seoul.go.kr/dataList/OA-21285/A/1/datasetView.do" target="_blank" rel="noreferrer">{t('source')}</a></p>
         <p>{t('sourceLimit')}</p>
         <p>{data.definition.areaCode ?? '—'} · {data.definition.schemaVersion ?? '—'} · Asia/Seoul</p>

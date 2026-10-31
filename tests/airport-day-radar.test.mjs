@@ -185,7 +185,7 @@ test("similar days: reproducible, never the day itself or a later day, missing p
   const lines = similarLines(first[0], current, "ko");
   assert.equal(lines.differ, "두드러진 차이 없음", "no difference is distinct from unavailable data");
   assert.match(lines.alike, /출발편 수\(2026-09-30 30 · 2026-09-23 30\)/);
-  assert.equal(lines.busiest, "09–10시 30편");
+  assert.equal(lines.busiest, "09 ~ 10시 30편");
   assert.equal(similarDays({ current, history: history.slice(0, 1) }).length, 1, "not padded to three");
   const noHours = { ...history[0], day: "2026-09-15", hours: history[0].hours.map(() => 0) };
   assert.equal(similarDays({ current, history: [noHours] }).length, 0, "a day whose hours cannot be compared is not a candidate");

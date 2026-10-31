@@ -1,0 +1,6 @@
+.home-checkpoint-waits{margin-block:28px;min-width:0}
+.home-checkpoint-waits>h2{margin:0 0 8px}
+.home-checkpoint-waits>.home-checkpoint-note{font-size:11px;line-height:1.6;color:var(--muted)}
+.home-checkpoint-waits .checkpoint-schematic-reading[data-state=current][data-wait-level=very-busy]{background:#f8e1e4;color:#a12d3f}
+.home-checkpoint-waits .checkpoint-severity{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+@media(forced-colors:active){.home-checkpoint-waits .checkpoint-schematic-reading[data-wait-level=very-busy]{color:CanvasText;border:1px solid CanvasText}}

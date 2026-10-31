@@ -15,11 +15,11 @@ export interface AirportTaxRefundLocation {
 }
 export const airportTaxRefundLocations:readonly AirportTaxRefundLocation[]=[
  {terminal:'T1',process:'KIOSK_REGISTRATION',securitySide:'BEFORE_SECURITY',location:'CHECK_IN',points:['B','D','J','L'],source:'AIRPORT_FACILITIES',deskHours:null,kioskHours:'24h',conflicting:false},
- {terminal:'T1',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'GATES',points:['28'],source:'AIRPORT_GUIDE',deskHours:'07:00–22:00',kioskHours:'24h',conflicting:true},
+ {terminal:'T1',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'GATES',points:['28'],source:'AIRPORT_GUIDE',deskHours:'07:00 ~ 22:00',kioskHours:'24h',conflicting:true},
  {terminal:'T2',process:'KIOSK_REGISTRATION',securitySide:'BEFORE_SECURITY',location:'CHECK_IN',points:['F','G'],source:'AIRPORT_FACILITIES',deskHours:null,kioskHours:'24h',conflicting:false},
- {terminal:'T2',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'GATES',points:['253','250'],source:'AIRPORT_GUIDE',deskHours:'07:00–21:30',kioskHours:'24h',conflicting:true},
+ {terminal:'T2',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'GATES',points:['253','250'],source:'AIRPORT_GUIDE',deskHours:'07:00 ~ 21:30',kioskHours:'24h',conflicting:true},
  {terminal:'T2',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'GATES',points:['249','270'],source:'AIRPORT_FACILITIES',deskHours:null,kioskHours:null,conflicting:true},
- {terminal:'T2',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'GATES',points:['225','249','274'],source:'KTO',deskHours:'07:30–21:30',kioskHours:'24h',conflicting:true},
+ {terminal:'T2',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'GATES',points:['225','249','274'],source:'KTO',deskHours:'07:30 ~ 21:30',kioskHours:'24h',conflicting:true},
  {terminal:'CONCOURSE',process:'REFUND_COLLECTION',securitySide:'AFTER_SECURITY',location:'CENTRAL_PHARMACY',points:[],source:'AIRPORT_GUIDE',deskHours:null,kioskHours:'24h',conflicting:false},
 ];
 // Versioned, swappable illustrations explain procedure, never airport positions.

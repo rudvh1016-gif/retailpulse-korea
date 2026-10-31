@@ -12,7 +12,7 @@ export type TrendCalendarItem=CalendarContext & {name:string;title:string;scopeL
 export function trendCalendarText(item:TrendCalendarItem,options:{compact?:boolean}={}){
  const compact=options.compact===true;
  const months=item.months.map(period=>`${period.month}${period.relation==='previous'?'(직전 월)':''}`).join('·');
- const dates=item.start===item.end?item.start:`${item.start}–${item.end}`;
+ const dates=item.start===item.end?item.start:`${item.start} ~ ${item.end}`;
  const scope=item.country==='KR'&&item.kind==='school_break'?'초등학교 방학기간 참고 · 개별 학교 예시':compact&&item.kind==='school_break'?'지역·학교별 일정 상이':item.scopeLabel;
  return `${compact?(item.relation==='previous'?'직전 월 · ':''):`${months} · `}${item.title} ${dates}${item.scope==='national'?'':` · ${scope}`}${!compact&&item.role==='origin'?' · 한국 출발지 참고':''}`;
 }

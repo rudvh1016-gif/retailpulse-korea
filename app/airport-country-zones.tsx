@@ -1,4 +1,5 @@
 'use client';
+import {chineseText} from '../lib/chinese-ui';
 import {useMemo,useState} from 'react';
 import type {Lang} from './retailpulse-data';
 import {useFlights} from './flights-client';
@@ -10,7 +11,7 @@ import {usePresentationClock} from './presentation-clock';
 import {useAirportHashReveal} from './use-airport-hash-reveal';
 
 export default function AirportCountryZones({date,initialScope,lang='ko'}:{date?:string|null;initialScope?:string|null;lang?:Lang}){
- const t=(ko:string,zh:string)=>lang==='zh'?zh:ko;
+ const t=(ko:string,zh:string)=>chineseText(lang,lang==='zh'?zh:ko);
  useAirportHashReveal();
  const today=kstDayOf(new Date().toISOString());
  const [dayChoice,setDayChoice]=useState<{initial:string|null|undefined;value:string}|null>(null);

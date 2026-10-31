@@ -22,7 +22,7 @@ export function PreparationEvent({event,children,flights,planning=false,lang='ko
  return <div className="focus-event-row focus-preparation-event" data-country={event.country}>
   <h4><b className="focus-event-country"><CountryFlag code={event.countryLabel==='괌'?'GU':event.countryLabel==='사이판'?'MP':event.country}/>{label.country}:</b> {label.name}</h4>
   {event.type==='bank_holiday'&&<small className="focus-event-scope">{lang==='ja'?'(金融機関)':briefText(lang,'(금융기관)','(Financial institutions)','(金融机构)')}</small>}
-  <div className="focus-event-dates"><EventDate date={event.start} lang={lang}/>{event.end!==event.start&&<>–<wbr/><EventDate date={event.end} lang={lang}/></>}</div>
+  <div className="focus-event-dates"><EventDate date={event.start} lang={lang}/>{event.end!==event.start&&<> ~ <wbr/><EventDate date={event.end} lang={lang}/></>}</div>
   {!planning&&flights&&<EventCountryFlights country={event.country} label={event.countryLabel} context={flights} lang={lang}/>}
   {timing&&<small className="focus-event-timing">{timing}</small>}
   {children}

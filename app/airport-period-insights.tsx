@@ -38,7 +38,7 @@ function PeriodFrame({view,date,lang}:{view:View;date?:string|null;lang:Lang}){
  },[date,lang]);
  const rangeKey=keys.map(k=>params.get(k)??'').join('/');
  useEffect(()=>{const values=Object.fromEntries(keys.map((k,i)=>[k,rangeKey.split('/')[i]]));frame.current?.contentWindow?.postMessage({type:'koretail-insights-view',view,...(validRanges(values)?{ranges:values}:{})},location.origin);},[view,rangeKey]);
- return <iframe ref={frame} title={t(view==='country'?'국가별 항공편 기간 비교':'공항 항공편 기간 비교')} src={'/airport-period/'+(lang==='zh'?'frame-zh.html':'frame.html')+'?'+initial} className="airport-period-frame"/>;
+ return <iframe ref={frame} title={t(view==='country'?'국가별 항공편 기간 비교':'공항 항공편 기간 비교')} src={'/airport-period/'+(lang==='zh'?'frame-zh.html':lang==='en'?'frame-en.html':'frame.html')+'?'+initial} className="airport-period-frame"/>;
 }
 function revealFocusedGlanceTab(strip:HTMLDivElement|null){const active=document.activeElement;if(active instanceof HTMLElement&&active.getAttribute('role')==='tab'&&strip?.contains(active))active.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});}
 function GlanceTabNavigation({view,lang}:{view:string;lang:Lang}){
@@ -74,7 +74,7 @@ function LocalizedGlance({children,date,lang}:{children:ReactNode;date?:string|n
   {view!=='overview'&&<div id="airport-insight-analysis" role="tabpanel" aria-labelledby={'airport-insight-tab-'+view}><PeriodFrame key={lang+':'+(date??'today')} lang={lang} date={date} view={view as View}/></div>}
  </section>;
 }
-export function AirportGlanceInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'||lang==='zh'?<LocalizedGlance {...props} lang={lang}/>:props.children;}
+export function AirportGlanceInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'||lang==='zh'||lang==='en'?<LocalizedGlance {...props} lang={lang}/>:props.children;}
 function LocalizedCountries({children,date,lang}:{children:ReactNode;date?:string|null;lang:Lang}){
  const t=(value:string)=>airportAnalysisText(lang,value);
  const query=useQuery(),mode=query.get('mode')==='flights'?'flights':query.get('mode')==='passengers'?'passengers':'zones',monthly=query.get('period')==='monthly';
@@ -87,4 +87,4 @@ function LocalizedCountries({children,date,lang}:{children:ReactNode;date?:strin
   {mode==='zones'&&<div id="country-flow-zones" role="tabpanel" aria-labelledby="country-flow-tab-zones"><CountryZones lang={lang} date={date} initialScope={query.get('building')}/></div>}
  </section>;
 }
-export function AirportCountryInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'||lang==='zh'?<LocalizedCountries {...props} lang={lang}/>:props.children;}
+export function AirportCountryInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'||lang==='zh'||lang==='en'?<LocalizedCountries {...props} lang={lang}/>:props.children;}

@@ -21,7 +21,7 @@ test('event dates precede its own country metrics without unrelated Taiwan data'
  for(const fact of ['선택일 2026-10-22','공항 전체','태국행','16편','2026-09월 전체 수집분 일평균 18.5편 대비','△ 2.5편','△ 13%','10/23'])assert.ok(visible.includes(fact),fact);
  assert.doesNotMatch(visible,/대만|90편|귀국 준비|공식 일정 확인|국적|특수금융기관/);
  assert.equal((html.match(/<details/g)??[]).length,1);assert.match(details,/^ class="staff-route-details">/);
- for(const fact of ['2026-09-01–2026-09-30','30일','금융기관·특수금융기관','귀국 준비','2026-10-21','https://example.test/th','노선 국가 기준','Preserved school-calendar context'])assert.ok(details.includes(fact),fact);
+ for(const fact of ['2026-09-01 ~ 2026-09-30','30일','금융기관·특수금융기관','귀국 준비','2026-10-21','https://example.test/th','노선 국가 기준','Preserved school-calendar context'])assert.ok(details.includes(fact),fact);
  assert.doesNotMatch(details,/18\.5편|Chulalongkorn|2026-10-22|공항 전체|change-rate/,'visible facts must not be repeated in the disclosure');
  assert.equal(JSON.stringify({flights,event}),before);
 });
@@ -32,7 +32,7 @@ test('sample-day parentheses remain a no-wrap inline group in every locale',()=>
 
 test('single dates collapse once, multi-day and cross-year ranges retain both endpoints for every country',()=>{
  assert.equal((render().split('<details')[0].match(/<time /g)??[]).length,1);
- for(const [country,countryLabel,start,end,expected] of [['PH','필리핀','2026-11-01','2026-11-02','11/01–11/02'],['MM','미얀마','2026-10-25','2026-10-27','10/25–10/27'],['JP','일본','2026-12-31','2027-01-01','2026/12/31–2027/01/01']]){
+ for(const [country,countryLabel,start,end,expected] of [['PH','필리핀','2026-11-01','2026-11-02','11/01 ~ 11/02'],['MM','미얀마','2026-10-25','2026-10-27','10/25 ~ 10/27'],['JP','일본','2026-12-31','2027-01-01','2026/12/31 ~ 2027/01/01']]){
   const html=render({event:{...event,country,countryLabel,start,end}}),visible=html.split('<details')[0];
   assert.equal((visible.match(/<time /g)??[]).length,2);assert.ok(plain(visible).includes(expected));
   assert.ok(html.includes(`dateTime="${start}"`));assert.ok(html.includes(`dateTime="${end}"`));
@@ -75,7 +75,7 @@ test('all four locales preserve numbers, country keys, source evidence and close
   assert.ok(visible.includes(scopes[lang]));assert.ok(visible.includes(directions[lang]));
   assert.doesNotMatch(visible,/data-country="TW"/);assert.match(visible,/data-country="TH"/);
   assert.match(details,/^ class="staff-route-details">/);assert.ok(details.includes(summaries[lang]));
-  assert.match(details,/2026-09-01–2026-09-30/);assert.doesNotMatch(details,/18\.5/);assert.match(details,/2026-10-21/);assert.match(details,/https:\/\/example.test\/th/);
+  assert.match(details,/2026-09-01 ~ 2026-09-30/);assert.doesNotMatch(details,/18\.5/);assert.match(details,/2026-10-21/);assert.match(details,/https:\/\/example.test\/th/);
  }
  // Untranslated source wording is preserved rather than guessed, matching the existing localization contract.
  assert.match(render({lang:'ja'}),/Chulalongkorn 国王|Chulalongkorn 국왕/);

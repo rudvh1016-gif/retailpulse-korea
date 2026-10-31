@@ -19,10 +19,10 @@ const concept = {
   ja: '建物比較用の概念模型 · 実際の地理配置ではありません。',
 };
 const lighting = {
-  ko: '조명은 현재 한국 시각 기준(주간 06–18시) · 데이터 상태와 무관',
-  en: 'Lighting uses current Korea time (day 06–18) · independent of data status',
-  zh: '照明按当前韩国时间（日间06–18时）· 与数据状态无关',
-  ja: '照明は現在の韓国時刻（昼間06–18時）· データ状態とは無関係',
+  ko: '조명은 현재 한국 시각 기준(주간 06 ~ 18시) · 데이터 상태와 무관',
+  en: 'Lighting uses current Korea time (day 06 ~ 18) · independent of data status',
+  zh: '照明按当前韩国时间（日间06 ~ 18时）· 与数据状态无关',
+  ja: '照明は現在の韓国時刻（昼間06 ~ 18時）· データ状態とは無関係',
 };
 export function airportLightingBasis(lang:Lang) { return lighting[lang]; }
 export function AirportSceneModel({scope,lang,className='',showBasis=true,children}:{scope:AirportSceneScope;lang:Lang;className?:string;showBasis?:boolean;children?:React.ReactNode}) {

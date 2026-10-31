@@ -97,14 +97,14 @@ test("current crowd status is numeric-source localized and concise, never a raw 
 
 test("the next official crowd peak names its day and hour without becoming a tourist forecast", () => {
   const today = buildTourismDeskBrief(full(), "ko", "명동").find(({ key }) => key === "forecast");
-  assert.equal(today?.text, "공식 예상 최대 시간대 · 오늘 18:00–19:00 · 붐빔");
+  assert.equal(today?.text, "공식 예상 최대 시간대 · 오늘 18:00 ~ 19:00 · 붐빔");
   assert.match(today?.basis ?? "", /서울시 공식 생활인구 예측/);
   assert.match(today?.basis ?? "", /관광객.*예측이 아닙니다/);
 
   const tomorrowInput = full("en");
   tomorrowInput.crowdForecast.dayOffset = "TOMORROW";
   const tomorrow = buildTourismDeskBrief(tomorrowInput, "en", "Myeongdong").find(({ key }) => key === "forecast");
-  assert.match(tomorrow?.text ?? "", /tomorrow 18:00–19:00/);
+  assert.match(tomorrow?.text ?? "", /tomorrow 18:00 ~ 19:00/);
 
   const invalid = full();
   invalid.crowdForecast.targetAt = "not-a-time";
@@ -116,7 +116,7 @@ test("a later forecast date is formatted in KST while a bare subway day stays un
   later.crowdForecast.targetAt = "2026-09-04T16:00:00Z";
   later.crowdForecast.dayOffset = "LATER";
   const forecast = buildTourismDeskBrief(later, "ko", "명동").find(({ key }) => key === "forecast");
-  assert.match(forecast?.text ?? "", /9월 5일 01:00–02:00/,
+  assert.match(forecast?.text ?? "", /9월 5일 01:00 ~ 02:00/,
     "a UTC timestamp crossing midnight in Seoul must name the Seoul calendar day");
 
   const subway = buildTourismDeskBrief(later, "en", "Myeongdong").find(({ key }) => key === "subway");

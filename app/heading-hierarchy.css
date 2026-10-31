@@ -84,3 +84,6 @@
 
 /* Quiet topic titles keep the existing numeric scale. */
 :root body .focus-report h3.focus-brief-band[data-heading="subsection"]{font-size:16px!important;font-weight:600!important}
+/* Decorative source/category labels keep the quiet label scale, not body size. */
+:root body .about-section>p.eyebrow,
+:root body .airport-detail-head p.eyebrow{font-size:11px;line-height:1.5}

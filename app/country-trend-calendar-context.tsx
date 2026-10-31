@@ -20,10 +20,10 @@ export function CountryTrendCalendarContext({row,events,asOf,lang='ko'}:{row:Foc
  // Dates are primary comparison context, not optional evidence. Never rank-cut them.
  const countryGroups=trendCalendarCountryGroups(details),groups=countryGroups.flatMap(section=>section.groups),availability=trendVacationAvailability(events,query,details),text=copy[lang];
  const eventName=(item:typeof details[number])=>item.title.slice(calendarCountryName(item.country).length+1).replace(/^공휴일 · /,'');
- const dates=(item:typeof details[number])=><>{chineseText(lang,item.start)}{chineseText(lang,item.start!==item.end?`–${item.end}`:'')}</>;
+ const dates=(item:typeof details[number])=><>{chineseText(lang,item.start)}{chineseText(lang,item.start!==item.end?` ~ ${item.end}`:'')}</>;
  const flag=(country:string)=><span aria-hidden="true" style={{display:'inline-flex',verticalAlign:'-2px'}}><CountryFlag code={country} size={16}/></span>;
  const scopeLabel=(item:typeof details[number])=>{
-  if(lang!=='zh')return item.scopeLabel;
+  if(lang!=='zh'&&lang!=='en')return item.scopeLabel;
   // A reviewed region can itself contain a middle dot; split only the final
   // applicability qualifier so the region keeps its complete meaning.
   const separator=item.scopeLabel.lastIndexOf(' · ');

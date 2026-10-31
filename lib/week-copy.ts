@@ -44,7 +44,7 @@ export function weekItemLine(item: WeekItem, lang: PrepLang): string {
   switch (item.kind) {
     case "HOLIDAY": {
       const name = localHolidayName(item.name, lang, item.country);
-      const period = item.start !== item.end ? ` ${short(item.start)}–${short(item.end)}` : "";
+      const period = item.start !== item.end ? ` ${short(item.start)} ~ ${short(item.end)}` : "";
       return row(`${countries[item.country].ko} 공휴일 · ${name}${period}`, `${countries[item.country].en} holiday · ${name}${period}`,
         `${countries[item.country].zh}假日 · ${name}${period}`, `${countries[item.country].ja}の祝日 · ${name}${period}`)[lang];
     }
@@ -53,10 +53,10 @@ export function weekItemLine(item: WeekItem, lang: PrepLang): string {
         `中国调休上班日（非假日）· ${item.name}`, `中国の振替出勤日（休日ではない）· ${localHolidayName(item.name, lang, "CN")}`)[lang];
     case "RAIN":
       return row(
-        `강수확률 최고 ${item.percent}% (${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)}–${prepTime(item.toAt, item.toAt.slice(0, 10), lang)} 예보 기준)`,
-        `Highest chance of rain ${item.percent}% (forecast for ${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)}–${prepTime(item.toAt, item.toAt.slice(0, 10), lang)})`,
-        `最高降水概率 ${item.percent}%（${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)}–${prepTime(item.toAt, item.toAt.slice(0, 10), lang)} 预报）`,
-        `最高降水確率 ${item.percent}%（${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)}–${prepTime(item.toAt, item.toAt.slice(0, 10), lang)}の予報）`,
+        `강수확률 최고 ${item.percent}% (${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)} ~ ${prepTime(item.toAt, item.toAt.slice(0, 10), lang)} 예보 기준)`,
+        `Highest chance of rain ${item.percent}% (forecast for ${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)} ~ ${prepTime(item.toAt, item.toAt.slice(0, 10), lang)})`,
+        `最高降水概率 ${item.percent}%（${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)} ~ ${prepTime(item.toAt, item.toAt.slice(0, 10), lang)} 预报）`,
+        `最高降水確率 ${item.percent}%（${prepTime(item.fromAt, item.fromAt.slice(0, 10), lang)} ~ ${prepTime(item.toAt, item.toAt.slice(0, 10), lang)}の予報）`,
       )[lang];
     case "FORECAST_NOT_PUBLISHED":
       return row("날씨 예보 발표 전", "No weather forecast published yet", "天气预报尚未发布", "天気予報はまだ発表前")[lang];
@@ -84,7 +84,7 @@ export function weekHeadline(week: WeekAhead, lang: PrepLang): string {
   }
   if (!parts.length) parts.push(headline.none[lang]);
   const events = week.events?.length ?? 0;
-  const range = `${short(week.start)}–${short(week.end)}`;
+  const range = `${short(week.start)} ~ ${short(week.end)}`;
   const eventPart = week.events ? row(`행사 ${events}건`, `${events} event(s)`, `活动 ${events} 项`, `イベント ${events}件`)[lang] : null;
   const rest = [...parts, ...(eventPart ? [eventPart] : [])].join(" · ");
   return lang === "zh" || lang === "ja" ? `${weekCopy.title[lang]}（${range}）· ${rest}` : `${weekCopy.title[lang]} (${range}) · ${rest}`;

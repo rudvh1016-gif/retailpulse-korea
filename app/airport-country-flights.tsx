@@ -1,4 +1,5 @@
 'use client';
+import {chineseText} from '../lib/chinese-ui';
 import {useMemo,useState} from 'react';
 import type {Lang} from './retailpulse-data';
 
@@ -19,10 +20,10 @@ const svgFlags=new Set('AE AT AU BN CA CH CZ DE DK ES ET FI FR GB GE GU HK HU ID
 function Flag({country}:{country:string}){const src=sculptedFlags.has(country)?`/images/airport-flags/${country}.webp`:svgFlags.has(country)?`/images/airport-flags/fallback/${country.toLowerCase()}.svg`:null;return src?<img src={src} width="22" height="22" alt=""/>:<span className="cfp-flag-code" aria-hidden="true">{country}</span>;}
 const wholeNumber=new Intl.NumberFormat('ko-KR',{maximumFractionDigits:0});
 const fmt=(value:number|null|undefined)=>value===null||value===undefined||!Number.isFinite(value)?'—':wholeNumber.format(Math.sign(value)*Math.round(Math.abs(value)));
-const text=(lang:Lang,ko:string,zh:string)=>lang==='zh'?zh:ko;
+const text=(lang:Lang,ko:string,zh:string)=>chineseText(lang,lang==='zh'?zh:ko);
 const monthLabel=(value:string,lang:Lang='ko')=>`${Number(value.slice(5))}${text(lang,'월','月')}`;
 const scopeLabel=(value:MonthScope,lang:Lang='ko')=>lang==='zh'?({ALL:'全部',T1:'T1主楼',CONCOURSE:'卫星厅',T2:'T2',UNKNOWN:'航站楼未确认'})[value]:scopes.find(([key])=>key===value)?.[1]??value;
-function periodLabel(month:AirportFlightMonth|undefined,lang:Lang='ko'){if(!month)return text(lang,'자료 없음','暂无资料');const included=month.includedDays,short=(day:string)=>`${Number(day.slice(5,7))}.${Number(day.slice(8))}`;return included.length?`${short(included[0])}–${short(included.at(-1)!)} · ${text(lang,`${included.length}일 포함`,`计入${included.length}天`)}`:text(lang,'포함 날짜 없음','无计入日期');}
+function periodLabel(month:AirportFlightMonth|undefined,lang:Lang='ko'){if(!month)return text(lang,'자료 없음','暂无资料');const included=month.includedDays,short=(day:string)=>`${Number(day.slice(5,7))}.${Number(day.slice(8))}`;return included.length?`${short(included[0])} ~ ${short(included.at(-1)!)} · ${text(lang,`${included.length}일 포함`,`计入${included.length}天`)}`:text(lang,'포함 날짜 없음','无计入日期');}
 function countryName(country:string,names:Intl.DisplayNames,lang:Lang='ko'){if(country==='KR')return text(lang,'국내 목적지','韩国境内目的地');try{return names.of(country)??country;}catch{return country;}}
 
 export function formatFlightChangeRate(value:number|null|undefined,lang:Lang='ko'){

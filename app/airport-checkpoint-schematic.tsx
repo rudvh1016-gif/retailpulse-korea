@@ -14,7 +14,7 @@ const LANE_ANCHORS=[[139,279],[198,279],[346,238],[406,238],[553,240],[612,240],
  * tied to its lane by a leader, so the left-to-right order is the floor order. */
 const leaderPath=(index:number)=>{const [x,y]=LANE_ANCHORS[index],column=(index+.5)*120;return `M${x} ${y+6}V352L${column} 400`;};
 
-export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T1'|'T2';rows:readonly CheckpointReading[];now:number;lang:Lang}) {
+export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=false}:{showSeverity?:boolean;terminal:'T1'|'T2';rows:readonly CheckpointReading[];now:number;lang:Lang}) {
  const groups=checkpointLayout(terminal,rows),minute=t(lang,'분','min','分','分');
  const terminalRows=rows.filter(row=>row.terminal===terminal);
  const observed=[...new Set(terminalRows.map(row=>row.observedAt))].filter(at=>Number.isFinite(Date.parse(at))).sort();
@@ -50,13 +50,13 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang}:{terminal:'T
     const peopleShown=lang==='en'?known?`${n} in line`:'No count':people;
     return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
      <span>{name}</span><strong><span>{shown}{heat.state==='zero'&&<sup>*</sup>}</span>{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}</strong>
-     <small className="checkpoint-schematic-people">{peopleShown}</small>
+     <small className="checkpoint-schematic-people">{peopleShown}</small>{showSeverity&&heat.state==='current'&&heat.level==='very-busy'&&<small className="checkpoint-severity">{heat.basis?t(lang,'60분+','60+ min','60分+','60分以上'):queueHeatLabel(heat,lang)}</small>}
     </div>;
    })}</div>
   </div>
   <p className="checkpoint-schematic-time">{t(lang,'관측','Observed','观测','観測')}: {observed.length?observed.length===1?stamp(observed[0]):`${stamp(observed[0])} / ${stamp(observed.at(-1)!)}`:'—'} KST{observed.length>1?` · ${t(lang,'출국장별 시각 다름','Clocks differ by hall','各厅时刻不同','出国場ごとに時刻が異なります')}`:''}</p>
   <p className="checkpoint-schematic-basis">{t(lang,'— 미확인 · *0분은 운영 확인 · 오래된 값은 회색','— unconfirmed · *0 min: check operation · old values are grey','— 未确认 · *0分需确认运营 · 旧值为灰色','— 未確認 · *0分は運営を確認 · 古い値は灰色')}</p>
-  <details className="checkpoint-schematic-details">
+  {showSeverity&&terminal==='T1'&&<p className="checkpoint-schematic-basis">{t(lang,'T1 색상은 코리테일 분 단위 기준 · 공식 혼잡 등급 아님','T1 colors use KORETAIL minute bands, not official congestion grades.','T1配色采用KORETAIL分钟标准，非官方拥挤等级。','T1の色はKORETAILの分単位基準で、公式混雑等級ではありません。')}</p>}<details className="checkpoint-schematic-details">
    <summary>{t(lang,'대기 인원·시각·출처','People, times and source','等候人数、时刻与来源','待機人数・時刻・出典')}</summary>
    {terminalRows.length?<ul className="checkpoint-observation-list">{terminalRows.map((row,index)=>{
     const {heat,value}=wait(row);

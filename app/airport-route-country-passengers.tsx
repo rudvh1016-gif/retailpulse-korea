@@ -1,4 +1,5 @@
 'use client';
+import {chineseText} from '../lib/chinese-ui';
 import {DisclosureLabel} from './disclosure-label';
 import {createContext,useContext,useMemo,useState,type ReactNode} from 'react';
 /** Optional approval-preview relocation; default preserves the production table. */
@@ -43,7 +44,7 @@ export function AirportRouteCountryPassengers({lang,month,terminal}:{lang:Lang;m
  if(replacement)return <>{replacement}</>;
  const fmt=new Intl.NumberFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang],{maximumFractionDigits:0});
  const names=new Intl.DisplayNames([lang],{type:'region'});
- const label=(row:AirportStatsRow)=>{const code=codes?.get(row.label);return code?names.of(code)??row.label:row.label;};
+ const label=(row:AirportStatsRow)=>{const code=codes?.get(row.label);return code?names.of(code)??chineseText(lang,row.label):chineseText(lang,row.label);};
  const daily=new Intl.NumberFormat(lang,{maximumFractionDigits:0});
  const rows=compareRoutePassengerMonths(current,previous);
  const scale=Math.max(1,...rows.flatMap(row=>[row.selectedTotal??0,row.baselineTotal??0]));

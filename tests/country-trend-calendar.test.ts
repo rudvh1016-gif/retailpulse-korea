@@ -141,7 +141,7 @@ test('Chuseok shows the complete reviewed range without inventing missing or sub
  const result=countryTrendCalendar(events,query);
  const chuseok=result.summary.find(item=>item.country==='KR'&&item.name==='추석 연휴')!;
  assert.deepEqual([chuseok.start,chuseok.end],['2026-09-24','2026-09-26']);
- assert.match(html().split('<details')[0],/추석 연휴<\/b> 2026-09-24–2026-09-26/);
+ assert.match(html().split('<details')[0],/추석 연휴<\/b> 2026-09-24 ~ 2026-09-26/);
  assert.doesNotMatch(html(),/내리숲초등학교|경기 화성/);
  assert.match(html(),/초등학교 방학기간 참고 · 개별 학교 예시/);
  const incomplete=countryTrendCalendar(events.filter(item=>item.start!=='2026-09-25'),query);
@@ -174,9 +174,9 @@ test('compact rows expose every matched event and keep sources in one closed lis
  assert.equal((rendered.match(/<details/g)??[]).length,1);
  assert.doesNotMatch(rendered,/<details[^>]*\bopen(?:[=> ]|$)/);
  assert.match(visible,/US\.webp.*미국 · <b>노동절<\/b> 2026-09-07 · 연방공무원/);
- assert.match(visible,/kr\.svg.*한국 · <b>추석 연휴<\/b> 2026-09-24–2026-09-26/);
- assert.match(visible,/<b>여름방학<\/b> 2026-07-28–2026-08-19 · 학교별 상이 · 예시 · 직전 월/);
- assert.doesNotMatch(rendered,/2026-09-07–2026-09-07/);
+ assert.match(visible,/kr\.svg.*한국 · <b>추석 연휴<\/b> 2026-09-24 ~ 2026-09-26/);
+ assert.match(visible,/<b>여름방학<\/b> 2026-07-28 ~ 2026-08-19 · 학교별 상이 · 예시 · 직전 월/);
+ assert.doesNotMatch(rendered,/2026-09-07 ~ 2026-09-07/);
  for(const name of ['노동절','추석 연휴'])assert.equal(visible.split(name).length-1,1,name);
  assert.match(visible,/한국 · <b>광복절<\/b> 2026-08-15 · 직전 월/);
  assert.match(visible,/한국 · <b>광복절 대체공휴일<\/b> 2026-08-17 · 직전 월/);
@@ -218,8 +218,8 @@ test('Japan screenshot regression: all selected and comparison-month holidays an
  const [visible,evidence]=html().split('<details');
  for(const [country,name,dates] of [
   ['일본','경로의 날','2026-09-21'],['일본','공휴일 사이 휴일','2026-09-22'],['일본','추분의 날','2026-09-23'],
-  ['일본','산의 날','2026-08-11'],['일본','여름방학','2026-07-21–2026-08-31'],
-  ['한국','추석 연휴','2026-09-24–2026-09-26'],['한국','여름방학','2026-07-28–2026-08-19'],
+  ['일본','산의 날','2026-08-11'],['일본','여름방학','2026-07-21 ~ 2026-08-31'],
+  ['한국','추석 연휴','2026-09-24 ~ 2026-09-26'],['한국','여름방학','2026-07-28 ~ 2026-08-19'],
   ['한국','광복절','2026-08-15'],['한국','광복절 대체공휴일','2026-08-17'],
  ])assert.equal(visible.split(`${country} · <b>${name}</b> ${dates}`).length-1,1,`${country} ${name}`);
  assert.equal((visible.match(/학교별 상이 · 예시/g)??[]).length,2);
@@ -262,7 +262,7 @@ test('one China summer heading preserves both local schools, dates, months and o
  const [visible,evidence]=rendered.split('<details');
  assert.equal((visible.match(/data-vacation-group="CN"/g)??[]).length,1);
  assert.equal((visible.match(/중국 · <b>여름방학<\/b>/g)??[]).length,1);
- for(const item of china[0].items){assert.ok(visible.includes(item.region!));assert.ok(visible.includes(`${item.start}–${item.end}`));assert.ok(evidence.includes(item.sourceURL));assert.ok(evidence.includes(item.verifiedAt));}
+ for(const item of china[0].items){assert.ok(visible.includes(item.region!));assert.ok(visible.includes(`${item.start} ~ ${item.end}`));assert.ok(evidence.includes(item.sourceURL));assert.ok(evidence.includes(item.verifiedAt));}
  assert.ok(visible.includes('한국 · <b>여름방학</b>'));assert.ok(evidence.includes('개별 학교 예시'));
  assert.ok(!china[0].items.some(item=>item.scope==='national'));
 });

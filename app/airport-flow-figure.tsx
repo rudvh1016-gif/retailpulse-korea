@@ -20,7 +20,7 @@ const copy = {
 
 const kstClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false });
 /** Rough text width at 11px: CJK glyphs are square, Latin digits are narrow. */
-const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·–:]/.test(ch) ? 3.4 : 6.2), 0);
+const textWidth = (text: string) => [...text].reduce((sum, ch) => sum + (ch > "⺀" ? 11 : /[0-9]/.test(ch) ? 6.4 : /[ ·~–:]/.test(ch) ? 3.4 : 6.2), 0);
 
 export function AirportFlowFigure({ chartId, timeline, layers = null, lang = "ko", terminal = 'all', showModel = true, peakStartAt, nowBandStart, nowBandProgress, nowLabel, numberLocale, label, reference = null }: {
   chartId?: string;
@@ -93,7 +93,7 @@ export function AirportFlowFigure({ chartId, timeline, layers = null, lang = "ko
 
   const tip = hover ? (() => {
     const band = layout.bands[hover.index];
-    const lines = [`${clock(band.start)}–${clock(band.end)} KST`, `${people(band.value)}${unit}`];
+    const lines = [`${clock(band.start)} ~ ${clock(band.end)} KST`, `${people(band.value)}${unit}`];
     if (layout.stacked) lines.push(layout.layers.map((layer) => `${layer.key} ${people(layer.values[hover.index])}`).join(" · "));
     const past = referenceAt(band.start);
     if (past && reference) lines.push(`${reference.short} ${people(past.value)}${unit}`);
@@ -155,8 +155,8 @@ export function AirportFlowFigure({ chartId, timeline, layers = null, lang = "ko
       {layout.bands.map((band, index) => <rect key={band.start} className={["airport-flow-band", band.now ? "now" : "", band.peak ? "peak" : ""].filter(Boolean).join(" ")}
         x={band.x} y={top} width={band.width} height={base - top} tabIndex={0} pointerEvents="none"
         onFocus={() => hoverBand(index)} onBlur={() => setHover(null)}
-        data-start={band.start} aria-label={`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}${referenceAt(band.start) && reference ? ` · ${reference.short} ${people(referenceAt(band.start)!.value)}` : ""}`}>
-        <title>{`${clock(band.start)}–${clock(band.end)} KST · ${people(band.value)}${referenceAt(band.start) && reference ? ` · ${reference.short} ${people(referenceAt(band.start)!.value)}` : ""}`}</title>
+        data-start={band.start} aria-label={`${clock(band.start)} ~ ${clock(band.end)} KST · ${people(band.value)}${referenceAt(band.start) && reference ? ` · ${reference.short} ${people(referenceAt(band.start)!.value)}` : ""}`}>
+        <title>{`${clock(band.start)} ~ ${clock(band.end)} KST · ${people(band.value)}${referenceAt(band.start) && reference ? ` · ${reference.short} ${people(referenceAt(band.start)!.value)}` : ""}`}</title>
       </rect>)}
     </svg>
     <ul className="av-legend airport-flow-legend">

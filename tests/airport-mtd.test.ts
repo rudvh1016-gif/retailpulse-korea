@@ -28,7 +28,7 @@ function index(days: Record<string, AirportForecastAggregateRow[]>) {
   return new Map(Object.entries(days));
 }
 
-/** 9/1–9/13 all complete: T1 100/band, T2 50/band → 2,400 + 1,200 per day. */
+/** 9/1 ~ 9/13 all complete: T1 100/band, T2 50/band → 2,400 + 1,200 per day. */
 function september(through = 13) {
   const rows: Record<string, AirportForecastAggregateRow[]> = {};
   for (const date of datesBetween("2026-09-01", `2026-09-${String(through).padStart(2, "0")}`)) {

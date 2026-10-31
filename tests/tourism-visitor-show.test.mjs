@@ -9,7 +9,7 @@ import { TourismVisitorShow } from "../app/tourism-visitor-show.tsx";
 
 const content = {
   officialEventTitleKo: "서울 공식 봄 행사",
-  officialEventPeriod: "2026-09-01–2026-09-07",
+  officialEventPeriod: "2026-09-01 ~ 2026-09-07",
   officialEventAddressKo: "서울특별시 중구 공식로 1",
   officialEventUrl: "https://example.go.kr/event/1",
   officialEventSource: "공식 행사 제공기관",

@@ -42,7 +42,7 @@ function HourFlights({flights, lang, testId}: {flights: readonly MapFlight[]; la
 function FlightHour({hour, flights, lang, testId}: {hour: string; flights: readonly MapFlight[]; lang: Lang; testId: string}) {
   const [open, setOpen] = useState(false);
   return <details className="airport-flight-hour" open={open} onToggle={event => setOpen(event.currentTarget.open)}>
-    <summary data-disclosure-mixed>{hour.slice(5,10)} · {hour.slice(11)}:00–{String((Number(hour.slice(11))+1)%24).padStart(2,'0')}:00 KST <span>{flights.length}</span></summary>
+    <summary data-disclosure-mixed>{hour.slice(5,10)} · {hour.slice(11)}:00 ~ {String((Number(hour.slice(11))+1)%24).padStart(2,'0')}:00 KST <span>{flights.length}</span></summary>
     {open && <HourFlights flights={flights} lang={lang} testId={`${testId}-rows`} />}
   </details>;
 }

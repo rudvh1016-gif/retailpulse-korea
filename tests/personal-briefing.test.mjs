@@ -101,7 +101,7 @@ test('future briefing uses weekday-matched partial schedules and shows airline c
 test('peak hour retains the number of expected passengers as well as time',()=>{
   const s={...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{T1:{targetStartAt:'2026-09-09T07:00:00+09:00',targetEndAt:'2026-09-09T08:00:00+09:00',expectedPassengers:3210}}}};
   const card=buildPersonalBrief(s,{...recommendedPreferences('manager'),terminal:'T1'},'2026-09-09','ko').cards.find(c=>c.interest==='crowding');
-  assert.equal(card.value,'07:00–08:00');
+  assert.equal(card.value,'07:00 ~ 08:00');
   assert.deepEqual(card.details,['3,210명']);
 });
 
@@ -126,7 +126,7 @@ test('an unreadable peak band omits the hour instead of taking the screen down',
   // A readable band is unchanged.
   const good={...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{T1:{
     targetStartAt:'2026-09-09T07:00:00+09:00',targetEndAt:'2026-09-09T08:00:00+09:00',expectedPassengers:3210}}}};
-  assert.equal(buildPersonalBrief(good,p,'2026-09-09','ko').cards.find(c=>c.interest==='crowding')?.value,'07:00–08:00');
+  assert.equal(buildPersonalBrief(good,p,'2026-09-09','ko').cards.find(c=>c.interest==='crowding')?.value,'07:00 ~ 08:00');
 });
 
 test('an unreadable Seoul forecast hour cannot take the briefing down either',()=>{
@@ -146,13 +146,13 @@ test('the work list leads with the value that produced it, and falls back to the
   // The airport band is the hour with the most expected departure-hall
   // passengers — a head count, not a queue length — so it must not be
   // called 혼잡. The busiest hour for people is not the longest wait.
-  assert.equal(led[0],'07:00–08:00 예상 이용객 최다 · 붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장');
+  assert.equal(led[0],'07:00 ~ 08:00 예상 이용객 최다 · 붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장');
   assert.ok(!led[0].includes('혼잡'));
   // Without a published peak the same reader keeps the general sentence
   // rather than a lead invented to fill the gap.
   const bare=buildPersonalBrief({...base,airport:{...base.airport,peakExpectedTimeBandByTerminal:{}}},p,'2026-09-09','ko').actions;
   assert.equal(bare[0],'붐비는 시간대 인력 배치와 주요 상품 재고 확인 권장');
-  assert.equal(buildPersonalBrief(s,p,'2026-09-09','en').actions[0],'most expected passengers around 07:00–08:00 · Review staffing and key stock for busy hours');
+  assert.equal(buildPersonalBrief(s,p,'2026-09-09','en').actions[0],'most expected passengers around 07:00 ~ 08:00 · Review staffing and key stock for busy hours');
 });
 
 test('rain chance and the official event name reach the work list from their own cards',()=>{

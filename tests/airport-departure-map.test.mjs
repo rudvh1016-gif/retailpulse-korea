@@ -96,8 +96,8 @@ test("the window keeps start <= t < end, to the minute", () => {
   assert.equal(customWindow(0, 25), null);
   assert.deepEqual(presetWindow("NEXT3", 22 * 60 + 15), { startMin: 1335, endMin: 1515 });
   assert.deepEqual(presetWindow("NEXT1", null), DAY, "no 'from now' window for another date");
-  assert.equal(windowLabel({ startMin: 1335, endMin: 1515 }), "22:15–01:15 (+1)");
-  assert.equal(windowLabel(DAY), "00:00–24:00");
+  assert.equal(windowLabel({ startMin: 1335, endMin: 1515 }), "22:15 ~ 01:15 (+1)");
+  assert.equal(windowLabel(DAY), "00:00 ~ 24:00");
 });
 
 test("past midnight: the next day's rows are used only when they exist; otherwise the gap is stated", () => {
@@ -176,7 +176,7 @@ test("the copied text carries date, terminal, window, filter, counts, gaps and t
   const rows = [row("T1", "9", "09:00"), row("T1", "29", "09:30"), row("T1", "", "10:00"), row("", "110", "10:30", { airportCode: "상하이/푸동" })];
   const map = departureMap({ date: DATE, nextDate: NEXT, terminal: "T1", window: { startMin: 540, endMin: 660 }, rows });
   const text = mapShareText(map, { date: DATE, filter: "JP", basis: "운항 기록 기준", url: "https://koretaildata.com/ko/business" }, "ko");
-  assert.match(text, /2026-09-29 T1 · 09:00–11:00/);
+  assert.match(text, /2026-09-29 T1 · 09:00 ~ 11:00/);
   assert.ok(text.includes(windowCountsLine(map, "ko")));
   assert.match(text, /탑승동 1편/);
   assert.match(text, /목적지 필터: 일본/);

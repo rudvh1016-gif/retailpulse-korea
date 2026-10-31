@@ -115,7 +115,7 @@ test("remaining departures counts whole official bands and never pro-rates the c
     ...productionDayBands("T2"), wrapBand("T2"),
   ];
   const summary = summarizeTodayPassengerForecast(rows, "2026-08-31");
-  // 21:30 KST — the 21:00–22:00 band is in progress.
+  // 21:30 KST — the 21:00 ~ 22:00 band is in progress.
   const nowIso = "2026-08-31T12:30:00.000Z";
   const remaining = summarizeRemainingPassengerForecast(summary.timeline, summary.coverage.all, nowIso);
   assert.ok(remaining);
@@ -137,7 +137,7 @@ test("remaining departures is withheld entirely when the day is not provably com
 
 /**
  * Production evidence (same diagnostic): at 22:55 KST the latest Seoul issue
- * covered 00:00–11:00 the NEXT day, so a "today only" filter reported zero
+ * covered 00:00 ~ 11:00 the NEXT day, so a "today only" filter reported zero
  * bands and the UI claimed no forecast existed while twelve official bands
  * were stored.
  */

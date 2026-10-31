@@ -43,7 +43,8 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  expect(await disclosures.count()).toBeGreaterThan(0);
  await expect(future.locator(':scope > div > small')).toHaveCount(0);
  await expect(future.locator('.focus-preparation-events')).toHaveCSS('margin-bottom',width<=700?'0px':'5px');
- await expect(future.locator(':scope > .focus-planning-basis')).toHaveCSS('margin-top',width<=700?'4px':'8px');
+ await expect(future.locator(':scope > .focus-planning-basis')).toHaveCount(0);
+ await expect(future.locator('.focus-planning-link')).toHaveCount(0);
  const heights:number[]=[],leftTops:number[][]=[];
  for(const expanded of [true,false]){
   for(const disclosure of await disclosures.all()){

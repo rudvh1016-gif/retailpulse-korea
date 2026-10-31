@@ -76,7 +76,7 @@ const passengerCopy={
  ja:{transfer:'予想乗継客',transferBasis:'乗継保安検査基準・到着日',today:'今日の予想出国者数',selected:'選択日の予想出国者数',people:'人',basis:'仁川空港公式の一日予測',shared:'T1共通（搭乗棟含む）',collected:'取得',partial:'一日予測が不完全'},
 } as const;
 export interface GlanceOverviewContext {comparisonPending?:boolean;weekPending?:boolean;weekReference?:GlanceWeekReference|null;eventFlights?:EventFlightContext;passengerBaseline?:PassengerReferenceMonth|null;selectedCountryChanges?:Array<{country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number;basis?:string}>;day:string;scope:GlanceScope;flights:number|null;passengers:number|null;transferPassengers:number|null;referenceSum:number|null;flightComparison:{mean:number;delta:number;percent:number}|null;flightBaseline:{mean:number;delta:number;percent:number|null;days:number;start:string;end:string;previous:boolean;basis?:string;evidence?:ComparisonBasis}|null}
-export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange,overviewHeading,overviewExtras,trailingContent,hideTitle=false,hideRepeatedFlightSummary=false,hideRepeatedPassengerSummary=false,artworkSrcSet,artworkSizes,artworkNote}:{lang:Lang;hideTitle?:boolean;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void;overviewHeading?:(context:GlanceOverviewContext)=>ReactNode;overviewExtras?:ReactNode;trailingContent?:ReactNode;hideRepeatedFlightSummary?:boolean;hideRepeatedPassengerSummary?:boolean;artworkSrcSet?:string;artworkSizes?:string;artworkNote?:string}){
+export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange,overviewHeading,overviewExtras,trailingContent,hideTitle=false,hideRepeatedFlightSummary=false,hideRepeatedPassengerSummary=false,artworkSrcSet,artworkSizes,artworkNote}:{lang:Lang;hideTitle?:boolean;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void;overviewHeading?:(context:GlanceOverviewContext)=>ReactNode;overviewExtras?:ReactNode;trailingContent?:ReactNode|((context:{summary:ReturnType<typeof useLiveSummary>;now:number})=>ReactNode);hideRepeatedFlightSummary?:boolean;hideRepeatedPassengerSummary?:boolean;artworkSrcSet?:string;artworkSizes?:string;artworkNote?:string}){
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
  const [previewDate,setPreviewDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all');
@@ -147,7 +147,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  // Format the existing aggregation boundaries only; do not extend the available day or change counts.
  function windowTime(start:number,end:number){
   const startDay=kstDayOf(new Date(start).toISOString()),endDay=kstDayOf(new Date(end).toISOString());
-  return startDay===endDay?`${shortFutureTime(start)}–${shortFutureTime(end)}`:`${startDay} ${shortFutureTime(start)}–${endDay} ${shortFutureTime(end)}`;
+  return startDay===endDay?`${shortFutureTime(start)} ~ ${shortFutureTime(end)}`:`${startDay} ${shortFutureTime(start)} ~ ${endDay} ${shortFutureTime(end)}`;
  }
  function shortFutureTime(value:number){return new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));}
  const stamp=(value:string|null|undefined)=>value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat(lang,{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value))+' KST':'—';
@@ -162,7 +162,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   forecast:`/${lang}/airport?terminal=${scope==='all'?'all':forecastTerminal}${dateQuery}#airport-forecast-title`,
   wait:scope==='CONCOURSE'?`/${lang}/airport?terminal=T1${dateQuery}#airport-checkpoints-title`:`${details}#airport-checkpoints-title`,
   map:scope==='CONCOURSE'?`${details}#airport-concourse`:`${details}#airport-departure-model-slot`,
-  countries:lang==='ko'||lang==='zh'?`/${lang}/airport-countries?mode=zones&building=${scope}${dateQuery}#airport-zone-countries`:`${details}#airport-zone-countries`,
+  countries:lang==='ko'||lang==='zh'||lang==='en'?`/${lang}/airport-countries?mode=zones&building=${scope}${dateQuery}#airport-zone-countries`:`${details}#airport-zone-countries`,
   monthCountries:`${details}#airport-month-destinations`,
  };
  // While a value is unknown its placeholder keeps the loaded shape: an invisible pseudo-element of that shape (.glance-hold, outside the DOM
@@ -209,7 +209,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
    </div>}
    {overviewHeading&&<h2 data-heading="section" id="airport-staff-briefing-title" className="glance-workday-heading"><span className="heading-marker" aria-hidden="true"/>{chineseText(lang,"주목할 공항 흐름")}</h2>}
    <a href={targets.wait} data-testid="glance-key-wait"><h3 className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"/><span className="airport-flow-check" aria-hidden="true">✓</span>{overviewHeading&&!isToday?chineseText(lang,'출국장 대기'):ic.wait}</h3><strong>{wait?`${wait.row.terminal} ${friendlyCheckpointName(wait.row.zone,lang)} · ${waitValue(wait)}`:overviewHeading&&!isToday?chineseText(lang,'오늘 자료에서 확인'):pendingText??ic.unavailable}</strong><small>{wait?`${shortTime(wait.row.observedAt)} KST · ${ic.waitBasis}${wait.tied?` · ${ic.tie}`:''}`:<>{ic.waitBasis}{liveHold&&hold(` · 00:00 KST · ${ic.tie}`,'')}</>}</small></a>
-   <a href={targets.map} data-testid="glance-key-upcoming"><h3 className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"/><span className="airport-flow-check" aria-hidden="true">✓</span>{overviewHeading&&!isToday?chineseText(lang,'출발편 집중 시간'):ic.upcoming}</h3><strong>{overviewHeading&&!isToday?chineseText(lang,'오늘 자료에서 확인'):upcoming?`${minuteText(upcoming.startMin)}–${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{dayText} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
+   <a href={targets.map} data-testid="glance-key-upcoming"><h3 className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"/><span className="airport-flow-check" aria-hidden="true">✓</span>{overviewHeading&&!isToday?chineseText(lang,'출발편 집중 시간'):ic.upcoming}</h3><strong>{overviewHeading&&!isToday?chineseText(lang,'오늘 자료에서 확인'):upcoming?`${minuteText(upcoming.startMin)} ~ ${minuteText(upcoming.endMin)} · ${upcoming.flights} ${c.unit}`:futureReady?ic.noUpcoming:pendingText??ic.unavailable}</strong><small>{dayText} KST · {ic.upcomingBasis}{upcoming?.tied?` · ${ic.tie}`:''}</small></a>
    <a href={targets.monthCountries} data-testid="glance-key-growth"><h3 className="airport-flow-item-title"><span className="heading-marker" aria-hidden="true"/><span className="airport-flow-check" aria-hidden="true">✓</span>{ic.growth}</h3><strong>{growth?<>{countryLabel(growth.country)} <CountChange delta={growth.delta} format={fmt.format} lang={lang} unit={ui.perDay}/>{ranking[1]&&sameDailyChange(ranking[1].delta,growth.delta)?` · ${ic.tie}`:''}</>:comparable?ic.noGrowth:pendingText??ic.unavailable}</strong><small>{previousMonthText} → {monthText} · {ui.days} {daysText(previous)} / {daysText(current)} {ui.dayUnit}</small></a>
    {overviewHeading&&<AirportStaffBriefing lang={lang} day={day} peak={staffDeparturePeak(day,data?.departures??null)} changes={staffCountryChanges} flights={eventFlights} retrievedAt={payload?.retrievedAt??null}/>}
    {overviewExtras&&<div className="glance-overview-extras">{overviewExtras}</div>}
@@ -244,7 +244,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
    {future?.clipped&&<small>{fc.midnight}</small>}
    <details className="glance-context"><summary>{compactCopy.rules}</summary><p>{fc.basis}</p><p>{gc.records}</p><p>{fc.zoneBasis}</p></details>
   </section>
-  {trailingContent}
+  {typeof trailingContent==='function'?trailingContent({summary,now:clock}):trailingContent}
   <footer><span>{c.collected} · {settling?stampHold:stamp(payload?.retrievedAt)}</span><span>{c.monthTime} · {monthPending?stampHold:stamp(monthRequest.reply?.calculatedAt)}</span><a href="https://www.airport.kr/geomap/ap_ko/view.do" target="_blank" rel="noreferrer">{ui.map} ↗</a></footer>
  </Container>;
 }

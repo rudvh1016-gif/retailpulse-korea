@@ -50,7 +50,7 @@ test('malformed profile counts, hours, side sums and unsafe totals fail closed',
 });
 test('exact previous weekday crosses months, years and leap February without a rolling average',async()=>{
  for(const [selected,expected] of [['2026-11-01','2026-10-25'],['2026-01-03','2025-12-27'],['2028-03-01','2028-02-23'],['2028-03-07','2028-02-29']] as const){
-  const db=mockDb({forecasts:[],transfers:[],profiles:[]}),result=await readGlanceWeekReference(db as never,selected);
+  const db=mockDb({forecasts:[],transfers:[],profiles:[]}),result=await readGlanceWeekReference(db as never,selected,'2026-10-19T03:00:00Z');
   assert.equal(result.previousDay,expected);assert.equal(result.day,selected);
   assert.deepEqual(db.queries.map(q=>q.values),[[expected],[expected],[selected,expected]]);
  }

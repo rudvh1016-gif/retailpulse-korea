@@ -12,7 +12,7 @@ test('translated disclosure label text stays exact while numbers stay regular',(
  }
 });
 test('readiness and week headings leave dates, counts and supporting copy regular',()=>{
- for(const [title,tail] of [['내일 예상 준비',': 24/24시간에 최소 자료 확보'],['다음 7일',' (10/22–10/28) · 행사 4건']]){
+ for(const [title,tail] of [['내일 예상 준비',': 24/24시간에 최소 자료 확보'],['다음 7일',' (10/22 ~ 10/28) · 행사 4건']]){
   const html=render(title+tail,title);assert.equal(html,`<span data-disclosure-title="true">${title}</span><span data-disclosure-meta="true">${tail}</span>`);
  }
 });

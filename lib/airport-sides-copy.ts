@@ -127,7 +127,7 @@ export const OFFICIAL_LINKS = [
 
 const hh = (hour: number) => String(hour).padStart(2, "0");
 export function hourSpan(hour: number, lang: PrepLang): string {
-  return lang === "en" ? `${hh(hour)}:00–${hh(hour + 1)}:00` : `${hh(hour)}–${hh(hour + 1)}${row("시", "", "时", "時")[lang]}`;
+  return lang === "en" ? `${hh(hour)}:00 ~ ${hh(hour + 1)}:00` : `${hh(hour)} ~ ${hh(hour + 1)}${row("시", "", "时", "時")[lang]}`;
 }
 
 export function count(value: number, lang: PrepLang): string {
