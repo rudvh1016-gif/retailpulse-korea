@@ -19,7 +19,7 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  const figures=report.locator('.focus-report-lines'),stack=report.locator('.focus-selected-country-stack');
  await expect(figures).toContainText('112,403');
  const figuresTitle=figures.locator('h3');
- await expect(figuresTitle).toHaveText(({ko:'출국객·항공편',en:'Passengers and flights',zh:'出境旅客与航班',ja:'出国者・便数'} as Record<string,string>)[lang]);
+ await expect(figuresTitle).toHaveText(({ko:'출국객 수 (환승객 포함)',en:'Departing passengers (incl. transfers)',zh:'出境旅客人数（含中转）',ja:'出国者数（乗継客含む）'} as Record<string,string>)[lang]);
  await expect(figuresTitle).toHaveAttribute('data-heading','subsection');
  await expect(figuresTitle).toHaveCSS('font-size',width<=600?'15px':'18px');
  await expect(report.locator('.focus-report-date')).toHaveCSS('font-size','12px');

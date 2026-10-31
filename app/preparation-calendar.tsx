@@ -5,6 +5,29 @@ import {useState} from 'react';
 import {CountryFlag} from './airport-country-flag';
 import {PreparationEventSource,preparationDescription} from './preparation-event-source';
 import {preparationMonthDays,preparationEventsOn,preparationFlagCode,shiftPreparationMonth,type PreparationEvent} from '../lib/preparation-calendar';
+// Reviewed chip-only labels: exact IDs, never a rewrite of official event names.
+const majorChipNames:Readonly<Record<string,string>>={
+ 'KR-2026-11-19-csat':'수능',
+ 'KR-2027-11-18-csat':'수능',
+ 'CN-SH-2026-11-05-ciie':'수입박람회',
+ 'US-2026-11-03-general-election':'총선',
+ 'JP-2027-01-16-common-test':'공통시험',
+ 'TW-2027-01-22-gsat':'학측',
+ 'HK-2027-01-17-marathon':'마라톤',
+ 'CN-GZ-2026-10-31-canton-fair-phase3':'교역회',
+ 'JP-FUK-2026-11-08-sumo':'스모',
+ 'US-LAS-2026-11-19-f1':'F1',
+ 'US-LAS-2027-01-06-ces':'CES',
+ 'VN-HAN-2026-11-07-heritage-marathon':'마라톤',
+ 'TH-PAT-2026-11-27-fireworks':'불꽃축제',
+ 'TW-TPE-2026-12-20-marathon':'마라톤',
+ 'SG-2026-12-04-international-marathon':'마라톤',
+ 'AU-MEL-2027-01-11-australian-open':'호주오픈',
+ 'CA-AB-2026-12-26-world-juniors':'하키',
+ 'PH-CEB-2027-01-10-marathon':'마라톤',
+ 'MY-PEN-2026-12-13-bridge-marathon':'마라톤',
+ 'HK-2026-12-04-clockenflap':'음악축제',
+};
 const weekdays=['일','월','화','수','목','금','토'];
 export function PreparationCalendar({events,month,today,onMonthChange,lang='ko'}:{lang?:Lang;events:PreparationEvent[];month:string;today:string;onMonthChange:(month:string)=>void}){
  const [selected,setSelected]=useState<string|null>(null);
@@ -12,7 +35,7 @@ export function PreparationCalendar({events,month,today,onMonthChange,lang='ko'}
  const monthLabel=`${Number(month.slice(0,4))}년 ${Number(month.slice(5))}월`;
  return <div className="preparation-month">
   <div className="preparation-month-toolbar"><h3 data-heading="subsection" id="preparation-month-title" aria-live="polite"><span className="heading-marker" aria-hidden="true"/>{chineseText(lang,monthLabel)}</h3><div className="preparation-month-navigation" aria-label={chineseText(lang,"달력 월 이동")}><button type="button" onClick={()=>onMonthChange(shiftPreparationMonth(month,-1))} aria-label={chineseText(lang,"이전 달")}>‹</button><button type="button" onClick={()=>{onMonthChange(today.slice(0,7));setSelected(today);}}>{chineseText(lang,"오늘")}</button><button type="button" onClick={()=>onMonthChange(shiftPreparationMonth(month,1))} aria-label={chineseText(lang,"다음 달")}>›</button></div></div>
-  <table className="preparation-month-grid" aria-labelledby="preparation-month-title" aria-describedby="preparation-month-note"><thead><tr>{weekdays.map(day=><th key={day} scope="col">{chineseText(lang,day)}</th>)}</tr></thead><tbody>{Array.from({length:days.length/7},(_,week)=><tr key={week}>{days.slice(week*7,week*7+7).map((date,index)=>{if(!date)return <td key={`empty-${index}`} aria-hidden="true"/>;const daily=preparationEventsOn(events,date),open=selected===date;return <td key={date}><button type="button" className="preparation-day" data-selected={open||undefined} aria-current={date===today?'date':undefined} aria-label={chineseText(lang,`${Number(date.slice(5,7))}월 ${Number(date.slice(8))}일, ${daily.length?`${daily.length}개 일정, 전체 이름과 적용 대상 보기`:'확인된 일정 없음 (휴일 없음의 뜻이 아님)'}`)} aria-expanded={open} aria-controls="preparation-day-details" onClick={()=>setSelected(open?null:date)}><time dateTime={date}>{Number(date.slice(8))}</time><span className="preparation-day-events" aria-hidden="true">{[...daily].sort((a,b)=>Number(b.start===date)-Number(a.start===date)).slice(0,2).map(event=><span className="preparation-event-chip" data-country={event.country} key={event.id}><CountryFlag code={preparationFlagCode(event)}/><span>{chineseText(lang,event.name)}</span></span>)}{daily.length>2&&<span className="preparation-event-more">+{daily.length-2}</span>}</span></button></td>;})}</tr>)}</tbody></table>
+  <table className="preparation-month-grid" aria-labelledby="preparation-month-title" aria-describedby="preparation-month-note"><thead><tr>{weekdays.map(day=><th key={day} scope="col">{chineseText(lang,day)}</th>)}</tr></thead><tbody>{Array.from({length:days.length/7},(_,week)=><tr key={week}>{days.slice(week*7,week*7+7).map((date,index)=>{if(!date)return <td key={`empty-${index}`} aria-hidden="true"/>;const daily=preparationEventsOn(events,date),open=selected===date;return <td key={date}><button type="button" className="preparation-day" data-selected={open||undefined} aria-current={date===today?'date':undefined} aria-label={chineseText(lang,`${Number(date.slice(5,7))}월 ${Number(date.slice(8))}일, ${daily.length?`${daily.length}개 일정, 전체 이름과 적용 대상 보기`:'확인된 일정 없음 (휴일 없음의 뜻이 아님)'}`)} aria-expanded={open} aria-controls="preparation-day-details" onClick={()=>setSelected(open?null:date)}><time dateTime={date}>{Number(date.slice(8))}</time><span className="preparation-day-events" aria-hidden="true">{[...daily].sort((a,b)=>Number(b.start===date)-Number(a.start===date)).slice(0,2).map(event=><span className="preparation-event-chip" data-country={event.country} key={event.id} title={chineseText(lang,event.name)}><CountryFlag code={preparationFlagCode(event)}/><span>{chineseText(lang,event.kind==='major_event'?majorChipNames[event.id]??event.name:event.name)}</span></span>)}{daily.length>2&&<span className="preparation-event-more">+{daily.length-2}</span>}</span></button></td>;})}</tr>)}</tbody></table>
   <p id="preparation-month-note" className="preparation-month-note">{chineseText(lang,"국기 옆에 일정 이름을 표시합니다. 날짜 또는 +N을 누르면 전체 이름과 적용 대상을 볼 수 있습니다. 빈 날짜는 휴일 없음이 아닌, 확인한 일정이 없다는 뜻입니다.")}</p>
   <section id="preparation-day-details" className="preparation-day-details" hidden={!selected?.startsWith(month)} aria-label={chineseText(lang,selected?`${selected} 일정`:'선택한 날짜 일정')} aria-live="polite">{selected?.startsWith(month)&&<><h4>{Number(selected.slice(5,7))}{chineseText(lang,"월 ")}{Number(selected.slice(8))}{chineseText(lang,"일 · ")}{selectedEvents.length}{chineseText(lang,"개 일정")}</h4>{selectedEvents.length?selectedEvents.map(event=><div key={event.id}><CountryFlag code={preparationFlagCode(event)}/><div className="preparation-day-description"><strong>{chineseText(lang,event.countryLabel)} · {chineseText(lang,event.name)}</strong><p>{preparationDescription(event,lang).meaning}</p><p>{chineseText(lang,event.dateLabel_ko)}</p><PreparationEventSource event={event} lang={lang} className="focus-holiday-conditions"/></div></div>):<p>{chineseText(lang,"확인한 일정이 없습니다. 해당 국가·지역 공식 자료를 확인해 주세요.")}</p>}</>}</section>
  </div>;

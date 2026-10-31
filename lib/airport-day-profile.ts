@@ -14,6 +14,7 @@
  * compared as if it were a whole past day.
  */
 import { AIRPORT_SIDES_VERSION, boardingAreaOf, summarizeGateSides, type SideFlightRow } from "./airport-sides";
+import { dailyFlightHours, latestDayFlights, cancelledFlight } from "./airport-flight-hours";
 import { normalizeDestination } from "./airport-destinations";
 
 export const PROFILE_VERSION = 1;
@@ -48,26 +49,21 @@ const empty = (): TerminalProfile => ({ total: 0, hours: Array.from({ length: 24
 
 export function dailyFlightProfile(rows: readonly ProfileRow[], day: string, complete: boolean): DayProfile {
   const sides = summarizeGateSides(rows, day);
+  const countsByArea = dailyFlightHours(rows, day);
   const profile: DayProfile = {
     v: PROFILE_VERSION, day, sidesVersion: AIRPORT_SIDES_VERSION, complete,
-    T1: empty(), T2: empty(), CONCOURSE: empty(), unknownBuilding: sides.byArea.UNKNOWN.total, cancelled: sides.cancelled,
+    T1: empty(), T2: empty(), CONCOURSE: empty(), unknownBuilding: countsByArea.unknownBuilding, cancelled: countsByArea.cancelled,
   };
   for (const area of ["T1", "T2", "CONCOURSE"] as const) {
     const counts = sides.byArea[area];
-    profile[area].total = counts.total;
+    profile[area].total = countsByArea[area].total;
     profile[area].sides = [counts.EAST, counts.WEST, counts.CENTER, counts.UNVERIFIED];
-    for (const hour of sides.byHour) profile[area].hours[hour.hour] = hour.byArea[area].total;
+    profile[area].hours = countsByArea[area].hours;
   }
   // Destinations of the same physical flights summarizeGateSides counted.
-  const latest = new Map<string, ProfileRow>();
-  for (const row of rows) {
-    const id = String(row.physicalFlightId ?? "");
-    if (!id || String(row.scheduledAt ?? "").slice(0, 10) !== day) continue;
-    const current = latest.get(id);
-    if (!current || String(row.retrievedAt ?? "") > String(current.retrievedAt ?? "")) latest.set(id, row);
-  }
+  const latest = latestDayFlights(rows, day);
   for (const row of latest.values()) {
-    if (String(row.status ?? "") === "cancelled") continue;
+    if (cancelledFlight(row)) continue;
     const area = boardingAreaOf(row);
     if (area === "UNKNOWN") continue;
     const raw = row.airportCode === null || row.airportCode === undefined ? "" : String(row.airportCode).trim();

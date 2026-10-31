@@ -120,10 +120,115 @@ test('day chips prioritize starting events without losing ongoing events or chan
  assert.ok(cell,'November 19 cell present');
  assert.ok(cell.includes('2027학년도 대학수학능력시험'));
  assert.ok(cell.includes('2026 라스베이거스 F1 그랑프리'));
+ assert.match(cell,/<span>수능<\/span>/);assert.match(cell,/<span>F1<\/span>/);
  assert.ok(!cell.includes('2026 후쿠오카 11월 스모 대회'),'ongoing event remains behind +N');
  assert.ok(cell.includes(`+${daily.length-2}`));
  assert.deepEqual(preparationEventsOn(all,'2026-11-19').map(e=>e.id),original,'chip selection cannot reorder event data');
  assert.ok(daily.some(e=>e.id==='JP-FUK-2026-11-08-sumo'));
  const filtered=renderToStaticMarkup(React.createElement(PreparationCalendar,{events:all.filter(e=>e.country==='JP'),month:'2026-11',today:asOf,onMonthChange:()=>{}}));
  assert.ok(filtered.split('<time dateTime="2026-11-19">')[1]?.split('</button>')[0].includes('2026 후쿠오카 11월 스모 대회'));
+});
+
+const expectedChipLabels:Record<string,[string,string]>={
+ "KR-2026-11-19-csat": [
+  "수능",
+  "韩国高考"
+ ],
+ "KR-2027-11-18-csat": [
+  "수능",
+  "韩国高考"
+ ],
+ "CN-SH-2026-11-05-ciie": [
+  "수입박람회",
+  "进博会"
+ ],
+ "US-2026-11-03-general-election": [
+  "총선",
+  "大选"
+ ],
+ "JP-2027-01-16-common-test": [
+  "공통시험",
+  "统考"
+ ],
+ "TW-2027-01-22-gsat": [
+  "학측",
+  "学测"
+ ],
+ "HK-2027-01-17-marathon": [
+  "마라톤",
+  "马拉松"
+ ],
+ "CN-GZ-2026-10-31-canton-fair-phase3": [
+  "교역회",
+  "广交会"
+ ],
+ "JP-FUK-2026-11-08-sumo": [
+  "스모",
+  "相扑"
+ ],
+ "US-LAS-2026-11-19-f1": [
+  "F1",
+  "F1"
+ ],
+ "US-LAS-2027-01-06-ces": [
+  "CES",
+  "CES"
+ ],
+ "VN-HAN-2026-11-07-heritage-marathon": [
+  "마라톤",
+  "马拉松"
+ ],
+ "TH-PAT-2026-11-27-fireworks": [
+  "불꽃축제",
+  "烟花节"
+ ],
+ "TW-TPE-2026-12-20-marathon": [
+  "마라톤",
+  "马拉松"
+ ],
+ "SG-2026-12-04-international-marathon": [
+  "마라톤",
+  "马拉松"
+ ],
+ "AU-MEL-2027-01-11-australian-open": [
+  "호주오픈",
+  "澳网"
+ ],
+ "CA-AB-2026-12-26-world-juniors": [
+  "하키",
+  "冰球"
+ ],
+ "PH-CEB-2027-01-10-marathon": [
+  "마라톤",
+  "马拉松"
+ ],
+ "MY-PEN-2026-12-13-bridge-marathon": [
+  "마라톤",
+  "马拉松"
+ ],
+ "HK-2026-12-04-clockenflap": [
+  "음악축제",
+  "音乐节"
+ ]
+};
+
+test('all twenty reviewed chip labels are short in Korean and Chinese while titles preserve exact official names',()=>{
+ const events=preparationEvents(asOf),before=JSON.stringify(reviewed);
+ const chips=(html:string)=>[...html.matchAll(/<span class="preparation-event-chip"[^>]*title="([^"]*)"[^>]*>[\s\S]*?<span>([^<]*)<\/span><\/span>/g)].map(match=>({title:match[1],visible:match[2]}));
+ assert.equal(Object.keys(expectedChipLabels).length,20);
+ for(const e of events.filter(e=>e.kind==='major_event'))for(const lang of ['ko','zh'] as const){
+  const html=renderToStaticMarkup(React.createElement(PreparationCalendar,{events:[e],month:e.start.slice(0,7),today:asOf,onMonthChange:()=>{},lang}));
+  const labels=chips(html),expected=expectedChipLabels[e.id][lang==='ko'?0:1];
+  assert.ok(labels.length>0,e.id);
+  for(const chip of labels){assert.equal(chip.visible,expected,e.id);assert.equal(chip.title,chineseText(lang,e.name),e.id);assert.ok(!/^20\d{2}/.test(chip.visible));}
+  assert.ok(html.includes(`dateTime="${e.start}"`));
+  assert.ok(html.includes(chineseText(lang,`${Number(e.start.slice(5,7))}월 ${Number(e.start.slice(8))}일, 1개 일정, 전체 이름과 적용 대상 보기`)));
+ }
+ const holiday=events.find(e=>e.country==='JP'&&e.name==='문화의 날'&&e.start==='2026-11-03')!;
+ assert.ok(holiday);
+ for(const event of [holiday,{...events.find(e=>e.id==='KR-2026-11-19-csat')!,id:'KR-unknown-event',name:'새 행사'}, {...holiday,id:'KR-2026-11-19-csat'}])for(const lang of ['ko','zh'] as const){
+  const html=renderToStaticMarkup(React.createElement(PreparationCalendar,{events:[event],month:event.start.slice(0,7),today:asOf,onMonthChange:()=>{},lang}));
+  for(const chip of chips(html)){assert.equal(chip.visible,chineseText(lang,event.name));assert.equal(chip.title,chineseText(lang,event.name));}
+ }
+ assert.equal(JSON.stringify(reviewed),before,'short labels cannot mutate official evidence');
 });

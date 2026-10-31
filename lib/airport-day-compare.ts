@@ -18,6 +18,7 @@
  * table, so a table revision that confirms more gates is never read as more
  * flights on a side.
  */
+import { terminalFlightHours } from "./airport-flight-hours";
 import { DESTINATION_GROUPS, destinationOf, type DestinationGroup } from "./airport-destinations";
 import type { DayProfile, TerminalProfile } from "./airport-day-profile";
 
@@ -58,7 +59,7 @@ export function terminalDay(profile: DayProfile, terminal: ViewTerminal): Termin
   const scope = merge(profile[terminal], terminal === "T1" ? profile.CONCOURSE : null);
   return {
     day: profile.day, complete: profile.complete, sidesVersion: profile.sidesVersion,
-    total: scope.total, hours: scope.hours, sides: [...profile[terminal].sides] as TerminalDay["sides"], groups: groupDestinations(scope.destinations),
+    ...terminalFlightHours(profile, terminal), sides: [...profile[terminal].sides] as TerminalDay["sides"], groups: groupDestinations(scope.destinations),
   };
 }
 
