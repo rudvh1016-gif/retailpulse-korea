@@ -151,9 +151,9 @@ for(const hour of [22,23])test(`midnight boundaries retain dates and existing co
  await routeData(page);await page.setViewportSize({width:360,height:1000});await page.clock.setFixedTime(new Date(`${date}T${hour}:00:00+09:00`));
  await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,dayRelation:'TODAY',todayKst:date,serviceDateKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date,congestion:[]},generatedAt:`${date}T${hour}:00:00+09:00`}));
  await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');
- if(hour===22)await expect(app.getByTestId('glance-comparison-periods')).toHaveText('비교 22:00 ~ 23:00 → 다음 2026-10-11 23:00–2026-10-12 00:00 (KST)');
- else {await expect(app.getByTestId('glance-zone-period')).toHaveText('집계 시간 2026-10-11 23:00–2026-10-12 00:00 (KST)');await expect(app.getByTestId('glance-future-countries')).toContainText('자정 이후 비교 자료 없음');await expect(app.getByTestId('glance-comparison-periods')).toHaveCount(0);}
- await app.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(app.getByTestId('glance-zone-period')).toHaveText(`집계 시간 2026-10-11 ${hour}:00–2026-10-12 00:00 (KST)`);await expect(app.getByTestId('glance-future-countries')).toContainText('자정 이후 비교 자료 없음');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ if(hour===22)await expect(app.getByTestId('glance-comparison-periods')).toHaveText('비교 22:00 ~ 23:00 → 다음 2026-10-11 23:00 ~ 2026-10-12 00:00 (KST)');
+ else {await expect(app.getByTestId('glance-zone-period')).toHaveText('집계 시간 2026-10-11 23:00 ~ 2026-10-12 00:00 (KST)');await expect(app.getByTestId('glance-future-countries')).toContainText('자정 이후 비교 자료 없음');await expect(app.getByTestId('glance-comparison-periods')).toHaveCount(0);}
+ await app.getByRole('button',{name:'향후 6 시간',exact:true}).click();await expect(app.getByTestId('glance-zone-period')).toHaveText(`집계 시간 2026-10-11 ${hour}:00 ~ 2026-10-12 00:00 (KST)`);await expect(app.getByTestId('glance-future-countries')).toContainText('자정 이후 비교 자료 없음');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 
 for(const width of [360,390,430,1440])test(`compact date retains native editing today and keyboard ${width}`,async({page})=>{

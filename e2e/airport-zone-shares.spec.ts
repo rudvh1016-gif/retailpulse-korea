@@ -17,7 +17,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
   for(const side of ['CENTER','EAST']) await expect(model.locator(`.airport-concept-counts [data-side=${side}] small`)).toHaveText('20%');
   await expect(model.getByTestId('model-unverified-share')).toContainText('20%');
   const west=page.getByTestId('map-zone-countries').locator('.airport-zone-country-grid > [data-side=WEST]');
-  if(lang!=='ko'&&lang!=='zh'){
+  if(lang!=='ko'&&lang!=='zh'&&lang!=='en'){
    await expect(west.locator('li[data-country=JP]')).toHaveAttribute('data-share','50');
    await expect(west.locator('li[data-country=HK]')).toHaveAttribute('data-share','50');
   }
@@ -38,7 +38,7 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [360,390,430,1280]) 
   await expect(model).toHaveAttribute('data-denominator','0');
   await expect(model.locator('.airport-concept-counts small').first()).not.toContainText('%');
   expect(reads).toBe(1);expect(errors).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  if(lang==='ko'||lang==='zh'){
+  if(lang==='ko'||lang==='zh'||lang==='en'){
    await page.goto(`/${lang}/airport-countries?mode=zones&date=2026-08-31&building=T2`);
    await expect(west.locator('li[data-country=JP]')).toHaveAttribute('data-share','50');
    await expect(west.locator('li[data-country=HK]')).toHaveAttribute('data-share','50');

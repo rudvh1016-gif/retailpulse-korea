@@ -60,7 +60,7 @@ test('both locales expose the same glance and country controls while English and
   assert.equal((render('en').match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?5:3);assert.doesNotMatch(render('en'),hangul);assert.equal(render('ja'),'<p>Existing content</p>');
  }
  const source=read('app/airport-period-insights.tsx');
- assert.match(source,/lang==='zh'\?'frame-zh\.html':lang==='en'\?'frame-en\.html':'frame\.html'/);
+ assert.match(source,/lang==='zh'\?'frame-zh\.html':'frame\.html'/);
  assert.match(source,/location\.assign\('\/'\+lang\+'\/airport-countries\?'/);
  assert.match(source,/key=\{lang\+':'\+\(date\?\?'today'\)\}/);
  for(const label of ['공항한눈에','언제 몰렸나요?','항공편 주말이 더 많나요?','어느 터미널이 달라졌나요?','연휴에는 늘었나요?','국가별 흐름'])assert.doesNotMatch(airportAnalysisText('zh',label),hangul);

@@ -13,7 +13,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [390,1440])test(`home
  await page.goto(`/${lang}?date=2026-10-19`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page.locator('.home-checkpoint-waits')).toHaveCount(1);await expect(page.locator('#focus-country-trends')).toHaveCount(0);
  await page.goto(`/${lang}/airport-countries?mode=passengers&date=2026-10-19`);
- const section=page.locator('#focus-country-trends');await expect(section).toBeVisible();await section.scrollIntoViewIfNeeded();
+ const section=page.locator('#focus-country-trends');await expect(section).toBeVisible();
  const cards=section.locator('.focus-trend-grid > article');await expect(cards).toHaveCount(12);
  const card=cards.first();await expect(card.locator('.focus-trend-top h3')).toHaveText(lang==='zh'?'日本':lang==='en'?'Japan':'일본');await expect(card.locator('.focus-trend-value')).toContainText('1,000,000');
  const chart=card.locator('.focus-interactive-line-chart');await expect(chart.locator('.focus-month-point')).toHaveCount(1);

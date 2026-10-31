@@ -23,6 +23,7 @@ function PeriodFrame({view,date,lang}:{view:View;date?:string|null;lang:Lang}){
  const frame=useRef<HTMLIFrameElement>(null),params=useQuery(),ranges=Object.fromEntries(keys.map(k=>[k,params.get(k)]));
  const current=useRef({view,ranges});useEffect(()=>{current.current={view,ranges};});
  const srcParams=new URLSearchParams({view,v:AIRPORT_PERIOD_VERSION});if(date)srcParams.set('date',date);if(validRanges(ranges))keys.forEach(k=>srcParams.set(k,ranges[k]));
+ if(lang==='en')srcParams.set('lang','en');
  // Keep the same frame across analysis tabs; the child stores each view's chosen ranges.
  const [initial]=useState(()=>srcParams.toString());
  useEffect(()=>{
@@ -38,7 +39,7 @@ function PeriodFrame({view,date,lang}:{view:View;date?:string|null;lang:Lang}){
  },[date,lang]);
  const rangeKey=keys.map(k=>params.get(k)??'').join('/');
  useEffect(()=>{const values=Object.fromEntries(keys.map((k,i)=>[k,rangeKey.split('/')[i]]));frame.current?.contentWindow?.postMessage({type:'koretail-insights-view',view,...(validRanges(values)?{ranges:values}:{})},location.origin);},[view,rangeKey]);
- return <iframe ref={frame} title={t(view==='country'?'국가별 항공편 기간 비교':'공항 항공편 기간 비교')} src={'/airport-period/'+(lang==='zh'?'frame-zh.html':lang==='en'?'frame-en.html':'frame.html')+'?'+initial} className="airport-period-frame"/>;
+ return <iframe ref={frame} title={t(view==='country'?'국가별 항공편 기간 비교':'공항 항공편 기간 비교')} src={'/airport-period/'+(lang==='zh'?'frame-zh.html':'frame.html')+'?'+initial} className="airport-period-frame"/>;
 }
 function revealFocusedGlanceTab(strip:HTMLDivElement|null){const active=document.activeElement;if(active instanceof HTMLElement&&active.getAttribute('role')==='tab'&&strip?.contains(active))active.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});}
 function GlanceTabNavigation({view,lang}:{view:string;lang:Lang}){

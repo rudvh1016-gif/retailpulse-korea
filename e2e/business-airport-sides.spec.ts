@@ -82,9 +82,9 @@ test('with the hall split published: sides add up, hours never split a band, and
   // 09:30 ~ 18:00: 10–17 whole, 09–10 shown apart and never halved.
   const inside = Array.from({ length: 8 }, (_, i) => 300 + 2 * (10 + i)).reduce((a, b) => a + b, 0);
   await expect(sides.getByTestId('halls-hours')).toContainText(`영업시간 안: ${inside.toLocaleString('ko-KR')}명`);
-  await expect(sides.getByTestId('halls-hours')).toContainText('경계 시간대 09–10시 318');
+  await expect(sides.getByTestId('halls-hours')).toContainText('경계 시간대 09 ~ 10시 318');
   // From now first (14:10 → the 14–15 band), whole day behind a toggle.
-  await expect(sides.getByTestId('halls-upcoming').locator('li').first()).toContainText('14–15시');
+  await expect(sides.getByTestId('halls-upcoming').locator('li').first()).toContainText('14 ~ 15시');
   await expect(sides.getByTestId('halls-all').locator('li')).toHaveCount(24);
   await expect(prep.getByTestId('prep-facts')).toContainText('동편 출국장 예상 이용객이 가장 많은 시간');
 });
@@ -186,7 +186,7 @@ test('the comparison is the first thing in the airport block: flights, ratio, an
   await page.keyboard.press('Enter');
   await expect(details).toHaveJSProperty('open', true);
   // Hours: each with east/west counts and shares.
-  await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText('15–16시 · 합계 3편 · 동 2편 / 서 1편 (동 67% · 서 33%)');
+  await expect(sides.getByTestId('gates-all').locator('li').first()).toHaveText('15 ~ 16시 · 합계 3편 · 동 2편 / 서 1편 (동 67% · 서 33%)');
   // The hall split stays withheld; the estimate is not the hall figure.
   await expect(sides.getByTestId('halls-withheld')).toBeVisible();
 });

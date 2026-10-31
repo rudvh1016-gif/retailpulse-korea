@@ -858,7 +858,7 @@ test("commercial activity and events expose their complete truth without a flat 
 
   const firstCard = panel.locator(".event-card").first();
   await expect(firstCard).toContainText("선택 날짜가 공식 행사기간에 포함");
-  await expect(firstCard).toContainText("8/20–9/10");
+  await expect(firstCard).toContainText("8/20 ~ 9/10");
   await expect(firstCard).toContainText("중구 명동길 14");
   await expect(firstCard).toContainText("320m");
   await expect(firstCard.locator(".event-preview")).toHaveText("관객과 소통하는 공연형 미술 콘텐츠입니다.");
@@ -1239,7 +1239,7 @@ test("Tourism event cards retain official facts and safe links after copy remova
   await expect(cards).toHaveCount(3);
   const first = cards.first();
   await expect(first.locator(".tourism-event-status")).toHaveText("공식 행사기간에 오늘 포함");
-  await expect(first).toContainText("2026-08-20 – 2026-09-10");
+  await expect(first).toContainText("2026-08-20 ~ 2026-09-10");
   await expect(first).toContainText("서울특별시 중구 명동길 14 · 1층");
   await expect(first).toContainText("한국관광공사");
   await expect(page.locator(".tourism-event-caveat")).toContainText("실제 운영 중인지");

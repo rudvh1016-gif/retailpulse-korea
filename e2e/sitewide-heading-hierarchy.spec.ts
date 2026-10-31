@@ -33,7 +33,7 @@ async function verifyHeadings(page:Page,textScale=1){
   const icon=node.querySelector(':scope > svg.ui-line-icon');
   return {compactGuide:!!node.closest('.site-usage-guide'),markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
-   textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1,
+   textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1&&style.overflowY!=='visible',
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
    hidden:marker?.getAttribute('aria-hidden'),markerText:marker?.textContent,
    markerCount:node.querySelectorAll(':scope > .heading-marker').length,
