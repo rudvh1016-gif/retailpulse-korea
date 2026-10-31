@@ -61,7 +61,83 @@ for (const reduced of [false, true]) test(`history filter updates existing bars 
   await page.evaluate(()=>{const original=Element.prototype.animate; (window as unknown as {fillCalls:number}).fillCalls=0; Element.prototype.animate=function(...args) { if(this.matches('.history-bars i')) (window as unknown as {fillCalls:number}).fillCalls++; return original.apply(this,args); };});
   await history.getByRole('button',{name:'ARRIVALS'}).click();
   await expect.poll(async()=>await bars.evaluateAll(nodes=>nodes.map(node=>(node as HTMLElement).style.width))).not.toEqual(widths);
+  // Refreshes outside the viewport stay pending until the fixed row is visible.
+  // Clicking ARRIVALS can leave its bars below the fold.
+  await bars.first().locator('..').scrollIntoViewIfNeeded();
+  await expect(bars.first().locator('..')).toBeInViewport();
   if (reduced) await expect.poll(()=>page.evaluate(()=>(window as unknown as {fillCalls:number}).fillCalls)).toBe(0);
   else await expect.poll(()=>page.evaluate(()=>(window as unknown as {fillCalls:number}).fillCalls)).toBeGreaterThan(0);
   await expect(history.locator('.history-bars b').first()).not.toBeEmpty();
+});
+
+for (const width of [390, 1440]) test(`below-fold charts reveal when first viewed, not before scrolling ${width}`, async ({page}) => {
+  await page.setViewportSize({width,height:500});
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.addInitScript(() => {
+    const original=Element.prototype.animate;
+    (window as unknown as {visibleFillCalls:number}).visibleFillCalls=0;
+    Element.prototype.animate=function(...args) {
+      if(this===document.querySelector('.route-country-comparison > b')) (window as unknown as {visibleFillCalls:number}).visibleFillCalls++;
+      return original.apply(this,args);
+    };
+  });
+  await page.route('**/api/live/summary*',route=>route.fulfill({json:SUMMARY_FIXTURE}));
+  await page.route('**/api/live/airport-passenger-stats*',route=>route.fulfill({json:{status:'READY',month:'2026-09',previousMonth:'2026-08',current:{ROUTE_COUNTRY_PASSENGERS:data('2026-09',900)},previous:{ROUTE_COUNTRY_PASSENGERS:data('2026-08',1000)}}}));
+  await page.route('**/api/live/airport-passenger-comparison*',route=>route.fulfill({json:{status:'READY',selectedMonth:'2026-09',baselineMonth:'2026-08',selected:data('2026-09',900),baseline:data('2026-08',1000),availableMonths:['2026-08','2026-09']}}));
+  await page.goto('/ko/airport-countries?mode=passengers');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+  const bar=page.locator('.route-country-comparison > b').first();
+  await expect(bar).toBeAttached();
+  expect((await bar.boundingBox())!.y).toBeGreaterThan(500);
+  // Let the original mount animation finish offscreen: this was the missing visible effect.
+  await bar.evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
+  expect(await page.evaluate(()=>(window as unknown as {visibleFillCalls:number}).visibleFillCalls)).toBe(0);
+  await bar.scrollIntoViewIfNeeded();
+  await expect.poll(()=>page.evaluate(()=>(window as unknown as {visibleFillCalls:number}).visibleFillCalls)).toBeGreaterThan(0);
+  const count=await page.evaluate(()=>(window as unknown as {visibleFillCalls:number}).visibleFillCalls);
+  await expect(page.locator('.route-month-total').first()).toHaveText('1,000');
+  await bar.evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
+  await page.getByRole('heading',{name:'국가별 흐름',exact:true}).scrollIntoViewIfNeeded();
+  await bar.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(()=>(window as unknown as {visibleFillCalls:number}).visibleFillCalls)).toBe(count);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  expect(await bar.evaluate(el=>getComputedStyle(el).transform)).toBe('none');
+  expect(await bar.getAttribute('style')).toMatch(/90%/);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+
+test('partially visible vertical bars observe the fixed plot, not their own changing scale', async ({page}) => {
+  await page.setViewportSize({width:390,height:500});
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  await page.addInitScript(() => {
+    const original=Element.prototype.animate;
+    Element.prototype.animate=function(...args) {
+      const animation=original.apply(this,args);
+      if(this.matches('.airport-month-chart svg > g')) { animation.pause(); animation.currentTime=225; }
+      return animation;
+    };
+  });
+  await page.route('**/api/live/summary*',route=>route.fulfill({json:SUMMARY_FIXTURE}));
+  await page.goto('/ko/airport');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+  const bar=page.getByTestId('airport-mtd').locator('.airport-month-chart svg > g').first();
+  await expect(bar).toBeAttached();
+  await bar.evaluate(async el=>{await Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>{})));});
+  const top=(await bar.boundingBox())!.y;
+  await page.evaluate(y=>window.scrollTo(0,y),top-460);
+  await expect.poll(()=>bar.evaluate(el=>el.getAnimations().filter(a=>!('animationName' in a)&&a.playState==='paused').length)).toBe(1);
+  // Two frames let IntersectionObserver react to the half-sized mark. It must not cancel itself.
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const state=await bar.evaluate(el=>{
+    const animation=el.getAnimations().find(a=>!('animationName' in a)&&a.playState==='paused');
+    if(!animation)return null;
+    const half=el.getBoundingClientRect(),scale=new DOMMatrix(getComputedStyle(el).transform).d;
+    animation.currentTime=450;
+    const final=el.getBoundingClientRect();
+    animation.play();
+    return {scale,bottom:half.bottom,finalBottom:final.bottom};
+  });
+  expect(state).not.toBeNull();
+  expect(state!.scale).toBeGreaterThan(0);expect(state!.scale).toBeLessThan(1);
+  expect(state!.bottom).toBeCloseTo(state!.finalBottom,1);
 });

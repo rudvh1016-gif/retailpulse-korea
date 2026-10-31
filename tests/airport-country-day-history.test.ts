@@ -38,3 +38,15 @@ test('current airport listing corrects reused and rebranded airline codes',()=>{
  assert.deepEqual(AIRPORT_AIRLINE_OVERRIDES.VZ,{name:'Thai VietJet Air',country:'TH'});
  for(const code of ['HH','WE','TW','JD','KN','VZ'])assert.ok(AIRPORT_AIRLINE_LOGO_EXTENSIONS[code]);
 });
+
+test('reviewed EVN mapping repairs stored October 7 names without trusting stale groups',()=>{
+ const p=dailyFlightProfile([{...row,airportCode:'PEK'},{...row,physicalFlightId:'evn',terminal:'T2',gate:'248',airportCode:'쯔바르트노츠'}],day,true);
+ // Saved profiles retain destination names; country lookup happens at read time.
+ const saved=JSON.stringify({profile:p});
+ const values=storedCountryDayObservations([{day,payload:saved}]);
+ assert.ok(values.every(v=>v.complete));
+ assert.equal(values.find(v=>v.country==='CN')?.value,1);
+ assert.equal(JSON.stringify({profile:p}),saved);
+ const unknown=dailyFlightProfile([{...row,airportCode:'UNREVIEWED_DESTINATION'}],day,true);
+ assert.ok(countryDayObservations(unknown).every(v=>!v.complete&&v.value===null));
+});
