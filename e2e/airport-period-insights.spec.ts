@@ -66,7 +66,7 @@ for(const width of [360,390,430,1440])test(`airport period comparison preserves 
  await frame.getByRole('button',{name:/일본 09\/21.*09\/23/ }).click();
  await expect(frame.locator('.holiday-value')).toHaveText(['150편','160편']);
  await expect(frame.locator('#takeaway')).toContainText('포함일수');
- await expect(frame.locator('#boundary')).toContainText('연휴의 인과 효과');
+ await expect(frame.locator('#boundary')).toHaveText('관측 차이 · 연휴 효과·매출 예측 아님');
  await expect(frame.locator('#holiday-calendar-context')).toContainText('경로의 날');
  await frame.getByRole('button',{name:'같은 기간 국가별 항공편 →',exact:true}).click();
  await expect(page).toHaveURL(/airport-countries\?mode=flights/);
