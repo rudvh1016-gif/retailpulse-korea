@@ -18,11 +18,11 @@
  * from the hall's hour to a flight's departure hour.
  */
 import sides from "../config/airport-sides.v1.json" with { type: "json" };
-import { flightBoardingLocation } from "./flight-scope";
+import { boardingAreaOf, latestDayFlights, cancelledFlight, scheduledFlightHour, type BoardingArea, type SideFlightRow } from "./airport-flight-hours";
+export { boardingAreaOf, type BoardingArea, type SideFlightRow } from "./airport-flight-hours";
 
 export type HallSide = "EAST" | "WEST";
 export type GateSide = "EAST" | "WEST" | "CENTER" | "UNVERIFIED";
-export type BoardingArea = "T1" | "T2" | "CONCOURSE" | "UNKNOWN";
 export type SideTerminal = "T1" | "T2";
 
 export const AIRPORT_SIDES_VERSION = sides.version;
@@ -139,12 +139,6 @@ export function summarizeHallSides(rows: readonly HallForecastRow[], terminal: S
   };
 }
 
-/** The boarding building a flight uses, from its stored terminal or an exact concourse gate. */
-export function boardingAreaOf(row: { terminal?: unknown; gate?: unknown }): BoardingArea {
-  const location = flightBoardingLocation(row);
-  return location === "T1" || location === "T2" || location === "CONCOURSE" ? location : "UNKNOWN";
-}
-
 /**
  * Why a flight has no confirmed side:
  *   NO_GATE       no gate assigned yet (or none stored) — a map cannot fix it
@@ -179,15 +173,6 @@ export function gateSideOf(area: BoardingArea, gate: unknown): GateSide {
   if (!/^\d{1,3}$/.test(key)) return "UNVERIFIED";
   const entry = GATE_BY_KEY.get(`${area}:${key}`);
   return entry ? (entry.side as GateSide) : "UNVERIFIED";
-}
-
-export interface SideFlightRow {
-  physicalFlightId?: unknown;
-  terminal?: unknown;
-  gate?: unknown;
-  scheduledAt?: unknown;
-  status?: unknown;
-  retrievedAt?: unknown;
 }
 
 export type SideCounts = Record<GateSide, number> & { total: number };
@@ -226,15 +211,13 @@ const areas = (): Record<BoardingArea, SideCounts> => ({ T1: emptyCounts(), T2: 
  * - For every area, EAST + WEST + CENTER + UNVERIFIED = total.
  */
 export function summarizeGateSides(rows: readonly SideFlightRow[], date: string): GateSideDay {
-  const latest = new Map<string, SideFlightRow>();
+  const latest = latestDayFlights(rows, date);
   const gatesSeen = new Map<string, Set<string>>();
   for (const row of rows) {
     const id = String(row.physicalFlightId ?? "");
     const scheduled = String(row.scheduledAt ?? "");
     if (!id || scheduled.slice(0, 10) !== date) continue;
     gatesSeen.set(id, (gatesSeen.get(id) ?? new Set()).add(`${row.terminal ?? ""}|${row.gate ?? ""}`));
-    const current = latest.get(id);
-    if (!current || String(row.retrievedAt ?? "") > String(current.retrievedAt ?? "")) latest.set(id, row);
   }
   const byArea = areas();
   const unverifiedByArea: Record<BoardingArea, ReasonCounts> = { T1: emptyReasons(), T2: emptyReasons(), CONCOURSE: emptyReasons(), UNKNOWN: emptyReasons() };
@@ -242,7 +225,7 @@ export function summarizeGateSides(rows: readonly SideFlightRow[], date: string)
   const hours = new Map<number, Record<BoardingArea, SideCounts>>();
   let cancelled = 0;
   for (const row of latest.values()) {
-    if (String(row.status ?? "") === "cancelled") { cancelled++; continue; }
+    if (cancelledFlight(row)) { cancelled++; continue; }
     const area = boardingAreaOf(row);
     const side = gateSideOf(area, row.gate);
     byArea[area][side]++;
@@ -257,7 +240,7 @@ export function summarizeGateSides(rows: readonly SideFlightRow[], date: string)
         unmapped.set(key, entry);
       }
     }
-    const hour = kstHour(String(row.scheduledAt));
+    const hour = scheduledFlightHour(row);
     const bucket = hours.get(hour) ?? areas();
     bucket[area][side]++;
     bucket[area].total++;
