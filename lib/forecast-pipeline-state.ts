@@ -73,6 +73,8 @@ export interface ForecastVerdict {
   /** Whether any accuracy claim may be published from this state. */
   performanceClaimAllowed: boolean;
   detail: string;
+  /** Joined recorded rows, not a claim that their values passed validation. */
+  outcomeCounts?: { expected: number; recorded: number };
 }
 
 /**
@@ -102,7 +104,7 @@ export function evaluateForecastPipeline(observation: ForecastObservation): Fore
     return deny("OUTCOME_NOT_AVAILABLE_YET", "the target time has not passed yet; this is normal, not a fault");
   }
   if (observation.outcomeRecorded === null) return deny("UNKNOWN", "outcome recording was not measured");
-  if (!observation.outcomeRecorded) return deny("OUTCOME_MISSING", "the target time has passed and no actual value was recorded");
+  if (!observation.outcomeRecorded) return deny("OUTCOME_MISSING", "the target time has passed and expected actual observations are incomplete");
   if (observation.outcomeMatched === null) return deny("UNKNOWN", "outcome matching was not measured");
   if (!observation.outcomeMatched) return deny("OUTCOME_MATCH_FAILED", "an outcome exists but could not be matched to its prediction key");
   if (observation.backfillOnly) {

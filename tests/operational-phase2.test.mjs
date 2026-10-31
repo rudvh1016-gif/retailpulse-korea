@@ -292,19 +292,56 @@ test('existing scheduled recovery records deduplicated incident events without i
  const incident=(await memory.incidents()).find(r=>r.failureClass==='STALE');assert.equal(incident.recoveryAttempts,1);assert.equal(incident.currentState,'DEGRADED');
  const attempts=await memory.attempts(parts.sourceId,'2026-09-13');assert.equal(attempts.length,1);assert.equal(attempts[0].verified,false);assert.equal(attempts[0].publicValid,null);
 });
-async function forecastFixture(db,{futureInput=false,badOutcome=false}={}) {
+async function forecastFixture(db,{futureInput=false,badOutcome=false,missingOutcomeHours=[]}={}) {
  const cutoff='2026-09-11T10:00:00Z';
  for(let h=0;h<24;h++) {const id='forecast-'+h,target=`2026-09-12T${String(h).padStart(2,'0')}:00:00+09:00`;
  const samples=['2026-09-05','2026-08-29'].map(day=>({observedAt:`${day}T${String(h).padStart(2,'0')}:05:00+09:00`,retrievedAt:futureInput?at:`${day}T${String(h).padStart(2,'0')}:06:00+09:00`,populationMin:100,populationMax:200,sourceHash:day,qualityStatus:'VALID',recordOrigin:'LIVE',schemaVersion:'population-v1'}));
  insert(db,'predictions',{prediction_id:id,created_at:cutoff,target_at:target,data_cutoff:cutoff,target_id:'AREA_ACTIVITY',area:'hongdae',value:150,value_scale:1,forecast_class:'MODERATE',confidence:'LOW',model_version:POPULATION_MODEL,proxy_version:'population-midpoint-people-v1',feature_version:'same-weekday-00-14min-v1',source_versions:JSON.stringify({SEOUL_CITYDATA_PPLTN:'population-v1'}),input_hash:await sha256(samples),prediction_hash:id,record_origin:'FORECAST'});
  insert(db,'prediction_inputs',{prediction_id:id,payload:JSON.stringify(samples)});
- insert(db,'outcomes',{id, prediction_id:id,target_id:'AREA_ACTIVITY',event_at:target,available_at:at,collected_at:at,actual_value:160,actual_unit:badOutcome?'wrong_unit':'estimated_people_midpoint',source_id:'SEOUL_CITYDATA_PPLTN',source_version:'population-v1',verification_level:'FAST',quality_status:'VALID'});
+ if(!missingOutcomeHours.includes(h))insert(db,'outcomes',{id, prediction_id:id,target_id:'AREA_ACTIVITY',event_at:target,available_at:at,collected_at:at,actual_value:160,actual_unit:badOutcome?'wrong_unit':'estimated_people_midpoint',source_id:'SEOUL_CITYDATA_PPLTN',source_version:'population-v1',verification_level:'FAST',quality_status:'VALID'});
  insert(db,'baseline_predictions',{id,prediction_id:id,baseline_id:'SAME_WEEKDAY',value:140,value_scale:1,created_at:cutoff});
  }
 }
 test('real forecast/input/outcome tables feed health without claiming independent skill',async()=>{
  const {db}=setup();await forecastFixture(db);const rows=await readForecastEvidence(db,at),hongdae=rows.find(r=>r.detail.startsWith('hongdae:'));
  assert.equal(hongdae.state,'BASELINE_NOT_INDEPENDENT');assert.equal(hongdae.performanceClaimAllowed,false);
+ assert.deepEqual(hongdae.outcomeCounts,{expected:24,recorded:24});
+});
+for(const missingOutcomeHours of [[0],Array.from({length:24},(_,h)=>h)])test(`forecast evidence distinguishes ${missingOutcomeHours.length} absent outcomes from an entirely empty day`,async()=>{
+ const {db}=setup();await forecastFixture(db,{missingOutcomeHours});
+ const row=(await readForecastEvidence(db,at)).find(r=>r.detail.startsWith('hongdae:'));
+ assert.equal(row.state,'OUTCOME_MISSING');assert.equal(row.performanceClaimAllowed,false);
+ assert.deepEqual(row.outcomeCounts,{expected:24,recorded:24-missingOutcomeHours.length});
+ assert.match(row.detail,new RegExp(`recorded outcomes ${24-missingOutcomeHours.length}/24`));
+ assert.doesNotMatch(row.detail,/no actual value was recorded/);
+});
+
+function diagnosticMeasurement(sourceId,run=null,status='LIVE') {
+ return {sourceId,observedAt:at,run,health:{status,last_retrieved_at:at,consecutive_failures:0},
+  storedRows:null,storageReadFailed:false,coverage:'UNKNOWN',dataValid:null,storageValid:null,publicValid:null,failureClass:null,detail:'unmeasured'};
+}
+test('unrecorded transfer and holiday collectors stay unknown without erasing holiday source errors',()=>{
+ for(const source of ['INCHEON_TRANSFER_FORECAST','KASI_PUBLIC_HOLIDAYS']) {
+  const m=diagnosticMeasurement(source,null,source==='KASI_PUBLIC_HOLIDAYS'?'ERROR':'LIVE');
+  if(source==='KASI_PUBLIC_HOLIDAYS'){m.dataValid=false;m.failureClass='HUMAN_REVIEW_REQUIRED';}
+  const observation=sourceObservation(m,'collect-production.yml',86400000),verdict=evaluateSource(observation,at);
+  assert.equal(verdict.walk.state,'UNKNOWN');assert.match(verdict.walk.trail.at(-1).evidence,/not instrumented/);
+  if(source==='KASI_PUBLIC_HOLIDAYS'){assert.match(verdict.walk.trail.at(-1).evidence,/source_health=ERROR/);assert.equal(observation.collectionFailure,'HUMAN_REVIEW_REQUIRED');assert.equal(observation.payloadProof.valid,false);assert.equal(verdict.severity,'ERROR');assert.equal(verdict.failureClass,'HUMAN_REVIEW_REQUIRED');assert.equal(verdict.observedCollectionFailure.state,'HUMAN_REVIEW_REQUIRED');}
+  else{assert.equal(verdict.severity,'UNKNOWN');assert.equal(verdict.observedCollectionFailure,undefined);}
+ }
+ assert.equal(evaluateSource(sourceObservation(diagnosticMeasurement('SEOUL_CITYDATA_PPLTN'),'collect-realtime.yml',900000),at).walk.state,'MISSED_RUN');
+});
+test('documented facility refresh skips do not prove missed daily runs or a healthy source',()=>{
+ const run={status:'SUCCESS',started_at:new Date(Date.parse(at)-4*86400000).toISOString(),finished_at:at,records_read:1,records_written:1};
+ const m=diagnosticMeasurement('INCHEON_FACILITY_DIRECTORY',run);
+ const obs=sourceObservation(m,'collect-production.yml',86400000);
+ assert.equal(evaluateSource(obs,at).walk.state,'UNKNOWN');assert.match(obs.runEvidenceUnavailableReason,/6 days/);
+ run.started_at=new Date(Date.parse(at)-6*86400000).toISOString();
+ assert.equal(evaluateSource(sourceObservation(m,'collect-production.yml',86400000),at).walk.state,'MISSED_RUN');
+ run.started_at=at;run.status='ERROR';
+ assert.equal(evaluateSource(sourceObservation(m,'collect-production.yml',86400000),at).walk.state,'EXECUTION_ERROR');
+ run.status='SUCCESS';run.started_at=new Date(Date.parse(at)-4*86400000).toISOString();m.health.status='ERROR';
+ assert.equal(sourceObservation(m,'collect-production.yml',86400000).runEvidenceUnavailableReason,undefined);
 });
 for(const [option,state] of [['futureInput','INPUT_NOT_FROZEN'],['badOutcome','OUTCOME_MATCH_FAILED']])test(`forecast evidence rejects ${option}`,async()=>{
  const {db}=setup();await forecastFixture(db,{[option]:true});assert.equal((await readForecastEvidence(db,at)).find(r=>r.detail.startsWith('hongdae:')).state,state);

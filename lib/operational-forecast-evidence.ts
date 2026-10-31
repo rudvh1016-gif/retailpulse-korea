@@ -56,8 +56,9 @@ export async function readForecastEvidence(db:D1Database,nowIso:string):Promise<
         baselineMeanAbsoluteError:actual.length&&actual.every(row=>row.baseline!==null)?actual.reduce((sum,row)=>sum+Math.abs(row.baseline!-row.actual_value!),0)/actual.length:null});
       // This model and SAME_WEEKDAY share historical inputs. Operational evidence cannot award independent skill.
       output.push({...verdict,performanceClaimAllowed:false,
+        outcomeCounts:{expected:records.length,recorded:actual.length},
         ...(verdict.state==='PIPELINE_HEALTHY'?{state:'BASELINE_NOT_INDEPENDENT' as const}:{}),
-        detail:`${area}: ${verdict.detail}; same-weekday reference is not independent; monitor only`});
+        detail:`${area}: ${verdict.detail}; recorded outcomes ${actual.length}/${records.length}; same-weekday reference is not independent; monitor only`});
     }
   }
   return output;
