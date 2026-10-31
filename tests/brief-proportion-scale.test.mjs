@@ -7,7 +7,8 @@ test('Today figures remain proportional to body text without changing heading ro
  const rules=[];css.walkRules(rule=>rules.push(rule));
  const values=(selector,prop)=>rules.filter(rule=>rule.selector===selector).flatMap(rule=>rule.nodes.filter(x=>x.prop===prop).map(x=>({value:x.value,media:rule.parent.type==='atrule'?rule.parent.params:null})));
  assert.deepEqual(values('.airport-focus-shell .focus-report .focus-core-metric .focus-metric-total','font-size'),[{value:'24px',media:null},{value:'28px',media:'(min-width:1000px)'},{value:'20px',media:'(max-width:600px)'}]);
- assert.deepEqual(values('.airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change)','font-size').slice(-2),[{value:'16px',media:null},{value:'13px',media:'(max-width:600px)'}]);
+ assert.deepEqual(values('.airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change)','font-size'),[{value:'16px',media:null}]);
+ assert.deepEqual(values('.airport-focus-shell .focus-report .focus-core-metric :is(.focus-week-change,.focus-comparison-change,.daily-comparison-change,.focus-comparison-unavailable)','font-size'),[{value:'12px',media:'(max-width:600px)'}]);
  assert.equal(values('.airport-focus-shell .focus-report .focus-core-metric p','font-size').at(-1).value,'16px');
  assert.deepEqual(values('.airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts','font-size').slice(-2),[{value:'11px',media:null},{value:'9px',media:'(max-width:600px)'}]);
  assert.equal(values('.airport-focus-shell .focus-report .focus-number-first-grid','gap')[0].value,'14px');

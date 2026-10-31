@@ -35,3 +35,13 @@ test('current schedule snapshots show their actual collection clock and never cl
   if(lang!=='ko')assert.doesNotMatch(markup,/[가-힣]/);
  }
 });
+
+
+test('phone comparison rows share one smaller size with precedence over metric paragraphs',()=>{
+ const css=readFileSync('app/airport-focus-preview.css','utf8');
+ // Four class selectors beat the three-class + p metric rule that formerly kept ① at 16px.
+ assert.match(css,/@media\(max-width:600px\)\{\s*\.airport-focus-shell \.focus-report \.focus-core-metric :is\(\.focus-week-change,\.focus-comparison-change,\.daily-comparison-change,\.focus-comparison-unavailable\)\{font-size:12px;line-height:1.5;overflow-wrap:anywhere\}/);
+ assert.match(css,/\.focus-week-change\{font-size:16px;font-weight:700/);
+ assert.match(css,/:is\(\.focus-comparison-change,\.daily-comparison-change\)\{order:-1;font-size:16px;font-weight:700/);
+ assert.match(css,/\.focus-comparison-unavailable\{font-size:16px;font-weight:700/);
+});

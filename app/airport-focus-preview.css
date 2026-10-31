@@ -338,7 +338,6 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  :root body .airport-focus-shell .focus-report .focus-figures-title[data-heading="subsection"]{font-size:15px!important}
  .airport-focus-shell .focus-report .focus-core-metric .focus-metric-label{font-size:13px}
  .airport-focus-shell .focus-report .focus-core-metric .focus-metric-total{font-size:20px}
- .airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change){font-size:13px}
  .airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis){font-size:10px!important}
  :root body .airport-focus-shell .focus-report .focus-passenger-calculation>summary{font-size:11px}
  .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:9px}
@@ -350,11 +349,14 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 .airport-focus-shell .focus-report .focus-week-basis{display:block;font-size:11px!important;font-weight:400;line-height:1.5;color:var(--text-muted,#667484);overflow-wrap:anywhere}
 .airport-focus-shell .focus-report .focus-week-change:has(>.glance-count-change[data-direction=down]){color:#a12d3f}
 @media(max-width:600px){
- .airport-focus-shell .focus-report .focus-week-change{font-size:13px}
  .airport-focus-shell .focus-report .focus-week-basis{font-size:10px!important}
 }
 .airport-focus-shell .focus-report .focus-comparison-unavailable{font-size:16px;font-weight:700;line-height:1.5}
-@media(max-width:600px){.airport-focus-shell .focus-report .focus-comparison-unavailable{font-size:13px}}
+/* Owner-requested phone typography: ① and ② share one size, including unavailable
+   states. The metric scope outranks its generic paragraph rule without changing PC. */
+@media(max-width:600px){
+ .airport-focus-shell .focus-report .focus-core-metric :is(.focus-week-change,.focus-comparison-change,.daily-comparison-change,.focus-comparison-unavailable){font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+}
 
 /* Match the phone briefing's inner text edge without changing its type or card. */
 @media(max-width:700px){

@@ -25,6 +25,14 @@ for(const width of [320,390,1440])test(`two comparison baselines stay separate a
  await expect(flight).not.toContainText('편/일');await expect(people).not.toContainText('명/일');
  await expect(report.locator('.focus-passenger-comparison')).toContainText('②');await expect(report.locator('.focus-flight-comparison')).toContainText('②');
  await expect(flight.locator('.focus-week-basis')).toHaveCSS('font-size',width<=600?'10px':'11px');
+ const comparisonRows=report.locator('.focus-core-metric :is(.focus-week-change,.focus-comparison-change,.daily-comparison-change,.focus-comparison-unavailable)');
+ await expect(comparisonRows).toHaveCount(4);
+ for(const row of await comparisonRows.all()){
+  await expect(row).toHaveCSS('font-size',width<=600?'12px':'16px');
+  for(const number of await row.locator('.change-rate').all())await expect(number).toHaveCSS('font-size',width<=600?'12px':'16px');
+  expect(await row.evaluate(node=>{const box=node.closest('.focus-core-metric')!.getBoundingClientRect();const range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()].every(r=>r.width===0||(r.left>=box.left-1&&r.right<=box.right+1));})).toBe(true);
+ }
+
  const boxes=await report.locator('.focus-core-metric').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right};}));
  expect(boxes[0].right).toBeLessThanOrEqual(boxes[1].left+1);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
