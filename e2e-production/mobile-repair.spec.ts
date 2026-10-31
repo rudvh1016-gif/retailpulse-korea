@@ -190,6 +190,37 @@ for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport me
     expect(geometry.at(-1)!.right).toBeCloseTo(box.x+box.width,1);
   }
   await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap',airportDateGapPx(width));
+  const dateRow=page.locator('.airport-date-reserved .date-nav-shortcuts');
+  await expect(dateRow).toHaveCSS('background-color',phone?'rgb(243, 246, 248)':'rgba(0, 0, 0, 0)');
+  if(phone){
+    const edge=await dateRow.evaluate(el=>({left:el.getBoundingClientRect().left,parent:el.parentElement!.getBoundingClientRect().left}));
+    expect(edge.left).toBeCloseTo(edge.parent,1);
+  }
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath(`production-menu-spacing-${width}.png`)});
+});
+
+for(const width of [320,360,390,430,600,700,1440]) test(`production glance compact terminal row ${width}`,async({page},info)=>{
+  await page.setViewportSize({width,height:900});await page.goto('/ko');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+  const controls=page.locator('.airport-focus-operating .glance-controls'),row=controls.locator(':scope > div[role=group]'),buttons=row.locator('button');
+  await expect(buttons).toHaveCount(4);const phone=width<=700;
+  await expect(row).toHaveCSS('gap',phone?'8px':'6px');
+  await expect(controls).toHaveCSS('margin-top',phone?'2px':'12px');
+  await expect(controls).toHaveCSS('padding-bottom',phone?'0px':'8px');
+  const geometry=await buttons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,height:b.height,width:b.width,clipped:node.scrollWidth>node.clientWidth};}));
+  const bounds=(await row.boundingBox())!;
+  expect(geometry[0].left).toBeCloseTo(bounds.x,1);
+  for(const box of geometry){expect(box.height).toBeGreaterThanOrEqual(44);expect(box.width).toBeGreaterThanOrEqual(44);expect(box.clipped).toBe(false);}
+  for(let i=1;i<geometry.length;i++)expect(geometry[i].left-geometry[i-1].right).toBeCloseTo(phone?8:6,1);
+  expect(geometry[3].right).toBeLessThanOrEqual(bounds.x+bounds.width+1);
+  if(phone)await expect(buttons.first()).toHaveCSS('padding-left','0px');
+  for(const index of [3,0]){
+    await buttons.nth(index).click();await expect(buttons.nth(index)).toHaveAttribute('aria-pressed','true');
+    const rule=buttons.nth(index).locator('.glance-selection-rule');await expect(rule).toBeVisible();
+    await expect(rule).toHaveCSS('height','2px');
+    await expect(rule).toHaveCSS('left',phone?(index===0?'0px':'6px'):'9px');
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath(`production-glance-compact-${width}.png`)});
 });
