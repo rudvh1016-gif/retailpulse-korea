@@ -17,8 +17,12 @@ async function openCharts(page:Page,path='/ko/airport-countries?mode=passengers&
  });
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,route=>route.abort());
  await page.goto(path,{waitUntil:'domcontentloaded'});
- await expect(page.locator('#focus-country-trends')).toBeVisible();await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
+ // The server-rendered section can be replaced during hydration. Interact
+ // only after the client owns the page and the actual charts are present.
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.locator('#focus-country-trends')).toBeVisible();
  await expect(page.locator('.focus-interactive-line-chart')).toHaveCount(12);
+ await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
 }
 
 test('hover and keyboard show the actual value for every month, including May',async({page},info)=>{
