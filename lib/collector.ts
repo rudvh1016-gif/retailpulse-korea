@@ -2142,12 +2142,14 @@ export async function readRequiredForecastCoverage(
     let rows: Array<Record<string, unknown>> = [];
     try {
       if (db) {
+        // Match the bounded aggregate seek used by today-answer; target_idx's
+        // time ordering otherwise scans arrival/component rows unnecessarily.
         const result = await db.prepare(
           `SELECT terminal, direction, is_aggregate AS isAggregate, target_date AS targetDate,
              time_band_raw AS timeBandRaw, target_start_at AS targetStartAt,
              target_end_at AS targetEndAt, expected_passengers AS expectedPassengers,
              retrieved_at AS retrievedAt
-           FROM airport_passenger_forecast
+           FROM airport_passenger_forecast INDEXED BY airport_passenger_forecast_month_idx
            WHERE direction = 'departure' AND is_aggregate = 1 AND target_date = ?
            ORDER BY target_start_at, terminal LIMIT 96`,
         ).bind(targetDate).all<Record<string, unknown>>();
