@@ -105,7 +105,8 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await detail.locator('summary').click();
  await expect(detail).not.toHaveAttribute('open','');
  await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size','22px');
- await expect(page.locator('.focus-preparation-brief>div>small').first()).toHaveCSS('font-size','12px');
+ await expect(page.locator('.focus-preparation-brief>div>small')).toHaveCount(0);
+ await expect(page.locator('.focus-preparation-brief>.focus-planning-basis>summary')).toBeVisible();
  expect(await page.getByTestId('glance-key-growth').evaluate(node=>Boolean(node.compareDocumentPosition(document.querySelector('#focus-holidays')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
  await page.locator('#focus-holidays').scrollIntoViewIfNeeded();
  await expect(page.locator('#focus-holidays li').first()).toBeVisible();

@@ -4,7 +4,7 @@ import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
 
-const cases=[...['ko','en'].flatMap(lang=>[390,899,999,1000,1280,1440,1920].map(width=>({lang,width}))),...['zh','ja'].flatMap(lang=>[390,1440].map(width=>({lang,width})))];
+const cases=[...['ko','en'].flatMap(lang=>[320,390,899,999,1000,1280,1440,1920].map(width=>({lang,width}))),...['zh','ja'].flatMap(lang=>[390,1440].map(width=>({lang,width})))];
 for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact rows at ${width}px with short and expanded future content`,async({page},info)=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  // Fully local test inputs, including one explicitly synthetic return-planning
@@ -41,6 +41,9 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  await expect(report.locator('.focus-report-date')).toHaveCSS('font-weight','400');
  const future=report.locator('.focus-preparation-brief'),disclosures=future.locator('details');
  expect(await disclosures.count()).toBeGreaterThan(0);
+ await expect(future.locator(':scope > div > small')).toHaveCount(0);
+ await expect(future.locator('.focus-preparation-events')).toHaveCSS('margin-bottom',width<=700?'0px':'5px');
+ await expect(future.locator(':scope > .focus-planning-basis')).toHaveCSS('margin-top',width<=700?'4px':'8px');
  const heights:number[]=[],leftTops:number[][]=[];
  for(const expanded of [true,false]){
   for(const disclosure of await disclosures.all()){
