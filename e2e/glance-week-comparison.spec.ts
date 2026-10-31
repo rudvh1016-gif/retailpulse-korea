@@ -82,7 +82,7 @@ for(const width of [320,390,1440])test(`witnessed today schedule and honest pass
  await page.goto(`/ko?date=${day}`,{waitUntil:'domcontentloaded'});
  const report=page.locator('.focus-report'),flight=report.locator('.focus-week-comparison[data-kind=flights]');
  await expect(report.locator('.focus-figures-title')).toHaveText('출국객 수 (환승객 포함)');await expect(report.locator('.focus-passenger-total')).toContainText('112,403');
- await expect(flight).toContainText('△ 10편');await expect(flight.locator('.focus-week-snapshot')).toHaveText('오늘 04:42 KST 수집 예정편 · 변경 가능 · 운항실적 아님');
+ await expect(flight).toContainText('△ 10편');await expect(flight.locator('.focus-week-snapshot')).toHaveCount(0);
  await expect(flight).not.toContainText('편/일');await expect(flight.locator('.focus-week-change')).toHaveCSS('color','rgb(161, 45, 63)');
  const parts=report.locator('.focus-passenger-parts');await expect(parts).toContainText('출국 103,124명 + 환승 9,279명');await expect(parts).toHaveCSS('font-size',width<=600?'9px':'11px');
  const bounds=await parts.evaluate(node=>{const b=node.getBoundingClientRect();return {height:b.height,overflow:node.scrollWidth>node.clientWidth,pieces:[...node.children].map(n=>{const r=n.getBoundingClientRect();return r.left>=b.left-1&&r.right<=b.right+1;})};});
@@ -96,7 +96,7 @@ test('an already-open glance rechecks its week witness after the shared flights 
  await page.route('**/api/live/flights*',route=>route.fulfill({json:{...flights,generatedAt:recovered?'2026-10-19T01:02:00Z':'2026-10-19T01:00:00Z'}}));
  await page.goto(`/ko?date=${day}`,{waitUntil:'domcontentloaded'});const flight=page.locator('.focus-week-comparison[data-kind=flights]');
  await expect(flight).toContainText('① 비교 불가');const before=weekReads;recovered=true;await page.clock.fastForward(121_000);
- await expect(flight).toContainText('△ 10편');await expect(flight.locator('.focus-week-snapshot')).toBeVisible();expect(weekReads).toBeGreaterThan(before);
+ await expect(flight).toContainText('△ 10편');await expect(flight.locator('.focus-week-snapshot')).toHaveCount(0);expect(weekReads).toBeGreaterThan(before);
 });
 test('a held schedule cannot borrow a current collected-scan witness even when its count coincides',async({page})=>{
  await page.clock.setFixedTime(new Date('2026-10-19T01:00:00Z'));await fixtures(page);

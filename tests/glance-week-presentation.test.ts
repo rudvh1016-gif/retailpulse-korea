@@ -26,12 +26,12 @@ test('weekly basis keeps the same explicit small-type precedence as the existing
  assert.match(css,/@media\(max-width:600px\)\{[\s\S]*?\.focus-week-basis\{font-size:10px!important\}/);
 });
 
-test('current schedule snapshots show their actual collection clock and never claim final operations',()=>{
+test('current schedule comparisons retain values without the removed collection-time note',()=>{
  const today=new Date(Date.now()+9*3_600_000).toISOString().slice(0,10),previousDay=new Date(Date.parse(today+'T00:00:00Z')-7*86_400_000).toISOString().slice(0,10);
  const ref={...reference,day:today,previousDay,selectedFlightSnapshot:{day:today,retrievedAt:today+'T00:00:00+09:00',provisional:true as const}};
  for(const lang of ['ko','en','zh','ja'] as const){
   const markup=renderToStaticMarkup(h(GlanceWeekComparison,{total:9,day:today,scope:'all',reference:ref,kind:'flights',lang}));
-  assert.match(markup,/focus-week-snapshot/);assert.match(markup,/00:00/);assert.match(markup,/KST/);assert.doesNotMatch(markup,/명\/일|편\/일|flights\/day|班\/天|便\/日/);
+  assert.doesNotMatch(markup,/focus-week-snapshot|00:00|KST/);assert.match(markup,/data-direction="down"/);assert.match(markup,/△ 10%/);assert.match(markup,new RegExp(previousDay));assert.doesNotMatch(markup,/명\/일|편\/일|flights\/day|班\/天|便\/日/);
   if(lang!=='ko')assert.doesNotMatch(markup,/[가-힣]/);
  }
 });
