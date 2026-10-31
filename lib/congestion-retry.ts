@@ -114,7 +114,8 @@ export function shouldRetryWeather(log: string): boolean {
 /** A1 success plus a context failure (e.g. holidays 403) never repeats A1/A2. */
 export function shouldRetryAirport(log: string): boolean {
   const result = parseCollectorResults(log).filter((item) => item.source === "airport_recent").at(-1);
-  return !!result?.detail?.includes("failureStage=FETCH") && classifiedTransientFailure(result);
+  return !!result?.detail?.includes("failureStage=FETCH") && (classifiedTransientFailure(result) ||
+    (result.status === 'ERROR' && /^failureStage=FETCH failureClass=VALIDATION causeCode=A1_TODAY_POPULATION_CHANGED_PAGE_[1-9]\d* attempts=1 elapsedMs=0 retryExhausted=false$/.test(result.detail)));
 }
 
 /** Publication is checked on the two existing jobs, spaced apart, within the same KST early window.

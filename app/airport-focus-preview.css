@@ -307,6 +307,8 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 :root body :is(.focus-passenger-calculation,.focus-monthly-calculation)>p{font-size:12px;font-weight:400;line-height:1.5;margin:4px 0}
 .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{display:block;font-size:11px;font-weight:400;line-height:1.5;margin-top:2px}
 
+.airport-focus-shell .focus-report .focus-passenger-part{display:inline-block;white-space:nowrap}
+
 /* On desktop, spacing separates the next-week events and closing notes.
    Keep the card boundary and the main topic divider for orientation. */
 @media(min-width:1000px){
@@ -336,10 +338,24 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  :root body .airport-focus-shell .focus-report .focus-figures-title[data-heading="subsection"]{font-size:15px!important}
  .airport-focus-shell .focus-report .focus-core-metric .focus-metric-label{font-size:13px}
  .airport-focus-shell .focus-report .focus-core-metric .focus-metric-total{font-size:20px}
- .airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change){font-size:13px}
  .airport-focus-shell .focus-report :is(.focus-comparison-basis,.daily-comparison-basis){font-size:10px!important}
  :root body .airport-focus-shell .focus-report .focus-passenger-calculation>summary{font-size:11px}
- .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:10px}
+ .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:9px}
+}
+
+/* Two distinct baselines stay inside the existing metric columns. */
+.airport-focus-shell .focus-report .focus-week-comparison{margin-top:4px;min-width:0}
+.airport-focus-shell .focus-report .focus-week-change{font-size:16px;font-weight:700;line-height:1.5;margin:0;overflow-wrap:anywhere}
+.airport-focus-shell .focus-report .focus-week-basis{display:block;font-size:11px!important;font-weight:400;line-height:1.5;color:var(--text-muted,#667484);overflow-wrap:anywhere}
+.airport-focus-shell .focus-report .focus-week-change:has(>.glance-count-change[data-direction=down]){color:#a12d3f}
+@media(max-width:600px){
+ .airport-focus-shell .focus-report .focus-week-basis{font-size:10px!important}
+}
+.airport-focus-shell .focus-report .focus-comparison-unavailable{font-size:16px;font-weight:700;line-height:1.5}
+/* Owner-requested phone typography: ① and ② share one size, including unavailable
+   states. The metric scope outranks its generic paragraph rule without changing PC. */
+@media(max-width:600px){
+ .airport-focus-shell .focus-report .focus-core-metric :is(.focus-week-change,.focus-comparison-change,.daily-comparison-change,.focus-comparison-unavailable){font-size:12px;line-height:1.5;overflow-wrap:anywhere}
 }
 
 /* Match the phone briefing's inner text edge without changing its type or card. */
@@ -360,4 +376,9 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-operating .glance-controls>div{justify-content:space-evenly;overflow-x:auto;scrollbar-width:none}
  .airport-focus-operating .glance-controls>div::-webkit-scrollbar{display:none}
  .airport-focus-operating .glance-controls>div button{flex:0 0 auto;min-width:44px}
+}
+
+/* On phones remove only the redundant rule directly under the selected-country note. */
+@media(max-width:700px){
+ .airport-focus-shell .focus-report .focus-selected-country-changes:not(.focus-return-context){border-bottom:0}
 }

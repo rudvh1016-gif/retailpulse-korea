@@ -40,3 +40,14 @@
 .records-controls label { position: relative; padding-top: 2px; }
 .records-controls select { padding-left: 48px; font-weight: var(--weight-strong); border-width: 0 0 1px; background: #fff; }
 .records-select-scene { position: absolute; left: 0; bottom: 0; width: 44px; height: 44px; object-fit: contain; pointer-events: none; }
+
+/* One full-plot date reader keeps the existing narrow bars usable by touch and keyboard. */
+.records-chart-plot { position: relative; touch-action: pan-y pinch-zoom; }
+.records-chart-reader { cursor: crosshair; min-height: 44px; scroll-margin-block: 80px; }
+.records-chart-reader:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.records-chart-marker { fill: none; stroke: var(--ink); stroke-width: 1; vector-effect: non-scaling-stroke; pointer-events: none; }
+.records-chart-tooltip { position: absolute; bottom: calc(100% + 6px); z-index: 2; width: 240px; max-width: 100%; box-sizing: border-box; padding: 7px 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 12px; line-height: 1.5; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.records-chart-tooltip::after { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: 8px; }
+.records-chart-tooltip time, .records-chart-tooltip strong { display: block; }
+.records-chart-tooltip strong { font-weight: var(--weight-strong); }
+.records-chart .records-chart-hint { margin-bottom: 0; }

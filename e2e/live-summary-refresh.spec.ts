@@ -86,7 +86,9 @@ test('failed refresh retains same-date values and original collection and observ
   await openAirport(page);
   await expect(page.locator('.airport-brief-total')).toContainText('47,320');
   await expect(page.locator('.airport-current-brief')).toContainText('09:05 수집');
-  await expect(page.locator('.airport-wait-brief')).toContainText('14:06');
+  await expect(page.locator('.airport-current-brief .airport-wait-brief')).toHaveCount(0);
+  await page.locator('.airport-checkpoints').scrollIntoViewIfNeeded();
+  await expect(page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"] .checkpoint-schematic-time')).toContainText('14:06');
   await expect(page.getByTestId('summary-refresh-failed')).toHaveCount(0);
   const initialRequests = requests;
   fail = true;
@@ -94,7 +96,8 @@ test('failed refresh retains same-date values and original collection and observ
   await expect.poll(() => requests).toBe(initialRequests + 1);
   await expect(page.locator('.airport-brief-total')).toContainText('47,320');
   await expect(page.locator('.airport-current-brief')).toContainText('09:05 수집');
-  await expect(page.locator('.airport-wait-brief')).toContainText('14:06');
+  await expect(page.locator('.airport-current-brief .airport-wait-brief')).toHaveCount(0);
+  await expect(page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"] .checkpoint-schematic-time')).toContainText('14:06');
   await expect(page.getByTestId('summary-refresh-failed')).toContainText('화면 갱신 실패 · 마지막 정상 자료를 표시합니다.');
   await page.clock.fastForward(30_000);
   expect(requests).toBe(initialRequests + 1);

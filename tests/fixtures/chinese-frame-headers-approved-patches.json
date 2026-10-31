@@ -1,0 +1,8 @@
+{
+  "public/_headers": [
+    [
+      "\n/airport-period/frame-zh.html\n  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests\n  X-Frame-Options: SAMEORIGIN\n  X-Content-Type-Options: nosniff\n  X-Robots-Tag: noindex, nofollow\n\n/airport-period/frame-zh\n  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests\n  X-Frame-Options: SAMEORIGIN\n  X-Content-Type-Options: nosniff\n  X-Robots-Tag: noindex, nofollow\n\n/airport-period/frame-zh/\n  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests\n  X-Frame-Options: SAMEORIGIN\n  X-Content-Type-Options: nosniff\n  X-Robots-Tag: noindex, nofollow\n",
+      ""
+    ]
+  ]
+}

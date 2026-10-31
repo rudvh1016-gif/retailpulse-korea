@@ -1,13 +1,28 @@
-/* The three airport-status selectors have room between choices, while the
-   quiet rule ends with the choices rather than crossing the whole page. */
+/* Equal-width phone menu slots keep the first text at the page edge.
+   Desktop and the existing date-shortcut spacing remain unchanged. */
 @media (max-width: 600px) {
   :root body .app .airport-view > #airport-data-flow,
   :root body .app .airport-view > .airport-context-nav {
-    width: max-content;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
     max-width: 100%;
-    gap: clamp(16px, 4.5vw, 20px);
-    margin-inline: auto;
+    gap: 0;
+    margin-inline: 0;
     padding-inline: 0;
+  }
+
+  :root body .app .airport-view > .airport-context-nav {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  :root body .app .airport-view > #airport-data-flow > button,
+  :root body .app .airport-view > .airport-context-nav > button {
+    min-width: 0;
+    width: 100%;
+    padding-inline: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   /* Reduce the menu stack, not the minimum tappable size of its choices. */

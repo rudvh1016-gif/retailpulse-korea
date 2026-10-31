@@ -55,3 +55,21 @@
   X-Frame-Options: SAMEORIGIN
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex, nofollow
+
+/airport-period/frame-zh.html
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex, nofollow
+
+/airport-period/frame-zh
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex, nofollow
+
+/airport-period/frame-zh/
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'; upgrade-insecure-requests
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex, nofollow

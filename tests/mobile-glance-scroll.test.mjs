@@ -7,7 +7,7 @@ test('glance arrows scroll the rail independently of URL selection and observe c
  const source=read('app/airport-period-insights.tsx');
  assert.match(source,/element\.scrollBy\(\{left:direction\*Math\.max\(120,element\.clientWidth\*\.8\),behavior:'instant'\}\)/);
  assert.match(source,/querySelectorAll\('\[role=tab\]'\)\.forEach\(tab=>observer\.observe\(tab\)\)/);
- assert.match(source,/aria-label="다음 메뉴 보기" aria-controls="airport-glance-tabs" disabled=\{!edges\.next\}/);
+ assert.match(source,/aria-label=\{t\('다음 메뉴 보기'\)\} aria-controls=\"airport-glance-tabs\" disabled=\{!edges\.next\}/);
  assert.match(source,/document\.activeElement===previousButton\.current\)pendingFocus\.current='next'/);
  assert.match(source,/document\.activeElement===nextButton\.current\)pendingFocus\.current='previous'/);
  assert.match(source,/useLayoutEffect\(\(\)=>\{\s*const button=pendingFocus[\s\S]*?button\?\.focus\(\{preventScroll:true\}\)/);

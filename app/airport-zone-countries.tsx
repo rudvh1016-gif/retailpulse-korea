@@ -10,7 +10,7 @@ import disclosureStyles from './compact-disclosure.module.css';
 const locale={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'};
 const blenderFlags=new Set(['CN','JP','US','VN']);
 // Other reviewed destination codes use the matching flag-icons SVG, never a Blender label.
-const svgFlags=new Set('AE AT AU BN CA CH CZ DE DK ES ET FI FR GB GE GU HK HU ID IN IT KG KH KR KZ LA LK MM MN MO MP MX MY NL NP NZ PH PL PT QA SG TH TM TR TW UZ'.split(' '));
+const svgFlags=new Set('AE AM AT AU BN CA CH CZ DE DK ES ET FI FR GB GE GU HK HU ID IN IT KG KH KR KZ LA LK MM MN MO MP MX MY NL NP NZ PH PL PT QA SG TH TM TR TW UZ'.split(' '));
 const flagEmoji=(country:string)=>/^[A-Z]{2}$/.test(country)
  ? String.fromCodePoint(...[...country].map(letter=>letter.charCodeAt(0)-65+0x1f1e6))
  : null;

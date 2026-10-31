@@ -36,11 +36,11 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.getByTestId('glance-key-sum')).toHaveCount(0);
  await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
  await expect(page.locator('.focus-passenger-parts')).toBeVisible();
- await expect(page.locator('.focus-passenger-parts')).toContainText('예상 출국객 103,124명 + 예상 환승객 9,279명');
+ await expect(page.locator('.focus-passenger-parts')).toContainText('출국 103,124명 + 환승 9,279명');
  await expect(page.locator('.focus-report-basis')).toContainText('누락일을 0으로 계산하지 않습니다');
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','normal');
- await expect(page.locator('.focus-passenger-comparison-core')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
+ await expect(page.locator('.focus-passenger-comparison-core .focus-comparison-basis')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width>=1000?'28px':width<=600?'20px':'24px');
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
  await page.locator('#focus-country-trends').scrollIntoViewIfNeeded();
@@ -218,7 +218,7 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  await dialog.getByRole('link',{name:'공항 한눈에 보기 →'}).click();
  await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
  await expect(page.locator('.focus-passenger-parts')).toBeVisible();
- await expect(page.locator('.focus-passenger-parts')).toContainText('예상 출국객 103,124명 + 예상 환승객 9,279명');
+ await expect(page.locator('.focus-passenger-parts')).toContainText('출국 103,124명 + 환승 9,279명');
  await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await expect(dialog).toBeVisible();
  await dialog.getByRole('link',{name:'반입 면세한도 보기 →'}).click();

@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 
-for (const width of [320, 390, 430, 1440]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
- test(`airport selector spacing and shortened rules ${lang} ${width}`, async ({ page }, info) => {
+for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
+ test(`airport selector equal slots and date spacing ${lang} ${width}`, async ({ page }, info) => {
   await page.setViewportSize({ width, height: 900 });
   await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   await page.route('**/api/live/summary*', async route => {
@@ -24,18 +24,30 @@ for (const width of [320, 390, 430, 1440]) for (const lang of ['ko', 'en', 'zh',
    await expect(buttons).toHaveCount([4, 5, 3][index]);
    const boxes = await buttons.evaluateAll(nodes => nodes.map(node => {
     const box = node.getBoundingClientRect();
-    return { left: box.left, right: box.right, height: box.height };
+    return { left: box.left, right: box.right, width: box.width, height: box.height, scrollWidth: node.scrollWidth, clientWidth: node.clientWidth };
    }));
    expect(boxes).toHaveLength([4, 5, 3][index]);
    for (const box of boxes) expect(box.height).toBeGreaterThanOrEqual(44);
    if (width <= 600) {
-    for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeGreaterThanOrEqual(15.5);
+    if (index < 2) {
+     for (const box of boxes) {
+      expect(box.width).toBeCloseTo(boxes[0].width, 1);
+      expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth + 1);
+     }
+     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeCloseTo(0, 1);
+     for (const button of await buttons.all()) await expect(button).toHaveCSS('text-align', 'left');
+    } else {
+     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeGreaterThanOrEqual(15.5);
+    }
     const row = await group.boundingBox(), parent = await group.evaluate(node => {
      const rect = node.parentElement!.getBoundingClientRect();
      return { left: rect.left, width: rect.width };
     });
     expect(row!.width).toBeLessThanOrEqual(parent.width + 1);
-    if (lang === 'ko' && width >= 390) {
+    if (index < 2) {
+     expect(row!.width).toBeCloseTo(parent.width, 1);
+     expect(row!.x).toBeCloseTo(parent.left, 1);
+    } else if (lang === 'ko' && width >= 390) {
      expect(row!.width).toBeLessThan(parent.width - 20);
      expect(row!.x).toBeGreaterThan(parent.left + 10);
     }

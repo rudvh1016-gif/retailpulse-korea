@@ -10,7 +10,7 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`every verified destinatio
  await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
  const summary={...SUMMARY_FIXTURE,airport:{...SUMMARY_FIXTURE.airport,sides:airportSides(date,'TODAY',[],flights,[],false,false)}};
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',flights,truncated:false,retrievedAt:flights[0].retrievedAt}}));
- await page.goto(lang==='ko'?`/ko/airport-countries?mode=zones&date=${date}&building=T1`:`/${lang}/airport?terminal=T1`);
+ await page.goto((lang==='ko'||lang==='zh')?`/${lang}/airport-countries?mode=zones&date=${date}&building=T1`:`/${lang}/airport?terminal=T1`);
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const countries=page.getByTestId('map-zone-countries');
  await expect(countries.locator('li[data-country]')).toHaveCount(destinations.length);

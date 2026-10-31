@@ -17,10 +17,10 @@ async function renderPath(path, documentLanguage = "ko") {
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test('only the public airport analysis document permits same-origin framing',async()=>{
-  for(const path of ['/airport-period/frame.html','/airport-period/frame','/airport-period/frame/']){
+  for(const path of ['/airport-period/frame.html','/airport-period/frame','/airport-period/frame/','/airport-period/frame-zh.html','/airport-period/frame-zh','/airport-period/frame-zh/']){
     const response=await renderPath(path);
     if(path.endsWith('/')&&response.status===308){
-      assert.equal(response.headers.get('location'),'/airport-period/frame');
+      assert.equal(response.headers.get('location'),path.slice(0,-1));
       continue; // The canonical document's policy is asserted above.
     }
     const csp=response.headers.get('content-security-policy');
@@ -30,11 +30,13 @@ test('only the public airport analysis document permits same-origin framing',asy
     assert.equal(response.headers.get('x-frame-options'),'SAMEORIGIN',path);
     assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow',path);
   }
-  const page=await renderPath('/ko');
-  assert.match(page.headers.get('content-security-policy'),/frame-ancestors 'none'/);
-  assert.equal(page.headers.get('x-frame-options'),'DENY');
+  for(const path of ['/ko','/zh','/airport-period/unreviewed.html']){
+    const page=await renderPath(path);
+    assert.match(page.headers.get('content-security-policy'),/frame-ancestors 'none'/);
+    assert.equal(page.headers.get('x-frame-options'),'DENY');
+  }
   const headers=await read('../public/_headers');
-  for(const path of ['/airport-period/frame.html','/airport-period/frame','/airport-period/frame/']){
+  for(const path of ['/airport-period/frame.html','/airport-period/frame','/airport-period/frame/','/airport-period/frame-zh.html','/airport-period/frame-zh','/airport-period/frame-zh/']){
     const block=headers.split('\n\n').find(block=>block.split('\n').includes(path));
     assert.ok(block,`${path} must also protect direct Workers assets`);
     assert.match(block,/frame-ancestors 'self'/);assert.match(block,/X-Frame-Options: SAMEORIGIN/);
@@ -1131,8 +1133,8 @@ test("server HTML never claims missing data or zero events before data loads", a
   assert.doesNotMatch(home, /국가 전체 보기 \(0\)/, "no false zero country count");
   // Stop at the next briefing topic, not the first nested metric/comparison div.
   const comparison = home.match(/class="focus-report-lines"[\s\S]*?(?=<div class="focus-selected-country-stack">)/)?.[0] ?? "";
-  assert.match(comparison,/예상 출국객 확인 중/);
-  assert.match(comparison,/예상 환승객 확인 중/);
+  assert.match(comparison,/출국 확인 중/);
+  assert.match(comparison,/환승 확인 중/);
   assert.match(comparison,/단순합계 확인 중/);
   assert.match(comparison,/<b class="focus-passenger-total focus-metric-total">\s*확인 중<\/b>/);
   assert.match(comparison,/<p class="focus-metric-label">출발 예정편<\/p><p><b class="focus-metric-total">확인 중<\/b>/);
