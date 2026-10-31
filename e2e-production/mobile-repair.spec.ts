@@ -30,7 +30,8 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(dateButtons).toHaveCount(3);
   await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('border-top-width', '0px');
-  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap', '6px');
+  const expectedGap = Math.max(16, Math.min(width * .045, 20));
+  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap', `${expectedGap}px`);
   for(const control of await dateButtons.all()){
     await expect(control).toHaveCSS('border-top-width','0px');
     await expect(control).toHaveAccessibleName(/.+/);
@@ -157,4 +158,39 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(picker).toHaveValue(today);
   await expect(page.locator('.date-nav-shortcuts button').nth(1)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
+});
+
+// The approved #514 phone layout uses equal slots, not centered content-width rows.
+// Keep a desktop witness so this cannot silently become a sitewide change.
+for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport menu spacing contract ${width}`, async ({page}, info) => {
+  await page.setViewportSize({width, height:900});
+  await page.goto('/ko/airport');
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+  await expect(page.locator('.airport-view > .airport-menu-label')).toHaveCount(2);
+  const phone = width <= 600;
+  for (const [selector, count] of [['#airport-data-flow',4],['.airport-context-nav',5]] as const) {
+    const row = page.locator(selector);
+    await expect(row).toHaveCSS('display',phone?'grid':'flex');
+    await expect(row).toHaveCSS('gap','0px');
+    const buttons=row.locator(':scope > button');
+    await expect(buttons).toHaveCount(count);
+    const geometry=await buttons.evaluateAll(nodes=>nodes.map(node=>{
+      const box=node.getBoundingClientRect();
+      return {left:box.left,right:box.right,width:box.width,height:box.height,clipped:node.scrollWidth>node.clientWidth};
+    }));
+    for(const box of geometry){
+      expect(box.width).toBeCloseTo(geometry[0].width,1);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.clipped).toBe(false);
+    }
+    for(let i=1;i<geometry.length;i++)expect(geometry[i].left-geometry[i-1].right).toBeCloseTo(0,1);
+    for(const button of await buttons.all())await expect(button).toHaveCSS('text-align',phone?'left':'center');
+    const box=(await row.boundingBox())!;
+    expect(geometry[0].left).toBeCloseTo(box.x,1);
+    expect(geometry.at(-1)!.right).toBeCloseTo(box.x+box.width,1);
+  }
+  const gap=phone?Math.max(16,Math.min(width*.045,20)):6;
+  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap',`${gap}px`);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath(`production-menu-spacing-${width}.png`)});
 });
