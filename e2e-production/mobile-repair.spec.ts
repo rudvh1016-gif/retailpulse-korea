@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { airportDateGapPx } from '../scripts/airport-control-spacing.mjs';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 import type {LiveSummary} from '../app/live-signals';
 
@@ -30,8 +31,7 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(dateButtons).toHaveCount(3);
   await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('border-top-width', '0px');
-  const expectedGap = Math.max(16, Math.min(width * .045, 20));
-  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap', `${expectedGap}px`);
+  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap', airportDateGapPx(width));
   for(const control of await dateButtons.all()){
     await expect(control).toHaveCSS('border-top-width','0px');
     await expect(control).toHaveAccessibleName(/.+/);
@@ -189,8 +189,7 @@ for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport me
     expect(geometry[0].left).toBeCloseTo(box.x,1);
     expect(geometry.at(-1)!.right).toBeCloseTo(box.x+box.width,1);
   }
-  const gap=phone?Math.max(16,Math.min(width*.045,20)):6;
-  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap',`${gap}px`);
+  await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap',airportDateGapPx(width));
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await page.screenshot({path:info.outputPath(`production-menu-spacing-${width}.png`)});
 });
