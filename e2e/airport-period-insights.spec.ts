@@ -255,6 +255,12 @@ for(const width of [701,1024,1440])test(`desktop keeps deployed airport gutters 
  const controls=page.locator('.airport-focus-operating .glance-controls');
  await expect(controls).toHaveCSS('margin-top','12px');await expect(controls).toHaveCSS('padding-bottom','8px');
  await expect(controls.locator(':scope > div[role=group]')).toHaveCSS('gap','6px');
+ const terminalButtons=controls.locator(':scope > div[role=group] > button');
+ for(const button of await terminalButtons.all()){
+  await expect(button).toHaveCSS('padding-left','13px');await expect(button).toHaveCSS('padding-right','13px');
+  expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);expect(await button.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+ }
+ for(const index of [3,0]){await terminalButtons.nth(index).click();await expect(terminalButtons.nth(index)).toHaveAttribute('aria-pressed','true');await expect(terminalButtons.nth(index).locator('.glance-selection-rule')).toHaveCSS('left','9px');}
  await page.screenshot({path:testInfo.outputPath(`desktop-glance-unchanged-${width}.png`),fullPage:true});
  await page.goto('/ko/airport-countries?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');await expect(page.locator('.country-tabs')).toHaveCSS('display','grid');
  const columns=await page.locator('.country-tabs').evaluate(node=>getComputedStyle(node).gridTemplateColumns.split(' ').map(Number.parseFloat));expect(columns).toHaveLength(3);expect(Math.max(...columns)-Math.min(...columns)).toBeLessThanOrEqual(1);
