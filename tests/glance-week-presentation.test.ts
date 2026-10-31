@@ -25,3 +25,23 @@ test('weekly basis keeps the same explicit small-type precedence as the existing
  assert.match(css,/\.focus-week-basis\{display:block;font-size:11px!important;/);
  assert.match(css,/@media\(max-width:600px\)\{[\s\S]*?\.focus-week-basis\{font-size:10px!important\}/);
 });
+
+test('current schedule snapshots show their actual collection clock and never claim final operations',()=>{
+ const today=new Date(Date.now()+9*3_600_000).toISOString().slice(0,10),previousDay=new Date(Date.parse(today+'T00:00:00Z')-7*86_400_000).toISOString().slice(0,10);
+ const ref={...reference,day:today,previousDay,selectedFlightSnapshot:{day:today,retrievedAt:today+'T00:00:00+09:00',provisional:true as const}};
+ for(const lang of ['ko','en','zh','ja'] as const){
+  const markup=renderToStaticMarkup(h(GlanceWeekComparison,{total:9,day:today,scope:'all',reference:ref,kind:'flights',lang}));
+  assert.match(markup,/focus-week-snapshot/);assert.match(markup,/00:00/);assert.match(markup,/KST/);assert.doesNotMatch(markup,/명\/일|편\/일|flights\/day|班\/天|便\/日/);
+  if(lang!=='ko')assert.doesNotMatch(markup,/[가-힣]/);
+ }
+});
+
+
+test('phone comparison rows share one smaller size with precedence over metric paragraphs',()=>{
+ const css=readFileSync('app/airport-focus-preview.css','utf8');
+ // Four class selectors beat the three-class + p metric rule that formerly kept ① at 16px.
+ assert.match(css,/@media\(max-width:600px\)\{\s*\.airport-focus-shell \.focus-report \.focus-core-metric :is\(\.focus-week-change,\.focus-comparison-change,\.daily-comparison-change,\.focus-comparison-unavailable\)\{font-size:12px;line-height:1.5;overflow-wrap:anywhere\}/);
+ assert.match(css,/\.focus-week-change\{font-size:16px;font-weight:700/);
+ assert.match(css,/:is\(\.focus-comparison-change,\.daily-comparison-change\)\{order:-1;font-size:16px;font-weight:700/);
+ assert.match(css,/\.focus-comparison-unavailable\{font-size:16px;font-weight:700/);
+});
