@@ -342,6 +342,18 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report .focus-core-metric .focus-passenger-parts{font-size:10px}
 }
 
+/* Two distinct baselines stay inside the existing metric columns. */
+.airport-focus-shell .focus-report .focus-week-comparison{margin-top:4px;min-width:0}
+.airport-focus-shell .focus-report .focus-week-change{font-size:16px;font-weight:700;line-height:1.5;margin:0;overflow-wrap:anywhere}
+.airport-focus-shell .focus-report .focus-week-basis{display:block;font-size:11px!important;font-weight:400;line-height:1.5;color:var(--text-muted,#667484);overflow-wrap:anywhere}
+.airport-focus-shell .focus-report .focus-week-change:has(>.glance-count-change[data-direction=down]){color:#a12d3f}
+@media(max-width:600px){
+ .airport-focus-shell .focus-report .focus-week-change{font-size:13px}
+ .airport-focus-shell .focus-report .focus-week-basis{font-size:10px!important}
+}
+.airport-focus-shell .focus-report .focus-comparison-unavailable{font-size:16px;font-weight:700;line-height:1.5}
+@media(max-width:600px){.airport-focus-shell .focus-report .focus-comparison-unavailable{font-size:13px}}
+
 /* Match the phone briefing's inner text edge without changing its type or card. */
 @media(max-width:700px){
  .page-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:2px}
@@ -353,4 +365,9 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 @media(max-width:365px){
  .page-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:6px}
  .airport-insight-shell .airport-focus-shell.airport-focus-operating:has(.glance-preview){padding-inline:0}
+}
+
+/* On phones remove only the redundant rule directly under the selected-country note. */
+@media(max-width:700px){
+ .airport-focus-shell .focus-report .focus-selected-country-changes:not(.focus-return-context){border-bottom:0}
 }
