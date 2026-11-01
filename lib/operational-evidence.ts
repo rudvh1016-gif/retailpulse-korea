@@ -15,6 +15,7 @@ import { SEOUL_FOREIGN_MAPPING_VERSION } from './seoul-foreign';
 import { SEOUL_REALTIME_STALE_MINUTES } from './seoul-freshness';
 import { verifyRecovery, type RecoveryVerification } from './recovery-orchestration';
 import type { SourceObservation } from './source-lifecycle';
+import { FACILITY_REFRESH_DAYS } from './airport-facilities';
 import type { FailureState } from './operational-states';
 
 export type EvidenceRow=Record<string,unknown>;
@@ -277,7 +278,15 @@ export function verifyPublicMeasurement(measurement:SourceMeasurement,bundle:Pub
 }
 export function sourceObservation(measurement:SourceMeasurement,job:string,interval:number|null):SourceObservation {
   const {run,health}=measurement;
+  const age=Date.parse(measurement.observedAt)-Date.parse(String(run?.started_at));
+  const unrecorded=!run&&['INCHEON_TRANSFER_FORECAST','KASI_PUBLIC_HOLIDAYS'].includes(measurement.sourceId);
+  const facilityRefresh=measurement.sourceId==='INCHEON_FACILITY_DIRECTORY'&&run?.status==='SUCCESS'&&health?.status==='LIVE'
+    &&Number.isFinite(age)&&age>=0&&age<FACILITY_REFRESH_DAYS*86400000;
+  const runEvidenceUnavailableReason=unrecorded
+    ?`collector_runs is not instrumented for ${measurement.sourceId}; source_health=${health?.status??'UNKNOWN'}; inspect workflow execution separately`
+    :facilityRefresh?`facility refresh window is ${FACILITY_REFRESH_DAYS} days; provider-free daily skips do not update collector_runs; latest invocation is unverified`:undefined;
   return {sourceId:measurement.sourceId,job,enablement:'SCHEDULE_DEFINED',expectedIntervalMs:interval,
+    runEvidenceUnavailableReason,
     lastRun:run?{status:String(run.status),startedAt:String(run.started_at),finishedAt:run.finished_at as string|null,
       recordsRead:Number(run.records_read),recordsWritten:Number(run.records_written),detail:null}:null,
     health:health?{status:String(health.status),lastRetrievedAt:health.last_retrieved_at as string|null,consecutiveFailures:Number(health.consecutive_failures)}:null,

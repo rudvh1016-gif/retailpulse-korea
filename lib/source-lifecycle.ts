@@ -54,6 +54,8 @@ export interface SourceObservation {
   expectedIntervalMs: number | null;
   /** Most recent run for this source, or null when none was found. */
   lastRun: RunRecord | null;
+  /** Known missing telemetry or an intentional provider-refresh skip; never proves a healthy run. */
+  runEvidenceUnavailableReason?: string;
   health: HealthRecord | null;
   /**
    * Rows readable right now for the logical period this source serves.
@@ -157,6 +159,10 @@ export function buildSourceEvidence(observation: SourceObservation, nowIso: stri
     return evidence;
   }
   if (!run) {
+    if (observation.runEvidenceUnavailableReason) {
+      evidence.push({stage:'TRIGGERED',proven:'UNPROVABLE',failure:'UNKNOWN',evidence:observation.runEvidenceUnavailableReason});
+      return evidence;
+    }
     evidence.push({
       stage: "TRIGGERED",
       proven: observation.expectedIntervalMs === null ? "UNPROVABLE" : "DISPROVEN",
@@ -172,6 +178,10 @@ export function buildSourceEvidence(observation: SourceObservation, nowIso: stri
     return evidence;
   }
   if (observation.expectedIntervalMs !== null && ageMs > missedRunThresholdMs(observation.expectedIntervalMs)) {
+    if (observation.runEvidenceUnavailableReason) {
+      evidence.push({stage:'TRIGGERED',proven:'UNPROVABLE',failure:'UNKNOWN',evidence:observation.runEvidenceUnavailableReason});
+      return evidence;
+    }
     evidence.push({
       stage: "TRIGGERED",
       proven: "DISPROVEN",
@@ -360,15 +370,23 @@ export interface SourceVerdict {
   severity: OverallStatus;
   /** The failure class used for incident fingerprinting. */
   failureClass: FailureState | null;
+  /** A structured collection failure can be known while run-stage telemetry is absent. */
+  observedCollectionFailure?: { state: FailureState; evidence: string };
 }
 
 export function evaluateSource(observation: SourceObservation, nowIso: string): SourceVerdict {
   const walk = walkLifecycle(buildSourceEvidence(observation, nowIso));
+  // Do not invent a proven execution stage, or let missing telemetry hide an
+  // independently measured AUTH/SCHEMA/provider failure (notably KASI).
+  const observedFailure=walk.state==='UNKNOWN'&&observation.runEvidenceUnavailableReason
+    &&observation.payloadProof?.valid===false&&observation.collectionFailure&&observation.collectionFailure!=='UNKNOWN'
+    ?observation.collectionFailure:null;
   return {
     sourceId: observation.sourceId,
     job: observation.job,
     walk,
-    severity: severityOf(walk.state),
-    failureClass: walk.state === "HEALTHY" ? null : (walk.state as FailureState),
+    severity: severityOf(observedFailure??walk.state),
+    failureClass: observedFailure??(walk.state === "HEALTHY" ? null : (walk.state as FailureState)),
+    ...(observedFailure?{observedCollectionFailure:{state:observedFailure,evidence:observation.payloadProof!.detail}}:{}),
   };
 }

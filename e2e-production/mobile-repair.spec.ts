@@ -203,16 +203,18 @@ for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport me
 for(const width of [320,360,390,430,600,700,1440]) test(`production glance compact terminal row ${width}`,async({page},info)=>{
   await page.setViewportSize({width,height:900});await page.goto('/ko');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+  await page.evaluate(()=>document.fonts.ready);
   const controls=page.locator('.airport-focus-operating .glance-controls'),row=controls.locator(':scope > div[role=group]'),buttons=row.locator('button');
   await expect(buttons).toHaveCount(4);const phone=width<=700;
   await expect(row).toHaveCSS('gap',phone?'8px':'6px');
-  await expect(controls).toHaveCSS('margin-top',phone?'2px':'12px');
+  await expect(controls).toHaveCSS('margin-top',phone?'0px':'8px');
   await expect(controls).toHaveCSS('padding-bottom',phone?'0px':'8px');
   const geometry=await buttons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,height:b.height,width:b.width,clipped:node.scrollWidth>node.clientWidth};}));
   const bounds=(await row.boundingBox())!;
   expect(geometry[0].left).toBeCloseTo(bounds.x,1);
   for(const box of geometry){expect(box.height).toBeGreaterThanOrEqual(44);expect(box.width).toBeGreaterThanOrEqual(44);expect(box.clipped).toBe(false);}
-  for(let i=1;i<geometry.length;i++)expect(geometry[i].left-geometry[i-1].right).toBeCloseTo(phone?8:6,1);
+  // Approved phone layout moves only T1 left by 8px; later buttons stay put.
+  for(let i=1;i<geometry.length;i++)expect(geometry[i].left-geometry[i-1].right).toBeCloseTo(phone?(i===1?0:i===2?16:8):6,1);
   expect(geometry[3].right).toBeLessThanOrEqual(bounds.x+bounds.width+1);
   if(phone)await expect(buttons.first()).toHaveCSS('padding-left','0px');
   for(const index of [3,0]){
