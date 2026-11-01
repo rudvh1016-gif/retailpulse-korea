@@ -74,14 +74,21 @@ for(const width of [390,1440]){
   await testInfo.attach(`approved-release-${width}.png`,{body:await page.screenshot({fullPage:true}),contentType:'image/png'});
   // T2 differs from the new-reader default, so this catches lost airport context.
   await glance.getByRole('button',{name:'T2',exact:true}).click();
-  await nav.locator('a').last().click();
+  const businessQuery={place:'airport',terminal:'T2'},moreNav=nav.locator('a').last();
+  const moreUrl=new URL((await moreNav.getAttribute('href'))!,page.url());
+  expect(moreUrl.pathname).toBe('/ko/more');
+  expect(Object.fromEntries(moreUrl.searchParams)).toEqual(businessQuery);
+  await moreNav.click();
   await expect(page).toHaveURL(url=>url.pathname==='/ko/more');
+  expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual(businessQuery);
   const more=page.locator('.more-section-links');
   await expect(more.locator('a')).toHaveText(['서울 한눈에','서울','요즘 뜨는 소비','매장','관광안내','기록','소개']);
   expect(await more.locator('a').evaluateAll(links=>links.map(link=>new URL((link as HTMLAnchorElement).href).pathname))).toEqual(['/ko/where-to','/ko/myeongdong','/ko/consumption','/ko/business','/ko/tourism-desk/myeongdong','/ko/forecast','/ko/about']);
-  const business=more.getByRole('link',{name:'매장',exact:true});
+  const business=more.getByRole('link').filter({hasText:/^매장$/});
+  // Keep exact visible copy and link semantics; CSS chevrons can enter the accessible name.
   await expect(business).toBeVisible();
-  const businessUrl=new URL((await business.getAttribute('href'))!,page.url()),businessQuery={place:'airport',terminal:'T2'};
+  await expect(business).toHaveText('매장');
+  const businessUrl=new URL((await business.getAttribute('href'))!,page.url());
   expect(businessUrl.pathname).toBe('/ko/business');
   expect(Object.fromEntries(businessUrl.searchParams)).toEqual(businessQuery);
   await business.click();
