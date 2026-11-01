@@ -49,6 +49,7 @@ jobs:
           node-version: 22.13.1
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: node scripts/audit-dependencies.mjs
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:unit

@@ -39,11 +39,11 @@
     "drizzle-orm": "0.45.2",
     "gsap": "3.15.0",
     "next": "16.4.1",
-    "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/vite-plugin": "1.66.0",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
@@ -54,14 +54,19 @@
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.3.2",
-    "react-server-dom-webpack": "19.2.6",
+    "react-server-dom-webpack": "19.2.8",
     "tailwindcss": "4.2.1",
     "tsx": "^4.20.6",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
-    "vite": "8.0.13",
+    "vite": "8.3.5",
     "wrangler": "^4.128.0"
   },
   "type": "module",
-  "displayName": "KORETAIL"
+  "displayName": "KORETAIL",
+  "overrides": {
+    "vinext": {
+      "image-size": "2.0.4"
+    }
+  }
 }

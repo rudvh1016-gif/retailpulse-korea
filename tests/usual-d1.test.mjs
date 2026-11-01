@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import { build } from "esbuild";
-import { Miniflare } from "miniflare";
+import { Miniflare } from "./helpers/miniflare.mjs";
 import { kstDayOf } from "../lib/kst.ts";
 import { holidayMonthsFor } from "../lib/usual-comparison.ts";
 
