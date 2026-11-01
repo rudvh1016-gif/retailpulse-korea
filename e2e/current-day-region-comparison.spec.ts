@@ -22,6 +22,7 @@ for(const lang of ['ko','en'])for(const width of [390,1440])test(`Nov 1 zones an
  await expect(section.getByTestId('airport-month-basis')).toContainText('31');await expect(section.getByTestId('current-period-collected')).toContainText('KST');
  const removed=section.locator(':scope > h3, :scope > label, :scope > .airport-month-basis, :scope > .airport-month-source-summary, :scope > .airport-month-total, :scope > .airport-country-changes > h4 + p');
  for(const item of await removed.all()){if(width>=1000)await expect(item).toBeHidden();else await expect(item).toBeVisible();}
+ if(width>=1000)await expect(section.getByTestId('destination-daily-changes')).toHaveCSS('border-top-width','0px');
  await expect(section.getByTestId('destination-daily-changes').locator('h4')).toBeVisible();await expect(section.getByTestId('destination-daily-changes').locator('ul')).toBeVisible();
  const zones=section.getByTestId('airport-month-zones');await expect(zones.locator('thead')).toContainText(day);
  if(width===390){await expect(section.locator('.airport-month-zone-title')).toHaveCSS('font-size','15px');for(const summary of await section.locator(':scope > details > summary').all())await expect(summary).toHaveCSS('font-size','14px');await expect(zones.locator('tbody tr').first().locator('td').nth(1)).toHaveCSS('font-size','13px');}else await expect(section.locator('.airport-month-zone-title')).toHaveCSS('font-size','18px');

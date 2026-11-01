@@ -121,6 +121,7 @@
 
 /* Keep the T2 country/zone chart while removing its duplicate desktop summary. */
 @media(min-width:1000px){
+ .airport-country-zones[data-scope="T2"]>.airport-month-flights>.airport-country-changes{margin-top:0;padding-top:0;border-top:0}
  .airport-country-zones[data-scope="T2"]>.airport-month-flights>:is(h3,label,.airport-month-basis,.airport-month-source-summary,.airport-month-total),
  .airport-country-zones[data-scope="T2"]>.airport-month-flights>.airport-country-changes>h4+p{display:none}
 }
