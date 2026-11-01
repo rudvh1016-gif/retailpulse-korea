@@ -93,6 +93,33 @@ function seed(database) {
   });
 }
 
+test('A4 source failure and future clocks retain evidence without current winners or extra reads',async()=>{
+  const {database,databasePath}=openDatabase('checkpoint-status');
+  try{
+    const at='2026-09-04T04:10:00.000Z';
+    const health=database.prepare(`INSERT INTO source_health (source_id,status,last_event_at,last_retrieved_at,schema_version,detail) VALUES (?,?,?,?, 'v1','test')`);
+    health.run('INCHEON_DEPARTURE_CONGESTION','LIVE',at,at);
+    health.run('INCHEON_DEPARTURE_CONGESTION_T2','ERROR',at,at);
+    const insert=database.prepare(`INSERT INTO airport_congestion (id,source_id,record_origin,terminal,zone,wait_time_minutes,waiting_count,observed_at,retrieved_at,freshness,schema_version,quality_status,source_hash) VALUES (?,?,'LIVE',?,?,?,100,?,?,'LIVE','v1','VALID',?)`);
+    insert.run('t1','INCHEON_DEPARTURE_CONGESTION','T1','DG2_E',15,at,at,'h1');
+    insert.run('t2','INCHEON_DEPARTURE_CONGESTION_T2','T2','DG1_A',60,at,at,'h2');
+    const client=new LocalD1Database(database),body=await (await summarizeLiveSummary(client,clockFor())).json();
+    assert.equal(client.trips.length,1);assert.equal(client.trips[0].count,30);
+    assert.equal(body.airport.congestion.find(row=>row.terminal==='T1').collectionStatus,'LIVE');
+    const failed=body.airport.congestion.find(row=>row.terminal==='T2');
+    assert.equal(failed.collectionStatus,'FAILED');assert.equal(failed.freshness,'STALE');
+    assert.equal(failed.waitTimeMinutes,60);assert.equal(failed.observedAt,at);
+    assert.ok(body.airport.currentBusiestDepartureHallByTerminal.T1);
+    assert.equal(body.airport.currentBusiestDepartureHallByTerminal.T2,undefined);
+    const future='2026-09-04T04:16:00.000Z';
+    database.prepare('UPDATE airport_congestion SET observed_at=? WHERE terminal=?').run(future,'T1');
+    const second=new LocalD1Database(database),futureBody=await (await summarizeLiveSummary(second,clockFor())).json();
+    assert.equal(second.trips.length,1);assert.equal(futureBody.airport.congestion.find(row=>row.terminal==='T1').collectionStatus,'UNKNOWN');
+    assert.equal(futureBody.airport.currentBusiestDepartureHallByTerminal.T1,undefined);
+    assert.equal(futureBody.airport.congestion.find(row=>row.terminal==='T1').observedAt,future);
+  }finally{database.close();unlinkSync(databasePath);}
+});
+
 test("the whole summary read path is one D1 round trip, and the payload is a cacheable live summary", async () => {
   const { database, databasePath } = openDatabase("one-trip");
   try {

@@ -38,3 +38,6 @@
 
 /* The unchanged original render is displayed in warm stone and brushed-metal tones. */
 .checkpoint-schematic-drawing>img{filter:grayscale(.9) sepia(.24) saturate(.8)}
+
+.checkpoint-schematic-reading:is([data-state="failed"],[data-state="unavailable"]){color:var(--muted)}
+.checkpoint-schematic-reading .checkpoint-reading-status{font-size:10px;line-height:1.4;overflow-wrap:anywhere}

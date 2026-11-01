@@ -208,6 +208,11 @@ for(const [file,patches] of Object.entries(JSON.parse(readFileSync('tests/fixtur
 const mobileDisplayPatches=JSON.parse(readFileSync('tests/fixtures/mobile-airport-ui-20261101-approved-patches.json','utf8'));
 assert.equal(mobileDisplayPatches.length,5);
 approvedCanonicalPatches['app/live-signals.tsx']=[...mobileDisplayPatches,...(approvedCanonicalPatches['app/live-signals.tsx']??[])];
+// Owner-requested A4 freshness/failure accuracy: only three observer-projection hunks.
+// Keep the API key fixed and restore the unchanged canonical bytes/hash; no SQL/auth/schedule edits.
+const checkpointObservationPatches=JSON.parse(readFileSync('tests/fixtures/checkpoint-observation-20261101-approved-patches.json','utf8'));
+assert.equal(checkpointObservationPatches.length,3);
+approvedCanonicalPatches['app/api/live/summary/route.ts']=[...checkpointObservationPatches,...(approvedCanonicalPatches['app/api/live/summary/route.ts']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');
