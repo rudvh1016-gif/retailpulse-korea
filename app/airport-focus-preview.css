@@ -417,3 +417,21 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report .focus-return-context .event-flight-change>.staff-route-rate{font-size:inherit;font-weight:inherit}
  .airport-focus-shell .focus-report .focus-return-context :is(.focus-event-dates,.focus-event-dates time,.focus-event-dates small,.event-flight-context,.event-flight-baseline,.event-flight-basis,.event-flight-note,.focus-event-scope,.focus-event-timing){font-size:10px;font-weight:400;line-height:1.6;color:#53616e}
 }
+
+/* PC-only position exchange: return planning occupies the former next-week column. */
+@media(min-width:1000px){
+ /* Keep the date row at its intrinsic height when the taller right card spans it. */
+ .airport-focus-shell .focus-report{grid-template-rows:auto fit-content(0px) auto auto minmax(0,1fr) auto}
+ .airport-focus-shell .focus-report .focus-selected-country-stack>.focus-selected-country-changes.focus-return-context{grid-column:2;grid-row:2/4;margin-top:0;padding-top:0;border-top:0}
+ .airport-focus-shell .focus-report .focus-return-context>h3{margin-top:0}
+ .airport-focus-shell .focus-report .focus-return-events{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .airport-focus-shell .focus-report .focus-preparation-brief{grid-column:1/-1;grid-row:6;margin-top:16px;padding-top:12px;border-top:1px solid #d5d9de}
+ .airport-focus-shell .focus-report .focus-preparation-events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px}
+ .airport-focus-shell .focus-report .focus-preparation-events>.focus-preparation-event+.focus-preparation-event{margin-top:0;border-top:0}
+ .airport-focus-shell .focus-report .focus-return-context :is(.focus-event-dates,.event-flight-context,.event-flight-baseline,.event-flight-basis,.event-flight-note){font-size:11px;font-weight:400;line-height:1.6;color:#53616e}
+ .airport-focus-shell .focus-report .focus-return-context .staff-route-metric{font-size:14px;line-height:1.5}
+ .airport-focus-shell .focus-report .focus-return-context .staff-route-metric b{font-size:24px;font-weight:700}
+ .airport-focus-shell .focus-report .event-flight-change{font-weight:700}
+ .airport-focus-shell .focus-report :is(.event-flight-change>.glance-count-change,.event-flight-change>.staff-route-rate,.event-flight-period){font-weight:700}
+ .airport-focus-shell .focus-report .focus-event-details .event-flight-basis{font-size:11px;line-height:1.6;color:#53616e}
+}

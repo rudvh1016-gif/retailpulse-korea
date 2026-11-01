@@ -56,7 +56,10 @@ for(const width of [360,390,430,1440])test(`airport production composition ${wid
  }
  await expect(page.locator('.airport-focus-operating')).toHaveCSS('padding-left','0px');
  const today=await page.locator('.focus-report-lines').boundingBox(),future=await page.locator('.focus-preparation-brief').boundingBox();
- if(width>=1000)expect(future!.x).toBeGreaterThan(today!.x+today!.width);else expect(future!.y).toBeGreaterThan(today!.y+today!.height);
+ if(width>=1000){
+  expect(Math.abs(future!.x-today!.x)).toBeLessThanOrEqual(2);
+  expect(future!.y).toBeGreaterThan(today!.y+today!.height);
+ }else expect(future!.y).toBeGreaterThan(today!.y+today!.height);
  const nav=page.locator(width<=820?'.bottom-nav':'.top-nav');await expect(nav.locator('a')).toHaveCount(width<=820?5:6);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`production-home-${width}.png`)});
