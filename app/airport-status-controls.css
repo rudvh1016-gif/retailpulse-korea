@@ -50,6 +50,18 @@
     flex: 0 1 auto;
     gap: clamp(16px, 4.5vw, 20px);
     margin-inline: 0;
-    background-color: #f3f6f8;
+    background-color: transparent;
   }
+}
+
+/* Phone date choices carry the navy selection; their gaps remain the page white. */
+@media (max-width: 600px) and (forced-colors: none) {
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] {
+  border-inline:0; background:#edf2f6; color:#24394f;
+ }
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"] {
+  background:#24394f; color:#fff;
+ }
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time {color:inherit}
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:focus-visible {outline:2px solid #24394f;outline-offset:2px}
 }
