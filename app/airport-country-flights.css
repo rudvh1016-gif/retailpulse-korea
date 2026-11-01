@@ -9,3 +9,5 @@
 @media(prefers-reduced-motion:reduce){.cfp-panel *{animation:none!important;transition:none!important}}
 
 .cfp-after,.cfp-bar-row[data-period=current] .cfp-track i{background:#345b7b}
+
+.cfp-panel[data-current-day] .cfp-bar-row{grid-template-columns:7.5em minmax(0,1fr) 46px}

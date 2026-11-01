@@ -10,10 +10,10 @@ for(const width of [320,1440])for(const reduced of [false,true])test(`checkpoint
  const t2=section.locator('figure[data-terminal=T2]');await t2.scrollIntoViewIfNeeded();await expect(t2.locator('.checkpoint-longest')).toContainText('60+');
  await expect(t2.locator('figcaption strong')).toHaveCSS('color','rgb(36, 91, 146)');await expect(section.locator('figure[data-terminal=T1] figcaption strong')).toHaveCSS('color','rgb(161, 45, 63)');
  await expect(t2.locator('.checkpoint-schematic-reading[data-longest]')).toHaveCount(1);await expect(t2.locator('[data-checkpoint="1A"]')).toHaveAttribute('data-longest','true');
- await expect(t2.locator('[data-checkpoint="1B"]')).not.toHaveAttribute('data-longest','true');await expect(t2.locator('.checkpoint-walkers')).toHaveAttribute('aria-hidden','true');
+ await expect(t2.locator('[data-checkpoint="1B"]')).not.toHaveAttribute('data-longest','true');await expect(t2.locator('.checkpoint-walkers')).toHaveAttribute('aria-hidden','true');await expect(t2.locator('.checkpoint-walker')).toHaveCount(4);expect(new Set(await t2.locator('.checkpoint-walker').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('data-coat')))).size).toBe(4);
  if(reduced){await expect(t2).toHaveAttribute('data-motion','paused');expect(await t2.evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length)).toBe(0);}
  else {await expect(t2).toHaveAttribute('data-motion','running');const person=t2.locator('.checkpoint-walker').first(),initial=await person.evaluate(el=>getComputedStyle(el).transform);await expect.poll(()=>person.evaluate(el=>getComputedStyle(el).transform)).not.toBe(initial);
-  const wash=await t2.locator('[data-checkpoint="1A"]').evaluate(el=>getComputedStyle(el,'::before').animationDuration);expect(wash).toBe('1.8s');
+  const wash=await t2.locator('[data-checkpoint="1A"]').evaluate(el=>getComputedStyle(el,'::before').animationDuration);expect(wash).toBe('2.6s');
   await page.evaluate(()=>window.scrollTo(0,0));await expect(t2).toHaveAttribute('data-motion','paused');await t2.scrollIntoViewIfNeeded();await page.emulateMedia({reducedMotion:'reduce'});await expect(t2).toHaveAttribute('data-motion','paused');expect(await t2.evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length)).toBe(0);
   await page.emulateMedia({reducedMotion:'no-preference'});await expect(t2).toHaveAttribute('data-motion','running');await expect.poll(()=>t2.evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length),{timeout:6500}).toBe(0);
  }
