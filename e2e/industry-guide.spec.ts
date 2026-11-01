@@ -10,7 +10,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
     await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-    await page.goto(`/${lang}/business`);
+    await page.goto(`/${lang}/business?place=area&area=myeongdong`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     const guide = page.getByTestId('industry-guide');
     for (const id of ['beauty', 'fashion', 'food', 'convenience', 'popup', 'tourism', 'liquor', 'luxury'] as const) {
@@ -59,8 +59,10 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
 
 test('general preparation remains identifiable when current data is missing', async ({ page }) => {
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {} }));
-  await page.goto('/ko/business');
+  await page.goto('/ko/business?place=area&area=myeongdong');
   const guide = page.getByTestId('industry-guide');
+  await expect(guide.getByTestId('industry-unselected')).toBeVisible();
+  await guide.getByRole('button', { name: industryProfiles.beauty.label.ko, exact: true }).click();
   await expect(guide).toContainText('상시 운영 참고');
   await expect(guide).toContainText('매출·방문자 수 예측이 아닙니다');
   await expect(guide.getByRole('heading', { name: '품목보다 색상·용량 단위로 재고 확인' })).toBeVisible();
@@ -73,7 +75,7 @@ for (const width of [320, 390, 430]) test(`store scenes and keyboard disclosures
   await page.setViewportSize({ width, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-  await page.goto('/ko/business');
+  await page.goto('/ko/business?place=area&area=myeongdong');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const guide = page.getByTestId('industry-guide');
   for (const id of ['beauty', 'convenience'] as const) {

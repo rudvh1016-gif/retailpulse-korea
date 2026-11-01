@@ -1,7 +1,7 @@
 import {chineseText} from './chinese-ui';
 import type {Lang} from '../app/retailpulse-data';
 const chinese:Record<string,string>={
- '공항한눈에':'机场一览','언제 몰렸나요?':'何时最集中？','항공편 주말이 더 많나요?':'周末航班更多吗？',
+ '공항한눈에':'机场一览','내 근무 브리핑':'我的当班简报','언제 몰렸나요?':'何时最集中？','항공편 주말이 더 많나요?':'周末航班更多吗？',
  '어느 터미널이 달라졌나요?':'哪个航站楼有变化？','연휴에는 늘었나요?':'连休期间增加了吗？',
  '국가별 항공편 기간 비교':'各国航班期间对比','공항 항공편 기간 비교':'机场航班期间对比',
  '이전 메뉴 보기':'查看前面的菜单','다음 메뉴 보기':'查看后面的菜单','공항 한눈에 보기 선택':'选择机场一览视图',
@@ -11,4 +11,5 @@ const chinese:Record<string,string>={
  '터미널별 국가·구역 출발편':'各航站楼按国家及区域的出发航班','노선의 목적지 국가 기준 · 승객 국적 아님':'按航线目的地国家 · 并非旅客国籍',
  '항공편 비교 방식':'航班对比方式','기간 직접 비교':'自选期间对比','터미널별 월 집계':'各航站楼月度汇总'
 };
-export function airportAnalysisText(lang:Lang,value:string){return lang==='en'?chineseText(lang,value):lang==='zh'?(chinese[value]??value):value;}
+const japanese:Record<string,string>={'공항한눈에':'空港ひと目で','내 근무 브리핑':'勤務ブリーフィング','인천공항 한눈에':'仁川空港ひと目で','공항 한눈에 보기 선택':'空港の表示を選択','이전 메뉴 보기':'前のメニューを表示','다음 메뉴 보기':'次のメニューを表示'};
+export function airportAnalysisText(lang:Lang,value:string){return lang==='en'?(value==='내 근무 브리핑'?'My shift briefing':chineseText(lang,value)):lang==='zh'?(chinese[value]??value):lang==='ja'?(japanese[value]??value):value;}

@@ -1,4 +1,5 @@
 import {expect,test} from '@playwright/test';
+import {expectNavigationHref} from './navigation-context';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 import {airportSides} from '../lib/airport-sides-summary';
 
@@ -23,7 +24,9 @@ for(const lang of ['ko','en','zh','ja'])test(`airport body stays airport-only an
   await expect(path === `/${lang}` ? page.getByTestId('airport-glance-preview') : page.locator('.airport-view')).toBeVisible();
   await expect(page.locator('.home-seoul-secondary')).toHaveCount(0);
   await expect(page.getByTestId('population-outlook')).toHaveCount(0);
-  await page.locator(`.bottom-nav a[href="/${lang}/more"]`).click();
+  const moreLink=page.locator(`.bottom-nav a[href^="/${lang}/more?"]`);
+  await expectNavigationHref(page,moreLink,`/${lang}/more`,{place:'airport',terminal:'T1',area:null,date:null});
+  await moreLink.click();
   const seoul=page.locator(`.more-section-links a[href="/${lang}/myeongdong"]`);
   await expect(seoul).toBeVisible();
   await seoul.click();

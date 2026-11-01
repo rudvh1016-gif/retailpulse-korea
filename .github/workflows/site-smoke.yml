@@ -39,9 +39,9 @@ jobs:
       - name: Read the deployed commit's own server-rendered markers
         run: |
           npx --yes tsx@4.20.6 -e 'import("./app/seo-config.ts").then(async (seo) => {
-            const { industryProfiles } = await import("./lib/industry-guidance.ts");
-            const { prepCopy } = await import("./lib/business-prep-copy.ts");
-            const markers = { homeTitle: seo.pageTitle("ko"), prepTitle: prepCopy.title.ko, checklist: industryProfiles.beauty.checklist.ko.find((row) => row[0] === "peak")[2] };
+            const { unselectedIndustryLabel } = await import("./lib/industry-ids.ts");
+            const { prepCopy, placeName } = await import("./lib/business-prep-copy.ts");
+            const markers = { homeTitle: seo.pageTitle("ko"), prepTitle: prepCopy.title.ko, airportPlace: placeName({ kind: "airport", terminal: "T1", side: null }, "ko"), unselectedIndustry: unselectedIndustryLabel.ko };
             console.log(JSON.stringify(markers));
             (await import("node:fs")).writeFileSync(process.env.RUNNER_TEMP + "/markers.json", JSON.stringify(markers));
           })'
@@ -72,15 +72,37 @@ jobs:
           check("serves the current build", servedTitle === markers.homeTitle, `deployed ${process.env.DEPLOYED_SHA}; served title "${servedTitle}"; expected "${markers.homeTitle}"`);
           check("no placeholder demand index", !/예시 수요지수|DEMO DEMAND INDEX/.test(korean), "sample index must not be served");
 
-          // The business screen's operating checklist is server-rendered, so a
-          // deploy that did not reach the edge shows up here as missing copy
-          // rather than as a page that merely looks fine. The expected lines
-          // come from the deployed commit: the prep heading and the default
-          // industry's busy-period checklist item.
+          // The approved entry is a tab immediately after the airport overview.
+          // Its order is server-rendered; query navigation and hydration are
+          // exercised by approved-release-live.spec.ts against the public site.
+          const insightTabs = [...korean.matchAll(/<button\b[^>]*\bid="airport-insight-tab-([^"]+)"[^>]*>([\s\S]*?)<\/button>/g)]
+            .map((match) => ({ id: match[1], label: match[2].replace(/<[^>]*>/g, "").trim() }));
+          const approvedTabs = [
+            { id: "overview", label: "공항한눈에" },
+            { id: "briefing", label: "내 근무 브리핑" },
+            { id: "rhythm", label: "언제 몰렸나요?" },
+            { id: "weekday", label: "항공편 주말이 더 많나요?" },
+            { id: "terminal", label: "어느 터미널이 달라졌나요?" },
+            { id: "holiday", label: "연휴에는 늘었나요?" },
+          ];
+          check("approved airport briefing tab order", JSON.stringify(insightTabs) === JSON.stringify(approvedTabs), insightTabs);
+
+          // A new reader starts at the airport without an invented industry.
+          // Check the server-rendered conditions and the unselected guide, not
+          // a beauty checklist that should appear only after an explicit choice.
           const business = await fetch(`${origin}/ko/business`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
           const businessHtml = await business.text();
-          check("business checklist is served", business.status === 200 && businessHtml.includes(markers.prepTitle) && businessHtml.includes(markers.checklist),
-            `status ${business.status}; prep heading ${businessHtml.includes(markers.prepTitle)}; checklist ${businessHtml.includes(markers.checklist)}`);
+          const prepTag = businessHtml.match(/<section\b[^>]*\bdata-testid="business-prep"[^>]*>/)?.[0] ?? "";
+          const prepPlace = businessHtml.match(/<span\b[^>]*\bdata-testid="prep-place"[^>]*>([^<]*)<\/span>/)?.[1] ?? "";
+          const prepIndustry = businessHtml.match(/<span\b[^>]*\bdata-testid="prep-industry"[^>]*>([^<]*)<\/span>/)?.[1] ?? "";
+          const unselectedGuide = /<p\b[^>]*\bdata-testid="industry-unselected"[^>]*>/.test(businessHtml);
+          const industryChecklist = /<details\b[^>]*\bclass="[^"]*\boperating-checklist\b/.test(businessHtml);
+          check("business preparation is served", business.status === 200 && businessHtml.includes(markers.prepTitle) && Boolean(prepTag),
+            `status ${business.status}; prep heading ${businessHtml.includes(markers.prepTitle)}; prep section ${Boolean(prepTag)}`);
+          check("new business reader starts at the airport", /\bdata-place="airport"/.test(prepTag) && prepPlace === markers.airportPlace,
+            `place "${prepPlace}"; expected "${markers.airportPlace}"`);
+          check("new business reader chooses an industry", prepIndustry === markers.unselectedIndustry && unselectedGuide && !industryChecklist,
+            `industry "${prepIndustry}"; selection guide ${unselectedGuide}; premature checklist ${industryChecklist}`);
 
           const about = await fetch(`${origin}/ko/about`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
           const aboutHtml = await about.text();

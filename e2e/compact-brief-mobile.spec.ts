@@ -30,7 +30,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  await expect(page.locator('h1 .airport-flow-check,h2 .airport-flow-check')).toHaveCount(0);
  if(width<=700){const a=(await flow.getByTestId('glance-key-growth').locator('small').boundingBox())!,b=(await flow.locator('.staff-brief-heading small').boundingBox())!;expect(b.y-a.y-a.height).toBeGreaterThanOrEqual(0);expect(b.y-a.y-a.height).toBeLessThanOrEqual(8);}
  if(lang==='ko'&&width<=700){
-  const tabs=page.locator('.airport-insight-tabs:not(.country-tabs)'),buttons=tabs.getByRole('tab');await expect(buttons).toHaveCount(5);
+  const tabs=page.locator('.airport-insight-tabs:not(.country-tabs)'),buttons=tabs.getByRole('tab');await expect(buttons).toHaveCount(6);
   const boxes=await buttons.evaluateAll(nodes=>nodes.map(n=>{const b=n.getBoundingClientRect();return {y:b.y,height:b.height,size:getComputedStyle(n).fontSize};}));
   for(const box of boxes){expect(box.y).toBe(boxes[0].y);expect(box.height).toBeGreaterThanOrEqual(48);expect(box.size).toBe('13px');}
   await buttons.first().focus();await page.keyboard.press('End');await expect(buttons.last()).toBeFocused();await expect(buttons.last()).toHaveAttribute('aria-selected','true');

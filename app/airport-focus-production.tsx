@@ -2,7 +2,7 @@
 import {AirportGlanceInsights,AirportCountryInsights} from './airport-period-insights';
 import {HomeCheckpointWaits} from './home-checkpoint-waits';
 import {MonthlyAirportScope} from './monthly-airport-scope';
-import {type ComponentProps,type ReactNode} from 'react';
+import {useEffect,useState,type ComponentProps,type ReactNode} from 'react';
 import dynamic from 'next/dynamic';
 import AirportGlance from './airport-glance-preview';
 import type {AirportView as AirportViewComponent} from './airport-view';
@@ -21,6 +21,12 @@ import {useOfficialCalendar} from './official-calendar-client';
 import type {Lang} from './retailpulse-data';
 import {airportFocusCopy} from './airport-focus-copy';
 import ArrivalAllowances from './arrival-allowances-preview';
+import {deviceAirportScope} from '../lib/airport-scope-preference';
+import type {GlanceWeekReference} from '../lib/glance-week-comparison';
+import {useFlights} from './flights-client';
+import {usePreparedMonth} from './use-prepared-month';
+import {usePresentationClock} from './presentation-clock';
+const ShiftBriefing=dynamic(()=>import('./shift-briefing'));
 const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국'],['HK','홍콩'],['SG','싱가포르'],['PH','필리핀'],['MY','말레이시아'],['AU','호주'],['CA','캐나다']] as const;
 function FocusLiveData({date,children,home=false}:{date?:string|null;children:ReactNode;home?:boolean}){
  const officialCalendar=useOfficialCalendar();
@@ -39,9 +45,24 @@ function FocusLiveData({date,children,home=false}:{date?:string|null;children:Re
 }
 function go(lang:Lang,slug:string,date?:string|null){const query=new URLSearchParams();if((lang==='ko'||lang==='zh'||lang==='en')&&slug==='airport-countries')query.set('mode','passengers');if(date)query.set('date',date);window.location.assign(`/${lang}/${slug}${query.size?'?'+query:''}`);}
 export function AirportFocusGlance(props:ComponentProps<typeof AirportGlance>){
- const {lang,selectedDate}=props;
+ const {lang,selectedDate,industry=null,onIndustryChange,onDateChange,onScopeChange}=props;
  const copy=airportFocusCopy(lang);
- return <AirportGlanceInsights lang={lang} date={selectedDate}><FocusLiveData date={selectedDate} home><div className="airport-focus-shell airport-focus-operating"><AirportGlance {...props} hideTitle={lang==='ko'||lang==='zh'||lang==='en'} published hideRepeatedFlightSummary hideRepeatedPassengerSummary artworkSrc="/images/airport-glance/approval-v2-1448.webp" artworkSrcSet={[480,960,1100,1200,1448].map(width=>`/images/airport-glance/approval-v2-${width}.webp ${width}w`).join(', ')} artworkSizes="(max-width:365px) calc(100vw - 28px), (max-width:820px) calc(100vw - 36px), (max-width:848px) calc(100vw - 48px), 800px" artworkNote={copy.model} overviewHeading={context=><OverviewHeadline lang={lang} context={context} onCountries={()=>go(lang,'airport-countries',selectedDate)} onPrepare={()=>go(lang,'airport-prepare')}/>} trailingContent={({summary,now})=><HomeCheckpointWaits summary={summary} now={now} lang={lang}/>} overviewExtras={<div className="focus-forward"><HolidayList lang={lang} onMore={()=>go(lang,'airport-prepare')}/><section className="focus-staff-links"><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{copy.staff}</h2><p>{copy.staffHelp}</p><a href={`/${lang}/airport${selectedDate?`?date=${encodeURIComponent(selectedDate)}`:''}`}>{copy.terminal}</a><a href={`/${lang}/airport-news`}>{copy.news}</a><a href={`/${lang}/airport-prepare#arrival-allowances`}>{copy.allowances}</a></section></div>}/></div></FocusLiveData></AirportGlanceInsights>;
+ const summary=useLiveSummary(selectedDate??null),day=selectedDate??summary?.serviceDateKst??'';
+ const loaded=useFlights(day||null),payload=loaded?.status==='OK'?loaded.payload:null;
+ const clock=usePresentationClock(summary?.generatedAt??'1970-01-01T00:00:00Z');
+ // The overview stays mounted across tabs. Share its comparison read so opening
+ // a briefing does not create a second week-reference request or a second cache.
+ const weekReference=usePreparedMonth<{status:string;month:string;data:GlanceWeekReference|null}>(day,`/api/live/glance-week-reference?date=${encodeURIComponent(day)}`,loaded!==undefined?day.slice(0,7):'',`${day}:${payload?.generatedAt??''}:${payload?.basis??''}`);
+ const rawReference=weekReference.reply?.data;
+ const safeReference=rawReference?.selectedFlightSnapshot&&payload?.basis!=='COLLECTED_FLIGHT_RECORDS'?{...rawReference,selectedFlights:null,selectedFlightSnapshot:undefined}:rawReference;
+ const [preferredTerminal,setPreferredTerminal]=useState<'T1'|'T2'>('T1');
+ useEffect(()=>{const restore=()=>setPreferredTerminal(deviceAirportScope()==='T2'?'T2':'T1');restore();window.addEventListener('popstate',restore);return()=>window.removeEventListener('popstate',restore);},[]);
+ const dateCopy={ko:{date:'날짜',today:'오늘',missing:'조회 날짜를 확인하지 못했습니다. 날짜를 선택해 다시 확인해 주세요.'},en:{date:'Date',today:'Today',missing:'The service date could not be verified. Select a date to try again.'},zh:{date:'日期',today:'今天',missing:'无法确认查询日期，请选择日期重试。'},ja:{date:'日付',today:'今日',missing:'表示日を確認できませんでした。日付を選んで再度ご確認ください。'}}[lang];
+ const briefing=<>
+  <div className="shift-panel-controls"><label>{dateCopy.date}<input name="shift-date" autoComplete="off" type="date" value={day} onChange={event=>{if(event.target.value)onDateChange?.(event.target.value);}}/></label><button type="button" onClick={()=>onDateChange?.(null)}>{dateCopy.today}</button><span>KST</span></div>
+  {!day&&summary===null?<p className="shift-panel-status" role="status">{dateCopy.missing}</p>:onIndustryChange&&<ShiftBriefing lang={lang} day={day} industry={industry} onIndustryChange={onIndustryChange} preferredTerminal={preferredTerminal} flights={loaded===undefined?undefined:payload} weekReference={safeReference?.day===day?safeReference:null} nowIso={Number.isFinite(clock)?new Date(clock).toISOString():'1970-01-01T00:00:00Z'}/>}
+ </>;
+ return <AirportGlanceInsights lang={lang} date={selectedDate} briefing={briefing}><FocusLiveData date={selectedDate} home><div className="airport-focus-shell airport-focus-operating"><AirportGlance {...props} sharedWeekReference={weekReference} onScopeChange={scope=>{setPreferredTerminal(scope==='T2'?'T2':'T1');onScopeChange?.(scope);}} hideTitle published hideRepeatedFlightSummary hideRepeatedPassengerSummary artworkSrc="/images/airport-glance/approval-v2-1448.webp" artworkSrcSet={[480,960,1100,1200,1448].map(width=>`/images/airport-glance/approval-v2-${width}.webp ${width}w`).join(', ')} artworkSizes="(max-width:365px) calc(100vw - 28px), (max-width:820px) calc(100vw - 36px), (max-width:848px) calc(100vw - 48px), 800px" artworkNote={copy.model} overviewHeading={context=><OverviewHeadline lang={lang} context={context} onCountries={()=>go(lang,'airport-countries',selectedDate)} onPrepare={()=>go(lang,'airport-prepare')}/>} trailingContent={({summary,now})=><HomeCheckpointWaits summary={summary} now={now} lang={lang}/>} overviewExtras={<div className="focus-forward"><HolidayList lang={lang} onMore={()=>go(lang,'airport-prepare')}/><section className="focus-staff-links"><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{copy.staff}</h2><p>{copy.staffHelp}</p><a href={`/${lang}/airport${selectedDate?`?date=${encodeURIComponent(selectedDate)}`:''}`}>{copy.terminal}</a><a href={`/${lang}/airport-news`}>{copy.news}</a><a href={`/${lang}/airport-prepare#arrival-allowances`}>{copy.allowances}</a></section></div>}/></div></FocusLiveData></AirportGlanceInsights>;
 }
 export function AirportFocusStatus(props:ComponentProps<typeof AirportViewComponent>){
  const copy=airportFocusCopy(props.lang);

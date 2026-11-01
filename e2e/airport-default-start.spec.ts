@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {expectNavigationHref,expectNavigationUrl} from './navigation-context';
 import {routeSummary,SUMMARY_FIXTURE} from './summary-fixture';
 for(const width of [390,1440])test(`default start preserves dated direct routes and history ${width}`,async({page,request},testInfo)=>{
  await page.setViewportSize({width,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
@@ -11,13 +12,14 @@ for(const width of [390,1440])test(`default start preserves dated direct routes 
  await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');
  const nav=page.locator(width<1000?'.bottom-nav':'.top-nav');
  // Seoul remains reachable through More; selected dates survive the extra navigation step.
- await nav.locator('a[href="/ko/more?date=2026-10-01"]').click();
- await expect(page).toHaveURL(/\/ko\/more\?date=2026-10-01/);
+ const moreLink=nav.locator('a[href^="/ko/more?"]'),moreContext={place:'airport',terminal:'T1',area:null,date:'2026-10-01'};
+ await expectNavigationHref(page,moreLink,'/ko/more',moreContext);await moreLink.click();
+ await expectNavigationUrl(page,'/ko/more',moreContext);
  const hongdaeLink=page.locator('.more-section-links a[href="/ko/hongdae"]');
  await hongdaeLink.click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-10-01/);
- await page.goBack();await expect(page).toHaveURL(/\/ko\/more\?date=2026-10-01/);
+ await page.goBack();await expectNavigationUrl(page,'/ko/more',moreContext);
  await page.goBack();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');
- await page.goForward();await expect(page).toHaveURL(/\/ko\/more\?date=2026-10-01/);
+ await page.goForward();await expectNavigationUrl(page,'/ko/more',moreContext);
  await page.goForward();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-10-01/);await expect(nav.locator('a[href^="/ko/more"]')).toHaveAttribute('aria-current','location');await expect(page.getByTestId('airport-glance-preview')).toHaveCount(0);
  await page.goto('/ko/airport?date=2026-10-01&terminal=T2');await expect(page.getByRole('heading',{name:'인천공항',exact:true})).toBeVisible();await expect(page.getByRole('tab',{name:'T2',exact:true})).toHaveAttribute('aria-selected','true');await expect(page).toHaveURL(/\/airport\?date=2026-10-01&terminal=T2/);await expect(page.getByTestId('airport-glance-preview')).toHaveCount(0);
  await page.getByRole('button',{name:'KORETAIL home'}).click();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();await expect(page.locator('.glance-controls input')).toHaveValue('2026-10-01');

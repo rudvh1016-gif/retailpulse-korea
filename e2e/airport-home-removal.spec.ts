@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import {expectNavigationHref} from './navigation-context';
 import { routeSummary, SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 for (const lang of ['ko','en','zh','ja']) for (const width of [360,390,430,1280]) {
@@ -20,7 +21,9 @@ for (const lang of ['ko','en','zh','ja']) for (const width of [360,390,430,1280]
     expect(await page.evaluate(key=>localStorage.getItem(key),PREFERENCE_KEY)).toBe(stored);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();
     const seoulNavigation = width > 820 ? 'nav.top-nav' : 'nav.bottom-nav';
-    await page.locator(`${seoulNavigation} a[href="/${lang}/more"]`).click();
+    const moreLink=page.locator(`${seoulNavigation} a[href^="/${lang}/more?"]`);
+    await expectNavigationHref(page,moreLink,`/${lang}/more`,{place:'airport',terminal:'T1',area:null,date:null});
+    await moreLink.click();
     await page.locator(`.more-section-links a[href="/${lang}/hongdae"]`).click();
     await expect(page).toHaveURL(new RegExp(`/${lang}/hongdae$`));
     await expect(page.locator('.area-current-brief')).toBeVisible();

@@ -3,6 +3,7 @@ import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { tofuCharacters } from './font-glyphs';
 import { weekCopy } from '../lib/week-copy';
 import { reviewCopy } from '../lib/review-copy';
+import { industryLabels } from '../lib/industry-ids';
 
 // The fixture moved to 2026-09-28 (a Monday): China's National Day holiday
 // (10/01 ~ 10/07, State Council notice) falls inside the week ahead.
@@ -12,7 +13,15 @@ async function open(page: Page, payload: unknown = WEEK, path = '/ko/business', 
   await page.setViewportSize({ width: 390, height: 900 });
   await page.route('**/api/live/summary*', routeSummary(payload));
   await page.route('**/api/live/usual*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-  await page.goto(path.replace('/ko/', `/${lang}/`));
+  await page.addInitScript(() => {
+    try {
+      if (!localStorage.getItem('retailpulse-preferences')) localStorage.setItem('retailpulse-preferences', JSON.stringify({ industry: 'beauty' }));
+    } catch { /* A blocked-storage case chooses its industry in the UI. */ }
+  });
+  const url = new URL(path.replace('/ko/', `/${lang}/`), 'https://koretaildata.com');
+  url.searchParams.set('place', 'area');
+  url.searchParams.set('area', 'myeongdong');
+  await page.goto(url.pathname + url.search);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   return page.getByTestId('business-prep');
 }
@@ -90,6 +99,7 @@ test('the weekly review remains available with the removed entry and blocked sto
   });
   const prep = await open(page);
   const notice=page.getByRole('dialog',{name:'new update!'});await expect(notice).toBeVisible();await notice.getByRole('button',{name:'닫기',exact:true}).click();await expect(notice).not.toBeVisible();
+  await page.getByTestId('industry-guide').getByRole('button', { name: industryLabels.beauty.ko, exact: true }).click();
   await expect(prep.getByTestId('feeling-log')).toHaveCount(0);
   await prep.getByTestId('weekly-review').locator('summary').first().click();
   await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.categoriesNote.ko);

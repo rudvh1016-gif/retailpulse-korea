@@ -1,4 +1,5 @@
 import {test,expect,type Page} from '@playwright/test';
+import {expectNavigationUrl} from './navigation-context';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 async function setup(page:Page){
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
@@ -17,7 +18,7 @@ for(const width of [360,390,430,1440])test(`glass navigation preserves menus, da
 });
 test('horizontal drag snaps once; vertical movement leaves navigation unchanged',async({page})=>{
  await page.setViewportSize({width:390,height:950});await setup(page);await page.goto('/ko');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const nav=page.locator('.bottom-nav'),links=nav.locator('a'),first=await links.first().boundingBox(),last=await links.last().boundingBox();
- await page.mouse.move(first!.x+first!.width/2,first!.y+15);await page.mouse.down();await page.mouse.move(last!.x+last!.width/2,last!.y+15,{steps:12});await page.mouse.up();await expect(page).toHaveURL(/\/ko\/more$/);await expect(links.last()).toHaveAttribute('aria-current','page');await expect(nav).not.toHaveAttribute('data-dragging','true');
+ await page.mouse.move(first!.x+first!.width/2,first!.y+15);await page.mouse.down();await page.mouse.move(last!.x+last!.width/2,last!.y+15,{steps:12});await page.mouse.up();await expectNavigationUrl(page,'/ko/more',{place:'airport',terminal:'T1',area:null,date:null});await expect(links.last()).toHaveAttribute('aria-current','page');await expect(nav).not.toHaveAttribute('data-dragging','true');
  const url=page.url();await page.mouse.move(first!.x+first!.width/2,first!.y+15);await page.mouse.down();await page.mouse.move(first!.x+first!.width/2,first!.y-60,{steps:8});await page.mouse.up();expect(page.url()).toBe(url);
 });
 test('keyboard focus and finite navigation animation respect reduced motion',async({page})=>{
@@ -35,10 +36,10 @@ test('desktop preserves plain operating menu and cancels mobile feedback on resi
  await page.locator('.bottom-nav a').last().click();await page.setViewportSize({width:1440,height:950});
  const nav=page.locator('.top-nav');await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(6);await expect(nav.locator('svg,.navigation-icon')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeHidden();
  await expect.poll(()=>page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
- await page.locator('.more-section-links').getByRole('link',{name:'매장 ›',exact:true}).click();await expect(page).toHaveURL(/\/ko\/business$/);await expect(nav.getByRole('link',{name:'더보기',exact:true})).toHaveAttribute('aria-current','location');
+ await page.locator('.more-section-links').getByRole('link',{name:'매장 ›',exact:true}).click();await expectNavigationUrl(page,'/ko/business',{place:'airport',terminal:'T1',area:null,date:null});await expect(nav.getByRole('link',{name:'더보기',exact:true})).toHaveAttribute('aria-current','location');
  expect(await page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
  expect(await nav.locator('a').first().evaluate(e=>getComputedStyle(e).transform)).toBe('none');
- await page.goBack();await expect(page).toHaveURL(/\/ko\/more$/);
+ await page.goBack();await expectNavigationUrl(page,'/ko/more',{place:'airport',terminal:'T1',area:null,date:null});
 });
 
 // Release checks (owner, 2026-10-14): small-screen clipping, bottom safe area,

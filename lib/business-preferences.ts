@@ -9,6 +9,7 @@
  * the reader had chosen it.
  */
 import { parseBusinessHours, type AirportSide, type BusinessHours, type PrepTerminal } from "./business-hours";
+import type { PrepArea, PrepPlace } from "./business-prep";
 
 export const BUSINESS_KEY = "koretail-business-v1";
 
@@ -25,7 +26,37 @@ export interface BusinessPreferences {
   hours: BusinessHours | null;
 }
 
-export const DEFAULT_BUSINESS_PREFERENCES: BusinessPreferences = { version: 1, place: "area", terminal: "T1", side: null, hours: null };
+export const DEFAULT_BUSINESS_PREFERENCES: BusinessPreferences = { version: 1, place: "airport", terminal: "T1", side: null, hours: null };
+
+/** An explicit link changes this visit's scope, never the reader's saved store. */
+export function sharedBusinessPlace(params: Pick<URLSearchParams, "get">): PrepPlace | null {
+  const kind = params.get("place"), area = params.get("area"), terminal = params.get("terminal"), side = params.get("side");
+  if ((kind === "area" || kind === null) && (area === "myeongdong" || area === "hongdae" || area === "seongsu" || area === "itaewon")) return { kind: "area", area };
+  if (kind === "airport" && (terminal === "T1" || terminal === "T2")) return { kind: "airport", terminal, side: side === "EAST" || side === "WEST" ? side : null };
+  return null;
+}
+
+export function businessScopeParams(place: PrepPlace): URLSearchParams {
+  const params = new URLSearchParams({ place: place.kind });
+  if (place.kind === "area") params.set("area", place.area);
+  else {
+    params.set("terminal", place.terminal);
+    if (place.side) params.set("side", place.side);
+  }
+  return params;
+}
+
+export function resolveBusinessContext(preferences: BusinessPreferences, area: PrepArea, scope: PrepPlace | null) {
+  const effective = scope ? {
+    ...preferences,
+    place: scope.kind,
+    ...(scope.kind === "airport" ? { terminal: scope.terminal, side: scope.side ?? null } : {}),
+  } : preferences;
+  const place: PrepPlace = scope ?? (effective.place === "airport"
+    ? { kind: "airport", terminal: effective.terminal, side: effective.side }
+    : { kind: "area", area });
+  return { preferences: effective, place };
+}
 
 /**
  * Strict: a value from another version, a hand-edited value or a truncated

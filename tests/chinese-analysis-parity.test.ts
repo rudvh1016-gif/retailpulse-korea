@@ -51,19 +51,26 @@ test('Chinese static iframe preserves every control and numeric token before Jav
  assert.match(read('public/airport-period/frame-zh.html'),/runtime\.js\?v=[a-f0-9]{12}/);
 });
 
-test('both locales expose the same glance and country controls while English and Japanese stay unchanged',()=>{
+test('Korean Chinese and English share six glance tabs while Japanese exposes overview and briefing only',()=>{
  for(const component of [AirportGlanceInsights,AirportCountryInsights]){
   const render=(lang:'ko'|'zh'|'en'|'ja')=>renderToStaticMarkup(h(component,{lang,date:'2026-10-19',children:h('p',null,'Existing content')}));
   const ko=render('ko'),zh=render('zh');
-  assert.equal((zh.match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?5:3);
+  assert.equal((zh.match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?6:3);
   const sharedKo=ko.replace(/<a class="shopping-mobile-entry"[^>]*>[\s\S]*?<\/a>/,'');assert.equal((ko.match(/class="shopping-mobile-entry"/g)??[]).length,component===AirportGlanceInsights?1:0);assert.ok(!zh.includes('shopping-mobile-entry'));assert.deepEqual(attrs(zh),attrs(sharedKo));assert.doesNotMatch(zh.replace(/<script[^>]*>[\s\S]*?<\/script>/g,''),hangul);
-  assert.equal((render('en').match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?5:3);assert.doesNotMatch(render('en'),hangul);assert.equal(render('ja'),'<p>Existing content</p>');
+  assert.equal((render('en').match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?6:3);assert.doesNotMatch(render('en'),hangul);
+  if(component===AirportGlanceInsights){
+   const tabIds=(markup:string)=>[...markup.matchAll(/id="airport-insight-tab-([^"]+)"/g)].map(match=>match[1]);
+   for(const lang of ['ko','zh','en'] as const)assert.deepEqual(tabIds(render(lang)),['overview','briefing','rhythm','weekday','terminal','holiday']);
+   const ja=render('ja');assert.deepEqual(tabIds(ja),['overview','briefing']);assert.doesNotMatch(ja,hangul);assert.match(ja,/<p>Existing content<\/p>/);
+   assert.match(ko,/id="airport-insight-tab-briefing"[^>]*aria-controls="airport-insight-briefing"/);
+   assert.doesNotMatch(ko,/class="airport-period-frame"|data-testid="shift-briefing"/);
+  }else assert.equal(render('ja'),'<p>Existing content</p>');
  }
  const source=read('app/airport-period-insights.tsx');
  assert.match(source,/lang==='zh'\?'frame-zh\.html':'frame\.html'/);
  assert.match(source,/location\.assign\('\/'\+lang\+'\/airport-countries\?'/);
  assert.match(source,/key=\{lang\+':'\+\(date\?\?'today'\)\}/);
- for(const label of ['공항한눈에','언제 몰렸나요?','항공편 주말이 더 많나요?','어느 터미널이 달라졌나요?','연휴에는 늘었나요?','국가별 흐름'])assert.doesNotMatch(airportAnalysisText('zh',label),hangul);
+ for(const label of ['공항한눈에','내 근무 브리핑','언제 몰렸나요?','항공편 주말이 더 많나요?','어느 터미널이 달라졌나요?','연휴에는 늘었나요?','국가별 흐름'])assert.doesNotMatch(airportAnalysisText('zh',label),hangul);
 });
 
 test('official holiday names and recommendations translate only presentation, never source data',()=>{

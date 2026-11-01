@@ -40,7 +40,28 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
  expect((await routeDetails.locator('summary').boundingBox())!.height).toBeGreaterThanOrEqual(44);
  for(const paragraph of await routeDetails.locator('p:visible').all()){await expect(paragraph).toHaveCSS('font-size','14px');await expect(paragraph).toHaveCSS('font-weight','400');}
  await routeDetails.locator('summary').focus();await page.keyboard.press('Space');await expect(routeDetails).not.toHaveAttribute('open','');
- const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');await strip.locator('.duty-free-rate-sources>summary').click();
+ const strip=page.getByTestId('airport-duty-free-exchange');await expect(strip).toHaveAttribute('data-state','VERIFIED_TODAY');
+ if(width===320){
+  const brand=page.locator('.topbar .brand>span:first-child'),rateValue=strip.locator('.duty-free-rate-sources>summary .duty-free-rate-value');
+  await expect(brand).toBeVisible();await expect(brand).toHaveText('KORETAIL');
+  await expect(rateValue).toBeVisible();await expect(rateValue).toHaveText(lang==='ko'?'1,400.67원':'1,400.67 KRW');
+  await page.evaluate(async()=>{await document.fonts.ready;});
+  const bounds=await rateValue.evaluate(node=>{
+   const range=document.createRange();range.selectNodeContents(node);
+   const strip=node.closest('.airport-duty-free-exchange')!.getBoundingClientRect(),language=document.querySelector('.topbar .language-control select')!.getBoundingClientRect();
+   return {rects:[...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0).map(rect=>({left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom})),strip:{left:strip.left,right:strip.right,top:strip.top,bottom:strip.bottom},languageLeft:language.left};
+  });
+  expect(bounds.rects.length,'the complete rate value has visible text bounds').toBeGreaterThan(0);
+  for(const rect of bounds.rects){
+   expect(rect.left,'rate value stays inside the exchange strip').toBeGreaterThanOrEqual(bounds.strip.left-1);
+   expect(rect.right,'rate value stays inside the exchange strip').toBeLessThanOrEqual(bounds.strip.right+1);
+   expect(rect.top).toBeGreaterThanOrEqual(bounds.strip.top-1);expect(rect.bottom).toBeLessThanOrEqual(bounds.strip.bottom+1);
+   expect(rect.right,'rate value does not overlap the language selector').toBeLessThanOrEqual(bounds.languageLeft+1);
+  }
+  const valueTops=bounds.rects.map(rect=>rect.top);expect(Math.max(...valueTops)-Math.min(...valueTops),'number and currency remain on one line').toBeLessThan(1);
+  expect(await brand.evaluate(node=>{const range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0).length;}),'KORETAIL remains on one line').toBe(1);
+ }
+ await strip.locator('.duty-free-rate-sources>summary').click();
  for(const [day,value]of [['previous','1,432.87'],['next','1,456.12']]){const row=strip.locator(`[data-rate-day="${day}"]`);await expect(row).toBeVisible();await expect(row).toContainText(value);await expect(row.locator('button')).toHaveCount(0);}
  const toggle=strip.locator('.duty-free-monthly-toggle');await expect(toggle).toHaveAttribute('aria-expanded','false');expect(monthlyReads).toBe(0);expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await toggle.focus();await page.keyboard.press('Enter');await expect(toggle).toHaveAttribute('aria-expanded','true');await expect(strip.locator('.duty-free-monthly-chart circle')).toHaveCount(1);await strip.getByRole('slider').focus();await page.keyboard.press('End');await expect(strip.locator('.duty-free-month-readout')).toContainText('1,400.67');

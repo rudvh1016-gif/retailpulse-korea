@@ -16,7 +16,7 @@ async function open(page: Page, usualBody: unknown, status = 200) {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
   await page.route('**/api/live/usual*', (route) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(usualBody) }));
-  await page.goto('/ko/business');
+  await page.goto('/ko/business?place=area&area=myeongdong');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   return page.getByTestId('business-prep');
 }

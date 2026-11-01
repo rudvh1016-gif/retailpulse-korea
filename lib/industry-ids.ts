@@ -2,6 +2,10 @@ import type { Lang } from "../app/retailpulse-data";
 
 export type IndustryId = "beauty" | "fashion" | "food" | "convenience" | "popup" | "tourism" | "liquor" | "luxury";
 
+export const unselectedIndustryLabel: Record<Lang, string> = {
+  ko: "업종 선택 전", en: "Business type not selected", zh: "尚未选择业态", ja: "業種未選択",
+};
+
 /**
  * Business types and their names only. The shell needs these on every route
  * (the saved-preference check, the More screen); the guidance itself

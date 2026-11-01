@@ -18,13 +18,19 @@ test('airport home wrapper renders English copy and keeps Korean copy and links'
   const jsx=source.slice(start,end).replace('export function','function')+'\nglobalThis.Wrapper=AirportFocusGlance;';
   const compiled=ts.transpileModule(jsx,{compilerOptions:{jsx:ts.JsxEmit.React,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
   const context=vm.createContext({React,require:createRequire(import.meta.url),airportFocusCopy,
+    // Keep the real server-rendered hook lifecycle: effects do not run, while
+    // shared data readers start pending rather than inventing airport records.
+    useState:React.useState,useEffect:React.useEffect,
+    useLiveSummary:()=>undefined,useFlights:()=>undefined,
+    usePreparedMonth:()=>({reply:undefined,pending:true,failed:false,retained:false,attempt:0,retry:()=>{}}),
+    usePresentationClock:iso=>Date.parse(iso),deviceAirportScope:()=> 'all',
     FocusLiveData:({children})=>children,
     AirportGlanceInsights:({children})=>children,
     AirportGlance:({artworkNote,overviewExtras})=>React.createElement('div',null,React.createElement('p',null,artworkNote),overviewExtras),
-    HolidayList:()=>null,CountryTrends:()=>null,OverviewHeadline:()=>null,go:()=>{},
+    HolidayList:()=>null,CountryTrends:()=>null,OverviewHeadline:()=>null,HomeCheckpointWaits:()=>null,ShiftBriefing:()=>null,go:()=>{},
   });
   vm.runInContext(compiled,context);
-  const render=lang=>renderToStaticMarkup(React.createElement(context.Wrapper,{lang,selectedDate:'2026-10-23'}));
+  const render=lang=>renderToStaticMarkup(React.createElement(context.Wrapper,{lang,selectedDate:'2026-10-23',onIndustryChange:()=>{}}));
   const en=render('en');
   assert.doesNotMatch(en,/[가-힣]/);
   assert.match(en,/Illustrative model/);

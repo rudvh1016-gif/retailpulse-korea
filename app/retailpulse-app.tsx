@@ -107,7 +107,7 @@ import {useBottomNavigationViewport} from "./use-bottom-navigation-viewport";
 import {NavigationIcon} from "./navigation-icon";
 import {useGlassNavigation} from "./use-glass-navigation";
 import "./glass-navigation.css";
-import { industryLabels, type IndustryId } from "../lib/industry-ids";
+import { industryLabels, unselectedIndustryLabel, type IndustryId } from "../lib/industry-ids";
 import {
   airportMonthly,
   airportValue,
@@ -148,7 +148,9 @@ import './compact-disclosure.module.css';
 import './departure-guide-entry.module.css';
 import { AirportDutyFreeExchange } from './airport-duty-free-exchange';
 import './airport-tax-refund-guide.css';
-import { saveBusinessPreferences, useBusinessPreferences } from "./business-preferences";
+import { saveBusinessPreferences, useBusinessContext } from "./business-preferences";
+import { businessScopeParams, sharedBusinessPlace } from "../lib/business-preferences";
+import type { PrepPlace } from "../lib/business-prep";
 import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer-text";
 
 const betaSignupEnabled = process.env.NEXT_PUBLIC_ENABLE_BETA_SIGNUP === "true";
@@ -367,7 +369,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   const [terminal, setTerminal] = useState<Terminal>("all");
   const [concourse,setConcourse]=useState(false);
   const [airportSection, setAirportSection] = useState<AirportSection>("now");
-  const [industry, setIndustry] = useState<IndustryId>("beauty");
+  const [industry, setIndustry] = useState<IndustryId | null>(null);
+  const { savedPreferences: savedBusiness, place: currentBusinessPlace } = useBusinessContext(selected);
+  const [businessEntry, setBusinessEntry] = useState<'airport' | 'area' | null>(initialScope === 'area' ? 'area' : ['airport-glance', 'airport', 'airport-countries', 'airport-prepare'].includes(initialView) ? 'airport' : null);
   const [preferencesReady, setPreferencesReady] = useState(false);
   // null means "whatever today is in KST, as the server reports it" — the
   // client never guesses a date from the device clock.
@@ -383,7 +387,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         if (saved) {
           const value = JSON.parse(saved) as Partial<{ lang: Lang; area: AreaId; terminal: Terminal; industry: IndustryId }>;
           if (!initialRoute && value.lang && ["ko", "en", "zh", "ja"].includes(value.lang)) setLang(value.lang);
-          if ((!initialRoute || ((initialScope === "home" && initialView === "today") || initialScope === "airport-home")) && value.area && Object.hasOwn(areaInfo, value.area)) setSelected(value.area);
+          if ((!initialRoute || initialScope !== "area") && value.area && Object.hasOwn(areaInfo, value.area)) setSelected(value.area);
           if (value.terminal && ["all", "T1", "T2"].includes(value.terminal)) setTerminal(value.terminal);
           if (value.industry && Object.hasOwn(industryLabels, value.industry)) setIndustry(value.industry);
         }
@@ -394,7 +398,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       } finally {
         const query = new URLSearchParams(window.location.search);
         if (/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '')) setServiceDate(query.get('date'));
-        if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
+        if (initialView !== 'business' && initialView !== 'more' && query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
+        const businessScope = sharedBusinessPlace(query);
+        if ((initialView === 'business' || initialView === 'more') && businessScope) setBusinessEntry(businessScope.kind);
         const airportScope=deviceAirportScope();
         setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
         setConcourse(airportScope==='CONCOURSE');
@@ -463,11 +469,15 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     const onPopState = () => {
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
-      if (query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
+      if (!/\/(business|more)\/?$/.test(window.location.pathname) && query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
       const airportScope=deviceAirportScope();
       setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
       setConcourse(airportScope==='CONCOURSE');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
+      const linkedBusiness = sharedBusinessPlace(query);
+      if ((slug === 'business' || slug === 'more') && linkedBusiness) setBusinessEntry(linkedBusiness.kind);
+      else if (!slug || ['airport', 'airport-glance', 'airport-countries', 'airport-prepare'].includes(slug)) setBusinessEntry('airport');
+      else if (Object.hasOwn(areaInfo, slug) || ['today', 'where-to', 'consumption', 'tourism-desk'].includes(slug)) setBusinessEntry('area');
       setHomeVisible(!slug);
       if (!slug) { setView("airport-glance"); setAirportSection("now"); }
       if (["ko", "en", "zh", "ja"].includes(locale)) setLang(locale as Lang);
@@ -482,15 +492,29 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
+  function businessDestination(nextArea: AreaId, nextTerminal: Terminal): PrepPlace {
+    // A visiting link (or an explicitly saved store change) stays consistent
+    // through More, language changes and new tabs, independently of airport filters.
+    if (view === 'business' || view === 'more') return currentBusinessPlace;
+    if (businessEntry === 'area') return { kind: 'area', area: nextArea };
+    if (businessEntry === 'airport' || savedBusiness.place === 'airport') {
+      const targetTerminal = nextTerminal === 'T1' || nextTerminal === 'T2' ? nextTerminal : savedBusiness.terminal;
+      return { kind: 'airport', terminal: targetTerminal, side: savedBusiness.terminal === targetTerminal ? savedBusiness.side : null };
+    }
+    return { kind: 'area', area: nextArea };
+  }
+
   function updateUrl(nextLang: Lang, nextView: View, nextArea: AreaId, nextTerminal: Terminal = terminal, preserveHome = false, nextConcourse=concourse) {
     const params = new URLSearchParams();
     if (serviceDate && nextView!=='where-to' && nextView!=='consumption') params.set('date',serviceDate);
     if (nextView === 'consumption' || nextView === 'forecast') {params.set('area',nextArea);const month=new URLSearchParams(window.location.search).get('month');if(month)params.set('month',month);}
     if(nextView==='airport'&&nextConcourse)params.set('building','CONCOURSE');
     else if ((nextView === 'airport' || nextView === 'airport-glance') && nextTerminal !== 'all') params.set('terminal',nextTerminal);
+    if (nextView === 'business' || nextView === 'more') businessScopeParams(businessDestination(nextArea, nextTerminal)).forEach((value, key) => params.set(key, value));
     const paramsText = params.toString(); // not .size: older Safari/Chrome lack URLSearchParams.size
     const nextPath = (preserveHome ? `/${nextLang}` : routeFor(nextLang, nextView, nextArea)) + (paramsText ? `?${paramsText}` : '');
     if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
+    window.dispatchEvent(new Event("koretail:analysis-nav"));
   }
 
   function navigationHref(next:View){
@@ -499,6 +523,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if(next==='consumption'||next==='forecast')params.set('area',selected);
     if(next==='airport'&&concourse)params.set('building','CONCOURSE');
     else if((next==='airport'||next==='airport-glance')&&terminal!=='all')params.set('terminal',terminal);
+    if (next === 'business' || next === 'more') businessScopeParams(businessDestination(selected, terminal)).forEach((value, key) => params.set(key, value));
     return routeFor(lang,next,selected)+(params.toString()?`?${params}`:'');
   }
 
@@ -507,6 +532,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     const url = new URL(window.location.href);
     if (next) url.searchParams.set('date', next); else url.searchParams.delete('date');
     window.history.pushState({}, '', url.pathname + url.search + url.hash);
+    window.dispatchEvent(new Event('koretail:analysis-nav'));
   }
 
   function changeLanguage(next: Lang) {
@@ -516,10 +542,12 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       window.history.pushState({}, "", path+window.location.search+window.location.hash);
     } else if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);
     else updateUrl(next, view, selected);
+    window.dispatchEvent(new Event("koretail:analysis-nav"));
   }
 
   function selectArea(next: AreaId) {
     setHomeVisible(false);
+    setBusinessEntry('area');
     setSelected(next);
     if (view === "today" || view === "tourism-desk" || view === "consumption" || view === "forecast") updateUrl(lang, view, next);
   }
@@ -527,6 +555,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   function navigate(next: View, nextTerminal: Terminal = terminal, nextConcourse=concourse) {
     setHomeVisible(false);
     setView(next);
+    if (['airport-glance', 'airport', 'airport-countries', 'airport-prepare'].includes(next)) setBusinessEntry('airport');
+    else if (['today', 'where-to', 'consumption', 'tourism-desk'].includes(next)) setBusinessEntry('area');
     setConcourse(next==='airport'&&nextConcourse);
     updateUrl(lang, next, selected, nextTerminal,false,nextConcourse);
     window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
@@ -534,11 +564,13 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   function goHome() {
     setHomeVisible(true);
+    setBusinessEntry('airport');
     setView('airport-glance');
     setAirportSection('now');
     setConcourse(false);
     const homePath=`/${lang}${serviceDate ? `?date=${serviceDate}` : ''}`;
     if(window.location.pathname+window.location.search!==homePath)window.history.pushState({},'',homePath);
+    window.dispatchEvent(new Event('koretail:analysis-nav'));
     window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
   }
 
@@ -578,7 +610,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       </div>
 
       <main className="page-shell">
-        {view === "airport-glance" && <AirportGlance lang={lang} published selectedDate={serviceDate} onDateChange={changeDate} artworkSrc="/images/airport-glance/approved-v1-1448.webp"/>}
+        {view === "airport-glance" && <AirportGlance lang={lang} industry={industry} onIndustryChange={setIndustry} onScopeChange={next=>{setTerminal(next==='CONCOURSE'?'T1':next);setConcourse(next==='CONCOURSE');}} published selectedDate={serviceDate} onDateChange={changeDate} artworkSrc="/images/airport-glance/approved-v1-1448.webp"/>}
         {view === "today" && (
           <>
             <section className="hero demand-hero" aria-labelledby="hero-title">
@@ -625,8 +657,9 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           lang={lang}
           setLang={changeLanguage}
           selected={selected}
-          terminal={terminal}
+          businessPlace={currentBusinessPlace}
           industry={industry}
+          businessHref={navigationHref('business')}
           onAbout={() => navigate("about")}
           onNavigate={navigate}
         />}
@@ -637,7 +670,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
             <a href={`/${lang}`}>HOME</a>
             {(Object.keys(areaInfo) as AreaId[]).map((id) => <a key={id} href={routeFor(lang, "today", id)}>{areaLocalName(id, lang)}</a>)}
             <a href={routeFor(lang, "airport", selected)}>{t.airport}</a>
-            <a href={routeFor(lang, "business", selected)}>{t.business}</a>
+            <a href={navigationHref("business")}>{t.business}</a>
             <a href={routeFor(lang, "where-to", selected)}>{t['where-to']}</a>
             <a href={routeFor(lang, "consumption", selected)}>{t.consumption}</a>
             <a href={routeFor(lang, "forecast", selected)}>{t.forecast}</a>
@@ -675,7 +708,7 @@ function BusinessView({
   lang, selected, setSelected, industry, setIndustry, date, setDate, IndustryGuide, BusinessPrep, DateNavigator, AreaCurrentBrief,
 }: {
   lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void;
-  industry: IndustryId; setIndustry: (id: IndustryId) => void;
+  industry: IndustryId | null; setIndustry: (id: IndustryId) => void;
   date: string | null; setDate: (value: string | null) => void;
   IndustryGuide: ComponentType<ComponentProps<typeof IndustryGuideComponent>>;
   BusinessPrep: ComponentType<ComponentProps<typeof BusinessPrepComponent>>;
@@ -685,10 +718,11 @@ function BusinessView({
   const [mode, setMode] = useState<"briefing" | "history">("briefing");
   // The airport is a place for the briefing only; the area tab keeps its own
   // choice so the history tab and the area pages are unaffected.
-  const { preferences: business } = useBusinessPreferences();
+  const { preferences: business, place, scope } = useBusinessContext(selected);
+  const currentArea = place.kind === 'area' ? place.area : selected;
   const atAirport = business.place === "airport";
   const chooseArea = (id: AreaId) => {
-    if (atAirport) saveBusinessPreferences({ ...business, place: "area" });
+    if (atAirport || scope) saveBusinessPreferences({ ...business, place: "area" });
     setSelected(id);
   };
 
@@ -714,22 +748,22 @@ function BusinessView({
 
       {mode === "history" ? <BusinessHistoryView lang={lang} selected={selected} setSelected={setSelected} /> : <>
         <div className="area-tabs" role="tablist">
-          {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={!atAirport && selected === id ? "active" : ""} onClick={() => chooseArea(id)} role="tab" aria-selected={!atAirport && selected === id}>{areaLocalName(id, lang)}</button>)}
-          <button className={atAirport ? "active" : ""} onClick={() => { if (!atAirport) saveBusinessPreferences({ ...business, place: "airport" }); }} role="tab" aria-selected={atAirport}>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</button>
+          {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={!atAirport && currentArea === id ? "active" : ""} onClick={() => chooseArea(id)} role="tab" aria-selected={!atAirport && currentArea === id}>{areaLocalName(id, lang)}</button>)}
+          <button className={atAirport ? "active" : ""} onClick={() => { if (!atAirport || scope) saveBusinessPreferences({ ...business, place: "airport" }); }} role="tab" aria-selected={atAirport}>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</button>
         </div>
         <DateNavigator lang={lang} date={date} onChange={setDate} />
         {/* Order for a reader about to open: conditions, the facts inside
             their hours, at most three actions, then the graphs and the
             standing guide. */}
-        <BusinessPrep lang={lang} area={selected} industry={industry} onIndustryChange={setIndustry} date={date} />
+        <BusinessPrep lang={lang} area={currentArea} industry={industry} onIndustryChange={setIndustry} date={date} onPlaceSaved={savedPlace => { if (savedPlace.kind === 'area') setSelected(savedPlace.area); }} />
         {atAirport
           ? <a className="current-brief-link business-airport-link" href={routeFor(lang, "airport", selected)}>{localText(lang, { ko: "공항 전체 신호 보기", en: "All airport signals", zh: "查看机场全部信号", ja: "空港の全シグナルを見る" })} →</a>
           : <AreaCurrentBrief
             lang={lang}
-            area={selected}
+            area={currentArea}
             date={date}
-            linkHref={routeFor(lang, "today", selected)}
-            linkLabel={localText(lang, { ko: `${areaLocalName(selected, lang)} 전체 신호 보기`, en: `All ${areaLocalName(selected, lang)} signals`, zh: `查看${areaLocalName(selected, lang)}全部信号`, ja: `${areaLocalName(selected, lang)}の全シグナルを見る` })}
+            linkHref={routeFor(lang, "today", currentArea)}
+            linkLabel={localText(lang, { ko: `${areaLocalName(currentArea, lang)} 전체 신호 보기`, en: `All ${areaLocalName(currentArea, lang)} signals`, zh: `查看${areaLocalName(currentArea, lang)}全部信号`, ja: `${areaLocalName(currentArea, lang)}の全シグナルを見る` })}
           />}
 
         <IndustryGuide lang={lang} industry={industry} onIndustryChange={setIndustry} airport={atAirport ? { terminal: business.terminal, direction: "departure" } : undefined} />
@@ -1082,9 +1116,9 @@ function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => 
 }
 
 function MoreView({
-  lang, setLang, selected, terminal, industry, onAbout, onNavigate,
+  lang, setLang, selected, businessPlace, industry, businessHref, onAbout, onNavigate,
 }: {
-  lang: Lang; setLang: (value: Lang) => void; selected: AreaId; terminal: Terminal; industry: IndustryId;
+  lang: Lang; setLang: (value: Lang) => void; selected: AreaId; businessPlace: PrepPlace; industry: IndustryId | null; businessHref: string;
   onAbout: () => void;
   onNavigate: (view: View) => void;
 }) {
@@ -1114,19 +1148,19 @@ function MoreView({
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         <button type="button" className="update-notice-trigger" aria-haspopup="dialog" onClick={()=>window.dispatchEvent(new Event(UPDATE_NOTICE_OPEN_EVENT))}>{localText(lang,{ko:'공지사항 보기',en:'View update notice',zh:'查看更新公告',ja:'更新のお知らせ'})}</button>
         {(lang === "ko" || lang === "zh") && <button type="button" className="update-notice-trigger" onClick={() => { const guide = document.getElementById("airport-usage-guide"); if (guide instanceof HTMLDetailsElement) { guide.open = true; guide.scrollIntoView({ behavior: "smooth", block: "start" }); } }}>{lang==='zh'?'仁川机场使用指南':'인천공항 이용 방법'}</button>}
-        {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
+        {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={item === 'business' ? businessHref : routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />
       <CollectionStatus lang={lang} />
 
       <section className="preference-block" aria-labelledby="preference-title">
-        <div className="section-head"><div><p className="eyebrow">SAVED ON THIS DEVICE</p><h2 data-heading="section" id="preference-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "저장된 설정", en: "Saved preferences", zh: "已保存的设置", ja: "保存された設定" })}</h2></div></div>
+        <div className="section-head"><div><p className="eyebrow">CURRENT PREFERENCES</p><h2 data-heading="section" id="preference-title"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "현재 설정", en: "Current preferences", zh: "当前设置", ja: "現在の設定" })}</h2></div></div>
         <ul className="preference-rows">
           <li><span>{localText(lang, { ko: "언어", en: "Language", zh: "语言", ja: "言語" })}</span><b>{lang === "ko" ? "한국어" : lang === "en" ? "English" : lang === "zh" ? "简体中文" : "日本語"}</b></li>
-          <li><span>{localText(lang, { ko: "지역", en: "Area", zh: "地区", ja: "エリア" })}</span><b>{areaLocalName(selected, lang)}</b></li>
-          <li><span>{localText(lang, { ko: "터미널", en: "Terminal", zh: "航站楼", ja: "ターミナル" })}</span><b>{terminal === "all" ? localText(lang, { ko: "전체", en: "All", zh: "全部", ja: "全体" }) : terminal}</b></li>
-          <li><span>{localText(lang, { ko: "업종", en: "Business type", zh: "业态", ja: "業種" })}</span><b>{industryLabels[industry][lang]}</b></li>
+          <li><span>{localText(lang, { ko: "매장 지역", en: "Store area", zh: "门店地区", ja: "店舗エリア" })}</span><b>{businessPlace.kind === 'airport' ? localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" }) : areaLocalName(businessPlace.area, lang)}</b></li>
+          {businessPlace.kind === 'airport' && <li><span>{localText(lang, { ko: "터미널·위치", en: "Terminal and side", zh: "航站楼与方位", ja: "ターミナル・位置" })}</span><b>{businessPlace.terminal} · {businessPlace.side === 'EAST' ? localText(lang, { ko: "동편", en: "East", zh: "东侧", ja: "東側" }) : businessPlace.side === 'WEST' ? localText(lang, { ko: "서편", en: "West", zh: "西侧", ja: "西側" }) : localText(lang, { ko: "터미널 전체", en: "Whole terminal", zh: "整个航站楼", ja: "ターミナル全体" })}</b></li>}
+          <li><span>{localText(lang, { ko: "업종", en: "Business type", zh: "业态", ja: "業種" })}</span><b>{industry ? industryLabels[industry][lang] : unselectedIndustryLabel[lang]}</b></li>
         </ul>
         <div className="language-choices" role="group" aria-label="Language">
           {(["ko", "en", "zh", "ja"] as Lang[]).map((item) => <button key={item} className={lang === item ? "active" : ""} onClick={() => setLang(item)}>{item === "ko" ? "한국어" : item === "en" ? "English" : item === "zh" ? "简体中文" : "日本語"}</button>)}

@@ -14,14 +14,14 @@ const text = (lang: Lang, ko: string, en: string, zh: string, ja: string) => ({ 
 
 export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
   lang: Lang;
-  industry: IndustryId;
+  industry: IndustryId | null;
   onIndustryChange: (value: IndustryId) => void;
   airport?: { terminal: Terminal; direction: 'departure' | 'arrival' };
 }) {
   const id = useId();
   const [storeArea, setStoreArea] = useState<AirportStoreArea>(airport?.direction === 'arrival' ? 'arrival' : 'landside');
-  const profile = industryProfiles[industry];
-  const playbook = industryPlaybooks[industry];
+  const profile = industry ? industryProfiles[industry] : null;
+  const playbook = industry ? industryPlaybooks[industry] : null;
   const area = airportStoreAreas[storeArea];
   const hasNewScene = industry === 'beauty' || industry === 'convenience';
   return <section id={airport ? 'airport-industry-guide' : 'store-industry-guide'} className="industry-section operating-guide" data-testid="industry-guide" aria-labelledby={`${id}-title`}>
@@ -35,6 +35,7 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
     <div className="industry-tabs" role="group" aria-label={text(lang, '업종 선택', 'Select a business type', '选择业态', '業種を選択')}>
       {(Object.keys(industryProfiles) as IndustryId[]).map(value => <button key={value} type="button" className={industry === value ? 'active' : ''} aria-pressed={industry === value} onClick={() => onIndustryChange(value)}>{industryProfiles[value].label[lang]}</button>)}
     </div>
+    {industry && profile && playbook ? <>
     {airport && <figure className="airport-shop-model">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`/airport-models/shop-${industry}.webp`} width="1200" height="900" alt="" loading="lazy" decoding="async"/>
@@ -80,5 +81,6 @@ export function IndustryGuide({ lang, industry, onIndustryChange, airport }: {
         <ul className="checklist-rows">{profile.checklist[lang].filter(row => row[0] === phase).map(([, label, action]) => <li key={label}><strong>{label}</strong><p>{action}</p></li>)}</ul>
       </section>)}</div>
     </details>
+    </> : <p className="prep-note" data-testid="industry-unselected">{text(lang, '업종을 선택하면 내 매장에 맞는 점검 목록을 볼 수 있습니다.', 'Choose a business type to see the checklist for your store.', '选择业态后可查看适合店铺的检查清单。', '業種を選ぶと店舗に合ったチェックリストを確認できます。')}</p>}
   </section>;
 }

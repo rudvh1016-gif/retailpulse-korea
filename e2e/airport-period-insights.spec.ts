@@ -283,12 +283,19 @@ for(const width of [320,390,430])test(`phone glance arrows reveal all menus with
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath(`phone-nav-arrow-start-${width}.png`),fullPage:true});
 });
-test('phone glance hides arrows when all menus fit at 700px',async({page},testInfo)=>{
+test('phone glance arrows reflect the actual six-tab overflow at 700px',async({page},testInfo)=>{
  await page.setViewportSize({width:700,height:1000});await records(page);await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- const strip=page.locator('#airport-glance-tabs');await expect(strip).toHaveCSS('display','flex');await expect(strip.getByRole('tab')).toHaveCount(5);
- expect(await strip.evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);await expect(page.locator('.airport-insight-scroll')).toHaveCount(0);
+ const strip=page.locator('#airport-glance-tabs');await expect(strip).toHaveCSS('display','flex');await expect(strip.getByRole('tab')).toHaveCount(6);
+ const overflows=await strip.evaluate(node=>node.scrollWidth-node.clientWidth>1);
+ if(overflows){
+  const next=page.getByRole('button',{name:'다음 메뉴 보기',exact:true});await expect(next).toBeVisible();await expect(next).toBeEnabled();
+  await expect(page.getByRole('button',{name:'이전 메뉴 보기',exact:true})).toHaveCount(0);
+  await strip.getByRole('tab').first().focus();await page.keyboard.press('End');await expect(strip.getByRole('tab').last()).toBeFocused();
+  await expect.poll(()=>strip.evaluate(node=>{const selected=node.querySelector('[role=tab][aria-selected=true]')!.getBoundingClientRect(),box=node.getBoundingClientRect();return selected.left>=box.left-1&&selected.right<=box.right+1;})).toBe(true);
+ }else await expect(page.locator('.airport-insight-scroll')).toHaveCount(0);
  const box=(await strip.boundingBox())!,last=(await strip.getByRole('tab').last().boundingBox())!;expect(last.x+last.width).toBeLessThanOrEqual(box.x+box.width+1);
- await page.screenshot({path:testInfo.outputPath('phone-nav-no-overflow-700.png'),fullPage:true});
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:testInfo.outputPath('phone-nav-six-tabs-700.png'),fullPage:true});
 });
 for(const width of [701,1440])test(`desktop glance arrow controls stay hidden ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});await records(page);await page.goto('/ko?date=2026-10-19');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');

@@ -45,7 +45,7 @@ function verdict(current: { min: number; max: number }, past: { min: number | nu
   return current.min > past.max ? "HIGHER" : current.max < past.min ? "LOWER" : "OVERLAPS";
 }
 
-export function buildWeeklyReview(summary: LiveSummary, place: PrepPlace, industry: IndustryId, usual: UsualComparison | null | undefined): WeeklyReview {
+export function buildWeeklyReview(summary: LiveSummary, place: PrepPlace, industry: IndustryId | null, usual: UsualComparison | null | undefined): WeeklyReview {
   if (place.kind === "airport") {
     const periods = summary.airport?.periodComparisons?.[place.terminal];
     return {
@@ -65,7 +65,7 @@ export function buildWeeklyReview(summary: LiveSummary, place: PrepPlace, indust
   });
   const trend = block?.subwayRidership?.trend;
   const context = block?.context ?? null;
-  const mapped = INDUSTRY_CATEGORIES[industry];
+  const mapped = industry ? INDUSTRY_CATEGORIES[industry] : [];
   return {
     population,
     subway: block?.subwayRidership ? {
@@ -74,11 +74,11 @@ export function buildWeeklyReview(summary: LiveSummary, place: PrepPlace, indust
       lastWeekTenths: trend?.sameWeekdayLastWeek?.changeTenthsPercent ?? null,
       fourWeekTenths: trend?.fourWeekSameWeekdayAverage?.changeTenthsPercent ?? null,
     } : null,
-    categories: {
+    categories: industry ? {
       mapped,
       rows: (context?.categories ?? []).filter((row) => mapped.includes(row.category)).map((row) => ({ category: row.category, level: row.level })),
       observedAt: context?.commercialAt ?? null,
-    },
+    } : null,
     quarterly: { salesQuarter: block?.sales?.quarterCode ?? null, storeQuarter: block?.storeDynamics?.quarterCode ?? null },
     airport: null,
   };

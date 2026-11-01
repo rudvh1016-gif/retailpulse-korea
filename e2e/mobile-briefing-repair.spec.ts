@@ -1,4 +1,5 @@
 import {expectDateSelection} from './date-selection';
+import {expectNavigationHref} from './navigation-context';
 import { test, expect, type Page } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY, parsePreferences, type PersonalPreferences } from '../lib/personal-briefing';
@@ -38,7 +39,9 @@ test('airport-glance-first home shows public information with briefing setup hid
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await expect(page.locator('.demand-home')).toHaveCount(0);
-    await expect(page.locator('.top-nav a[href="/ko/more"]')).toBeVisible();
+    const moreLink = page.locator('.top-nav a[href^="/ko/more?"]');
+    await expect(moreLink).toBeVisible();
+    await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
     await expect(page.locator('.footer-links a[href="/ko/myeongdong"]')).toHaveCount(1);
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);

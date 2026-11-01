@@ -1,4 +1,5 @@
 import {expectDateSelection} from './date-selection';
+import {expectNavigationHref} from './navigation-context';
 import {test,expect,chromium,type Page} from '@playwright/test';
 import {SUMMARY_FIXTURE} from './summary-fixture';
 import {pc} from '../lib/personal-copy';
@@ -25,7 +26,9 @@ test('a first visit answers with the information, not a questionnaire',async({pa
     await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await expect(page.locator('details.personal-existing')).toHaveCount(0);
     await expect(page.locator('.demand-home')).toHaveCount(0);
-    await expect(page.locator('.top-nav a[href="/ko/more"]')).toHaveCount(1);
+    const moreLink = page.locator('.top-nav a[href^="/ko/more?"]');
+    await expect(moreLink).toHaveCount(1);
+    await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
     await expect(page.locator('.footer-links a[href="/ko/myeongdong"]')).toHaveCount(1);
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);
@@ -182,7 +185,9 @@ test('brand returns to airport-glance root while Seoul navigation retains the ar
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
-    await page.locator('.top-nav a[href="/ko/more"]').click();
+    const moreLink = page.locator('.top-nav a[href^="/ko/more?"]');
+    await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
+    await moreLink.click();
     await page.locator('.more-section-links a[href="/ko/myeongdong"]').click();
     await expect(page).toHaveURL(new RegExp("/ko/myeongdong$"));
     await expect(page.locator('.area-current-brief')).toBeVisible();
@@ -200,7 +205,9 @@ test('mobile back navigation returns to airport-glance root with one active item
     const nav = page.locator('nav.bottom-nav');
     await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(nav.locator('a')).toHaveCount(5);
-    await nav.locator('a[href="/ko/more"]').click();
+    const moreLink = nav.locator('a[href^="/ko/more?"]');
+    await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
+    await moreLink.click();
     const more=page.locator('.more-section-links');
     await expect(more.locator('a[href="/ko/where-to"]')).toHaveCount(1);
     await expect(more.locator('a[href="/ko/consumption"]')).toHaveCount(1);

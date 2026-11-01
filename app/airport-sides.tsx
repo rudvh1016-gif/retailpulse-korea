@@ -11,7 +11,8 @@ import { prepTime } from '../lib/business-prep-copy';
 import { OFFICIAL_LINKS, count, hourSpan, sidesCopy as copy } from '../lib/airport-sides-copy';
 import { splitFromSummary } from '../lib/airport-flight-split';
 import { estimateBasisLine, estimateBody, estimateNote, flightsBody, hourBody, sharesBody, splitCopy } from '../lib/airport-flight-split-copy';
-import './airport-split-details.css';
+// RetailPulseApp provides this stylesheet. A second import creates a CSS-only
+// JS preload that Vite removes from the client build.
 import {GateDistributionBar,GateDistributionLegend} from './gate-distribution-bar';
 
 type Side = AirportSide | null;

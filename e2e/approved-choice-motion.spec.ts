@@ -60,7 +60,7 @@ test('population selection moves only marker, immediately commits ranges and sur
 });
 
 test('preparation changes only affected items; copy acknowledgement follows success',async({page})=>{
- await page.setViewportSize({width:390,height:2400});await instrument(page);await page.goto('/ko/business');const prep=page.getByTestId('business-prep');await expect(prep.getByTestId('prep-actions')).toBeVisible();
+ await page.setViewportSize({width:390,height:2400});await instrument(page);await page.goto('/ko/business?place=area&area=myeongdong');const prep=page.getByTestId('business-prep');await expect(prep.getByTestId('prep-actions')).toBeVisible();
  await prep.getByRole('button',{name:prepCopy.change.ko}).click();await clear(page);await prep.getByLabel(prepCopy.industry.ko).selectOption('food');
  await prep.getByRole('button',{name:prepCopy.save.ko,exact:true}).click();
  expect(await page.evaluate(()=>window.motionEvents.filter(e=>e.target.startsWith('fact:')))).toEqual([]);

@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {expectNavigationHref} from './navigation-context';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 
 // A Seoul visit never loads the airport screen on its own. Pointing at, or
@@ -77,7 +78,9 @@ test('the other tabs never load the airport screens',async({page})=>{
  await page.goto('/ko/myeongdong');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  for(const [pathname,query] of [['/ko/where-to',''],['/ko/consumption','?area=myeongdong']]){
-  await page.locator('.bottom-nav a[href="/ko/more"]').click();
+  const moreLink=page.locator('.bottom-nav a[href^="/ko/more?"]');
+  await expectNavigationHref(page,moreLink,'/ko/more',{place:'area',area:'myeongdong',terminal:null,date:null});
+  await moreLink.click();
   const tab=page.locator(`.more-section-links a[href="${pathname}"]`);
   await tab.hover();await tab.click();await expect(page).toHaveURL(url=>url.pathname===pathname&&url.search===query);
  }

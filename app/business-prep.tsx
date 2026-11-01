@@ -4,17 +4,17 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { useLiveSummary, LiveLoadMessage } from './live-signals';
 import { usePresentationClock } from './area-demand-card';
-import { saveBusinessPreferences, useBusinessPreferences } from './business-preferences';
+import { saveBusinessPreferences, useBusinessContext } from './business-preferences';
 import { buildBusinessPrep, prepInputFromSummary, type BusinessHours, type PrepArea, type PrepFact, type PrepPlace, type PrepSource } from '../lib/business-prep';
 import { HOUR_CHOICES, type BusinessPreferences } from '../lib/business-preferences';
 import { actionText, coverageLine, evidenceText, factLine, hoursLabel, isWholeDayFact, levelName, limitLine, placeName, prepCopy, prepSpan, sideNames, statusLine } from '../lib/business-prep-copy';
 import { industryProfiles, type IndustryId } from '../lib/industry-guidance';
+import { unselectedIndustryLabel } from '../lib/industry-ids';
 import { snapshotOf } from '../lib/last-check';
 import { LastCheckBlock, UsualComparisonBlock } from './business-compare';
 import {usePrepChangeMotion} from './use-choice-motion';
 import { PrepShare } from './prep-share';
-import { buildShareDocument, shareLink, sharedPrepPlace } from '../lib/prep-share';
-import { useSearchParams } from 'next/navigation';
+import { buildShareDocument, shareLink } from '../lib/prep-share';
 import { siteOrigin } from './seo-config';
 import { WeekAheadBlock } from './week-ahead';
 import { AirportSidesBlock } from './airport-sides';
@@ -83,9 +83,9 @@ export function prepPlaceOf(preferences: BusinessPreferences, area: PrepArea): P
   return preferences.place === 'airport' ? { kind: 'airport', terminal: preferences.terminal, side: preferences.side } : { kind: 'area', area };
 }
 
-function Conditions({ lang, place, preferences, saved, storageFailed, industry, onIndustryChange, onSaved }: {
+function Conditions({ lang, place, preferences, saved, storageFailed, industry, onIndustryChange, onPlaceSaved }: {
   lang: Lang; place: PrepPlace; preferences: BusinessPreferences; saved: boolean; storageFailed: boolean;
-  industry: IndustryId; onIndustryChange: (value: IndustryId) => void; onSaved: () => void;
+  industry: IndustryId | null; onIndustryChange: (value: IndustryId) => void; onPlaceSaved?: (place: PrepPlace) => void;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -104,8 +104,8 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
   };
   const save = () => {
     const hours: BusinessHours | null = wholeDay ? null : { open: openAt, close: closeAt };
+    onPlaceSaved?.(place);
     saveBusinessPreferences({ version: 1, place: preferences.place, terminal, side, hours });
-    onSaved();
     trackPersonalEvent('business_hours_saved', { language: lang, location: place.kind === 'airport' ? 'airport' : place.area });
     setOpen(false);
   };
@@ -114,7 +114,7 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
       <span className="prep-conditions-label">{prepCopy.conditions[lang]}</span>
       <span data-testid="prep-place">{placeName(place, lang)}</span>
       <span aria-hidden="true">·</span>
-      <span data-testid="prep-industry">{industryProfiles[industry].label[lang]}</span>
+      <span data-testid="prep-industry">{industry ? industryProfiles[industry].label[lang] : unselectedIndustryLabel[lang]}</span>
       <span aria-hidden="true">·</span>
       <span data-testid="prep-hours">{hoursLabel(preferences.hours, lang)}</span>
       <button type="button" className="prep-change" aria-expanded={open} aria-controls={`${id}-form`} onClick={() => (open ? setOpen(false) : start())}>{open ? prepCopy.close[lang] : prepCopy.change[lang]}</button>
@@ -129,7 +129,8 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
         {([null, 'EAST', 'WEST'] as const).map((value) => <label key={value ?? 'all'}><input type="radio" name={`${id}-side`} value={value ?? 'all'} checked={side === value} onChange={() => setSide(value)}/>{value ? sideNames[value][lang] : prepCopy.wholeTerminal[lang]}</label>)}
       </fieldset>}
       <label className="prep-field">{prepCopy.industry[lang]}
-        <select value={industry} onChange={(event) => onIndustryChange(event.target.value as IndustryId)}>
+        <select value={industry ?? ''} onChange={(event) => { if (event.target.value) onIndustryChange(event.target.value as IndustryId); }}>
+          <option value="" disabled>{unselectedIndustryLabel[lang]}</option>
           {(Object.keys(industryProfiles) as IndustryId[]).map((value) => <option key={value} value={value}>{industryProfiles[value].label[lang]}</option>)}
         </select>
       </label>
@@ -149,22 +150,17 @@ function Conditions({ lang, place, preferences, saved, storageFailed, industry, 
   </div>;
 }
 
-export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
-  lang: Lang; area: PrepArea; industry: IndustryId; onIndustryChange: (value: IndustryId) => void; date: string | null;
+export function BusinessPrep({ lang, area, industry, onIndustryChange, date, onPlaceSaved }: {
+  lang: Lang; area: PrepArea; industry: IndustryId | null; onIndustryChange: (value: IndustryId) => void; date: string | null; onPlaceSaved?: (place: PrepPlace) => void;
 }) {
   const id = useId();
   const summary = useLiveSummary(date);
-  const { ready, saved, preferences: storedPreferences, storageFailed } = useBusinessPreferences();
-  const search=useSearchParams(),scopeKey=search.toString();
-  const [dismissedScope,setDismissedScope]=useState<string|null>(null);
-  const shared=scopeKey===dismissedScope?null:sharedPrepPlace(search);
-  const preferences=shared?{...storedPreferences,place:shared.kind,...(shared.kind==='airport'?{terminal:shared.terminal,side:shared.side??null}:{})}:storedPreferences;
+  const { ready, saved, preferences, storageFailed, place } = useBusinessContext(area);
   const clock = usePresentationClock(summary?.generatedAt ?? new Date(0).toISOString());
   // The service date is always the server's. The device clock only moves
   // "now" forward between refreshes; a device set hours off is ignored.
   const generated = summary ? Date.parse(summary.generatedAt) : NaN;
   const now = Number.isFinite(generated) && Math.abs(clock - generated) > 2 * 3_600_000 ? generated : clock;
-  const place = shared ?? prepPlaceOf(preferences, area);
   const nowIso = new Date(now).toISOString();
   // China's and Japan's official holidays on the service date; Korea's come in the summary.
   const officialHolidays = summary ? officialHolidaysOn(summary.serviceDateKst) : [];
@@ -191,7 +187,7 @@ export function BusinessPrep({ lang, area, industry, onIndustryChange, date }: {
       <h2 data-heading="section" id={`${id}-title`}><span className="heading-marker" aria-hidden="true"/>{prepCopy.title[lang]}</h2>
     </div></div>
     <Conditions key={`${preferences.place}:${preferences.terminal}:${preferences.side ?? ''}:${preferences.hours?.open ?? ''}:${preferences.hours?.close ?? ''}`}
-      lang={lang} place={place} preferences={preferences} saved={saved} storageFailed={storageFailed} industry={industry} onIndustryChange={onIndustryChange} onSaved={()=>setDismissedScope(scopeKey)}/>
+      lang={lang} place={place} preferences={preferences} saved={saved} storageFailed={storageFailed} industry={industry} onIndustryChange={onIndustryChange} onPlaceSaved={onPlaceSaved}/>
     {!summary || !prep ? <LiveLoadMessage loading={summary === undefined || !ready} lang={lang}/> : <>
       <div className="prep-block">
         <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{prepCopy.factsTitle[lang]}</h3>
