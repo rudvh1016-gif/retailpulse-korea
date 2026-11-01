@@ -13,41 +13,50 @@ const queues=[{terminal:'T1',zone:'DG2_E',waitTimeMinutes:12,waitTimeRaw:'12',ob
 async function routeData(page:import('@playwright/test').Page){
  await page.clock.setFixedTime(new Date(`${date}T10:15:00+09:00`));
  await page.route('**/api/live/summary*',route=>{const day=new URL(route.request().url()).searchParams.get('date')??date;return routeSummary({...SUMMARY_FIXTURE,dayRelation:day===date?'TODAY':'PAST',todayKst:date,serviceDateKst:day,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:day,congestion:day===date?queues:[]},generatedAt:`${date}T10:15:00+09:00`})(route);});
- await page.route('**/api/live/flights*',route=>{const day=new URL(route.request().url()).searchParams.get('date')!;return route.fulfill({json:{mode:'live-flights',serviceDateKst:day,flights:day===date?flights:[],retrievedAt:`${day}T00:00:00Z`,truncated:false}});});
+ await page.route('**/api/live/flights*',route=>{const day=new URL(route.request().url()).searchParams.get('date')!;return route.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',serviceDateKst:day,flights:day===date?flights:[],retrievedAt:`${day}T00:00:00Z`,truncated:false}});});
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:monthly}));
+ await page.route('**/api/live/glance-week-reference*',route=>route.fulfill({json:{status:'READY',month:'2026-10',data:{day:date,previousDay:'2026-10-04',passengers:{all:null,T1:null,T2:null},flights:null,selectedFlights:{all:300,T1:156,T2:144,CONCOURSE:0},selectedFlightSnapshot:{day:date,retrievedAt:date+'T00:00:00Z',provisional:true}}}}));
 }
 for(const width of [360,390,430,1440])test(`decision summary with image overlays and detail links ${width}`,async({page})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await routeData(page);await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');
  await expect(app.locator('.glance-map-heading')).toContainText('300 편');await expect(app.getByTestId('glance-key-wait')).toContainText('T2 출국장 1A · 24 분');await expect(app.getByTestId('glance-key-wait')).toContainText('동률');
- await expect(app.getByTestId('glance-key-upcoming')).toContainText('23:00 ~ 24:00 · 24 편');await expect(app.getByTestId('glance-key-growth')).toContainText('대만');
- await expect(app.locator('.glance-destinations li[data-country=JP]')).toContainText('100%');await expect(app.locator('.glance-destinations li[data-country=JP] img')).toHaveAttribute('src','/images/airport-flags/JP.webp');await expect(app.getByTestId('glance-key-growth').locator('img')).toHaveAttribute('src','/images/airport-flags/fallback/tw.svg');await expect(app.locator('.glance-ranking [data-country=TW] img')).toHaveAttribute('src','/images/airport-flags/fallback/tw.svg');await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);
+ await expect(app.getByTestId('glance-key-upcoming')).toContainText('23:00 ~ 24:00 · 24 편');await expect(app.getByTestId('glance-key-growth')).toContainText('일본');
+ await expect(app.locator('.glance-destinations li[data-country=JP]')).toContainText('100%');await expect(app.locator('.glance-destinations li[data-country=JP] img')).toHaveAttribute('src','/images/airport-flags/JP.webp');await expect(app.getByTestId('glance-key-growth').locator('img')).toHaveAttribute('src','/images/airport-flags/JP.webp');await expect(app.locator('.glance-ranking [data-country=TW] img')).toHaveAttribute('src','/images/airport-flags/fallback/tw.svg');await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(6);
  await expect(app.getByTestId('glance-day-comparison')).toContainText('오늘 출발편 300 편');await expect(app.getByTestId('glance-day-comparison')).toContainText('+293 편');await expect(app.getByTestId('glance-day-comparison')).toContainText('+4186%');await expect(app.locator('a[href*=airport-departure-preparation],a[href*=airport-news]')).toHaveCount(0);
  await expect(app.locator('.glance-map-queue')).toHaveCount(2);for(const label of await app.locator('.glance-building :is(h2,span,dt,dd,small)').all())await expect(label).toHaveCSS('color','rgb(0, 0, 0)');await expect(app.locator('.glance-building-CONCOURSE .glance-map-queue')).toHaveCount(0);await expect(app.locator('.glance-location-note')).toHaveCount(0);
  if(width>700)await expect(app.locator('.glance-building').first()).toHaveCSS('width','225px');await expect(app.locator('.glance-building dl').first()).toHaveCSS('display',width<=700?'grid':'flex');
  if(width<=700){await expect(app.locator('.glance-building').first()).toHaveCSS('position','absolute');await expect(app.locator('.glance-building dd').first()).toHaveCSS('font-size','9px');await expect(app.locator('.glance-building dt').first()).toHaveCSS('font-size','8px');}
  const imageBox=await app.locator('.glance-art-frame>img').boundingBox(),labels=await app.locator('.glance-building').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom};}));
  for(const box of labels){expect(box.x).toBeGreaterThanOrEqual(imageBox!.x);expect(box.right).toBeLessThanOrEqual(imageBox!.x+imageBox!.width+1);expect(box.y).toBeGreaterThanOrEqual(imageBox!.y);expect(box.bottom).toBeLessThanOrEqual(imageBox!.y+imageBox!.height+1);}expect(labels[0].bottom).toBeLessThan(labels[1].y);expect(labels[1].bottom).toBeLessThan(labels[2].y);
- await expect(app.locator('.glance-bars,.glance-hour-picker,.glance-destinations details')).toHaveCount(0);await expect(app.locator('.glance-included-days')).toHaveText('포함일 · 전월 1 일 / 선택월 1 일');
+ await expect(app.locator('.glance-bars,.glance-hour-picker,.glance-destinations details')).toHaveCount(0);await expect(app.locator('.glance-included-days')).toHaveText('포함일 · 전월 1 일 / 선택일 1 일');
  await expect(app.getByRole('link',{name:'국가 전체 보기 (1) ↗'})).toHaveAttribute('href',new RegExp('/ko/airport-countries\\?mode=zones&building=all&date=2026-10-11#airport-zone-countries$'));
  // Owner, 2026-10-14: Top 5 by the change in daily-mean flights, shown as a count, not a rate;
  // every detail link names the section that holds the same information.
- const increase=app.getByTestId('glance-ranking-increase');await expect(app.locator('.glance-ranking>.glance-section-head h2')).toHaveText('전월비 일평균 증가 Top 5');await expect(increase.locator('th').nth(3)).toHaveText('증감');
+ const increase=app.getByTestId('glance-ranking-increase');await expect(app.locator('.glance-ranking>.glance-section-head h2')).toHaveText('오늘 출발편 증가 Top 5');await expect(increase.locator('th').nth(3)).toHaveText('증감');
  const ranked=await increase.locator('tbody tr').evaluateAll(rows=>rows.map(row=>{const [previous,current,change]=[...row.querySelectorAll('td')].map(cell=>cell.textContent??'');return {country:row.getAttribute('data-country'),previous:Number(previous),current:Number(current),change};}));
- expect(ranked.map(row=>row.country)).toEqual(['TW','TH','FR','DE','US']);
+ expect(ranked.map(row=>row.country)).toEqual(['JP']);
  for(const [index,row] of ranked.entries()){expect(row.change).toContain(`+${row.current-row.previous}`);expect(row.change).not.toContain('%');if(index)expect(row.current-row.previous).toBeLessThanOrEqual(ranked[index-1].current-ranked[index-1].previous);}
- await expect(app.getByTestId('glance-key-growth')).toContainText('+7편/일');
- await expect(app.getByTestId('glance-key-growth')).toHaveAttribute('href',/\/ko\/airport\?terminal=all&date=2026-10-11#airport-month-destinations$/);
- await expect(app.locator('.glance-ranking .glance-detail-link')).toHaveCount(1);await expect(app.locator('.glance-ranking .glance-detail-link')).toHaveAttribute('href',/#airport-month-destinations$/);
+ await expect(app.getByTestId('glance-key-growth')).toContainText('+299편/일');
+ await expect(app.getByTestId('glance-key-growth')).toHaveAttribute('href',/\/ko\/airport-countries\?mode=zones&building=all&date=2026-10-11#airport-zone-countries$/);
+ await expect(app.locator('.glance-ranking .glance-detail-link')).toHaveCount(1);await expect(app.locator('.glance-ranking .glance-detail-link')).toHaveAttribute('href',/#airport-zone-countries$/);
  // The decrease list sits right under the increase table: nothing between the two lists.
  expect(await app.locator('.glance-ranking').evaluate(section=>{const up=section.querySelector('[data-testid=glance-ranking-increase]')!,down=section.querySelector('[data-testid=glance-ranking-decrease]')!;return up.nextElementSibling===down&&down.getBoundingClientRect().top-up.getBoundingClientRect().bottom<=24;})).toBe(true);
- // Every destination in the fixture grew, so the decrease list says so instead of inventing rows.
- await expect(app.getByTestId('glance-ranking-decrease').locator('h2')).toHaveText('전월비 일평균 감소 Top 5');await expect(app.getByTestId('glance-ranking-decrease').locator('tbody tr')).toHaveCount(0);await expect(app.getByTestId('glance-ranking-decrease')).toContainText('비교 가능한 감소 없음');
+ // Today has only JP in a fully witnessed scan; the other known destinations have real zero departures.
+ await expect(app.getByTestId('glance-ranking-decrease').locator('h2')).toHaveText('오늘 출발편 감소 Top 5');await expect(app.getByTestId('glance-ranking-decrease').locator('tbody tr')).toHaveCount(5);await expect(app.getByTestId('glance-ranking-decrease').locator('tr[data-country=CN] td').nth(1)).toHaveText('0');
  await expect(app.getByTestId('glance-key-wait')).toHaveAttribute('href',/#airport-checkpoints-title$/);
  await expect(app.getByTestId('glance-key-upcoming')).toHaveAttribute('href',/#airport-departure-model-slot$/);
  await expect(app.getByTestId('glance-key-passengers')).toHaveAttribute('href',/\/ko\/airport\?terminal=all&date=2026-10-11#airport-forecast-title$/);
  await app.getByRole('button',{name:'T1',exact:true}).click();await expect(app.getByTestId('glance-key-wait')).toContainText('T1 출국장 2E · 12 분');await expect(app.locator('.glance-map-heading')).toContainText('156 편');
  await expect(app.locator('.glance-building-T2')).toHaveCSS('opacity','1');await expect(app.locator('.glance-building-T2 small')).toHaveCSS('color','rgb(0, 0, 0)');
  const disclosure=app.locator('.glance-airport>.glance-context summary');await disclosure.focus();await page.keyboard.press('Enter');await expect(app.locator('.glance-airport>.glance-context p').first()).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);
+});
+test('past selection retains monthly included-day ranking, separate from today snapshot',async({page})=>{
+ await routeData(page);await page.goto('/ko/airport-glance-preview');await expect(page.locator('.glance-map-heading')).toContainText('300 편');await page.locator('input[type=date]').fill('2026-10-10');
+ const app=page.getByTestId('airport-glance-preview'),increase=app.getByTestId('glance-ranking-increase');
+ await expect(app.locator('.glance-ranking>.glance-section-head h2')).toHaveText('전월비 일평균 증가 Top 5');
+ await expect(increase.locator('tbody tr')).toHaveCount(5);
+ expect(await increase.locator('tbody tr').evaluateAll(rows=>rows.map(row=>row.getAttribute('data-country')))).toEqual(['TW','TH','FR','DE','US']);
+ await expect(app.getByTestId('glance-key-growth')).toContainText('+7편/일');await expect(app.getByTestId('glance-ranking-decrease').locator('tbody tr')).toHaveCount(0);await expect(app.getByTestId('glance-ranking-decrease')).toContainText('비교 가능한 감소 없음');
 });
 test('upcoming area details and counting basis start closed independently',async({page})=>{
  await routeData(page);await page.goto('/ko/airport-glance-preview');
@@ -91,7 +100,7 @@ for(const lang of ['ko','en','zh','ja'] as const){
   await expect(transfer.locator('small')).toContainText(copy.basis);
   await expect(transfer.locator('small')).toContainText(date);
   await expect(transfer).toHaveAttribute('href',new RegExp('date='+date+'#airport-forecast-title$'));
-  await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(5);await expect(app.locator('.glance-map-queue')).toHaveCount(2);
+  await expect(app.locator('.glance-ranking tbody tr')).toHaveCount(6);await expect(app.locator('.glance-map-queue')).toHaveCount(2);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  });
 }
@@ -141,9 +150,10 @@ for(const width of [360,390,1440])test(`physical building scopes align flights d
  await routeData(page);await page.setViewportSize({width,height:1000});
  const dayRows=[...Array.from({length:5},(_,i)=>({...flight(date,'main'+i,i<2?11:12,'NRT','T1','45'),direction:'departure'})),...Array.from({length:7},(_,i)=>({...flight(date,'con'+i,i<3?11:12,'PEK','CONCOURSE','110'),direction:'departure'})),...Array.from({length:9},(_,i)=>({...flight(date,'t2'+i,i<4?11:12,'LAX','T2','274'),direction:'departure'}))];
  const monthRows=(m:string,current:boolean)=>[...Array.from({length:current?3:1},(_,i)=>flight(m+'-01','m'+i,11,'NRT','T1','45')),...Array.from({length:current?4:2},(_,i)=>flight(m+'-01','c'+i,11,'PEK','CONCOURSE','110')),...Array.from({length:current?6:3},(_,i)=>flight(m+'-01','t'+i,11,'LAX','T2','274'))];
- await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:date,flights:dayRows,retrievedAt:`${date}T00:00:00Z`,truncated:false}}));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{...monthly,data:{...monthly.data,months:[buildAirportFlightMonth('2026-10',date,monthRows('2026-10',true),new Set(['2026-10-01'])),buildAirportFlightMonth('2026-09',date,monthRows('2026-09',false),new Set(['2026-09-01']))]}}}));
+ await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',basis:'COLLECTED_FLIGHT_RECORDS',serviceDateKst:date,flights:dayRows,retrievedAt:`${date}T00:00:00Z`,truncated:false}}));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{...monthly,data:{...monthly.data,months:[buildAirportFlightMonth('2026-10',date,monthRows('2026-10',true),new Set(['2026-10-01'])),buildAirportFlightMonth('2026-09',date,monthRows('2026-09',false),new Set(['2026-09-01']))]}}}));
+ await page.route('**/api/live/glance-week-reference*',route=>route.fulfill({json:{status:'READY',month:'2026-10',data:{day:date,previousDay:'2026-10-04',passengers:{all:null,T1:null,T2:null},flights:null,selectedFlights:{all:21,T1:5,T2:9,CONCOURSE:7},selectedFlightSnapshot:{day:date,retrievedAt:date+'T00:00:00Z',provisional:true}}}}));
  await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview');await expect(app.locator('.glance-map-heading')).toContainText('21 편');await expect(app.getByTestId('glance-shared-processing')).toContainText('탑승동도 T1에서 출국수속');
- for(const [button,building,total,country,delta,mean,window] of [['T1','T1',5,'JP',4,1,2],['탑승동','CONCOURSE',7,'CN',5,2,3],['T2','T2',9,'US',6,3,4]] as const){await app.getByRole('button',{name:button,exact:true}).click();await expect(app.locator('.glance-map-heading')).toContainText(`${total} 편`);await expect(app.locator(`.glance-building-${building} h2`)).toContainText(`${total} 편`);await expect(app.locator('.glance-building[data-selected=true]')).toHaveCount(1);await expect(app.locator('.glance-destinations li')).toHaveCount(1);await expect(app.locator(`.glance-destinations li[data-country=${country}]`)).toContainText('100%');await expect(app.getByTestId('glance-day-comparison')).toContainText(`+${delta} 편`);await expect(app.getByTestId('glance-day-comparison')).toContainText(`전월 일평균 ${mean} 편`);{const [previous,current,change]=await app.getByTestId('glance-ranking-increase').locator(`[data-country=${country}] td`).allTextContents();expect(change).toContain(`+${Number(current)-Number(previous)}`);expect(change).not.toContain('%');}await expect(app.getByTestId('glance-future-zones').locator('.glance-window-note')).toContainText(`총 ${window}편`);if(building!=='T2')await expect(app.getByTestId('glance-key-wait')).toContainText('T1 출국장 2E · 12 분');}
+ for(const [button,building,total,country,delta,mean,window] of [['T1','T1',5,'JP',4,1,2],['탑승동','CONCOURSE',7,'CN',5,2,3],['T2','T2',9,'US',6,3,4]] as const){await app.getByRole('button',{name:button,exact:true}).click();await expect(app.locator('.glance-map-heading')).toContainText(`${total} 편`);await expect(app.locator(`.glance-building-${building} h2`)).toContainText(`${total} 편`);await expect(app.locator('.glance-building[data-selected=true]')).toHaveCount(1);await expect(app.locator('.glance-destinations li')).toHaveCount(1);await expect(app.locator(`.glance-destinations li[data-country=${country}]`)).toContainText('100%');await expect(app.getByTestId('glance-day-comparison')).toContainText(`+${delta} 편`);await expect(app.getByTestId('glance-day-comparison')).toContainText(`전월 일평균 ${mean} 편`);{const cells=app.getByTestId('glance-ranking-increase').locator(`[data-country=${country}] td`);await expect(cells.first()).toBeVisible();const [previous,current,change]=await cells.allTextContents();expect(change).toContain(`+${Number(current)-Number(previous)}`);expect(change).not.toContain('%');}await expect(app.getByTestId('glance-future-zones').locator('.glance-window-note')).toContainText(`총 ${window}편`);if(building!=='T2')await expect(app.getByTestId('glance-key-wait')).toContainText('T1 출국장 2E · 12 분');}
  await expect(app.locator('.glance-building-CONCOURSE .glance-map-queue')).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 
@@ -179,12 +189,12 @@ test(`airport detail link lands on #${hash} below the sticky bars`,async({page})
  if(check==='details')await expect(target).toHaveJSProperty('open',true);
  await expect.poll(()=>target.evaluate(node=>{const bars=[...document.querySelectorAll<HTMLElement>('.site-header, .airport-context-nav')].filter(bar=>['sticky','fixed'].includes(getComputedStyle(bar).position)).map(bar=>bar.getBoundingClientRect().bottom),covered=Math.max(0,...bars),top=node.getBoundingClientRect().top;return scrollY>0&&top>=covered-1&&top<=covered+24;}),{timeout:10_000}).toBe(true);
 });
-test('glance Top 5 detail link opens the full destination list on the airport page',async({page})=>{
+test('today Top 5 detail link opens the current-day destination breakdown',async({page})=>{
  await page.setViewportSize({width:390,height:844});await routeData(page);await page.goto('/ko/airport-glance-preview');
- const app=page.getByTestId('airport-glance-preview');await expect(app.getByTestId('glance-ranking-increase').locator('tbody tr')).toHaveCount(5);
- await app.locator('.glance-ranking .glance-detail-link').click();await expect(page).toHaveURL(/\/ko\/airport\?terminal=all&date=2026-10-11#airport-month-destinations$/);
- const list=page.locator('details#airport-month-destinations');await expect(list).toHaveJSProperty('open',true);await expect(list).toBeInViewport();
- await expect(list).toContainText('대만');
+ const app=page.getByTestId('airport-glance-preview');await expect(app.getByTestId('glance-ranking-increase').locator('tbody tr')).toHaveCount(1);
+ await app.locator('.glance-ranking .glance-detail-link').click();await expect(page).toHaveURL(/\/ko\/airport-countries\?mode=zones&building=all&date=2026-10-11#airport-zone-countries$/);
+ const list=page.locator('#airport-zone-countries');await expect(list).toBeVisible();await expect(list).toBeInViewport();
+ await expect(list).toContainText('일본');const values=await list.locator('[data-country=JP]').evaluateAll(rows=>rows.map(row=>Number(row.getAttribute('data-value'))));expect(values.sort((a,b)=>a-b)).toEqual([144,156]);expect(values.reduce((a,b)=>a+b,0)).toBe(300);
 });
 test('decrease Top 5 lists the largest falls in daily-mean flights with filled △, distinct from the increase list',async({page})=>{
  await page.setViewportSize({width:390,height:844});await routeData(page);
@@ -192,7 +202,7 @@ test('decrease Top 5 lists the largest falls in daily-mean flights with filled �
  const codes=['NRT','PEK','LAX','FRA','CDG','BKK','TPE'],fell=(day:string,current:boolean)=>codes.flatMap((code,index)=>Array.from({length:current?(code==='TPE'?9:1):index+2},(_,n)=>flight(day,code+n,10,code)));
  const months={...monthly,data:{...monthly.data,months:[buildAirportFlightMonth('2026-10',date,fell('2026-10-01',true),new Set(['2026-10-01'])),buildAirportFlightMonth('2026-09',date,fell('2026-09-01',false),new Set(['2026-09-01']))]}};
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:months}));
- await page.goto('/ko/airport-glance-preview');const app=page.getByTestId('airport-glance-preview'),decrease=app.getByTestId('glance-ranking-decrease');
+ await page.goto('/ko/airport-glance-preview');await expect(page.locator('.glance-map-heading')).toContainText('300 편');await page.locator('input[type=date]').fill('2026-10-10');const app=page.getByTestId('airport-glance-preview'),decrease=app.getByTestId('glance-ranking-decrease');
  await expect(decrease.locator('tbody tr')).toHaveCount(5);
  const rows=await decrease.locator('tbody tr').evaluateAll(list=>list.map(row=>{const [previous,current,change]=[...row.querySelectorAll('td')].map(cell=>cell.textContent??'');return {country:row.getAttribute('data-country'),previous:Number(previous),current:Number(current),change};}));
  expect(rows.map(row=>row.country)).toEqual(['TH','FR','DE','US','CN']);

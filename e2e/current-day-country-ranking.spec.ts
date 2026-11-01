@@ -1,0 +1,21 @@
+import {test,expect} from '@playwright/test';
+import {SUMMARY_FIXTURE} from './summary-fixture';
+import {AIRPORT_SIDES_VERSION} from '../lib/airport-sides';import {DESTINATIONS_VERSION} from '../lib/airport-destinations';
+const day='2026-11-01',at=day+'T00:00:00Z',now=day+'T01:00:00Z';
+const empty=()=>({total:0,sides:{EAST:0,WEST:0,CENTER:0,UNVERIFIED:0},airlines:{},registrationCountries:{},destinationCountries:{},destinationSides:{}});
+const previousCounts={...empty(),total:232,sides:{EAST:0,WEST:0,CENTER:0,UNVERIFIED:232},destinationCountries:{JP:62,CN:93,US:31,TH:15,TW:31}};
+const period=(month:string,complete:boolean)=>({month,from:month+'-01',through:complete?'2026-10-31':null,eligibleDays:complete?31:0,includedDays:complete?Array.from({length:31},(_,i)=>`2026-10-${String(i+1).padStart(2,'0')}`):[],excludedDays:[],cancelled:0,airlineNames:{},scopes:{ALL:complete?previousCounts:empty(),T1:empty(),T2:complete?previousCounts:empty(),CONCOURSE:empty(),UNKNOWN:empty()}});
+for(const lang of ['ko','en'])for(const width of [390,1440])test(`first day uses today's witnessed records and previous 31 days ${lang} ${width}`,async({page})=>{
+ const summary=structuredClone(SUMMARY_FIXTURE);Object.assign(summary,{generatedAt:now,todayKst:day,serviceDateKst:day,dayRelation:'TODAY'});summary.airport.serviceDateKst=day;
+ const flights=['NRT','NRT','NRT','NRT','PVG','SFO','BKK','TPE'].map((airportCode,i)=>({physicalFlightId:`test-${i}`,flightNumber:`KE${100+i}`,airlineCode:'KE',airportCode,direction:'departure',terminal:'T2',gate:'230',scheduledAt:`${day}T${String(i+8).padStart(2,'0')}:00:00+09:00`,status:'scheduled'}));
+ await page.clock.setFixedTime(new Date(now));await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
+ await page.route('**/api/**',r=>r.fulfill({status:503,json:{}}));await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
+ await page.route('**/api/live/flights*',r=>r.fulfill({json:{mode:'live-flights',generatedAt:now,serviceDateKst:day,basis:'COLLECTED_FLIGHT_RECORDS',retrievedAt:at,truncated:false,flights}}));
+ await page.route('**/api/live/airport-months*',r=>r.fulfill({json:{status:'READY',month:'2026-11',calculatedAt:at,data:{version:2,asOf:day,preparedAt:at,sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,months:[period('2026-11',false),period('2026-10',true)]}}}));
+ await page.route('**/api/live/glance-week-reference*',r=>r.fulfill({json:{status:'READY',month:'2026-11',data:{day,previousDay:'2026-10-25',passengers:{all:null,T1:null,T2:null},flights:null,selectedFlights:{all:8,T1:0,T2:8,CONCOURSE:0},selectedFlightSnapshot:{day,retrievedAt:at,provisional:true}}}}));
+ await page.goto(`/${lang}`);const ranking=page.locator('.glance-ranking');await ranking.scrollIntoViewIfNeeded();
+ await expect(ranking.locator('.glance-included-days')).toHaveText(/31.*(?:선택일|Selected day).*1/);
+ const jp=page.getByTestId('glance-ranking-increase').locator('tr[data-country=JP]');await expect(jp).toBeVisible();await expect(jp.locator('td').nth(0)).toHaveText('2');await expect(jp.locator('td').nth(1)).toHaveText('4');
+ await expect(page.getByTestId('glance-ranking-decrease').locator('tr[data-country=CN]')).toBeVisible();await expect(ranking).toContainText(lang==='ko'?'운항 확정 실적이 아닙니다':'not certified actual operations');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await ranking.screenshot({path:`test-results/current-day-ranking-${lang}-${width}.png`});
+});
