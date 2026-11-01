@@ -25,7 +25,7 @@
    "woff2-variations", so this loses no browser support. */
 @font-face {
   font-family: "KORETAIL Sans Variable";
-  src: url("/fonts/koretail-sans-variable.woff2") format("woff2");
+  src: url("/fonts/koretail-sans-variable.woff2?v=8a8517c9e1a9") format("woff2");
   font-style: normal;
   font-weight: 45 920;
   font-display: swap;

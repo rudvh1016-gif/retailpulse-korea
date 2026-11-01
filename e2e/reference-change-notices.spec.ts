@@ -49,7 +49,7 @@ test('missing and unchanged collector outputs do not create extra notice cards',
  await page.route('**/api/airport/calendar',route=>route.fulfill({json:{...calendar,changes:[]}}));
  await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[],japan:{previous:values,values,changedAt:null},reviewNotices:[]}}));
  await page.goto('/ko/airport-focus-preview');await expect(page.getByRole('dialog')).toBeVisible();
- await expect(page.locator('[data-change-id]')).toHaveCount(0);await expect(page.getByRole('dialog').locator('section')).toHaveCount(4);
+ await expect(page.locator('[data-change-id]')).toHaveCount(0);await expect(page.getByRole('dialog').locator('.update-notice-items>section')).toHaveCount(1);
 });
 test('closing during an in-flight check does not reopen the dialog when data arrives',async({page})=>{
  let release:()=>void=()=>{};const gate=new Promise<void>(resolve=>{release=resolve;});

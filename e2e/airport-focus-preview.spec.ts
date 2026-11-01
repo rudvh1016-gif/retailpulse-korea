@@ -204,26 +204,9 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  expect(noticeContrast).toBeGreaterThanOrEqual(4.5);
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
  await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeInViewport({ratio:1});
- await expect(dialog.locator('section')).toHaveCount(4);
+ await expect(dialog.locator('.update-notice-items > section')).toHaveCount(1);
+ await expect(dialog.getByRole('link',{name:'\uBCF4\uACE0\uC11C \uBCF4\uAE30 \u2192'})).toHaveAttribute('href','/shopping-report/index.html');
  await page.screenshot({path:testInfo.outputPath(`notice-${width}.png`)});
- await dialog.getByRole('link',{name:'국가별 흐름 보기 →'}).click();
- await expect(page.locator('.focus-country-brief')).toBeVisible();
- await expect(page.getByTestId('airport-route-passengers')).toBeVisible();
- await page.evaluate(()=>sessionStorage.clear());
- await page.reload({waitUntil:'domcontentloaded'});
- await expect(dialog).toBeVisible();
- await dialog.getByRole('link',{name:'주요 휴일 보기 →'}).click();
- await expect(page.locator('.focus-country-filter')).toBeVisible();
- await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
- await dialog.getByRole('link',{name:'공항 한눈에 보기 →'}).click();
- await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
- await expect(page.locator('.focus-passenger-parts')).toBeVisible();
- await expect(page.locator('.focus-passenger-parts')).toContainText('출국 103,124명 + 환승 9,279명');
- await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
- await expect(dialog).toBeVisible();
- await dialog.getByRole('link',{name:'반입 면세한도 보기 →'}).click();
- await expect(page.locator('#arrival-allowances')).toBeInViewport();
- await page.evaluate(()=>sessionStorage.clear());await page.reload({waitUntil:'domcontentloaded'});
  await dialog.getByRole('button',{name:'닫기',exact:true}).click();await expect(dialog).not.toBeVisible();
 });
 
@@ -271,10 +254,10 @@ for(const width of [390,1440])test(`arrival allowances preserve traveller condit
  expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
 });
 
-// Real document anchors must survive first-load hydration and browser scroll restoration.
+// The single current announcement must navigate on a cold load; retained preview anchors remain independently reachable.
 for(const attempt of [1,2,3])test(`notice destinations cold load 390 attempt ${attempt}`,async({browser})=>{
  test.setTimeout(120000);
- const destinations=[['공항 한눈에 보기 →','.focus-report'],['국가별 흐름 보기 →','.focus-country-brief'],['주요 휴일 보기 →','.focus-country-filter'],['반입 면세한도 보기 →','#arrival-allowances']] as const;
+ const destinations=[['\uBCF4\uACE0\uC11C \uBCF4\uAE30 \u2192','/shopping-report/index.html']] as const;
  for(const [name,target] of destinations){
   const context=await browser.newContext({viewport:{width:390,height:1000}});
   const page=await context.newPage();
@@ -287,26 +270,29 @@ for(const attempt of [1,2,3])test(`notice destinations cold load 390 attempt ${a
   await page.goto('/ko/airport-focus-preview',{waitUntil:'domcontentloaded'});
   const dialog=page.getByRole('dialog',{name:'new update!'});
   await expect(dialog).toBeVisible();
-  if(target==='#arrival-allowances')await expect(dialog.getByRole('link',{name})).toHaveAttribute('href',/section=arrival#arrival-allowances$/);
+  await expect(dialog.getByRole('link',{name})).toHaveAttribute('href',target);
   await dialog.getByRole('link',{name}).click();
-  await expect(page.locator(target)).toBeInViewport();
-  if(target==='#arrival-allowances'){
-   await expect(page).toHaveURL(/#arrival-allowances$/);
-   await page.evaluate(()=>document.fonts.ready);
-   const assertAnchor=async()=>{
-    await expect.poll(()=>page.locator(target).evaluate(node=>{const top=node.getBoundingClientRect().top+scrollY;const margin=parseFloat(getComputedStyle(node).scrollMarginTop)||0;const padding=parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)||0;const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);return Math.abs(scrollY-Math.min(Math.max(0,top-margin-padding),max));})).toBeLessThan(3);
-    const geometry=await page.locator(target).evaluate(node=>({headingTop:node.querySelector('h2')!.getBoundingClientRect().top,headingBottom:node.querySelector('h2')!.getBoundingClientRect().bottom,navTop:document.querySelector('.focus-mobile-navigation .bottom-nav')!.getBoundingClientRect().top}));
-    expect(geometry.headingTop).toBeGreaterThanOrEqual(0);expect(geometry.headingBottom).toBeLessThan(geometry.navTop);
-   };
-   await assertAnchor();
-   await page.reload({waitUntil:'domcontentloaded'});
-   await expect(page.locator(target)).toBeInViewport();await assertAnchor();
-   await page.goBack({waitUntil:'domcontentloaded'});
-   await expect(page).toHaveURL(/\/ko\/airport-focus-preview$/);
-   await expect(page.locator('.focus-report')).toBeVisible();
-   await page.goForward({waitUntil:'domcontentloaded'});
-   await expect(page.locator(target)).toBeInViewport();await assertAnchor();
-  }
+  await expect(page).toHaveURL(/\/shopping-report\/index\.html$/);
+  await expect(page.locator('main')).toBeVisible();
+  await page.goBack({waitUntil:'domcontentloaded'});
+  await expect(page.locator('.focus-report')).toBeVisible();
+  await expect(dialog).not.toBeVisible();
+  await page.goto('/ko/airport-focus-preview?view=prepare&section=arrival#arrival-allowances',{waitUntil:'domcontentloaded'});
+  await expect(page.locator('#arrival-allowances')).toBeInViewport();
+  await page.evaluate(()=>document.fonts.ready);
+  const assertAnchor=async()=>{
+   await expect.poll(()=>page.locator('#arrival-allowances').evaluate(node=>{const top=node.getBoundingClientRect().top+scrollY;const margin=parseFloat(getComputedStyle(node).scrollMarginTop)||0;const padding=parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)||0;const max=Math.max(0,document.documentElement.scrollHeight-innerHeight);return Math.abs(scrollY-Math.min(Math.max(0,top-margin-padding),max));})).toBeLessThan(3);
+   const geometry=await page.locator('#arrival-allowances').evaluate(node=>({headingTop:node.querySelector('h2')!.getBoundingClientRect().top,headingBottom:node.querySelector('h2')!.getBoundingClientRect().bottom,navTop:document.querySelector('.focus-mobile-navigation .bottom-nav')!.getBoundingClientRect().top}));
+   expect(geometry.headingTop).toBeGreaterThanOrEqual(0);expect(geometry.headingBottom).toBeLessThan(geometry.navTop);
+  };
+  await assertAnchor();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await expect(page.locator('#arrival-allowances')).toBeInViewport();await assertAnchor();
+  await page.goBack({waitUntil:'domcontentloaded'});
+  await expect(page).toHaveURL(/\/ko\/airport-focus-preview$/);
+  await expect(page.locator('.focus-report')).toBeVisible();
+  await page.goForward({waitUntil:'domcontentloaded'});
+  await expect(page.locator('#arrival-allowances')).toBeInViewport();await assertAnchor();
   await context.close();
  }
 });

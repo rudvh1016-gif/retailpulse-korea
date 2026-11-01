@@ -217,6 +217,11 @@ approvedCanonicalPatches['app/live-signals.tsx']=[...mobileDisplayPatches,...(ap
 const checkpointObservationPatches=JSON.parse(readFileSync('tests/fixtures/checkpoint-observation-20261101-approved-patches.json','utf8'));
 assert.equal(checkpointObservationPatches.length,3);
 approvedCanonicalPatches['app/api/live/summary/route.ts']=[...checkpointObservationPatches,...(approvedCanonicalPatches['app/api/live/summary/route.ts']??[])];
+// Owner-requested menu glyph consistency: one exact font cache-key substitution only.
+// Restore the existing canonical CSS bytes; retain every other style and protected hash.
+const menuFontCachePatches=JSON.parse(readFileSync('tests/fixtures/menu-font-cache-20261101-approved-patches.json','utf8'));
+assert.equal(menuFontCachePatches.length,1);
+approvedCanonicalPatches['app/globals.css']=[...menuFontCachePatches,...(approvedCanonicalPatches['app/globals.css']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

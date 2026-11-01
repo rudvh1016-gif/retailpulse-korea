@@ -6,6 +6,6 @@ import type {SeoLocale} from './seo-config';
  * preload without it is fetched twice. The home does not call this (see
  * app/[locale]/page.tsx). */
 export function preloadShellFont(locale:SeoLocale) {
- const font={ko:'/fonts/koretail-sans-variable.woff2',en:'/fonts/koretail-sans-variable.woff2',ja:'/fonts/noto-sans-jp-400.woff2',zh:'/fonts/noto-sans-sc-400.woff2'}[locale];
+ const font={ko:'/fonts/koretail-sans-variable.woff2?v=8a8517c9e1a9',en:'/fonts/koretail-sans-variable.woff2?v=8a8517c9e1a9',ja:'/fonts/noto-sans-jp-400.woff2',zh:'/fonts/noto-sans-sc-400.woff2'}[locale];
  preload(font,{as:'font',type:'font/woff2',crossOrigin:'anonymous'});
 }

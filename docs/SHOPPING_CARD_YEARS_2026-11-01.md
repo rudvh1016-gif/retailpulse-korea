@@ -19,3 +19,9 @@ Show 2025 first and 2026 second, with 2024 as a reference. Retain the existing p
 The remaining data-acquisition blocker is the official login-gated download and matching count/category documentation, not a license claim or proof that 2026 data is unpublished. `data/shopping-card-year-coverage-2026.json` records known values, nulls, source/version boundaries and the excluded amount alternative.
 
 Read-only connected-browser inventory also found no existing authenticated Data Lab tab. Any later file must include its applicable reuse terms; official download availability alone does not establish commercial redistribution permission. This branch adds no new 2026 numeric claims. Local build, TypeScript, lint, six font/data unit cases and eight Chromium cases passed, including all six industries showing null/missing 2026 without a fabricated bar.
+
+## Public nationwide amount comparison acquired without login
+
+MCST https://www.mcst.go.kr/site/s_notice/press/pressView.jsp?pMenuCD=0302000000&pSeq=22790 (2026-10-22), displayed KOGL Type 0. Official PDF pages 1 and 3 visually checked. Jan-Sep 2025 spending 107,940 versus 2026 159,416 KRW 100 million, +47.7%; online included. Both years are taken from this same release; the nine 2026 monthly values sum exactly to its total. No 2024 amount, monthly 2025 or matching industry breakdown was supplied. Historical releases are not spliced into this amount series. Amount is a separate nationwide tourism metric, not the historical category count indices or airport/store sales. No API, login or consent submission. The public report replaces login as the acquisition route for this aggregate comparison. It does not solve the detailed six-category 2026 count gap.
+
+Latest main a3df2730 mobile store expansions and monthly relocation were retained. Static content only: no collectors, APIs, database, schedules or runtime cost changes.

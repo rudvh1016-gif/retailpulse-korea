@@ -56,3 +56,5 @@ test('three-year card view preserves historical indices and leaves 2026 unknown'
   assert.equal(coverage.excludedAlternative.metric, 'spending amount');
   assert.equal(coverage.revisionNotice.currentVersionRequiredForAmountComparisons, true);
 });
+
+test("latest spending uses the same-release nationwide amount pair without inventing 2024",()=>{const d=JSON.parse(readFileSync("data/shopping-tourism-card-spending-2026.json","utf8"));assert.equal(d.sameReleaseComparison[2024],null);assert.equal(d.sameReleaseComparison[2025],107940);assert.equal(d.sameReleaseComparison[2026],159416);assert.equal(d.monthly2026.reduce((a,b)=>a+b,0),159416);assert.equal(Math.round((159416/107940-1)*1000)/10,47.7);assert.ok(html.includes("온라인 소비 포함"));assert.ok(html.includes("pSeq=22790"));});
