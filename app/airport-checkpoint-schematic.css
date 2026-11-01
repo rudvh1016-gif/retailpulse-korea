@@ -36,8 +36,8 @@
 .airport-checkpoint-schematics {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;}
 .checkpoint-schematic-reading[data-state=closed] strong {font-size:var(--checkpoint-value-size);}
 
-/* The unchanged original render is displayed in warm stone and brushed-metal tones. */
-.checkpoint-schematic-drawing>img{filter:grayscale(.9) sepia(.24) saturate(.8)}
+/* Preserve the original render's cool blue glass, white structure and neutral floor. */
+.checkpoint-schematic-drawing>img{filter:none}
 
 .checkpoint-schematic-reading:is([data-state="failed"],[data-state="unavailable"]){color:var(--muted)}
 .checkpoint-schematic-reading .checkpoint-reading-status{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
