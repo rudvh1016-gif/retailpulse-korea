@@ -1,0 +1,83 @@
+{
+  "metric": "foreign_credit_card_transaction_count_index",
+  "period": "January–September",
+  "indexBase": {
+    "year": 2024,
+    "value": 100
+  },
+  "focusYears": [
+    2025,
+    2026
+  ],
+  "source": "https://knto.or.kr/pressRelease/549938",
+  "publishedAt": "2025-12-16",
+  "license": "KOGL Type 1",
+  "series": [
+    {
+      "industry": "소품",
+      "indices": {
+        "2024": 100,
+        "2025": 158.1,
+        "2026": null
+      },
+      "growth2025Vs2024Percent": 58.1
+    },
+    {
+      "industry": "뷰티·건강",
+      "indices": {
+        "2024": 100,
+        "2025": 140.4,
+        "2026": null
+      },
+      "growth2025Vs2024Percent": 40.4
+    },
+    {
+      "industry": "패션",
+      "indices": {
+        "2024": 100,
+        "2025": 123.4,
+        "2026": null
+      },
+      "growth2025Vs2024Percent": 23.4
+    },
+    {
+      "industry": "대형 쇼핑몰",
+      "indices": {
+        "2024": 100,
+        "2025": 118.8,
+        "2026": null
+      },
+      "growth2025Vs2024Percent": 18.8
+    },
+    {
+      "industry": "백화점",
+      "indices": {
+        "2024": 100,
+        "2025": 109.9,
+        "2026": null
+      },
+      "growth2025Vs2024Percent": 9.9
+    },
+    {
+      "industry": "면세점",
+      "indices": {
+        "2024": 100,
+        "2025": 106.2,
+        "2026": null
+      },
+      "growth2025Vs2024Percent": 6.2
+    }
+  ],
+  "unavailable2026Reason": "No matching latest official transaction-count series acquired. Official industry download redirected to login; no new login or personal information entered.",
+  "revisionNotice": {
+    "url": "https://datalab.visitkorea.or.kr/site/portal/ex/bbs/View.do?bcIdx=311089&cbIdx=1135&pageIndex=1",
+    "scope": "credit card spending amounts, not an assertion of transaction-count revisions",
+    "currentVersionRequiredForAmountComparisons": true
+  },
+  "excludedAlternative": {
+    "url": "https://knto.or.kr/pressRelease/550575",
+    "period": "May 2025 versus May 2026",
+    "metric": "spending amount",
+    "reason": "Different metric and period; not substituted into count-index series."
+  }
+}

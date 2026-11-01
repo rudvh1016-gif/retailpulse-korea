@@ -1,0 +1,31 @@
+{
+  "verifiedAt": "2026-11-01",
+  "source": "https://www.mcst.go.kr/site/s_notice/press/pressView.jsp?pMenuCD=0302000000&pSeq=22790",
+  "publishedAt": "2026-10-22",
+  "licenseDisplayed": "KOGL Type 0 / public work free use",
+  "metric": "Foreign credit-card tourism spending amount including online spending",
+  "geography": "South Korea nationwide; not Incheon Airport or duty-free sales",
+  "unit": "KRW 100 million",
+  "period": "January through September of each year",
+  "sameReleaseComparison": {
+    "2024": null,
+    "2025": 107940,
+    "2026": 159416,
+    "growth2026Vs2025Percent": 47.7
+  },
+  "monthly2026": [
+    11752,
+    10683,
+    17144,
+    19945,
+    21235,
+    20570,
+    19530,
+    19847,
+    18710
+  ],
+  "monthly2025": null,
+  "industryBreakdown": null,
+  "versionBoundary": "Use the 2025 and 2026 values together as published in this October release. Do not splice earlier releases into this series; full supplier/estimation/version documentation is not supplied by this PDF.",
+  "prohibitedSubstitution": "Do not insert into the existing Jan-Sep 2024/2025 category transaction-count index chart. Do not fill 2024, monthly 2025 or industry cells by back-calculation."
+}

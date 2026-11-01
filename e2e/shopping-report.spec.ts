@@ -123,3 +123,26 @@ test('desktop detail charts keep a common growth scale and mobile disclosures', 
   await expect(page.locator('.detail-copy').first()).toBeVisible();
   await expect(page.locator('.detail-chart').first()).toBeHidden();
 });
+
+test('year comparison focuses on 2025 and 2026 without fabricating missing values', async ({ page }) => {
+  await page.goto('/shopping-report/index.html');
+  await expect(page.locator('#card-trends h2')).toHaveText('2025년 vs 2026년, 관광 지출은?');
+  await expect(page.locator('.spending-row > b')).toHaveText(['107,940','159,416']);
+  await expect(page.locator('.spending-growth strong')).toHaveText('+47.7%');
+  const indices = ['158.1', '140.4', '123.4', '118.8', '109.9', '106.2'];
+  for (let industry = 0; industry < indices.length; industry++) {
+    await page.locator('#industry-choice').selectOption(String(industry));
+    const group = page.locator('.index-group:visible');
+    await expect(group.locator('.index-bar-row > span')).toHaveText(['2025', '2026', '2024']);
+    await expect(group.locator('.index-bar-row > b')).toHaveText([indices[industry], '미확보', '100.0']);
+    await expect(group.locator('.missing-year-row i')).toHaveCount(0);
+  }
+});
+
+ test('latest amount bars share a scale and respect reduced motion',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/shopping-report/index.html');
+ await expect(page.locator('.spending-bar')).toHaveCount(2);await expect(page.locator('.spending-bar').first()).toHaveCSS('transition-duration','0s');
+ const widths=await page.locator('.spending-bar').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().width));expect(widths[0]/widths[1]).toBeCloseTo(107940/159416,2);
+ await expect(page.locator('.spending-comparison')).toContainText('온라인 소비 포함');await expect(page.locator('.spending-comparison')).toContainText('2024년 동일 기준 지출액: 미확보');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ });
