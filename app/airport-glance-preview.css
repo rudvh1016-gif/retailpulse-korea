@@ -86,3 +86,6 @@ body:has(.glance-preview){background:#fff}
 .glance-hold{position:relative;font-style:inherit}.glance-hold::before{content:attr(data-shape);visibility:hidden}.glance-hold:empty{visibility:hidden}.glance-hold>b{position:absolute;left:0;font-weight:inherit}
 /* Decrease Top 5 directly under the increase Top 5 (owner, 2026-10-14); the empty-list line keeps the note style. */
 .glance-ranking-list>p{font-size:10px;color:#53616e}.glance-ranking-decline{margin-top:14px}
+
+/* Desktop uses the full destination list; compact layouts retain the six-country tie rule. */
+@media(max-width:999px){.glance-destinations li[data-desktop-extra]{display:none}}
