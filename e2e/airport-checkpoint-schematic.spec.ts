@@ -16,7 +16,7 @@ for(const [lang,width] of [['ko',360],['ko',390],['ko',430],['ko',1280],['en',32
  summary.airport.congestion=keys.map((key,index)=>({...base,zone:`DG${key[0]}_${key[1]}`,waitingCount:counts[index],waitTimeMinutes:values[index],waitTimeRaw:index===0?'60+':index===3?'운영 종료':String(values[index]),freshness:index===1?'STALE':'LIVE'}));
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
- const loadedDrawings:string[]=[];page.on('request',request=>{if(/checkpoint-base-|assets\/airport-checkpoint-schematic-/.test(request.url()))loadedDrawings.push(request.url());});
+ const loadedDrawings:string[]=[];page.on('request',request=>{if(/checkpoint-colors-20261101-|assets\/airport-checkpoint-schematic-/.test(request.url()))loadedDrawings.push(request.url());});
  await page.route('**/api/live/summary*',routeSummary(summary));await page.goto(`/${lang}/airport?terminal=T2`);
  const model=page.getByTestId('checkpoint-schematic');await expect(model).toHaveAttribute('data-terminal','T2');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  expect(loadedDrawings).toEqual([]);await model.scrollIntoViewIfNeeded();
