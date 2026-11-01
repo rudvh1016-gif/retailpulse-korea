@@ -48,7 +48,10 @@ test('the Airport page keeps one visible model and both daily histories with sha
   const map=page.getByTestId('departure-map');
   await expect(map).toBeVisible();
   await expect(map.getByTestId('map-groups')).not.toBeVisible();
-  await map.getByTestId('map-counting-basis').locator(':scope > summary').click();
+  const basis=map.getByTestId('map-counting-basis');
+  await expect(basis).not.toBeVisible(); // Owner removed this duplicate source disclosure on phones.
+  await page.setViewportSize({width:1280,height:900});
+  await basis.locator(':scope > summary').click();
   await map.getByTestId('map-destinations').locator('summary').click();
   await expect(map.getByTestId('map-groups')).toBeVisible();
   await expect(overview.getByTestId('overview-T2')).toHaveCount(0);

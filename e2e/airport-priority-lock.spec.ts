@@ -291,10 +291,10 @@ for (const count of [1, 2]) {
           expect(box.width, "a day's bar is at most 8% of the plot").toBeLessThanOrEqual(plot.width * 0.08 + 0.0001);
           expect(box.width, "and still visible").toBeGreaterThan(1);
         }
-        // October 3 owner revision: use the full width for the available dates.
+        // November 1 owner revision: start short month series at the left, reserving five drawing positions.
         for (let index = 0; index < count; index++) {
           const centre=boxes[index].x+boxes[index].width/2-plot.x;
-          expect(Math.abs(centre-plot.width*(index+.5)/count)).toBeLessThan(2);
+          expect(Math.abs(centre-plot.width*(index+.5)/5)).toBeLessThan(2);
         }
         await expect(page.locator('.airport-month-bar[data-value]')).toHaveCount(count);
         await expect(page.locator('.airport-month-dot')).toHaveCount(0);

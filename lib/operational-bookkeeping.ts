@@ -1,5 +1,6 @@
 /** Observer only: cannot dispatch, suppress, retry or modify a collector's result. */
 import { OperationalMemory, safeOperationalEvidence } from './operational-memory';
+import { recheckCongestionPublication } from './operational-congestion-recheck';
 import { canonicalOperationalJob, fullyVerified, measureSource, sourceIdsForRun, type SourceMeasurement } from './operational-evidence';
 import { incidentFingerprint } from './incident-ledger';
 import { recoveryExecutionId, verifyRecovery } from './recovery-orchestration';
@@ -63,7 +64,7 @@ export async function saveMeasurement(memory:OperationalMemory,measurement:Sourc
 }
 
 export async function recordExistingCompletion(db:D1Database,result:ProductionSourceResult,context:{runId:string;startedAt:string;completedAt:string;attempt:number;
-  rowsRead?:number|null;rowsWritten?:number|null}):Promise<{state:string;sourceCount:number}> {
+  rowsRead?:number|null;rowsWritten?:number|null},options:{fetchImpl?:typeof fetch}={}):Promise<{state:string;sourceCount:number}> {
   const memory=new OperationalMemory(db);
   if(!await memory.available())return {state:'DORMANT_MIGRATION_UNAVAILABLE',sourceCount:0};
   const ids=sourceIdsForRun(result.source);
@@ -75,7 +76,10 @@ export async function recordExistingCompletion(db:D1Database,result:ProductionSo
       ?measured.runId!:context.runId;
     const metrics={providerRequests:sourceId===ids[0]?result.providerRequests??null:null,rowsRead:sourceId===ids[0]?context.rowsRead??null:null,rowsWritten:sourceId===ids[0]?context.rowsWritten??null:null};
     await saveMeasurement(memory,measured,runId,metrics);
-    if(result.mode!=='RECOVERY'&&context.attempt<=1)continue;
+    if(result.mode!=='RECOVERY'&&context.attempt<=1){
+      if(result.status==='SUCCESS')await recheckCongestionPublication(db,measured,context,options.fetchImpl);
+      continue;
+    }
     const prior=earlierIncidents.filter(row=>row.currentState!=='RESOLVED'&&row.contractVersion===measured.contractVersion
       &&Date.parse(row.lastSeen)<=Date.parse(context.startedAt)).sort((a,b)=>b.lastSeen.localeCompare(a.lastSeen))[0];
     const parts={sourceId,logicalJob:canonicalOperationalJob(sourceId),contractVersion:measured.contractVersion,
