@@ -55,7 +55,7 @@ export function loadFlights(date: string, refresh = false): Promise<Loaded> {
   return request;
 }
 
-export function useFlights(date: string | null, scope='all'): Loaded | undefined {
+export function useFlights(date: string | null, scope='all',refreshRevision=0): Loaded | undefined {
   const [state, setState] = useState<{ date: string; value: Loaded } | undefined>(undefined);
   useEffect(() => {
     if (!date) return;
@@ -69,7 +69,7 @@ export function useFlights(date: string | null, scope='all'): Loaded | undefined
     };
     const onFocus = () => update(true);
     const onVisible = () => { if (document.visibilityState === 'visible') update(true); };
-    update();
+    update(refreshRevision>0);
     const timer = window.setInterval(() => update(true), FLIGHTS_TTL_MS);
     // A fixed future selection keeps its date at midnight. Renew its basis
     // immediately rather than waiting for the two-minute freshness interval.
@@ -88,6 +88,6 @@ export function useFlights(date: string | null, scope='all'): Loaded | undefined
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [date]);
+  }, [date,refreshRevision]);
   return useMemo(()=>state && state.date === date ? state.value.status==='OK'?{...state.value,payload:scopedFlightPayload(state.value.payload,scope)}:state.value : undefined,[state,date,scope]);
 }

@@ -4,7 +4,8 @@ import {AIRPORT_MONTH_VERSION,buildAirportFlightMonth,type MonthFlightRow} from 
 import {AIRPORT_SIDES_VERSION} from '../lib/airport-sides';
 import {DESTINATIONS_VERSION} from '../lib/airport-destinations';
 const row=(day:string,id:string,terminal:string,gate:string):MonthFlightRow=>({physicalFlightId:id,terminal,gate,operatingFlight:'KE703',airportCode:'NRT',status:'scheduled',scheduledAt:day+'T09:00:00+09:00',retrievedAt:day+'T01:00:00Z'});
-const summary={...SUMMARY_FIXTURE,todayKst:'2026-10-10',serviceDateKst:'2026-10-10',generatedAt:'2026-10-10T01:00:00Z',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:'2026-10-10'}};
+// Historical monthly coverage stays distinct from the separately tested provisional current day.
+const summary={...SUMMARY_FIXTURE,todayKst:'2026-10-11',serviceDateKst:'2026-10-10',dayRelation:'PAST' as const,generatedAt:'2026-10-11T01:00:00Z',airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:'2026-10-10'}};
 const reply=(month='2026-10')=>({status:'READY',month,months:['2026-10','2026-09'],calculatedAt:'2026-10-10T01:00:00Z',data:{version:AIRPORT_MONTH_VERSION,asOf:'2026-10-10',sidesVersion:AIRPORT_SIDES_VERSION,destinationsVersion:DESTINATIONS_VERSION,months:[
  buildAirportFlightMonth('2026-10','2026-10-10',[row('2026-10-01','a','T2','274'),row('2026-10-01','b','T2','274'),row('2026-10-01','c','CONCOURSE','110')],new Set(['2026-10-01'])),
  buildAirportFlightMonth('2026-09','2026-10-10',[row('2026-09-01','d','T2','231'),row('2026-09-02','e','T2','274')],new Set(['2026-09-01','2026-09-02']))]}});
@@ -42,7 +43,7 @@ for(const width of [360,390,430,1280])test(`monthly cards show top eight, expand
 for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430,1280])test(`daily-mean scope, complete lists and keyboard ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(summary));await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply()}));
- await page.goto((lang==='ko'||lang==='zh'||lang==='en')?`/${lang}/airport-countries?mode=zones&date=2026-10-10&building=all`:`/${lang}/airport`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ await page.goto((lang==='ko'||lang==='zh'||lang==='en')?`/${lang}/airport-countries?mode=zones&date=2026-10-10&building=all`:`/${lang}/airport?date=2026-10-10`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
  const includedDates=section.locator('details').filter({has:page.locator('.airport-month-period')}),includedSummary=includedDates.locator(':scope > summary');
  await includedSummary.click();await expect(includedDates).toHaveAttribute('open','');await expect(includedDates.locator('.airport-month-period').first()).toBeVisible();
  await expect(includedDates).toContainText('2026-09-01 ~ 2026-09-30');await expect(includedDates).toContainText('2/30');await expect(includedDates).toContainText('1/9');
@@ -59,7 +60,7 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
 test('a slower old month cannot replace a new selection; failures and zero baselines are explicit',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(summary));
  await page.route('**/api/live/airport-months*',async route=>{const month=new URL(route.request().url()).searchParams.get('month');if(month==='2026-09')await new Promise(resolve=>setTimeout(resolve,300));await route.fulfill({json:reply(month??undefined)});});
- await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section).toContainText('+200%');
+ await page.goto('/ko/airport?date=2026-10-10');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section).toContainText('+200%');
  await section.locator('select').selectOption('2026-09');await section.locator('select').selectOption('2026-10');await page.waitForTimeout(400);await expect(section.locator('select')).toHaveValue('2026-10');await expect(section).toContainText('+200%');
  await page.route('**/api/live/airport-months*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE',data:null}}));await section.locator('select').selectOption('2026-09');await expect(section).toContainText('집계');await expect(section).not.toContainText('+200%');
 });
@@ -71,7 +72,7 @@ test('legacy update and missing months use three bounded checks; failed refresh 
   if(ready&&month==='2026-10')return route.fulfill({json:reply()});
   return route.fulfill({json:{status:month==='2026-10'?'PENDING_UPDATE':'MISSING',month,months:['2026-10','2026-09'],lastPreparedAt:`2026-10-10T00:00:${String(reads).padStart(2,'0')}Z`,data:null}});
  });
- await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
+ await page.goto('/ko/airport?date=2026-10-10');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();
  await expect(section).toContainText('업데이트를 기다리고');await expect(section.getByRole('button',{name:'자료 다시 확인'})).toHaveCount(0);
  // Wait for each response's rendered state before advancing the fake clock again
  // Request entry alone does not prove response parsing and backoff registration completed
@@ -93,7 +94,7 @@ for(const [label,monthDelay,flightDelay] of [['month first',100,700],['flights f
  const sent:string[]=[];page.on('request',request=>{if(request.url().includes('/api/live/airport-months'))sent.push(new URL(request.url()).search);});
  await page.route('**/api/live/flights*',async route=>{await new Promise(resolve=>setTimeout(resolve,flightDelay));await route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:'2026-10-10',flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
  await page.route('**/api/live/airport-months*',async route=>{await new Promise(resolve=>setTimeout(resolve,monthDelay));await route.fulfill({json:reply()});});
- await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');
+ await page.goto('/ko/airport?date=2026-10-10');const section=page.getByTestId('airport-month-flights');
  await expect(section).toContainText('+200%');await section.scrollIntoViewIfNeeded();await page.waitForTimeout(1000);
  expect(sent).toEqual(['?month=2026-10']);
 });
@@ -105,7 +106,7 @@ test('a comparison month chosen for one date does not carry over to another date
  await page.route('**/api/live/summary*',async route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;await route.fulfill({json:{...summary,serviceDateKst:date,airport:{...summary.airport,serviceDateKst:date}}});});
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:reply(new URL(route.request().url()).searchParams.get('month')??undefined)}));
  await page.route('**/api/live/flights*',route=>{const date=new URL(route.request().url()).searchParams.get('date')??summary.todayKst;return route.fulfill({json:{mode:'live-flights',generatedAt:summary.generatedAt,serviceDateKst:date,flights:[],truncated:false,retrievedAt:summary.generatedAt}});});
- await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const section=page.getByTestId('airport-month-flights');await expect(section.locator('select')).toHaveValue('2026-10');await section.scrollIntoViewIfNeeded();
+ await page.goto('/ko/airport?date=2026-10-10');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const section=page.getByTestId('airport-month-flights');await expect(section.locator('select')).toHaveValue('2026-10');await section.scrollIntoViewIfNeeded();
  const select=section.locator('select'),shortcuts=page.locator('.date-nav-shortcuts button');
  await expect(select).toHaveValue('2026-10');
  // Visit yesterday and come back, so both summaries are cached.
