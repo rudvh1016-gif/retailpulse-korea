@@ -55,3 +55,10 @@ header .brand{text-decoration:none}html{scroll-behavior:smooth}@media(prefers-re
 
 .store-month-delta strong{font-weight:700}
 @media(min-width:821px){.monthly-mix>.monthly-highlight{display:none}}
+
+.card-year-status{font-size:13px;line-height:1.7}
+.card-year-status>strong:first-child{font-weight:700}
+.index-key .key-missing:before{display:none}
+.missing-year-row>div{height:auto;color:var(--muted);font-size:11px}
+.missing-year-row>b{font-weight:700;white-space:nowrap}
+.reference-year{margin-top:12px;padding-top:4px;color:var(--muted)}

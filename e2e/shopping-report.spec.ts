@@ -83,3 +83,16 @@ test('desktop detail charts keep a common growth scale and mobile disclosures', 
   await expect(page.locator('.detail-copy').first()).toBeVisible();
   await expect(page.locator('.detail-chart').first()).toBeHidden();
 });
+
+test('year comparison focuses on 2025 and 2026 without fabricating missing values', async ({ page }) => {
+  await page.goto('/shopping-report/index.html');
+  await expect(page.locator('#card-trends h2')).toHaveText('2025년 vs 2026년, 결제 건수는?');
+  const indices = ['158.1', '140.4', '123.4', '118.8', '109.9', '106.2'];
+  for (let industry = 0; industry < indices.length; industry++) {
+    await page.locator('#industry-choice').selectOption(String(industry));
+    const group = page.locator('.index-group:visible');
+    await expect(group.locator('.index-bar-row > span')).toHaveText(['2025', '2026', '2024']);
+    await expect(group.locator('.index-bar-row > b')).toHaveText([indices[industry], '미확보', '100.0']);
+    await expect(group.locator('.missing-year-row i')).toHaveCount(0);
+  }
+});
