@@ -138,3 +138,11 @@ test('year comparison focuses on 2025 and 2026 without fabricating missing value
     await expect(group.locator('.missing-year-row i')).toHaveCount(0);
   }
 });
+
+ test('latest amount bars share a scale and respect reduced motion',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/shopping-report/index.html');
+ await expect(page.locator('.spending-bar')).toHaveCount(2);await expect(page.locator('.spending-bar').first()).toHaveCSS('transition-duration','0s');
+ const widths=await page.locator('.spending-bar').evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().width));expect(widths[0]/widths[1]).toBeCloseTo(107940/159416,2);
+ await expect(page.locator('.spending-comparison')).toContainText('온라인 소비 포함');await expect(page.locator('.spending-comparison')).toContainText('2024년 동일 기준 지출액: 미확보');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ });
