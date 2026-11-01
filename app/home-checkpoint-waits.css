@@ -7,6 +7,8 @@
 .home-checkpoint-waits .checkpoint-schematic[data-terminal=T2] figcaption strong{color:#245b92;font-weight:700}
 .checkpoint-longest{font-size:11px;line-height:1.6;margin:5px 0 8px;min-height:18px;overflow-wrap:anywhere}
 .checkpoint-longest b{font-weight:700}
+.home-checkpoint-waits .checkpoint-observation-heading{margin:4px 0;font-weight:700}
+.home-checkpoint-waits .checkpoint-observation-heading strong{font-weight:700}
 .checkpoint-schematic[data-enhanced]{--checkpoint-focus:#2d5268}
 .checkpoint-schematic[data-enhanced]:has(.checkpoint-schematic-reading[data-longest][data-wait-level=very-busy]){--checkpoint-focus:#a12d3f}
 .checkpoint-schematic-reading[data-longest]{position:relative;isolation:isolate;outline:1px solid var(--checkpoint-focus);outline-offset:-1px}
