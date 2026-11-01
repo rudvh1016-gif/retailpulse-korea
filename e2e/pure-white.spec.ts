@@ -177,10 +177,11 @@ for (const width of [390, 1440]) {
     await page.goto("/ko/airport?date=2026-10-19");
     const jump = page.locator(".airport-focus-shell .focus-country-jump");
     await expect(jump).toHaveCount(1);
-    await expect(jump).toBeVisible();
+    if(width<=600)await expect(jump).not.toBeVisible();else await expect(jump).toBeVisible();
     await expect(jump).toHaveCSS("background-color", "rgba(255, 255, 255, 0.4)");
     await expect(jump).toHaveCSS("backdrop-filter", "blur(14px)");
     await expect(jump).toHaveAttribute("href", "/ko/airport-countries?mode=passengers&date=2026-10-19");
+    if(width>600){
     const box = await jump.boundingBox();
     const parent = await jump.locator("..").boundingBox();
     expect(box).not.toBeNull();
@@ -191,6 +192,7 @@ for (const width of [390, 1440]) {
     expect(box!.width).toBeLessThanOrEqual(Math.min(480, parent!.width));
     expect(box!.x).toBeGreaterThanOrEqual(parent!.x);
     expect(box!.x + box!.width).toBeLessThanOrEqual(parent!.x + parent!.width + 1);
+    }
     for (const selector of ["body", ".airport-focus-shell", ".airport-view"]) {
       const backgrounds = await paintedBackground(page, selector);
       expect(backgrounds.length).toBeGreaterThan(0);
@@ -211,7 +213,7 @@ for (const width of [390, 1440]) {
     }));
     expect(surroundingPaint).toEqual([WHITE, WHITE]);
     await jump.focus();
-    await expect(jump).toBeFocused();
+    if(width<=600)await expect(jump).not.toBeFocused();else await expect(jump).toBeFocused();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   });
 }

@@ -1,3 +1,4 @@
+import {openRetainedTerminalDetails} from './retained-terminal-details';
 import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import { routeGateFlights } from './gate-model-fixture';
 import { expect, test } from "@playwright/test";
@@ -198,12 +199,13 @@ test("airport summary keeps forecast, flights, gate and checkpoints truthful on 
   await expect(page.locator(".airport-current-brief")).toContainText("출국장 공식 예상 승객");
   await expect(page.locator(".airport-current-brief .airport-wait-brief")).toHaveCount(0);
   await expect(page.locator(".airport-current-brief .passenger-scope-note > summary")).toHaveText("집계 기준 보기");
-  await expect(page.locator(".airport-summary-details > summary")).toHaveText("터미널별 상세·집계 기준 보기");
+  await expect(page.locator(".airport-summary-details")).not.toBeVisible();
+  await expect(page.locator(".airport-comparison-mobile")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).toContainText("출발 운항 561편");
   await expect(page.locator(".airport-current-brief")).not.toContainText("출발 561편");
   await expect(page.locator(".airport-glance-strip, .airport-near-term, .airport-upcoming-peak")).toHaveCount(0);
   await expect(page.locator(".airport-today-grid")).not.toBeVisible();
-  await page.locator(".airport-summary-details > summary").click();
+  await openRetainedTerminalDetails(page);
   await expect(page.locator(".airport-today-grid").getByText("출국장 공식 예상 승객", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
@@ -263,7 +265,7 @@ test("terminal briefing shows one labelled card per terminal and names the longe
   } as const;
   for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
     await page.goto(`/${locale}/airport`);
-    await page.locator(".airport-summary-details > summary").click();
+    await openRetainedTerminalDetails(page);
     const briefing = page.locator('[data-signal-key="terminal-briefing"]');
     await expect(briefing).toBeVisible();
     await expect(briefing.locator("h3")).toContainText(expected[locale].title);
@@ -417,7 +419,7 @@ test("the airport page reads summary -> next -> composition -> observation table
   // 말하므로, 표는 일부러 펼쳐 보는 참고 자료다.
   const brief = await top(".airport-current-brief");
   await expect(page.locator(".airport-today-grid")).not.toBeVisible();
-  const grid = await top(".airport-summary-details");
+  await expect(page.locator(".airport-summary-details")).not.toBeVisible();
   const forecast = await top(".airport-forecast");
   const composition = await top(".airport-composition");
   const checkpoints = await top(".airport-checkpoints");
@@ -425,8 +427,7 @@ test("the airport page reads summary -> next -> composition -> observation table
   // 2026-09-13: 시간대별 차트는 하루 합계를 시간대로 갈라 보여주므로 그 합계를
   // 실은 요약 바로 아래다. 예전에는 접힌 상세 격자 다음이라, 시간대 모양을
   // 보려면 닫힌 블록을 지나쳐 내려가야 했다.
-  expect(forecast).toBeLessThan(grid);
-  expect(grid).toBeLessThan(composition);
+  expect(forecast).toBeLessThan(composition);
   // 세 구성 보기는 하나의 탭 묶음 안에 있고, 표는 그 뒤에 남는다.
   expect(composition).toBeLessThan(checkpoints);
   const checkpointModel = page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"]');
@@ -468,7 +469,7 @@ test("remaining expected departures is shown for a complete day and withheld for
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
-  await page.locator(".airport-summary-details > summary").click();
+  await openRetainedTerminalDetails(page);
   await expect(page.getByText("현재 시간대부터 자정까지", { exact: true })).toBeVisible();
   await expect(page.getByText("11,430명", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-current-brief .airport-near-term")).toHaveCount(0);
@@ -494,7 +495,7 @@ test("remaining expected departures is shown for a complete day and withheld for
   await page.reload();
   await expect(page.getByText("현재 시간대부터 자정까지", { exact: true })).toHaveCount(0);
   await expect(page.getByText("11,430명", { exact: true })).toHaveCount(0);
-  await page.locator(".airport-summary-details > summary").click();
+  await openRetainedTerminalDetails(page);
   await expect(page.getByText("전체 시간대 확인 불가").first()).toBeVisible();
 });
 
@@ -583,7 +584,7 @@ test("selecting T1 or T2 changes every top metric, not just the current departur
   await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
-  await page.locator(".airport-summary-details > summary").click();
+  await openRetainedTerminalDetails(page);
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-today-grid").getByText("47,320명", { exact: true })).toBeVisible();
   await expect(page.getByText("561편", { exact: true })).toBeVisible();
@@ -629,7 +630,7 @@ test("incomplete A5 daily coverage never renders as a full-day total or peak", a
   await page.route("**/api/live/summary*", routeSummary(partial));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/airport");
-  await page.locator(".airport-summary-details > summary").click();
+  await openRetainedTerminalDetails(page);
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
   await expect(page.locator(".airport-today-grid article").filter({ hasText: "출국장 공식 예상 승객" }).getByText("전체 시간대 확인 불가", { exact: true })).toBeVisible();
   await expect(page.locator(".airport-forecast .flow-note")).toContainText("일부");
