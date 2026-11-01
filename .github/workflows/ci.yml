@@ -73,10 +73,8 @@ jobs:
           RPK_KNOWN_ENABLE_PRODUCTION_COLLECTOR: ${{ vars.ENABLE_PRODUCTION_COLLECTOR }}
       - run: npm run build
       - run: node --test tests/rendered-html.test.mjs
-      # Fails on a high/critical vulnerability, but not on the registry being
-      # unreachable — those are different facts and `npm audit` reports both
-      # with the same non-zero exit. See the script for what it does instead.
-      - run: bash scripts/audit-production-deps.sh
+      # Include build/RSC dependencies; incomplete evidence blocks release.
+      - run: node scripts/audit-dependencies.mjs
       - run: npm run e2e:install
       - name: Critical UI checks before the full suite
         run: >-

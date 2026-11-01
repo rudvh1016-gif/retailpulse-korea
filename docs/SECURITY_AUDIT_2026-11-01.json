@@ -1,0 +1,348 @@
+{
+  "baseline": "e96a5017e3b89b59900d75a120982f198facb501",
+  "date": "2026-11-01",
+  "scope": "complete npm tree including dev dependencies; not an exploitability verdict",
+  "before": {
+    "info": 0,
+    "low": 0,
+    "moderate": 23,
+    "high": 15,
+    "critical": 0,
+    "total": 38
+  },
+  "after": {
+    "info": 0,
+    "low": 0,
+    "moderate": 23,
+    "high": 0,
+    "critical": 0,
+    "total": 23
+  },
+  "remaining": [
+    {
+      "name": "@esbuild-kit/core-utils",
+      "severity": "moderate",
+      "via": [
+        "esbuild"
+      ],
+      "fixAvailable": {
+        "name": "drizzle-kit",
+        "version": "0.18.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@esbuild-kit/esm-loader",
+      "severity": "moderate",
+      "via": [
+        "@esbuild-kit/core-utils"
+      ],
+      "fixAvailable": {
+        "name": "drizzle-kit",
+        "version": "0.18.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@eslint-community/eslint-utils",
+      "severity": "moderate",
+      "via": [
+        "eslint"
+      ],
+      "fixAvailable": {
+        "name": "eslint",
+        "version": "4.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@eslint/config-array",
+      "severity": "moderate",
+      "via": [
+        "minimatch"
+      ],
+      "fixAvailable": {
+        "name": "eslint",
+        "version": "4.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@eslint/eslintrc",
+      "severity": "moderate",
+      "via": [
+        "minimatch"
+      ],
+      "fixAvailable": {
+        "name": "eslint",
+        "version": "4.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@next/eslint-plugin-next",
+      "severity": "moderate",
+      "via": [
+        "@eslint-community/eslint-utils"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "0.2.4",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@typescript-eslint/eslint-plugin",
+      "severity": "moderate",
+      "via": [
+        "@typescript-eslint/parser",
+        "@typescript-eslint/type-utils",
+        "@typescript-eslint/utils",
+        "eslint"
+      ],
+      "fixAvailable": true
+    },
+    {
+      "name": "@typescript-eslint/parser",
+      "severity": "moderate",
+      "via": [
+        "@typescript-eslint/typescript-estree",
+        "eslint"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "0.2.4",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@typescript-eslint/type-utils",
+      "severity": "moderate",
+      "via": [
+        "@typescript-eslint/typescript-estree",
+        "@typescript-eslint/utils",
+        "eslint"
+      ],
+      "fixAvailable": true
+    },
+    {
+      "name": "@typescript-eslint/typescript-estree",
+      "severity": "moderate",
+      "via": [
+        "minimatch"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "0.2.4",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@typescript-eslint/utils",
+      "severity": "moderate",
+      "via": [
+        "@eslint-community/eslint-utils",
+        "@typescript-eslint/typescript-estree",
+        "eslint"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "0.2.4",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@vercel/og",
+      "severity": "moderate",
+      "via": [
+        "satori"
+      ],
+      "fixAvailable": {
+        "name": "vinext",
+        "version": "1.4.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "drizzle-kit",
+      "severity": "moderate",
+      "via": [
+        "@esbuild-kit/esm-loader"
+      ],
+      "fixAvailable": {
+        "name": "drizzle-kit",
+        "version": "0.18.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "esbuild",
+      "severity": "moderate",
+      "via": [
+        {
+          "source": 1102341,
+          "name": "esbuild",
+          "dependency": "esbuild",
+          "title": "esbuild enables any website to send any requests to the development server and read the response",
+          "url": "https://github.com/advisories/GHSA-67mh-4wv8-2f99",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-346"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N"
+          },
+          "range": "<=0.24.2"
+        }
+      ],
+      "fixAvailable": {
+        "name": "drizzle-kit",
+        "version": "0.18.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "eslint",
+      "severity": "moderate",
+      "via": [
+        "@eslint-community/eslint-utils",
+        "@eslint/config-array",
+        "@eslint/eslintrc",
+        "minimatch"
+      ],
+      "fixAvailable": {
+        "name": "eslint",
+        "version": "4.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "eslint-config-next",
+      "severity": "moderate",
+      "via": [
+        "@next/eslint-plugin-next",
+        "eslint",
+        "eslint-plugin-import",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-react",
+        "typescript-eslint"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "0.2.4",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "eslint-plugin-import",
+      "severity": "moderate",
+      "via": [
+        "minimatch"
+      ],
+      "fixAvailable": true
+    },
+    {
+      "name": "eslint-plugin-jsx-a11y",
+      "severity": "moderate",
+      "via": [
+        "minimatch"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "0.2.4",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "eslint-plugin-react",
+      "severity": "moderate",
+      "via": [
+        "minimatch"
+      ],
+      "fixAvailable": true
+    },
+    {
+      "name": "minimatch",
+      "severity": "moderate",
+      "via": [
+        {
+          "source": 1244012,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has potential denial of service via globparts amplification",
+          "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-405"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<11.0.1"
+        }
+      ],
+      "fixAvailable": {
+        "name": "eslint",
+        "version": "4.0.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "satori",
+      "severity": "moderate",
+      "via": [
+        {
+          "source": 1243436,
+          "name": "satori",
+          "dependency": "satori",
+          "title": "Satori-generated SVG has improper escaping",
+          "url": "https://github.com/advisories/GHSA-wx4j-mvgx-mqwp",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-116"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=0.0.27 <0.33.5"
+        }
+      ],
+      "fixAvailable": {
+        "name": "vinext",
+        "version": "1.4.0",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "typescript-eslint",
+      "severity": "moderate",
+      "via": [
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "@typescript-eslint/typescript-estree",
+        "@typescript-eslint/utils",
+        "eslint"
+      ],
+      "fixAvailable": {
+        "name": "eslint-config-next",
+        "version": "0.2.4",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "vinext",
+      "severity": "moderate",
+      "via": [
+        "@vercel/og"
+      ],
+      "fixAvailable": {
+        "name": "vinext",
+        "version": "1.4.0",
+        "isSemVerMajor": true
+      }
+    }
+  ]
+}

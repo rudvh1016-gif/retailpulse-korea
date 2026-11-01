@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import test from 'node:test';
 import {build} from 'esbuild';
-import {Miniflare} from 'miniflare';
+import {Miniflare} from './helpers/miniflare.mjs';
 
 // Exercise the real Cache API and the installed framework's outer finalizer.
 // A plain new Response mock has mutable headers and misses this production bug.
