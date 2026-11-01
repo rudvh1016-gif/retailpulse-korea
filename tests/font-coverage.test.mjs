@@ -50,6 +50,7 @@ async function productCopy() {
   await walk(new URL("../app/", import.meta.url));
   await walk(new URL("../lib/", import.meta.url));
   await walk(new URL("../data/airport-focus-preview/", import.meta.url));
+  files.push(new URL("../public/shopping-report/index.html", import.meta.url), new URL("../public/shopping-report/report.js", import.meta.url));
   return files;
 }
 
