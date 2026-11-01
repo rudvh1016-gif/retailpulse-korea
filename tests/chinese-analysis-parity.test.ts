@@ -56,7 +56,7 @@ test('both locales expose the same glance and country controls while English and
   const render=(lang:'ko'|'zh'|'en'|'ja')=>renderToStaticMarkup(h(component,{lang,date:'2026-10-19',children:h('p',null,'Existing content')}));
   const ko=render('ko'),zh=render('zh');
   assert.equal((zh.match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?5:3);
-  assert.deepEqual(attrs(zh),attrs(ko));assert.doesNotMatch(zh.replace(/<script[^>]*>[\s\S]*?<\/script>/g,''),hangul);
+  const sharedKo=ko.replace(/<a class="shopping-mobile-entry"[^>]*>[\s\S]*?<\/a>/,'');assert.equal((ko.match(/class="shopping-mobile-entry"/g)??[]).length,component===AirportGlanceInsights?1:0);assert.ok(!zh.includes('shopping-mobile-entry'));assert.deepEqual(attrs(zh),attrs(sharedKo));assert.doesNotMatch(zh.replace(/<script[^>]*>[\s\S]*?<\/script>/g,''),hangul);
   assert.equal((render('en').match(/role="tab"/g)??[]).length,component===AirportGlanceInsights?5:3);assert.doesNotMatch(render('en'),hangul);assert.equal(render('ja'),'<p>Existing content</p>');
  }
  const source=read('app/airport-period-insights.tsx');
