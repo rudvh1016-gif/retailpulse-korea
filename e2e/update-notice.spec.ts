@@ -29,7 +29,7 @@ test('More explicitly reopens a hidden notice without clearing the snooze or unr
   localStorage.setItem(key,until);
   localStorage.setItem('koretail-airport-scope','T2');
  },{key:UPDATE_NOTICE_UNTIL_KEY,until});
- await page.goto('/ko/more');
+ await page.goto('/ko/more');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const dialog=page.getByRole('dialog'),reopen=page.locator('.more-section-links').getByRole('button',{name:'공지사항 보기 ›',exact:true});
  await expect(dialog).not.toBeVisible();
  await reopen.click();
