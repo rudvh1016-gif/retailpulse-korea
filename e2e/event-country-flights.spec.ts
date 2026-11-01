@@ -3,18 +3,18 @@ import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 import {flightBaseline} from '../tests/helpers/event-flight-fixture';
 const day='2026-10-22';
 const event=(country:string,date=day)=>({id:`fixture-${country}-${date}`,country,scope:'national',name:`${country} fixture holiday`,kind:'public_holiday',start:date,end:date,status:'verified',sourceURL:`https://example.test/${country}`,verifiedAt:'2026-10-21'});
-async function fixture(page:Page,{partial=false,baseline='full',multiple=false}:{partial?:boolean;baseline?:'full'|'partial'|'missing'|'zero';multiple?:boolean}={}){
+async function fixture(page:Page,{partial=false,baseline='full',multiple=false,typography=false}:{typography?:boolean;partial?:boolean;baseline?:'full'|'partial'|'missing'|'zero';multiple?:boolean}={}){
  await page.clock.setFixedTime(new Date(`${day}T10:00:00+09:00`));
  await page.addInitScript(()=>localStorage.setItem('koretail-airport-scope','all'));
  // All fixture reads are local interceptions; no provider or production requests.
  await page.route('**/api/**',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
  await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,todayKst:day,serviceDateKst:day,dayRelation:'TODAY',generatedAt:`${day}T10:00:00+09:00`,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:day}}));
- const flights=[['BKK',16],['TPE',90],['NRT',20]].flatMap(([code,count])=>Array.from({length:Number(count)},(_,i)=>({physicalFlightId:`${code}-${i}`,flightNumber:`TG${code}${i}`,operatingFlight:`TG${i}`,airportCode:code,terminal:'T2',gate:'274',scheduledAt:`${day}T12:00:00+09:00`,retrievedAt:`${day}T01:00:00Z`,status:'scheduled',direction:'departure'})));
+ const flights=[['BKK',16],['TPE',90],['NRT',20],...(typography?([['MNL',5]] as [string,number][]):[])].flatMap(([code,count])=>Array.from({length:Number(count)},(_,i)=>({physicalFlightId:`${code}-${i}`,flightNumber:`TG${code}${i}`,operatingFlight:`TG${i}`,airportCode:code,terminal:'T2',gate:'274',scheduledAt:`${day}T12:00:00+09:00`,retrievedAt:`${day}T01:00:00Z`,status:'scheduled',direction:'departure'})));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:day,retrievedAt:`${day}T01:00:00Z`,flights:[...flights,flights[0]],truncated:partial}}));
- const month=flightBaseline(baseline==='zero'?{TW:30,JP:600}:baseline==='partial'?{TH:10,TW:2,JP:40}:{TH:554,TW:30,JP:600},baseline==='partial'?2:30);
+ const month=flightBaseline(baseline==='zero'?{TW:30,JP:600}:baseline==='partial'?{TH:10,TW:2,JP:40}:{TH:554,TW:30,JP:600,...(typography?{PH:141}:{})},baseline==='partial'?2:30);
  month.scopes.T2={...month.scopes.ALL};
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{status:baseline==='missing'?'MISSING':'READY',month:'2026-10',calculatedAt:`${day}T01:00:00Z`,data:baseline==='missing'?null:{version:2,asOf:day,sidesVersion:'fixture',destinationsVersion:'fixture',months:[month]}}}));
- await page.route('**/api/airport/calendar',route=>route.fulfill({json:{status:'READY',events:multiple?[event('TH'),event('JP')]:[event('TH','2026-10-23')],sources:[],calendarReplacementScopes:[{country:'TH',year:2026,scope:'national'}],checkedAt:'2026-10-21'}}));
+ await page.route('**/api/airport/calendar',route=>route.fulfill({json:{status:'READY',events:multiple?[event('TH'),event(typography?'PH':'JP')]:[event('TH','2026-10-23')],sources:[],calendarReplacementScopes:[{country:'TH',year:2026,scope:'national'}],checkedAt:'2026-10-21'}}));
 }
 for(const lang of ['ko','en','zh','ja'])test(`event country beats largest unrelated delta and localizes changes ${lang}`,async({page},info)=>{
  await page.setViewportSize({width:390,height:1000});await fixture(page);await page.goto(`/${lang}?date=${day}`);
@@ -37,7 +37,7 @@ test('multiple Today event countries each receive their own flight comparison an
  await page.setViewportSize({width:1280,height:1000});await fixture(page,{multiple:true});await page.goto(`/ko?date=${day}`);
  const today=page.locator('[aria-label="오늘 귀국 준비"]');
  const thai=today.locator('.focus-preparation-event[data-country="TH"] .event-country-flights'),japan=today.locator('.focus-preparation-event[data-country="JP"] .event-country-flights');
- await expect(thai).toContainText('16편');await expect(thai).toContainText('△ 13%');await expect(japan).toContainText('20편');await expect(japan).toContainText('0%');await expect(japan.locator('[data-direction="neutral"]')).not.toHaveCount(0);
+ await expect(thai).toContainText('16편');await expect(thai).toContainText('△ 13%');await expect(japan).toContainText('20편');await expect(japan).toContainText('0%');await expect(japan.locator('[data-direction="neutral"]')).not.toHaveCount(0);await expect(japan.locator('.glance-count-change')).toHaveCSS('color','rgb(89, 99, 110)');
  await expect(today.locator('.focus-preparation-event')).toHaveCount(2);
  const previous=await page.locator('.focus-selected-country-stack > .focus-selected-country-changes').first().boundingBox(),current=await today.boundingBox();expect(previous&&current).toBeTruthy();expect(current!.y).toBeGreaterThanOrEqual(previous!.y+previous!.height-1);
 });
@@ -48,4 +48,14 @@ for(const state of ['missing','partial','zero','partial-flights'] as const)test(
  if(state==='partial'){await expect(metric.locator('.event-flight-baseline')).toHaveText('2026-09월 수집분 일평균 (2/30일) 5편 대비');await expect(metric).not.toContainText('전체 수집분');await expect(metric).toContainText('+11편');await expect(metric).toContainText('+220%');}
  if(state==='zero'){await expect(metric).toContainText('+16편');await expect(metric).toContainText('증감률 계산 불가');await expect(metric).not.toContainText('0%');}
  if(state==='partial-flights'){await expect(metric).toContainText('일부 자료');await expect(metric).toContainText('비교 보류');await expect(metric).not.toContainText('16편');}
+});
+
+for(const [lang,width] of [['ko',320],['ko',390],['ko',430],['ko',600],['ko',601],['ko',1280],['en',390],['ja',390]] as const)test(`return planning numeric hierarchy ${lang} ${width}`,async({page},info)=>{
+ await page.setViewportSize({width,height:1000});await fixture(page,{multiple:true,typography:true});await page.goto(`/${lang}?date=${day}`);
+ const returned=page.locator('.focus-return-context'),ph=returned.locator('.focus-preparation-event[data-country="PH"]'),metric=ph.locator('.event-country-flights');await expect(metric).toContainText('5');await expect(metric.locator('.glance-count-change')).toContainText('+0.3');await expect(metric.locator('.staff-route-rate')).toContainText('+6%');await expect(metric.locator('.event-flight-baseline')).toContainText('4.7');
+ const value=metric.locator('.staff-route-metric b'),change=metric.locator('.event-flight-change'),basis=metric.locator('.event-flight-baseline');await expect(value).toHaveCSS('font-size',width<=600?'20px':'24px');await expect(value).toHaveCSS('font-weight','700');await expect(change).toHaveCSS('font-size',width<=600?'12px':'16px');await expect(basis).toHaveCSS('font-size',width<=600?'10px':'12px');
+ await expect(metric.locator('.glance-count-change')).toHaveCSS('color','rgb(36, 89, 166)');await expect(returned.locator('[data-country="TH"] .glance-count-change')).toHaveCSS('color','rgb(161, 45, 63)');
+ if(width<=600){await expect(value).toHaveCSS('font-size',await page.locator('.focus-flight-metric .focus-metric-total').evaluate(el=>getComputedStyle(el).fontSize));await expect(change).toHaveCSS('font-weight','700');await expect(ph.locator('.focus-event-dates')).toHaveCSS('font-size','10px');}
+ const titles=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title');await expect(titles).toHaveCount(5);for(const title of await titles.all())await expect(title).toHaveCSS('font-size',width<=600?'14px':'16px');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await returned.screenshot({path:info.outputPath('return-planning.png')});
 });
