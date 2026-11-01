@@ -4,6 +4,7 @@ for(const width of [390,1440])test(`approved airport glance and menu live ${widt
  const glance=page.getByTestId('airport-glance-preview');await expect(glance).toBeVisible();await expect(glance.locator('.glance-header')).toHaveCount(0);await expect(page.locator('.airport-insight-shell > .glance-heading')).toContainText('인천공항 한눈에');await expect(page.locator('.airport-insight-shell > .glance-heading')).not.toContainText('공개 반영 전');
  const nav=page.locator(width<1000?'.bottom-nav':'.top-nav'),names=['한눈에','공항현황','국가별 흐름','미리 준비','더보기'];
  const paths=['/ko','/ko/airport','/ko/airport-countries','/ko/airport-prepare','/ko/more'];
+ if(width>=1000){names.splice(4,0,'외국인은 뭘 살까?');paths.splice(4,0,'/shopping-report/index.html');}
  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href',new URL('/ko',page.url()).href);
  await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveText(names);
  // Date/terminal selections may add query parameters; the approved destinations

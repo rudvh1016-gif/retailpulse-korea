@@ -160,18 +160,18 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
 });
 
-// The approved #514 phone layout uses equal slots, not centered content-width rows.
-// Keep a desktop witness so this cannot silently become a sitewide change.
+// Phone slots retain their approved layout; desktop menus use compact 96px slots.
+// Both contracts retain touch targets, clipping and alignment checks.
 for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport menu spacing contract ${width}`, async ({page}, info) => {
   await page.setViewportSize({width, height:900});
   await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await expect(page.locator('.airport-view > .airport-menu-label')).toHaveCount(2);
-  const phone = width <= 600;
+  const phone = width <= 600,desktop = width >= 1000;
   for (const [selector, count] of [['#airport-data-flow',4],['.airport-context-nav',5]] as const) {
     const row = page.locator(selector);
     await expect(row).toHaveCSS('display',phone?'grid':'flex');
-    await expect(row).toHaveCSS('gap','0px');
+    await expect(row).toHaveCSS('gap',desktop?'0px 20px':'0px');
     const buttons=row.locator(':scope > button');
     await expect(buttons).toHaveCount(count);
     const geometry=await buttons.evaluateAll(nodes=>nodes.map(node=>{
@@ -179,11 +179,11 @@ for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport me
       return {left:box.left,right:box.right,width:box.width,height:box.height,clipped:node.scrollWidth>node.clientWidth};
     }));
     for(const box of geometry){
-      expect(box.width).toBeCloseTo(geometry[0].width,1);
+      expect(box.width).toBeCloseTo(desktop?96:geometry[0].width,1);
       expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.clipped).toBe(false);
     }
-    for(let i=1;i<geometry.length;i++)expect(geometry[i].left-geometry[i-1].right).toBeCloseTo(0,1);
+    for(let i=1;i<geometry.length;i++)expect(geometry[i].left-geometry[i-1].right).toBeCloseTo(desktop?20:0,1);
     for(const button of await buttons.all())await expect(button).toHaveCSS('text-align',phone?'left':'center');
     const box=(await row.boundingBox())!;
     expect(geometry[0].left).toBeCloseTo(box.x,1);
@@ -191,7 +191,7 @@ for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport me
   }
   await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap',airportDateGapPx(width));
   const dateRow=page.locator('.airport-date-reserved .date-nav-shortcuts');
-  await expect(dateRow).toHaveCSS('background-color',phone?'rgb(243, 246, 248)':'rgba(0, 0, 0, 0)');
+  await expect(dateRow).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   if(phone){
     const edge=await dateRow.evaluate(el=>({left:el.getBoundingClientRect().left,parent:el.parentElement!.getBoundingClientRect().left}));
     expect(edge.left).toBeCloseTo(edge.parent,1);

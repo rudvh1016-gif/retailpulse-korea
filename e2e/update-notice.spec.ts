@@ -10,7 +10,7 @@ test.beforeEach(async({page})=>{
  const base={operationId:'',month:'2026-07',retrievedAt:SUMMARY_FIXTURE.generatedAt};
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[{label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null}]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
 });
-test('the October 27 notice is visible despite dismissing or snoozing the prior notice',async({page})=>{
+test('the report notice preserves separate prior-release preferences',async({page})=>{
  await page.addInitScript(()=>{
   sessionStorage.setItem('koretail-notice:airport-flow-20261021-v1:closed','1');
   localStorage.setItem('koretail-notice:airport-flow-20261021-v1:until',String(Date.UTC(2099,0,1)));
@@ -18,9 +18,9 @@ test('the October 27 notice is visible despite dismissing or snoozing the prior 
  await page.goto('/ko');
  const dialog=page.getByRole('dialog');
  await expect(dialog).toBeVisible();
- await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-10-28');
- await expect(dialog).toContainText('공항한눈에는 그대로');
- await expect(dialog).toContainText('판매사원');
+ await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-11-01');
+ await expect(dialog).toContainText('외국인은 뭘 살까?');
+ await expect(dialog).toContainText('판판면세점 6개 매장');
  expect(await page.evaluate(()=>localStorage.getItem('koretail-notice:airport-flow-20261021-v1:until'))).toBe(String(Date.UTC(2099,0,1)));
 });
 test('More explicitly reopens a hidden notice without clearing the snooze or unrelated preferences',async({page})=>{
@@ -29,7 +29,7 @@ test('More explicitly reopens a hidden notice without clearing the snooze or unr
   localStorage.setItem(key,until);
   localStorage.setItem('koretail-airport-scope','T2');
  },{key:UPDATE_NOTICE_UNTIL_KEY,until});
- await page.goto('/ko/more');
+ await page.goto('/ko/more');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const dialog=page.getByRole('dialog'),reopen=page.locator('.more-section-links').getByRole('button',{name:'공지사항 보기 ›',exact:true});
  await expect(dialog).not.toBeVisible();
  await reopen.click();
@@ -55,17 +55,17 @@ for(const [width,height]of [[1440,1000],[360,568],[390,844],[430,700],[390,500]]
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
  const dialog=page.getByRole('dialog',{name:'new update!'});await expect(dialog).toBeVisible();
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
- await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('section')).toHaveCount(4);
- await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(4);
- await expect(dialog).toContainText('공항한눈에는 그대로');
- await expect(dialog).toContainText('하루 평균과 실제 포함일수');
- await expect(dialog).toContainText('국가별 여객과 항공편');
+ await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('.update-notice-items>section')).toHaveCount(1);
+ await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(1);
+ await expect(dialog).toContainText('외국인은 뭘 살까?');
+ await expect(dialog).toContainText('구매 품목·쇼핑 장소');
+ await expect(dialog).toContainText('판매 구성');
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toHaveCSS('background-color','rgb(36, 39, 44)');
  expect(await page.evaluate(()=>getComputedStyle(document.documentElement).overflow)).toBe('hidden');
  const box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.width).toBeLessThanOrEqual(width);expect(box!.height).toBeLessThanOrEqual(height);
  expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('notice-no-top-close.png')});
- await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'오늘 공항 확인'})).toBeFocused();
+ await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'보고서 보기'})).toBeFocused();
  await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
  await page.reload();await expect(dialog).not.toBeVisible();expect(await page.evaluate(key=>sessionStorage.getItem(key),UPDATE_NOTICE_SESSION_KEY)).toBe('1');expect(errors).toEqual([]);
 });
@@ -78,26 +78,21 @@ test('week hiding lasts exactly seven days across reload and another tab',async(
  const other=await context.newPage();await other.goto('/ko');await expect(other.getByRole('dialog')).not.toBeVisible();await other.close();
  await page.clock.fastForward(NOTICE_WEEK_MS-1);await expect(page.getByRole('dialog')).not.toBeVisible();await page.clock.fastForward(1);await expect(page.getByRole('dialog')).toBeVisible();
 });
-for(const [link,path,target]of [
- ['오늘 공항 확인','/ko','#airport-insight-overview'],
- ['기간 비교 보기','/ko?insight=rhythm','#airport-insight-analysis'],
- ['국가별 항공편 보기','/ko/airport-countries?mode=flights','#country-flow-flights'],
- ['이용 방법 보기','/ko/more#site-usage-title','#site-usage-title'],
-])test(`release shortcut closes and opens its actual destination: ${link}`,async({page})=>{
- await page.goto('/ko');
- const shortcut=page.getByRole('dialog').getByRole('link',{name:link});
- await expect(shortcut).toHaveAttribute('href',path);
- await shortcut.click();
- await expect(page).toHaveURL(new RegExp(path.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$'));
- await expect(page.getByRole('dialog')).not.toBeVisible();
- await expect(page.locator(target)).toBeVisible();
- if(path.includes('#'))await expect(page.locator(target)).toBeInViewport();
+for(const lang of ['ko','en','zh','ja'])test(`report shortcut is the only release item and opens the complete report ${lang}`,async({page})=>{
+ await page.goto(`/${lang}`);const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
+ await expect(dialog.locator('.update-notice-items>section')).toHaveCount(1);
+ await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-11-01');
+ const shortcut=dialog.locator('.update-notice-items>section>a');await expect(shortcut).toHaveAttribute('href','/shopping-report/index.html');
+ if(lang==='en')expect(await dialog.innerText()).not.toMatch(/[가-힣]/);
+ await shortcut.click();await expect(page).toHaveURL(/\/shopping-report\/(?:index\.html)?$/);
+ await expect(page.locator('.store-overview')).toHaveCount(6);await expect(page.getByRole('dialog')).not.toBeVisible();
 });
 
-for(const [link,id]of [['반입 면세한도 보기','arrival-allowances']])test(`preview shortcut closes and lands on the retained section: ${id}`,async({page})=>{
- await page.goto('/ko/airport-focus-preview');await page.getByRole('dialog').getByRole('link',{name:link}).click();await expect(page).toHaveURL(new RegExp('#'+id+'$'));await expect(page.getByRole('dialog')).not.toBeVisible();
- const target=page.locator('#'+id);await expect(target).toBeInViewport();await expect.poll(async()=>target.evaluate(e=>{const y=e.getBoundingClientRect().top;return y>=0&&y<innerHeight;})).toBe(true);
+test('the preview notice also retains only the report shortcut',async({page})=>{
+ await page.goto('/ko/airport-focus-preview');const dialog=page.getByRole('dialog');await expect(dialog.locator('.update-notice-items>section')).toHaveCount(1);
+ await expect(dialog.locator('.update-notice-items>section>a')).toHaveAttribute('href','/shopping-report/index.html');
 });
+
 test('blocked storage still permits close without errors or new permissions',async({page})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{for(const key of ['localStorage','sessionStorage'])Object.defineProperty(window,key,{get(){throw new DOMException('blocked','SecurityError');}});});
