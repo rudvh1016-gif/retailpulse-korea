@@ -49,7 +49,14 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
      expect(row!.x).toBeCloseTo(parent.left, 1);
     } else {
      expect(row!.x).toBeCloseTo(parent.left, 1);
-     await expect(group).toHaveCSS('background-color', 'rgb(243, 246, 248)');
+     // Owner removed the grey gutter: only the buttons carry the navy selection.
+     await expect(group).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+     for(const button of await buttons.all()){
+      const selected=await button.getAttribute('aria-pressed')==='true';
+      await expect(button).toHaveCSS('background-color',selected?'rgb(36, 57, 79)':'rgb(237, 242, 246)');
+      await expect(button).toHaveCSS('border-left-width','0px');
+      await expect(button).toHaveCSS('border-right-width','0px');
+     }
     }
    }
   }

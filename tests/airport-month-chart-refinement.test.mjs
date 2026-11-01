@@ -41,7 +41,7 @@ test('long daily strips cap horizontal pitch with aligned ticks and no date trun
  assert.ok(chart.includes("`min(100%, calc(${slots} * clamp(12px, 1.6vw, 22px)))`"));
  assert.match(chart,/<div className="airport-month-plot" style=\{plotStyle\}>/);
  assert.match(chart,/<div className="airport-month-ticks" style=\{plotStyle\}/);
- assert.match(chart,/const slots = days.length/);
+ assert.match(chart,/const slots = Math\.max\(5, days\.length\)/);
  assert.match(chart,/days.map\(\(day\) => <button/);
 });
 

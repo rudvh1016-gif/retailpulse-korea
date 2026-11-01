@@ -76,11 +76,13 @@ for(const lang of ['ko','en','zh','ja']) for(const width of [320,390,430,1280]) 
     await expect(img).toHaveAttribute('width','1784');await expect(img).toHaveAttribute('height','1073');
     await expect(overview.getByTestId('map-groups')).toHaveCount(0);
     await expect(overview.getByTestId('map-T2')).toHaveCount(0);
+    if(width>600){
     await overview.getByTestId('map-counting-basis').locator(':scope > summary').click();
     await overview.getByTestId('map-destinations').locator('summary').click();
     await expect(overview.getByTestId('map-groups')).toBeVisible();
     await overview.getByTestId('map-official-coordinates').locator('summary').click();
     await expect(overview.getByTestId('map-T2')).toBeVisible();
+    }else await expect(overview.getByTestId('map-counting-basis')).not.toBeVisible();
     await expect(model.locator('a[href="https://www.airport.kr/geomap/ap_ko/view.do"]')).toHaveCount(1);
     expect(requests).toHaveLength(1);
     await model.screenshot({path:`test-results/approved-C-${lang}-${width}.png`});

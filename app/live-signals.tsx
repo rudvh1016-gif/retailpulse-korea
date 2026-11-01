@@ -1,5 +1,6 @@
 "use client";
 import {unverifiedPurposeText} from '../lib/purpose-display';
+import {AirportPeriodSentence} from './airport-period-sentence';
 import {RateText} from './change-rate';
 import Image from 'next/image';
 import { AirportDateCalendar } from './airport-date-calendar';
@@ -1243,8 +1244,8 @@ function AirportMonthChart({ days, lang, numberLocale, unit }: {
   const [active, setActive] = useState<string | null>(null);
   if (!days.length) return null;
   const width = 100, height = 100;
-  // Each calendar date receives equal space; missing values remain gaps.
-  const slots = days.length;
+  // Keep early-month dates in the first columns. Empty drawing space adds no dates or values; missing observations remain gaps.
+  const slots = Math.max(5, days.length);
   const slot = width / slots;
   // Fill two thirds of each date slot; cap short series to avoid oversized bars.
   const barWidth = Math.min(8, slot * 0.66);
@@ -1447,12 +1448,17 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
 
       </>}
       {showCrowding && checkpoint && <aside className="airport-wait-brief"><p>{queueIsStale ? contextText(lang,"이전 대기 관측","Previous queue observation","先前等候观测","以前の待ち状況の観測") : contextText(lang,"현재 대기 관측","Current queue observation","当前等候观测","現在の待ち状況の観測")} · {checkpoint.terminal} {friendlyCheckpointName(checkpoint.zone,lang)}</p><p><strong className="airport-wait-value">{queueValue ? `${queueValue}${/분|min|分钟|分/i.test(queueValue) ? '' : {ko:'분',en:' min',zh:'分钟',ja:'分'}[lang]}` : checkpoint.waitingCount !== null ? `${checkpoint.waitingCount.toLocaleString(numberLocale, {maximumFractionDigits:0})}${peopleUnit}` : airportTodayText.unavailable[lang]}</strong><small className="airport-wait-observed">{kstStamp(checkpoint.observedAt)} KST {demandCopy.observed[lang]}</small></p></aside>}
-      {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p>{airportTodayText.expected[lang]} · <strong><RateText text={passengerChanges.join(" · ")} lang={lang}/></strong></p>}
-      {showFlights && flightsCount !== null && <p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.map(({days,change})=>{
+      {showPassengers && expectedTotal !== null && passengerChanges.length > 0 && <p className="airport-comparison-desktop">{airportTodayText.expected[lang]} · <strong><RateText text={passengerChanges.join(" · ")} lang={lang}/></strong></p>}
+      {showFlights && flightsCount !== null && <p className="airport-comparison-desktop">{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}{flightChanges.map(({days,change})=>{
         const exact=change.baselineMin!==undefined&&change.baselineMin===change.baselineMax && (change.baselineMin ?? 0)>0&&Number.isSafeInteger(change.baselineMin);
         const prefix=days===7?contextText(lang,'전주 동요일','Same weekday last week','上周同星期','先週同曜日'):contextText(lang,'4주 전 같은 요일','Same weekday 4 weeks ago','4周前同星期','4週前同曜日');
         return <span key={days} style={days===28?{fontWeight:'var(--weight-strong)'}:undefined}> · {prefix}{exact?` ${change.baselineMin!.toLocaleString(numberLocale)}${flightUnit}${contextText(lang,'보다',' compared with','相比','比')}`:''} <strong className="airport-comparison-change"><RateText text={comparisonValue(change)} lang={lang}/></strong> {days===28?<strong>({change.baselineAt.slice(0,10)})</strong>:<>({change.baselineAt.slice(0,10)})</>}</span>;
       })}</p>}
+      <div className="airport-comparison-mobile">
+       {showPassengers&&expectedTotal!==null&&([7,28] as const).map(days=>{const change=comparisons?.[days]?.passengers;return change?<AirportPeriodSentence key={`people-${days}`} current={expectedTotal} change={change} kind="people" days={days} lang={lang}/>:null;})}
+       {showFlights&&flightsCount!==null&&flightChanges.map(({days,change})=><AirportPeriodSentence key={`flights-${days}`} current={flightsCount} change={change} kind="flights" days={days} lang={lang}/>)}
+       {showFlights&&flightsCount!==null&&flightChanges.length===0&&<p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}</p>}
+      </div>
       {showFlights && flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
       {showFlights && isAll && <FlightScopeNote airport={airport} lang={lang} />}
       {showFlights && flightChanges.length > 0 && <details className="airport-record-scope"><summary>{contextText(lang,'항공편 자료 범위','Flight coverage','航班资料范围','便の資料範囲')}</summary><p>{recordsOnly}</p></details>}
