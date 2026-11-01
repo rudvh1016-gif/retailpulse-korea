@@ -11,7 +11,7 @@ import {AirportSceneArtwork} from './airport-scene-model';
 import {AirportRouteCountryPassengers,RoutePassengerPlacement} from './airport-route-country-passengers';
 import {useAirportPassengerStats} from './airport-passenger-stats-client';
 import {AirportFocusData,type FocusTrend} from './airport-focus-data';
-import {CountryBriefing,CountryTrends,HolidayList,OverviewHeadline,StaffCalendarContext} from './airport-focus-preview';
+import {CountryBriefing,CountryTrends,HolidayList,OverviewHeadline} from './airport-focus-preview';
 import './preparation-calendar.css';
 import {PreparationArrivalLink} from './preparation-arrival-link';
 import {selectHomeMonthlyCountries,homeMonthlyCountryTrends} from '../lib/home-monthly-countries';
@@ -45,7 +45,7 @@ export function AirportFocusGlance(props:ComponentProps<typeof AirportGlance>){
 }
 export function AirportFocusStatus(props:ComponentProps<typeof AirportViewComponent>){
  const copy=airportFocusCopy(props.lang);
- return <FocusLiveData date={props.date}><div className="airport-focus-shell airport-focus-operating"><AirportSceneArtwork.Provider value="/airport-models/approval-v3"><RoutePassengerPlacement.Provider value={<a className="focus-country-jump" href={`/${props.lang}/airport-countries?mode=passengers${props.date?`&date=${props.date}`:''}`}>{copy.countryJump}</a>}><AirportView {...props} industryContext={<StaffCalendarContext lang={props.lang} onMore={()=>go(props.lang,'airport-prepare')}/>}/></RoutePassengerPlacement.Provider></AirportSceneArtwork.Provider></div></FocusLiveData>;
+ return <FocusLiveData date={props.date}><div className="airport-focus-shell airport-focus-operating"><AirportSceneArtwork.Provider value="/airport-models/approval-v3"><RoutePassengerPlacement.Provider value={<a className="focus-country-jump" href={`/${props.lang}/airport-countries?mode=passengers${props.date?`&date=${props.date}`:''}`}>{copy.countryJump}</a>}><AirportView {...props}/></RoutePassengerPlacement.Provider></AirportSceneArtwork.Provider></div></FocusLiveData>;
 }
 function CountryContents({lang,date}:{lang:Lang;date:string|null}){
  const copy=airportFocusCopy(lang);
