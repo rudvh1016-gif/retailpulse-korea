@@ -1457,6 +1457,7 @@ export function AirportAtAGlance({summary,lang,terminal="all",showPassengers=tru
       <div className="airport-comparison-mobile">
        {showPassengers&&expectedTotal!==null&&([7,28] as const).map(days=>{const change=comparisons?.[days]?.passengers;return change?<AirportPeriodSentence key={`people-${days}`} current={expectedTotal} change={change} kind="people" days={days} lang={lang}/>:null;})}
        {showFlights&&flightsCount!==null&&flightChanges.map(({days,change})=><AirportPeriodSentence key={`flights-${days}`} current={flightsCount} change={change} kind="flights" days={days} lang={lang}/>)}
+       {showFlights&&flightsCount!==null&&flightChanges.length===0&&<p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}</p>}
       </div>
       {showFlights && flightsCount===null&&<>{officialSchedule&&planned&&planned.totalFlights>0?<><p>{pc('officialScheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit}</p><small>{pc('officialScheduleBasis',lang)}</small></>:<><p>{pc('schedulePending',lang)}</p>{planned&&planned.totalFlights>0&&<small>{pc('scheduledFlights',lang)} {planned.totalFlights.toLocaleString(numberLocale)}{flightUnit} · {pc('scheduleBasis',lang)}</small>}</>}</>}
       {showFlights && isAll && <FlightScopeNote airport={airport} lang={lang} />}

@@ -203,6 +203,11 @@ for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtur
 for(const [file,patches] of Object.entries(JSON.parse(readFileSync('tests/fixtures/ui-localization-20261031-approved-patches.json','utf8')))){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }
+// Owner explicitly approved only these five mobile display expressions.
+// Keep the protected file fixed, the five-entry bound and all canonical hashes.
+const mobileDisplayPatches=JSON.parse(readFileSync('tests/fixtures/mobile-airport-ui-20261101-approved-patches.json','utf8'));
+assert.equal(mobileDisplayPatches.length,5);
+approvedCanonicalPatches['app/live-signals.tsx']=[...mobileDisplayPatches,...(approvedCanonicalPatches['app/live-signals.tsx']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

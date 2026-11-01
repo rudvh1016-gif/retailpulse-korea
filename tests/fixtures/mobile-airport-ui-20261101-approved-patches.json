@@ -1,0 +1,22 @@
+[
+  [
+    "import {AirportPeriodSentence} from './airport-period-sentence';\n",
+    ""
+  ],
+  [
+    "// Keep early-month dates in the first columns. Empty drawing space adds no dates or values; missing observations remain gaps.\n  const slots = Math.max(5, days.length);",
+    "// Each calendar date receives equal space; missing values remain gaps.\n  const slots = days.length;"
+  ],
+  [
+    "passengerChanges.length > 0 && <p className=\"airport-comparison-desktop\">",
+    "passengerChanges.length > 0 && <p>"
+  ],
+  [
+    "showFlights && flightsCount !== null && <p className=\"airport-comparison-desktop\">",
+    "showFlights && flightsCount !== null && <p>"
+  ],
+  [
+    "      <div className=\"airport-comparison-mobile\">\n       {showPassengers&&expectedTotal!==null&&([7,28] as const).map(days=>{const change=comparisons?.[days]?.passengers;return change?<AirportPeriodSentence key={`people-${days}`} current={expectedTotal} change={change} kind=\"people\" days={days} lang={lang}/>:null;})}\n       {showFlights&&flightsCount!==null&&flightChanges.map(({days,change})=><AirportPeriodSentence key={`flights-${days}`} current={flightsCount} change={change} kind=\"flights\" days={days} lang={lang}/>)}\n       {showFlights&&flightsCount!==null&&flightChanges.length===0&&<p>{airportTodayText.flights[lang]} {flightsCount.toLocaleString(numberLocale)}{flightUnit}</p>}\n      </div>\n",
+    ""
+  ]
+]
