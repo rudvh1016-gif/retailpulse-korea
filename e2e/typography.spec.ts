@@ -1,3 +1,4 @@
+import fontCoverage from '../tests/fixtures/koretail-sans-hangul.json' with {type:'json'};
 import { routeGateFlights } from './gate-model-fixture';
 import { expect, test } from "@playwright/test";
 
@@ -867,8 +868,8 @@ test("the area headline fits one line on a phone, at the owner's own numbers", a
  */
 test("each locale preloads exactly one shell font, and it is its own", async ({ page }) => {
   const EXPECTED: Record<string, string> = {
-    ko: "/fonts/koretail-sans-variable.woff2",
-    en: "/fonts/koretail-sans-variable.woff2",
+    ko: `/fonts/koretail-sans-variable.woff2?v=${fontCoverage._font_sha256.slice(0,12)}`,
+    en: `/fonts/koretail-sans-variable.woff2?v=${fontCoverage._font_sha256.slice(0,12)}`,
     ja: "/fonts/noto-sans-jp-400.woff2",
     zh: "/fonts/noto-sans-sc-400.woff2",
   };
