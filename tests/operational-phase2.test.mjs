@@ -223,12 +223,14 @@ const menuFontCachePatches=JSON.parse(readFileSync('tests/fixtures/menu-font-cac
 assert.equal(menuFontCachePatches.length,1);
 approvedCanonicalPatches['app/globals.css']=[...menuFontCachePatches,...(approvedCanonicalPatches['app/globals.css']??[])];
 // Owner approved the shift briefing, airport-first store context, unselected
-// industry and query-preserving navigation. Reverse only the exact final hunks
-// back to origin/main ed58e619 before applying older exceptions; retain all hashes.
+// industry and query-preserving navigation, plus the 320px brand wrapping fix.
+// Reverse only the exact final hunks back to origin/main ed58e619 before applying
+// older exceptions; retain all hashes and bound the CSS exception to one hunk.
 const shiftBriefingPatches=JSON.parse(readFileSync('tests/fixtures/shift-briefing-20261102-approved-patches.json','utf8'));
-assert.deepEqual(Object.keys(shiftBriefingPatches),['app/airport-view.tsx','app/retailpulse-app.tsx']);
+assert.deepEqual(Object.keys(shiftBriefingPatches),['app/airport-view.tsx','app/retailpulse-app.tsx','app/globals.css']);
 assert.equal(shiftBriefingPatches['app/airport-view.tsx'].length,1);
 assert.equal(shiftBriefingPatches['app/retailpulse-app.tsx'].length,20);
+assert.equal(shiftBriefingPatches['app/globals.css'].length,1);
 for(const [file,patches] of Object.entries(shiftBriefingPatches)){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }

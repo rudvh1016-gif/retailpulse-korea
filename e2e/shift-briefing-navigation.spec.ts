@@ -41,11 +41,13 @@ async function fixtures(page:Page){
 }
 async function saveShift(page:Page){
  const settings=page.getByTestId('shift-settings');await expect(settings).toBeVisible();
- await settings.getByLabel('터미널',{exact:true}).selectOption('T2');
- await settings.getByLabel('매장 위치 (선택)',{exact:true}).selectOption('WEST');
- await settings.getByLabel('업종',{exact:true}).selectOption('fashion');
- await settings.getByLabel('근무 시작',{exact:true}).selectOption('07:00');
- await settings.getByLabel('근무 종료',{exact:true}).selectOption('15:00');
+ // The label-text matcher includes nested options; the accessible combobox
+ // name remains the field label, as confirmed by the browser's ARIA snapshot.
+ await settings.getByRole('combobox',{name:'터미널',exact:true}).selectOption('T2');
+ await settings.getByRole('combobox',{name:'매장 위치 (선택)',exact:true}).selectOption('WEST');
+ await settings.getByRole('combobox',{name:'업종',exact:true}).selectOption('fashion');
+ await settings.getByRole('combobox',{name:'근무 시작',exact:true}).selectOption('07:00');
+ await settings.getByRole('combobox',{name:'근무 종료',exact:true}).selectOption('15:00');
  await settings.getByRole('button',{name:'저장하고 보기',exact:true}).click();
  await expect(page.getByTestId('shift-briefing')).toHaveAttribute('data-configured','true');
  await expect(page.getByTestId('shift-count').locator('strong')).toHaveText('4');
@@ -62,8 +64,21 @@ for(const width of [320,430,701,1440])test(`shift briefing is the second reachab
  expect(new URL(page.url()).searchParams.get('insight')).toBe('briefing');
  const panel=page.locator('#airport-insight-briefing');await expect(panel).toHaveAttribute('role','tabpanel');await expect(panel).toHaveAttribute('aria-labelledby','airport-insight-tab-briefing');await expect(panel).toBeVisible();
  await expect(panel.getByTestId('shift-briefing')).toHaveCount(1);await expect(page.locator('#airport-insight-overview')).toBeHidden();await expect(page.locator('.airport-period-frame')).toHaveCount(0);
- const settings=panel.getByTestId('shift-settings');await expect(settings.getByLabel('터미널',{exact:true})).toHaveValue('T2');await expect(settings.getByLabel('업종',{exact:true})).toHaveValue('');await expect(panel).not.toContainText('명동');
+ const settings=panel.getByTestId('shift-settings');await expect(settings.getByRole('combobox',{name:'터미널',exact:true})).toHaveValue('T2');await expect(settings.getByRole('combobox',{name:'업종',exact:true})).toHaveValue('');await expect(panel).not.toContainText('명동');
  for(const control of await settings.locator('select,button').all())expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ if(width===320){
+  await page.evaluate(()=>document.fonts.ready);
+  const brand=page.getByRole('button',{name:'KORETAIL home',exact:true}),word=brand.locator(':scope > span').first();await expect(word).toHaveText('KORETAIL');
+  const geometry=await word.evaluate(node=>{
+   const range=document.createRange();range.selectNodeContents(node);
+   const textRects=[...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0);
+   const button=node.closest('button')!.getBoundingClientRect(),meta=node.closest('.topbar')!.querySelector('.header-meta')!.getBoundingClientRect();
+   return {lines:new Set(textRects.map(rect=>Math.round(rect.top))).size,textLeft:Math.min(...textRects.map(rect=>rect.left)),textRight:Math.max(...textRects.map(rect=>rect.right)),buttonLeft:button.left,buttonRight:button.right,metaLeft:meta.left};
+  });
+  expect(geometry.lines,'KORETAIL stays on one painted text line at 320px').toBe(1);
+  expect(geometry.textLeft).toBeGreaterThanOrEqual(geometry.buttonLeft-1);expect(geometry.textRight).toBeLessThanOrEqual(geometry.buttonRight+1);
+  expect(geometry.buttonRight,'the brand button does not overlap the adjacent header controls').toBeLessThanOrEqual(geometry.metaLeft+1);
+ }
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`shift-tab-setup-${width}.png`),fullPage:true});
  await page.locator('#airport-insight-tab-overview').click();await expect(page.getByTestId('shift-briefing')).toHaveCount(0);await expect(page.locator('#airport-insight-overview')).toBeVisible();
@@ -81,7 +96,7 @@ for(const width of [390,1440])test(`saved shift survives refresh and both store 
  await page.reload();await expect(page.locator('#airport-insight-tab-briefing')).toHaveAttribute('aria-selected','true');await expect(page.getByTestId('shift-settings')).toHaveCount(0);await expect(page.getByTestId('shift-count').locator('strong')).toHaveText('4');await expect(scope).toContainText('서편 근무');
  await expect(page.getByTestId('shift-briefing')).toContainText('지난 확인 이후 주요 변화가 없습니다.');
  const details=page.getByTestId('shift-details');await details.locator(':scope > summary').click();await expect(details.locator('.shift-details-content > section').first()).toContainText('서편·중앙 포함');await expect(details.locator('.shift-details-content > section').first()).toContainText('2편');
- await page.getByTestId('shift-briefing').getByRole('button',{name:'설정 변경',exact:true}).click();await page.getByTestId('shift-settings').getByLabel('매장 위치 (선택)',{exact:true}).selectOption('EAST');await page.getByTestId('shift-settings').getByRole('button',{name:'저장하고 보기',exact:true}).click();
+ await page.getByTestId('shift-briefing').getByRole('button',{name:'설정 변경',exact:true}).click();await page.getByTestId('shift-settings').getByRole('combobox',{name:'매장 위치 (선택)',exact:true}).selectOption('EAST');await page.getByTestId('shift-settings').getByRole('button',{name:'저장하고 보기',exact:true}).click();
  await expect(scope).toContainText('동편 근무');await expect(page.getByTestId('shift-count').locator('strong')).toHaveText('4');await expect(destinations).toContainText('일본');await expect(destinations).toContainText('중국');
  await expect(details.locator('.shift-details-content > section').first()).toContainText('동편·중앙 포함');await expect(details.locator('.shift-details-content > section').first()).toContainText('3편');
  const href=new URL((await page.locator('.shift-detail-link').getAttribute('href'))!,page.url());expect(href.searchParams.get('place')).toBe('airport');expect(href.searchParams.get('terminal')).toBe('T2');expect(href.searchParams.get('side')).toBe('EAST');

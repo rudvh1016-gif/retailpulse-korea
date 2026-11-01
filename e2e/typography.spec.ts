@@ -503,9 +503,10 @@ test("the approved gate comparison retains live counts and the public typography
  * of vinext URLs and nothing to do with charts. Any edit that reshuffles the
  * bundle can produce such a hash, so this was a trap waiting on a coin flip.
  *
- * Matching a delimiter-bounded token inside a path segment keeps every real
- * import caught — /node_modules/d3/…, chart.umd.js, echarts/index.js — while a
- * hex hash cannot spell one by accident.
+ * Production chunks also carry an eight-character base64url hash, whose
+ * punctuation can make motion-D3-p_Qod.js look like a d3 import. Strip that
+ * emitted /assets/ suffix before matching delimiter-bounded library tokens;
+ * the package path and the complete unhashed chunk name remain checked.
  */
 const CHART_LIBRARY_TOKENS = new Set([
   "chart", "charts", "chartjs", "d3", "plotly", "echarts", "highcharts",
@@ -523,6 +524,12 @@ function loadsChartLibrary(rawUrl: string): boolean {
   // Vite serves our own typed calculation helpers as source modules. A file
   // called commercial-category-chart.ts is not an npm charting dependency.
   if (!pathname.includes('/node_modules/') && /\.(?:ts|tsx)$/.test(pathname)) return false;
+  pathname = pathname.replace(
+    /(\/assets\/[^/]+)-([A-Za-z0-9_-]{8})(\.(?:m?js|css))$/,
+    (filename, stem: string, hash: string, extension: string) =>
+      // Keep a bare library suffix such as vendor-recharts.js detectable too.
+      CHART_LIBRARY_TOKENS.has(hash.toLowerCase()) ? filename : `${stem}${extension}`,
+  );
   return pathname.toLowerCase().split("/").some((segment) =>
     segment.split(/[.\-_@]/).some((token) => CHART_LIBRARY_TOKENS.has(token)));
 }
@@ -538,6 +545,11 @@ test("the gate model shares the full flight read without a chart or 3D library",
   expect(loadsChartLibrary("http://x/lib/commercial-category-chart.ts")).toBe(false);
   expect(loadsChartLibrary("http://x/node_modules/three/src/core/Object3D.ts")).toBe(true);
   expect(loadsChartLibrary("https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.js")).toBe(true);
+  expect(loadsChartLibrary("http://x/assets/motion-D3-p_Qod.js")).toBe(false);
+  expect(loadsChartLibrary("http://x/assets/vendor-d3-D3-p_Qod.js")).toBe(true);
+  expect(loadsChartLibrary("http://x/assets/chart.umd-D3-p_Qod.js")).toBe(true);
+  expect(loadsChartLibrary("http://x/assets/three-D3-p_Qod.js")).toBe(true);
+  expect(loadsChartLibrary("http://x/assets/vendor-recharts.js")).toBe(true);
 
   await routeGateFlights(page);
   const extraRequests: string[] = [];

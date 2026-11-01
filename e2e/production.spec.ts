@@ -3,6 +3,7 @@ import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import { routeGateFlights } from './gate-model-fixture';
 import { expect, test } from "@playwright/test";
 import { industryLabels } from '../lib/industry-ids';
+import {expectNavigationUrl} from './navigation-context';
 
 import {
   FLIGHT_ROWS,
@@ -1337,7 +1338,7 @@ test("mobile More explains usage without the removed promotion and retains its T
   await expect(bottom.locator("a")).toHaveCount(5);
   await expect(bottom).not.toContainText("관광안내");
   await bottom.locator("a").filter({ hasText: "더보기" }).click();
-  await expect(page).toHaveURL(/\/ko\/more$/);
+  await expectNavigationUrl(page,'/ko/more',{place:'area',area:'myeongdong',terminal:null,date:null});
 
   await expect(page.locator(".tourism-link-block")).toHaveCount(0);
   await expect(page.locator(".site-usage-guide h2")).toHaveText("누가, 어떻게 쓰면 좋을까요?");

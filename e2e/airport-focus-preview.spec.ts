@@ -204,7 +204,9 @@ for(const width of [390,1440])test(`approved notice has only bottom close ${widt
  expect(noticeContrast).toBeGreaterThanOrEqual(4.5);
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
  await expect(dialog.getByRole('button',{name:'일주일 동안 안 보기',exact:true})).toBeInViewport({ratio:1});
- await expect(dialog.locator('.update-notice-items > section')).toHaveCount(1);
+ const items=dialog.locator('.update-notice-items > section');await expect(items).toHaveCount(2);
+ expect(await items.evaluateAll(nodes=>nodes.map(node=>node.getAttribute('data-notice-item')))).toEqual(['shift-briefing','shopping-report']);
+ await expect(items.first().getByRole('link',{name:'브리핑 보기 →',exact:true})).toHaveAttribute('href','/ko?insight=briefing');
  await expect(dialog.getByRole('link',{name:'\uBCF4\uACE0\uC11C \uBCF4\uAE30 \u2192'})).toHaveAttribute('href','/shopping-report/index.html');
  await page.screenshot({path:testInfo.outputPath(`notice-${width}.png`)});
  await dialog.getByRole('button',{name:'닫기',exact:true}).click();await expect(dialog).not.toBeVisible();

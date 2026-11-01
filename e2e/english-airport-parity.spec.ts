@@ -20,7 +20,7 @@ for(const width of [390,1440])test(`English preserves airport menus, analysis an
  await expect(page.getByRole('heading',{name:'Airport changes to watch',exact:true})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Times and terminals',exact:true})).toBeVisible();
  await expect(page.getByRole('heading',{name:'Route and holiday planning',exact:true})).toBeVisible();
- await expect(page.locator('#airport-glance-tabs [role=tab]')).toHaveCount(5);
+ await expect(page.locator('#airport-glance-tabs [role=tab]')).toHaveText(['Airport at a glance','My shift briefing','When were departures busiest?','Are there more weekend flights?','Which terminal changed?','Did flights increase during holidays?']);
  for(const label of ['When were departures busiest?','Are there more weekend flights?','Which terminal changed?','Did flights increase during holidays?']){
   await page.getByRole('tab',{name:label,exact:true}).click();
   await expect(page.locator('.airport-period-frame')).toHaveAttribute('src',/frame\.html\?.*lang=en/);

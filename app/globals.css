@@ -1617,10 +1617,10 @@ h1, h2, h3, strong, b { font-weight: var(--weight-strong); }
 }
 
 @media (max-width: 365px) {
-.brand { font-size: 12px; }
+.brand { font-size: 12px; flex-shrink: 0; white-space: nowrap; }
 .brand .brand-descriptor { display: none; }
 .language-control select { max-width: 82px; font-size: 10px; }
-.header-meta { gap: 4px; }
+.header-meta { gap: 4px; min-width: 0; }
 }
 
 .methodology { margin-top: 72px; }
