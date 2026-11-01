@@ -281,7 +281,9 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
    stays today -> changes -> return planning -> next week on narrow screens. */
 @media(min-width:1000px){
  .airport-focus-shell .focus-report .focus-selected-country-stack{display:contents}
- .airport-focus-shell .focus-selected-country-stack>.focus-selected-country-changes:not(.focus-return-context){grid-column:1;grid-row:4;margin-top:12px;padding-top:12px;border-top:1px solid #d5d9de}
+ .airport-focus-shell .focus-selected-country-stack>.focus-selected-country-changes:not(.focus-return-context){grid-column:1;grid-row:4;margin-top:12px;padding-top:12px;border-top:1px solid transparent}
+ /* Share the return-planning rule's full grid width without moving either column. */
+ .airport-focus-shell .focus-report::before{content:'';position:relative;z-index:1;grid-column:1/-1;grid-row:4;align-self:start;margin-top:12px;border-top:1px solid #d5d9de;pointer-events:none}
  .airport-focus-shell .focus-report .focus-return-context{grid-column:1/-1;grid-row:6;margin-top:16px;padding-top:12px;border-top:1px solid #d5d9de}
  .airport-focus-shell .focus-return-events{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 24px;min-width:0}
  .airport-focus-shell .focus-report .focus-return-context .focus-return-events>.focus-preparation-event{margin-top:0}
