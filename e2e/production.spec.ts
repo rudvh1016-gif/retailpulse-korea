@@ -1308,7 +1308,7 @@ test("desktop navigation keeps stores and moves secondary pages under More", asy
   await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
   await page.setViewportSize({ width: 1280, height: 900 });
   const expected = {
-    ko: ['한눈에','공항현황','국가별 흐름','미리 준비','더보기'],
+    ko: ['한눈에','공항현황','국가별 흐름','미리 준비','외국인은 뭘 살까?','더보기'],
     en: ['Airport glance','Airport','Country trends','Prepare ahead','More'],
     zh: ['机场一览','机场','国家趋势','提前准备','更多'],
     ja: ['空港一覧','空港','国別の動向','事前準備','その他'],
@@ -1317,7 +1317,7 @@ test("desktop navigation keeps stores and moves secondary pages under More", asy
     await page.goto(`/${locale}/tourism-desk/myeongdong`);
     const nav = page.locator("nav.top-nav");await expect(nav).toBeVisible();
     await expect(nav.locator('a')).toHaveText([...expected[locale]]);
-    await expect(nav.locator("a[aria-current='location']")).toHaveText(expected[locale][4]);
+    await expect(nav.locator("a[aria-current='location']")).toHaveText(expected[locale].at(-1)!);
     await expect(page.locator("nav.bottom-nav")).toBeHidden();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
   }

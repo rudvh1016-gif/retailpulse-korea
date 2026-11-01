@@ -1,6 +1,7 @@
 "use client";
 import {formatDisplayInteger} from "../lib/display-number";
 import './airport-history-polish.css';
+import { ShoppingDesktopEntry } from './shopping-entry';
 import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
 import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
 import {ConciseExplainer} from './concise-explainer';
@@ -101,7 +102,7 @@ function OnDemandAirportView(props: ComponentProps<typeof AirportViewComponent>)
 import { recordText } from './monthly-records-copy';
 import { activeSourceCatalog,sourceName,sourceUse,CollectionStatus } from "./source-status";
 
-import { useEffect, useState, type ComponentProps, type ComponentType } from "react";
+import { Fragment, useEffect, useState, type ComponentProps, type ComponentType } from "react";
 import {useBottomNavigationViewport} from "./use-bottom-navigation-viewport";
 import {NavigationIcon} from "./navigation-icon";
 import {useGlassNavigation} from "./use-glass-navigation";
@@ -556,7 +557,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         </button>
         <nav className="top-nav" aria-label="Primary">
           {(["airport-glance", "airport", "airport-countries", "airport-prepare", "more"] as View[]).map((item) => (
-            <a key={item} href={navigationHref(item)} className={view === item || (item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} aria-current={view === item ? "page" : item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a>
+            <Fragment key={item}>{item === "more" && lang === "ko" && <ShoppingDesktopEntry />}<a key={item} href={navigationHref(item)} className={view === item || (item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view)) ? "active" : ""} onClick={(event) => { event.preventDefault(); navigate(item); }} onPointerEnter={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} onFocus={item === "airport" ? prepareAirport : item === "airport-glance" ? prepareAirportGlance : item === "business" ? prepareBusinessView : item === "today" ? prepareTodaySignals : item === "where-to" || item === "consumption" ? prepareSeoulComparison : undefined} aria-current={view === item ? "page" : item === "more" && ["today","where-to","consumption","business","tourism-desk","forecast","about"].includes(view) ? "location" : undefined}>{navLabel(item)}</a></Fragment>
           ))}
         </nav>
         <div className="header-meta">
