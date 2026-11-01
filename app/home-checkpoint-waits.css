@@ -3,4 +3,28 @@
 .home-checkpoint-waits>.home-checkpoint-note{font-size:11px;line-height:1.6;color:var(--muted)}
 .home-checkpoint-waits .checkpoint-schematic-reading[data-state=current][data-wait-level=very-busy]{background:#f8e1e4;color:#a12d3f}
 .home-checkpoint-waits .checkpoint-severity{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+.home-checkpoint-waits .checkpoint-schematic[data-terminal=T1] figcaption strong{color:#a12d3f;font-weight:700}
+.home-checkpoint-waits .checkpoint-schematic[data-terminal=T2] figcaption strong{color:#245b92;font-weight:700}
+.checkpoint-longest{font-size:11px;line-height:1.6;margin:5px 0 8px;min-height:18px;overflow-wrap:anywhere}
+.checkpoint-longest b{font-weight:700}
+.checkpoint-schematic[data-enhanced]{--checkpoint-focus:#2d5268}
+.checkpoint-schematic[data-enhanced]:has(.checkpoint-schematic-reading[data-longest][data-wait-level=very-busy]){--checkpoint-focus:#a12d3f}
+.checkpoint-schematic-reading[data-longest]{position:relative;isolation:isolate;outline:1px solid var(--checkpoint-focus);outline-offset:-1px}
+.checkpoint-schematic-reading[data-longest] strong{font-weight:700}
+.checkpoint-schematic-reading[data-longest]::before{content:'';position:absolute;inset:0;z-index:-1;background:var(--checkpoint-focus);opacity:.09;transform-origin:bottom;animation:checkpoint-wash 1.8s cubic-bezier(.2,.65,.25,1) both;animation-play-state:paused;pointer-events:none}
+.checkpoint-schematic-leaders g[data-longest] path{stroke:var(--checkpoint-focus);stroke-width:2;opacity:1;stroke-dasharray:1;animation:checkpoint-trace 1.8s ease-out both;animation-play-state:paused}
+.checkpoint-schematic-leaders g[data-longest] circle{fill:var(--checkpoint-focus);opacity:1}
+.checkpoint-walkers{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.checkpoint-walker{animation:checkpoint-walk 2.4s ease-in-out 2 both;animation-play-state:paused}
+.checkpoint-walker-body{animation:checkpoint-step .6s ease-in-out 8 both;animation-play-state:paused}
+.checkpoint-walker-leg{stroke:#527e92;stroke-width:4;stroke-linecap:round;transform-box:fill-box;transform-origin:50% 0;animation:checkpoint-leg .6s ease-in-out 8 both;animation-play-state:paused}
+.checkpoint-walker-leg-back{animation-direction:reverse}
+.checkpoint-schematic[data-motion=running] :is(.checkpoint-walker,.checkpoint-walker-body,.checkpoint-walker-leg,.checkpoint-schematic-leaders g[data-longest] path),.checkpoint-schematic[data-motion=running] .checkpoint-schematic-reading[data-longest]::before{animation-play-state:running}
+@keyframes checkpoint-walk{0%,100%{transform:translateX(-9px)}50%{transform:translateX(9px)}}
+@keyframes checkpoint-step{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+@keyframes checkpoint-leg{0%,100%{transform:rotate(-16deg)}50%{transform:rotate(16deg)}}
+@keyframes checkpoint-wash{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes checkpoint-trace{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.checkpoint-schematic[data-enhanced] :is(.checkpoint-walker,.checkpoint-walker-body,.checkpoint-walker-leg,.checkpoint-schematic-leaders path),.checkpoint-schematic[data-enhanced] .checkpoint-schematic-reading::before{animation:none!important}}
+@media(forced-colors:active){.checkpoint-schematic-reading[data-longest]{outline-color:Highlight}.checkpoint-schematic-leaders g[data-longest] path{stroke:Highlight}.home-checkpoint-waits .checkpoint-schematic figcaption strong{color:CanvasText}}
 @media(forced-colors:active){.home-checkpoint-waits .checkpoint-schematic-reading[data-wait-level=very-busy]{color:CanvasText;border:1px solid CanvasText}}

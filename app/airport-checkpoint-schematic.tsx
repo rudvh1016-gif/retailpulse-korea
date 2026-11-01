@@ -1,4 +1,7 @@
+'use client';
+import {useEffect,useRef} from 'react';
 import type {Lang} from './retailpulse-data';
+import {longestCheckpoint} from '../lib/checkpoint-longest';
 import {CHECKPOINT_SOURCE_URLS,checkpointLayout} from '../lib/airport-checkpoint-layout';
 import {queueHeat,queueHeatLabel,type QueueHeatReading} from '../lib/airport-queue-heat';
 import {displayedQueueMinutes} from '../lib/airport-queue-representatives';
@@ -16,6 +19,17 @@ const leaderPath=(index:number)=>{const [x,y]=LANE_ANCHORS[index],column=(index+
 
 export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=false}:{showSeverity?:boolean;terminal:'T1'|'T2';rows:readonly CheckpointReading[];now:number;lang:Lang}) {
  const groups=checkpointLayout(terminal,rows),minute=t(lang,'분','min','分','分');
+ const host=useRef<HTMLElement>(null),longest=longestCheckpoint(terminal,rows,now);
+ const motionKey=JSON.stringify(rows.map(row=>[row.zone,row.observedAt,row.freshness]));
+ useEffect(()=>{
+  const node=host.current;if(!showSeverity||!node||!window.IntersectionObserver)return;
+  const preference=window.matchMedia('(prefers-reduced-motion: reduce)');let visible=false;
+  const update=()=>{node.dataset.motion=visible&&!document.hidden&&!preference.matches&&longest.value!==null?'running':'paused';};
+  const observer=new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;update();},{threshold:.15});
+  observer.observe(node);preference.addEventListener('change',update);document.addEventListener('visibilitychange',update);update();
+  return()=>{observer.disconnect();preference.removeEventListener('change',update);document.removeEventListener('visibilitychange',update);};
+ },[showSeverity,motionKey,longest.value]);
+ const locations=longest.keys.slice(0,2).map(key=>terminal==='T1'?`${key[0]} ${key.endsWith('E')?t(lang,'동','E','东','東'):t(lang,'서','W','西','西')}`:key).join(' / ')+(longest.keys.length>2?` +${longest.keys.length-2}`:'');
  const terminalRows=rows.filter(row=>row.terminal===terminal);
  const observed=[...new Set(terminalRows.map(row=>row.observedAt))].filter(at=>Number.isFinite(Date.parse(at))).sort();
  const locale={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[lang];
@@ -26,15 +40,17 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=
   const shown=heat.state==='closed'?t(lang,'중단','Off','暂停','停止'):value===null?'—':`${value}${row?.waitTimeRaw==='60+'?'+':''}`;
   return {heat,value,shown};
  };
- return <figure className="checkpoint-schematic" data-testid="checkpoint-schematic" data-terminal={terminal}>
+ return <figure ref={host} className="checkpoint-schematic" data-testid="checkpoint-schematic" data-terminal={terminal} data-enhanced={showSeverity||undefined}>
   <figcaption><strong>{terminal}</strong> {t(lang,'출국장 대기','Departure-hall waits','出境厅等候','出国場の待ち時間')}</figcaption>
+  {showSeverity&&<p className="checkpoint-longest" data-testid="checkpoint-longest" data-uncertain={longest.uncertain||undefined}>{longest.value===null?t(lang,'비교할 최신 대기 관측 없음','No fresh waits to compare','暂无最新等候可比较','比較できる最新の待ち時間なし'):longest.uncertain?t(lang,'최장 지점 미확정 · 60분 이상 관측 포함','Longest location unconfirmed · includes 60+ min','最长地点未确定 · 含60分钟以上观测','最長地点未確定 · 60分以上の観測あり'):<>{t(lang,'확인된 최장','Longest confirmed','已确认最长','確認済み最長')} <b>{longest.value}{longest.lowerBound?'+':''}{minute}</b> · {locations}</>}</p>}
   <div className="checkpoint-schematic-stage">
    <div className="checkpoint-schematic-drawing">
     {/* eslint-disable-next-line @next/next/no-img-element -- Original responsive Blender render; dimensions reserve space. */}
     <img src="/visuals/airport-queue/checkpoint-base-480.webp" srcSet="/visuals/airport-queue/checkpoint-base-480.webp 480w, /visuals/airport-queue/checkpoint-base-960.webp 960w" sizes="(max-width:600px) calc(100vw - 36px), 640px" width="960" height="400" alt="" loading="lazy" decoding="async"/>
     <svg className="checkpoint-schematic-leaders" viewBox="0 0 960 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-     {LANE_ANCHORS.map(([x,y],index)=><g key={index}><path d={leaderPath(index)}/><circle cx={x} cy={y} r="7"/></g>)}
+     {LANE_ANCHORS.map(([x,y],index)=><g key={index} data-longest={showSeverity&&longest.keys.includes(groups.flat()[index].key)||undefined}><path d={leaderPath(index)} pathLength="1"/><circle cx={x} cy={y} r="7"/></g>)}
     </svg>
+    {showSeverity&&<svg className="checkpoint-walkers" viewBox="0 0 960 400" aria-hidden="true" focusable="false">{[[257,267],[687,267]].map(([x,y],index)=><g key={index} transform={`translate(${x} ${y})`}><g className="checkpoint-walker" style={{animationDelay:`${index*-.8}s`}}><ellipse cy="3" rx="13" ry="4" fill="#7e969b" opacity=".2"/><g className="checkpoint-walker-body"><circle cy="-32" r="7" fill="#c8dfe5"/><path d="M-6-23Q0-27 6-23L8-9H-8Z" fill="#6899ac"/><path d="M-6-20L-11-9M6-20L11-12" stroke="#8bb6c5" strokeWidth="4" strokeLinecap="round"/><path className="checkpoint-walker-leg" d="M-4-10L-6 1"/><path className="checkpoint-walker-leg checkpoint-walker-leg-back" d="M4-10L6 1"/></g></g></g>)}</svg>}
    </div>
    <div className="checkpoint-schematic-readings">{groups.flat().map(slot=>{
     const {heat,value,shown}=wait(slot.row);
@@ -48,7 +64,7 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=
     // A lane is about 35px wide on a 320px phone: English words longer than that
     // would split mid-word, so the label shows short words and speaks in full.
     const peopleShown=lang==='en'?known?`${n} in line`:'No count':people;
-    return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
+    return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-longest={showSeverity&&longest.keys.includes(slot.key)||undefined} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
      <span>{name}</span><strong><span>{shown}{heat.state==='zero'&&<sup>*</sup>}</span>{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}</strong>
      <small className="checkpoint-schematic-people">{peopleShown}</small>{showSeverity&&heat.state==='current'&&heat.level==='very-busy'&&<small className="checkpoint-severity">{heat.basis?t(lang,'60분+','60+ min','60分+','60分以上'):queueHeatLabel(heat,lang)}</small>}
     </div>;
