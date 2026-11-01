@@ -1,7 +1,7 @@
 import './shopping-entry.css';
 
 const label = '외국인은 뭘 살까?';
-const href = '/shopping-report/';
+const href = '/shopping-report/index.html';
 
 export function ShoppingDesktopEntry() {
   return <a className="shopping-desktop-entry" href={href}>{label}</a>;

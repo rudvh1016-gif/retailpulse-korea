@@ -18,7 +18,7 @@ for (const width of [320, 390, 820, 821, 1440]) {
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await entry.click();
-    await expect(page).toHaveURL(/\/shopping-report\/?$/);
+    await expect(page).toHaveURL(/\/shopping-report\/(?:index\.html)?$/);
     await expect(page.locator('h1')).toHaveText('외국인 쇼핑,무엇을 사고 어디서 샀을까?');
     await expect(page.locator('.store-overview')).toHaveCount(6);
   });
@@ -29,7 +29,7 @@ test('report keeps all comparisons, monthly choices, source links and reduced mo
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/shopping-report/');
+  await page.goto('/shopping-report/index.html');
   await expect(page.locator('h1')).toHaveCSS('color', 'rgb(112, 43, 62)');
   await expect(page.locator('#quarters')).toContainText('74.1%');
   await expect(page.locator('#quarters')).toContainText('+1.2');
