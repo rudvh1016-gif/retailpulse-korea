@@ -55,3 +55,7 @@ header .brand{text-decoration:none}html{scroll-behavior:smooth}@media(prefers-re
 
 .store-month-delta strong{font-weight:700}
 @media(min-width:821px){.monthly-mix>.monthly-highlight{display:none}}
+
+/* Keep the relocated monthly disclosure and all six mobile store details readable. */
+#store-monthly-view>.caption{font-size:11px}
+@media(max-width:820px){.store-overview .compact-detail{border-top:0}}
