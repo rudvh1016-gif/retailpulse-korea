@@ -31,7 +31,7 @@ export default function AirportCountryZones({date,initialScope,lang='ko'}:{date?
  const map=useMemo(()=>current?.status==='OK'&&current.payload.truncated===false&&current.payload.flights.length>0
    ?departureMap({date:day,nextDate:shiftKstDay(day,1),terminal:scope==='T2'?'T2':'T1',buildingScope:scope,window:{startMin,endMin},rows:current.payload.flights,nextRows:next?.status==='OK'&&next.payload.truncated===false?next.payload.flights:null})
    :null,[current,next,day,scope,startMin,endMin]);
- return <section aria-label={t("국가별 출발 구역","各国航班出发区域")}>
+ return <section className="airport-country-zones" data-scope={scope} aria-label={t("국가별 출발 구역","各国航班出发区域")}>
   <div className="airport-period-modes" role="group" aria-label={t("출발 구역 터미널 선택","选择出发区域航站楼")}>{(['all','T1','CONCOURSE','T2'] as const).map(value=><button type="button" key={value} aria-pressed={scope===value} onClick={()=>setScope(value)}>{({all:t('전체','全部'),T1:t('T1 본관','T1主楼'),CONCOURSE:t('탑승동','卫星厅'),T2:'T2'})[value]}</button>)}</div>
   <label>{t("날짜","日期")} <input aria-label={t("날짜","日期")} type="date" value={day} onChange={e=>{if(e.target.value){setDay(e.target.value);setPreset('DAY');}}}/></label>
   <div className="airport-period-modes" role="group" aria-label={t("출발 시간 선택","选择出发时间")}>{(['DAY',...(isToday?['NEXT1','NEXT3','NEXT6'] as const:[]),'CUSTOM'] as WindowPreset[]).map(value=><button type="button" key={value} aria-pressed={activePreset===value} onClick={()=>setPreset(value)}>{({DAY:t('하루 전체','全天'),NEXT1:t('1시간','未来1小时'),NEXT3:t('3시간','未来3小时'),NEXT6:t('6시간','未来6小时'),CUSTOM:t('시간 직접 선택','自选时段')})[value]}</button>)}</div>
