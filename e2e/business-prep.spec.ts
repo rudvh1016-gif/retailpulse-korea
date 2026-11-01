@@ -13,7 +13,14 @@ import type { PrepWeatherRow } from '../lib/business-prep';
 async function open(page: Page, lang = 'ko', width = 390) {
   await page.setViewportSize({ width, height: 900 });
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-  await page.goto(`/${lang}/business`);
+  // These cases exercise a chosen Seoul / beauty context. Fresh visits start
+  // at the airport with no industry, covered in business-entry.spec.ts.
+  await page.addInitScript(() => {
+    try {
+      if (!localStorage.getItem('retailpulse-preferences')) localStorage.setItem('retailpulse-preferences', JSON.stringify({ industry: 'beauty' }));
+    } catch { /* The blocked-storage case still opens with an unset industry. */ }
+  });
+  await page.goto(`/${lang}/business?place=area&area=myeongdong`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const prep = page.getByTestId('business-prep');
   await expect(prep.getByTestId('prep-facts')).toBeVisible();
@@ -151,7 +158,7 @@ test('the business type is one choice shared by the briefing and the guide', asy
 
 test('a past date gets a plain note instead of a briefing', async ({ page }) => {
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, serviceDateKst: '2026-08-30', dayRelation: 'PAST' }));
-  await page.goto('/ko/business?date=2026-08-30');
+  await page.goto('/ko/business?date=2026-08-30&place=area&area=myeongdong');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.getByTestId('business-prep').getByTestId('prep-status')).toHaveText(statusLine('PAST', 'ko'));
 });
@@ -209,7 +216,7 @@ test('zero rain stays zero and absent weather creates no weather models', async 
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
     ...SUMMARY_FIXTURE.areas, myeongdong: { ...SUMMARY_FIXTURE.areas.myeongdong, weather },
   } }));
-  await page.goto('/ko/business');
+  await page.goto('/ko/business?place=area&area=myeongdong');
   const prep = page.getByTestId('business-prep');
   await expect(prep.locator('[data-fact="RAIN_MAX"] .prep-fact-value')).toContainText('0%');
   await expect(prep.locator('.prep-actions > li[data-rule="RAIN"]')).toHaveCount(0);

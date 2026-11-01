@@ -2,6 +2,7 @@ import {openRetainedTerminalDetails} from './retained-terminal-details';
 import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import { routeGateFlights } from './gate-model-fixture';
 import { expect, test } from "@playwright/test";
+import { industryLabels } from '../lib/industry-ids';
 
 import {
   FLIGHT_ROWS,
@@ -59,6 +60,7 @@ for (const [locale, primaryFamily] of localeFonts) {
 test("business checklist uses one regular and one strong weight", async ({ page }) => {
   await page.goto("/ko/business");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.getByTestId('industry-guide').getByRole('button', { name: industryLabels.beauty.ko, exact: true }).click();
   await expect(page.locator(".industry-tabs button").first()).toHaveCSS("font-weight", "600");
   await page.locator('.operating-checklist > summary').click();
   await expect(page.locator(".checklist-rows p").first()).toHaveCSS("font-weight", "400");
@@ -777,6 +779,7 @@ test("unknown routes return a useful 404", async ({ page }) => {
 test("the business-type checklist is readable, filled in and switches with the tab", async ({ page }) => {
   await page.goto("/ko/business");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.getByTestId('industry-guide').getByRole('button', { name: industryLabels.beauty.ko, exact: true }).click();
   await page.evaluate(async () => document.fonts.ready);
   const section = page.locator(".industry-section");
   await section.scrollIntoViewIfNeeded();
@@ -820,6 +823,7 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
   await page.setViewportSize({ width: 320, height: 844 });
   await page.goto("/ja/business");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
+  await page.getByTestId('industry-guide').getByRole('button', { name: industryLabels.beauty.ja, exact: true }).click();
   await page.evaluate(async () => document.fonts.ready);
   await page.locator(".industry-section").scrollIntoViewIfNeeded();
   await page.locator('.operating-checklist > summary').click();

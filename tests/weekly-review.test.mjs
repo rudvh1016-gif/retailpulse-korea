@@ -46,6 +46,14 @@ test("the airport review uses its own 7- and 28-day comparisons only", () => {
   assert.equal(review.airport.flights[7], null);
 });
 
+test('an unselected business type does not silently use the beauty category', () => {
+  const review = buildWeeklyReview(summary, place, null, usual);
+  assert.equal(review.categories, null);
+  assert.ok(review.population);
+  const airport = buildWeeklyReview(summary, { kind: 'airport', terminal: 'T1' }, null, null);
+  assert.deepEqual(airport.airport.passengers[7], { baselineAt: 'x', minPercent: 5, maxPercent: 5 });
+});
+
 test("the review copy never calls card activity sales and never trends a quarter", () => {
   const copy = readFileSync("lib/review-copy.ts", "utf8");
   assert.match(copy, /매출이나 외국인 매출이 아니며/);

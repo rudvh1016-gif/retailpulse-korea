@@ -104,7 +104,9 @@ test('a stored side that is not east or west is ignored, not guessed', async ({ 
   await page.route('**/api/live/summary*', routeSummary(fixture(false)));
   await page.goto('/ko/business');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  await expect(page.getByTestId('business-prep').getByTestId('prep-place')).toHaveText('명동');
+  await expect(page.getByTestId('business-prep').getByTestId('prep-place')).toHaveText('인천공항 T1');
+  await expect(page.getByTestId('business-prep').getByTestId('prep-industry')).toHaveText('업종 선택 전');
+  expect(JSON.parse(await page.evaluate(() => localStorage.getItem('koretail-business-v1') ?? 'null')).side).toBe('NORTH');
 });
 
 test('the staff share names the date, terminal, side, expectation basis and flight basis', async ({ page }) => {
@@ -135,7 +137,9 @@ test('the added business types sit in the existing selector and drive the gate h
   const prep = await open(page, { side: null as unknown as string });
   await prep.getByRole('button', { name: prepCopy.change.ko }).click();
   const select = prep.locator('.prep-form select').first();
-  await expect(select.locator('option')).toHaveCount(8);
+  await expect(select).toHaveValue('');
+  await expect(select.locator('option[value=""]')).toHaveText('업종 선택 전');
+  await expect(select.locator('option:enabled')).toHaveCount(8);
   await select.selectOption('luxury');
   await expect(prep.getByTestId('prep-industry')).toHaveText(industryProfiles.luxury.label.ko);
   await expect(prep.getByTestId('prep-actions').locator('li[data-rule="GATE_PEAK"] .prep-industry-hint')).toContainText('대기 고객 응대 방식');

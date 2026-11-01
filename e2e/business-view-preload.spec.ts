@@ -19,16 +19,16 @@ test('More prepares the business screen, which then opens without a gap',async({
  await page.waitForTimeout(1000);
  // The shell may fetch the industry guide once idle (the airport screen needs it too); the briefing itself stays with 매장.
  expect([...requested].filter(code=>code!=='industry-guide'),'a Seoul page does not load the business briefing').toEqual([]);
- await page.locator('.bottom-nav a[href="/ko/more"]').click();
- await expect(page).toHaveURL(/\/ko\/more$/);
+ await page.locator('.bottom-nav a[href^="/ko/more"]').click();
+ await expect(page).toHaveURL(/\/ko\/more(?:\?|$)/);
  await expect.poll(()=>[...requested].sort(),{message:'More starts loading the business screen'}).toEqual(['business-prep','industry-guide']);
  await page.waitForLoadState('networkidle');
  await page.evaluate(()=>{
   const w=window as unknown as {firstBusinessFrame?:{prep:boolean;guide:boolean}};
   new MutationObserver((_,observer)=>{const view=document.querySelector('.business-view');if(!view)return;observer.disconnect();w.firstBusinessFrame={prep:Boolean(view.querySelector('[data-testid="business-prep"]')),guide:Boolean(view.querySelector('[data-testid="industry-guide"]'))};}).observe(document.body,{childList:true,subtree:true});
  });
- await page.locator('.more-section-links a[href="/ko/business"]').click();
- await expect(page).toHaveURL(/\/ko\/business$/);
+ await page.locator('.more-section-links a[href^="/ko/business"]').click();
+ await expect(page).toHaveURL(/\/ko\/business(?:\?|$)/);
  await expect(page.getByTestId('business-prep')).toBeVisible();
  expect(await page.evaluate(()=>(window as unknown as {firstBusinessFrame?:unknown}).firstBusinessFrame),'the first frame of the business screen already holds its briefing and guide').toEqual({prep:true,guide:true});
  expect(errors).toEqual([]);

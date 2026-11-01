@@ -10,7 +10,8 @@ const CountryFlights=dynamic(()=>import('./airport-country-flights'));
 // The default tab is selected from browser URL state. Mount it after hydration
 // so a server placeholder cannot be replaced while readers interact with it.
 const CountryZones=dynamic(()=>import('./airport-country-zones'),{ssr:false});
-const tabs=[['overview','공항한눈에'],['rhythm','언제 몰렸나요?'],['weekday','항공편 주말이 더 많나요?'],['terminal','어느 터미널이 달라졌나요?'],['holiday','연휴에는 늘었나요?']] as const;
+const tabs=[['overview','공항한눈에'],['briefing','내 근무 브리핑'],['rhythm','언제 몰렸나요?'],['weekday','항공편 주말이 더 많나요?'],['terminal','어느 터미널이 달라졌나요?'],['holiday','연휴에는 늘었나요?']] as const;
+const glanceTabs=(lang:Lang)=>lang==='ja'?tabs.slice(0,2):tabs;
 type View='rhythm'|'weekday'|'terminal'|'holiday'|'country';
 type Ranges={aStart:string;aEnd:string;bStart:string;bEnd:string};
 const keys=['aStart','aEnd','bStart','bEnd'] as const;
@@ -45,6 +46,7 @@ function PeriodFrame({view,date,lang}:{view:View;date?:string|null;lang:Lang}){
 function revealFocusedGlanceTab(strip:HTMLDivElement|null){const active=document.activeElement;if(active instanceof HTMLElement&&active.getAttribute('role')==='tab'&&strip?.contains(active))active.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});}
 function GlanceTabNavigation({view,lang}:{view:string;lang:Lang}){
  const t=(value:string)=>airportAnalysisText(lang,value);
+ const visibleTabs=glanceTabs(lang);
  const strip=useRef<HTMLDivElement>(null),previousButton=useRef<HTMLButtonElement>(null),nextButton=useRef<HTMLButtonElement>(null);
  const [edges,setEdges]=useState({overflow:false,previous:false,next:false});
  const pendingFocus=useRef<'previous'|'next'|null>(null),keyboardNavigation=useRef(false);
@@ -63,20 +65,21 @@ function GlanceTabNavigation({view,lang}:{view:string;lang:Lang}){
  const scroll=(direction:number)=>{keyboardNavigation.current=false;const element=strip.current;if(element)element.scrollBy({left:direction*Math.max(120,element.clientWidth*.8),behavior:'instant'});};
  return <div className="airport-insight-tab-nav" onPointerDownCapture={()=>{keyboardNavigation.current=false;}} onWheelCapture={()=>{keyboardNavigation.current=false;}}>
   {edges.overflow&&edges.previous&&<button type="button" ref={previousButton} className="airport-insight-scroll" aria-label={t('이전 메뉴 보기')} aria-controls="airport-glance-tabs" onClick={()=>scroll(-1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m12 4-6 6 6 6"/></svg></button>}
-  <div ref={strip} id="airport-glance-tabs" className="airport-insight-tabs" role="tablist" aria-label={t('공항 한눈에 보기 선택')}>{tabs.map(([key,label],i)=><button key={key} id={'airport-insight-tab-'+key} role="tab" aria-selected={view===key} aria-controls={key==='overview'?'airport-insight-overview':'airport-insight-analysis'} tabIndex={view===key?0:-1} onClick={()=>navigate('insight',key)} onKeyDown={e=>{const keyboard=!e.ctrlKey&&!e.metaKey&&!e.altKey&&['ArrowRight','ArrowLeft','Home','End'].includes(e.key);keyboardNavigation.current=keyboard;tabKeys(e,i,tabs.length,n=>navigate('insight',tabs[n][0]));if(keyboard)revealFocusedGlanceTab(strip.current);}}>{t(label)}</button>)}</div>
+  <div ref={strip} id="airport-glance-tabs" className="airport-insight-tabs" data-tab-count={visibleTabs.length} role="tablist" aria-label={t('공항 한눈에 보기 선택')}>{visibleTabs.map(([key,label],i)=><button key={key} id={'airport-insight-tab-'+key} role="tab" aria-selected={view===key} aria-controls={key==='overview'?'airport-insight-overview':key==='briefing'?'airport-insight-briefing':'airport-insight-analysis'} tabIndex={view===key?0:-1} onClick={()=>navigate('insight',key)} onKeyDown={e=>{const keyboard=!e.ctrlKey&&!e.metaKey&&!e.altKey&&['ArrowRight','ArrowLeft','Home','End'].includes(e.key);keyboardNavigation.current=keyboard;tabKeys(e,i,visibleTabs.length,n=>navigate('insight',visibleTabs[n][0]));if(keyboard)revealFocusedGlanceTab(strip.current);}}>{t(label)}</button>)}</div>
   {edges.overflow&&<button type="button" ref={nextButton} className="airport-insight-scroll" aria-label={t('다음 메뉴 보기')} aria-controls="airport-glance-tabs" disabled={!edges.next} onClick={()=>scroll(1)}><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="m8 4 6 6-6 6"/></svg></button>}
  </div>;
 }
-function LocalizedGlance({children,date,lang}:{children:ReactNode;date?:string|null;lang:Lang}){
+function LocalizedGlance({children,briefing,date,lang}:{children:ReactNode;briefing?:ReactNode;date?:string|null;lang:Lang}){
  const t=(value:string)=>airportAnalysisText(lang,value);
- const query=useQuery(),raw=query.get('insight'),view=tabs.some(([key])=>key===raw)?raw!:'overview';
+ const query=useQuery(),raw=query.get('insight'),view=glanceTabs(lang).some(([key])=>key===raw)?raw!:'overview';
  return <section className="airport-insight-shell" aria-label={t('인천공항 한눈에')}><div className="glance-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{t('인천공항 한눈에')}</h1>{lang === 'ko' && <ShoppingMobileEntry />}</div>
   <GlanceTabNavigation view={view} lang={lang}/>
   <div id="airport-insight-overview" role="tabpanel" aria-labelledby="airport-insight-tab-overview" hidden={view!=='overview'}>{children}</div>
-  {view!=='overview'&&<div id="airport-insight-analysis" role="tabpanel" aria-labelledby={'airport-insight-tab-'+view}><PeriodFrame key={lang+':'+(date??'today')} lang={lang} date={date} view={view as View}/></div>}
+  {view==='briefing'&&<div id="airport-insight-briefing" role="tabpanel" aria-labelledby="airport-insight-tab-briefing">{briefing}</div>}
+  {view!=='overview'&&view!=='briefing'&&<div id="airport-insight-analysis" role="tabpanel" aria-labelledby={'airport-insight-tab-'+view}><PeriodFrame key={lang+':'+(date??'today')} lang={lang} date={date} view={view as View}/></div>}
  </section>;
 }
-export function AirportGlanceInsights({lang,...props}:{lang:Lang;children:ReactNode;date?:string|null}){return lang==='ko'||lang==='zh'||lang==='en'?<LocalizedGlance {...props} lang={lang}/>:props.children;}
+export function AirportGlanceInsights({lang,...props}:{lang:Lang;children:ReactNode;briefing?:ReactNode;date?:string|null}){return <LocalizedGlance {...props} lang={lang}/>;}
 function LocalizedCountries({children,date,lang}:{children:ReactNode;date?:string|null;lang:Lang}){
  const t=(value:string)=>airportAnalysisText(lang,value);
  const query=useQuery(),mode=query.get('mode')==='flights'?'flights':query.get('mode')==='passengers'?'passengers':'zones',monthly=query.get('period')==='monthly';

@@ -35,6 +35,17 @@ test("all four areas and both airport terminals keep their exact scope and dated
   assert.doesNotMatch(text.replace('지금 핵심',''),lang==='en'?/\bnow\b/i:lang==='ko'?/지금/:lang==='zh'?/现在/:/いま|現在/);
  }
 });
+
+test('an unselected industry stays unselected in every export language', () => {
+ for (const lang of ['ko', 'en', 'zh', 'ja']) {
+  const doc = buildShareDocument({ ...input(prepFor(), lang), industry: null, place: { kind: 'airport', terminal: 'T2', side: 'WEST' } });
+  const text = shareText(doc);
+  assert.ok(text.includes('T2'));
+  assert.doesNotMatch(text, /뷰티|화장품|Beauty & cosmetics|美妆|化粧品/);
+ }
+ const text = shareText(buildShareDocument({ ...input(prepFor()), industry: null }));
+ assert.match(text, /업종 선택 전/);
+});
 test("no data and stale forecasts never become calm facts",()=>{
  const empty=shareText(buildShareDocument(input(buildBusinessPrep({serviceDate:day,dayRelation:'TODAY',nowIso:at(9),place:{kind:'area',area:'itaewon'},hours:null}))));
  assert.match(empty,/판단할 자료가 부족합니다/);assert.match(empty,/최신 자료와 매장 실제 대기·재고/);assert.doesNotMatch(empty,/출처.*없음/);

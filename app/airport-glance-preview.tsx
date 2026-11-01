@@ -25,6 +25,7 @@ import {staffDeparturePeak} from '../lib/airport-staff-peak';
 import AirportStaffBriefing from './airport-staff-briefing';
 import type {EventFlightContext} from '../lib/event-country-flights';
 import type {GlanceWeekReference} from '../lib/glance-week-comparison';
+import type {IndustryId} from '../lib/industry-ids';
 import './airport-glance-preview.css';
 interface MonthReply{status:string;month:string;data:AirportMonthlyRollups|null;calculatedAt:string|null}
 /** On a page that opens on the glance, the two reads the glance makes once the summary names the day
@@ -77,7 +78,7 @@ const passengerCopy={
  ja:{transfer:'予想乗継客',transferBasis:'乗継保安検査基準・到着日',today:'今日の予想出国者数',selected:'選択日の予想出国者数',people:'人',basis:'仁川空港公式の一日予測',shared:'T1共通（搭乗棟含む）',collected:'取得',partial:'一日予測が不完全'},
 } as const;
 export interface GlanceOverviewContext {comparisonPending?:boolean;weekPending?:boolean;weekReference?:GlanceWeekReference|null;eventFlights?:EventFlightContext;passengerBaseline?:PassengerReferenceMonth|null;selectedCountryChanges?:Array<{country:string;label:string;count:number;mean:number;delta:number;percent:number|null;month:string;days:number;basis?:string}>;day:string;scope:GlanceScope;flights:number|null;passengers:number|null;transferPassengers:number|null;referenceSum:number|null;flightComparison:{mean:number;delta:number;percent:number}|null;flightBaseline:{mean:number;delta:number;percent:number|null;days:number;start:string;end:string;previous:boolean;basis?:string;evidence?:ComparisonBasis}|null}
-export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange,overviewHeading,overviewExtras,trailingContent,hideTitle=false,hideRepeatedFlightSummary=false,hideRepeatedPassengerSummary=false,artworkSrcSet,artworkSizes,artworkNote}:{lang:Lang;hideTitle?:boolean;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void;overviewHeading?:(context:GlanceOverviewContext)=>ReactNode;overviewExtras?:ReactNode;trailingContent?:ReactNode|((context:{summary:ReturnType<typeof useLiveSummary>;now:number})=>ReactNode);hideRepeatedFlightSummary?:boolean;hideRepeatedPassengerSummary?:boolean;artworkSrcSet?:string;artworkSizes?:string;artworkNote?:string}){
+export default function AirportGlancePreview({lang,artworkSrc=null,published=false,selectedDate=null,onDateChange,overviewHeading,overviewExtras,trailingContent,hideTitle=false,hideRepeatedFlightSummary=false,hideRepeatedPassengerSummary=false,artworkSrcSet,artworkSizes,artworkNote,onScopeChange,sharedWeekReference}:{lang:Lang;hideTitle?:boolean;artworkSrc?:string|null;published?:boolean;selectedDate?:string|null;onDateChange?:(date:string|null)=>void;overviewHeading?:(context:GlanceOverviewContext)=>ReactNode;overviewExtras?:ReactNode;trailingContent?:ReactNode|((context:{summary:ReturnType<typeof useLiveSummary>;now:number})=>ReactNode);hideRepeatedFlightSummary?:boolean;hideRepeatedPassengerSummary?:boolean;artworkSrcSet?:string;artworkSizes?:string;artworkNote?:string;industry?:IndustryId|null;onIndustryChange?:(id:IndustryId|null)=>void;onScopeChange?:(scope:GlanceScope)=>void;sharedWeekReference?:{reply?:{data:GlanceWeekReference|null}|null;pending:boolean}}){
  const c=copy[lang],ui=interfaceCopy[lang],dc=destinationCopy[lang],ic=insightCopy[lang];
  const [futureHours,setFutureHours]=useState<1|3|6>(1);
  const [previewDate,setPreviewDate]=useState<string|null>(null),[scope,setScope]=useState<GlanceScope>('all');
@@ -86,7 +87,7 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
   restore();window.addEventListener('popstate',restore);
   return ()=>window.removeEventListener('popstate',restore);
  },[]);
- const chooseScope=(next:GlanceScope)=>{setScope(next);saveAirportScope(next);};
+ const chooseScope=(next:GlanceScope)=>{setScope(next);saveAirportScope(next);onScopeChange?.(next);};
  const motionRoot=useRef<HTMLElement>(null);
  useChoiceMotion(motionRoot,scope,'.glance-controls button[aria-pressed=true] .glance-selection-rule, .glance-building[data-selected=true] .glance-building-label',180);
  useChoiceMotion(motionRoot,String(futureHours),'.glance-zone-leaders, .glance-destination-growth',220);
@@ -99,13 +100,14 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const referenceMonth=usePreparedMonth<{status:string;month:string;data:Record<ReferenceScope,PassengerReferenceMonth>|null}>(previousMonth,`/api/live/passenger-reference?month=${encodeURIComponent(previousMonth)}`,overviewHeading?previousMonth:'',month);
  const payload=loaded?.status==='OK'?loaded.payload:null;
  // Recheck the stored scan witness when the already-shared flight read refreshes.
- const weekReference=usePreparedMonth<{status:string;month:string;data:GlanceWeekReference|null}>(day,`/api/live/glance-week-reference?date=${encodeURIComponent(day)}`,(overviewHeading||isToday)&&loaded!==undefined?month:'',`${day}:${payload?.generatedAt??''}:${payload?.basis??''}`);
+ const ownWeekReference=usePreparedMonth<{status:string;month:string;data:GlanceWeekReference|null}>(day,`/api/live/glance-week-reference?date=${encodeURIComponent(day)}`,!sharedWeekReference&&(overviewHeading||isToday)&&loaded!==undefined?month:'',`${day}:${payload?.generatedAt??''}:${payload?.basis??''}`);
  // Until the first summary and flight requests settle (always, in the server HTML) nothing is known yet:
  // the glance tiles below say "checking", never "no verified data" or a zero. The passenger tile waits on the summary alone.
  const settling=summary===undefined||(Boolean(day)&&loaded===undefined);
  const pendingText=settling?c.loading:null;
  const ready=Boolean(payload&&!payload.truncated&&(payload.retrievedAt||payload.flights.length));
  const data=useMemo(()=>ready&&payload?glanceFlights(day,payload.flights,scope):null,[ready,payload,day,scope]);
+ const weekReference=sharedWeekReference??ownWeekReference;
  const rawWeekReference=weekReference.reply?.data;
  const safeWeekReference=rawWeekReference?.selectedFlightSnapshot&&payload?.basis!=='COLLECTED_FLIGHT_RECORDS'?{...rawWeekReference,selectedFlights:null,selectedFlightSnapshot:undefined}:rawWeekReference;
  const storedCurrent=monthRequest.reply?.data?.months.find(row=>row.month===month),storedPrevious=monthRequest.reply?.data?.months.find(row=>row.month===previousMonth);

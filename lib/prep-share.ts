@@ -10,6 +10,8 @@ import { sidesCopy } from "./airport-sides-copy";
 import type { BusinessHours, BusinessPrep, PrepAction, PrepFact, PrepPlace, PrepSource } from "./business-prep";
 import { factLine, hoursLabel, isWholeDayFact, placeName, prepSpan, prepTime, sourceName, statusLine, type PrepLang } from "./business-prep-copy";
 import { industryProfiles, type IndustryId } from "./industry-guidance";
+import { unselectedIndustryLabel } from "./industry-ids";
+import { businessScopeParams, sharedBusinessPlace } from "./business-preferences";
 
 type Row = Record<PrepLang, string>;
 const row = (ko: string, en: string, zh: string, ja: string): Row => ({ ko, en, zh, ja });
@@ -59,23 +61,20 @@ export function dateLabel(serviceDate: string, lang: PrepLang): string {
 /** The page for the same place and date; the date is always explicit. */
 export function shareLink(origin: string, lang: PrepLang, serviceDate: string, place?: PrepPlace): string {
   const params=new URLSearchParams({date:serviceDate});
-  if(place){params.set("place",place.kind);if(place.kind==="area")params.set("area",place.area);else{params.set("terminal",place.terminal);if(place.side)params.set("side",place.side);}}
+  if(place) businessScopeParams(place).forEach((value,key)=>params.set(key,value));
   return `${origin.replace(/\/+$/, "")}/${lang}/business?${params}`;
 }
 
 /** Explicit share scope takes precedence for this visit; never writes recipient preferences. */
 export function sharedPrepPlace(params: Pick<URLSearchParams, 'get'>): PrepPlace | null {
- const kind=params.get('place'),area=params.get('area'),terminal=params.get('terminal'),side=params.get('side');
- if(kind==='area'&&(area==='myeongdong'||area==='hongdae'||area==='seongsu'||area==='itaewon'))return {kind:'area',area};
- if(kind==='airport'&&(terminal==='T1'||terminal==='T2'))return {kind:'airport',terminal,side:side==='EAST'||side==='WEST'?side:null};
- return null;
+ return sharedBusinessPlace(params);
 }
 
 export interface ShareInput {
   prep: BusinessPrep;
   serviceDate: string;
   place: PrepPlace;
-  industry: IndustryId;
+  industry: IndustryId | null;
   hours: BusinessHours | null;
   lang: PrepLang;
   link: string;
@@ -95,9 +94,9 @@ function briefFact(fact:PrepFact,day:string,lang:PrepLang){
   const text=factLine(fact,day,lang),sourceSuffix=text.lastIndexOf(` (${sourceName(factSource(fact),lang)}`);
   return sourceSuffix<0?text:text.slice(0,sourceSuffix);
 }
-function briefAction(action:PrepAction,day:string,industry:IndustryId,lang:PrepLang){
+function briefAction(action:PrepAction,day:string,industry:IndustryId|null,lang:PrepLang){
  const span=action.startAt&&action.endAt?prepSpan(action.startAt,action.endAt,day,lang):'';
- const peak=industryProfiles[industry].checklist[lang].find(entry=>entry[0]==='peak')?.[2];
+ const peak=industry ? industryProfiles[industry].checklist[lang].find(entry=>entry[0]==='peak')?.[2] : undefined;
  const instruction:Record<PrepAction['rule'],Row>={
   CROWD:row('계산대·진열·통로를 정리하세요.','Clear the counter, displays and walkways.','整理收银台、陈列与通道。','レジ・陳列・通路を整えてください。'),
   AIRPORT_PEAK:row('계산대와 재고를 확인하고 매장 실제 대기 줄을 살피세요.','Check the counter, stock and actual store queue.','检查收银台、库存与店前实际排队。','レジ・在庫と店前の実際の待ちを確認してください。'),
@@ -115,7 +114,7 @@ function briefAction(action:PrepAction,day:string,industry:IndustryId,lang:PrepL
 export function buildShareDocument(input: ShareInput): ShareDocument {
  const {prep,serviceDate,lang}=input,lines:ShareDocument['lines']=[];
  lines.push({kind:'text',text:`${dateLabel(serviceDate,lang)} · ${placeName(input.place,lang)}`});
- lines.push({kind:'text',text:`${labels.industry[lang]}: ${industryProfiles[input.industry].label[lang]} · ${labels.hours[lang]}: ${hoursLabel(input.hours,lang)}`});
+ lines.push({kind:'text',text:`${labels.industry[lang]}: ${input.industry ? industryProfiles[input.industry].label[lang] : unselectedIndustryLabel[lang]} · ${labels.hours[lang]}: ${hoursLabel(input.hours,lang)}`});
  // The withheld flight-share passenger estimate is not reintroduced by a share export.
  const facts=prep.facts.filter(fact=>fact.kind!=='FLIGHT_SPLIT_ESTIMATE').sort((a,b)=>priority.indexOf(a.kind)-priority.indexOf(b.kind)).slice(0,3);
  const actions=prep.actions.slice(0,3);

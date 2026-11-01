@@ -3,12 +3,12 @@ import { readFile } from 'node:fs/promises';
 import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { shareCopy } from '../lib/prep-share';
 
-async function open(page: Page, lang = 'ko', width = 390, area?:string) {
+async function open(page: Page, lang = 'ko', width = 390, area = 'myeongdong') {
   await page.setViewportSize({ width, height: 900 });
   let summaryRequests = 0;
   await page.route('**/api/live/summary*', async (route) => { summaryRequests += 1; await routeSummary(SUMMARY_FIXTURE)(route); });
   await page.route('**/api/live/usual*', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{}' }));
-  await page.goto(`/${lang}/business${area?`?area=${area}`:''}`);
+  await page.goto(`/${lang}/business${area === 'airport' ? '' : `?place=area&area=${area}`}`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const share = page.getByTestId('prep-share');
   await expect(share).toBeVisible();
@@ -96,7 +96,7 @@ for(const [place,label,terminal,width] of [['myeongdong','명동','T1',390],['ho
   Object.defineProperty(navigator,'share',{configurable:true,value:async(data:ShareData)=>{capture.shared=data.text??'';}});
   const original=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text:string,x:number,y:number,maxWidth?:number){capture.drawn.push(text);return original.call(this,text,x,y,maxWidth as number);};
  },{place,terminal});
- const {share}=await open(page,'ko',width,place==='airport'?undefined:place);await share.locator('summary').click();const preview=await share.getByTestId('share-preview').innerText();expect(preview).toContain(label);expect(preview).toContain('지금 핵심');expect(preview).toContain('영업시간:');
+ const {share}=await open(page,'ko',width,place);await share.locator('summary').click();const preview=await share.getByTestId('share-preview').innerText();expect(preview).toContain(label);expect(preview).toContain('지금 핵심');expect(preview).toContain('영업시간:');
  await share.getByRole('button',{name:shareCopy.copy.ko}).click();await expect(share.getByTestId('share-status')).toHaveText(shareCopy.copied.ko);
  await share.getByRole('button',{name:shareCopy.share.ko}).click();await expect(share.getByTestId('share-status')).toHaveText(shareCopy.shareChosen.ko);
  const download=page.waitForEvent('download');await share.getByRole('button',{name:shareCopy.image.ko}).click();const file=await download;await file.saveAs(test.info().outputPath(`brief-${place}-${terminal}.png`));

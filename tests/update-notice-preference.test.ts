@@ -12,7 +12,9 @@ test('notice expires at the exact clicked instant plus seven days',()=>{
 test('invalid preferences cannot break first display and keys are isolated',()=>{
  for(const value of [null,'','bad','NaN','-1','Infinity','1.5','9007199254740992'])assert.equal(noticeDeadline(value,100),null);
  assert.notEqual(UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY);
- assert.match(UPDATE_NOTICE_SESSION_KEY,/airport-period-20261028-v1/);
+ assert.match(UPDATE_NOTICE_SESSION_KEY,/shift-briefing-20261102-v1/);
+ assert.notEqual(UPDATE_NOTICE_SESSION_KEY,'koretail-notice:airport-period-20261028-v1:closed');
+ assert.notEqual(UPDATE_NOTICE_UNTIL_KEY,'koretail-notice:airport-period-20261028-v1:until');
  assert.notEqual(UPDATE_NOTICE_SESSION_KEY,'koretail-notice:airport-comparison-20261019-v1:closed');
  assert.notEqual(UPDATE_NOTICE_UNTIL_KEY,'koretail-notice:airport-comparison-20261019-v1:until');
  assert.doesNotMatch(UPDATE_NOTICE_UNTIL_KEY,/analytics-consent|airport-scope/);

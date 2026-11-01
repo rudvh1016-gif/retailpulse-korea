@@ -26,15 +26,21 @@ async function noKoreanFrame(frame:FrameLocator){
  expect(labels.filter(label=>/[가-힣]/.test(label!))).toEqual([]);
  expect(await frame.locator('html').evaluate(node=>node.scrollWidth<=innerWidth+1)).toBe(true);
 }
-for(const width of [320,390,1440])test(`Chinese five glance tabs, all comparison modes and country jump ${width}`,async({page},info)=>{
+for(const width of [320,390,1440])test(`Chinese six glance tabs, shift briefing, all comparison modes and country jump ${width}`,async({page},info)=>{
  test.setTimeout(120000);await page.setViewportSize({width,height:950});await page.emulateMedia({reducedMotion:'reduce'});await fixtures(page);
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/zh?date=2026-10-19');await expect(page.getByRole('heading',{name:'仁川机场一览',exact:true})).toBeVisible();
- await expect(page.locator('#airport-glance-tabs [role=tab]')).toHaveCount(5);
+ const tabs=page.locator('#airport-glance-tabs [role=tab]');await expect(tabs).toHaveCount(6);
+ expect(await tabs.evaluateAll(nodes=>nodes.map(node=>node.id))).toEqual(['overview','briefing','rhythm','weekday','terminal','holiday'].map(view=>'airport-insight-tab-'+view));
  await expect(page.locator('#airport-insight-overview .focus-report-lines')).toContainText('103,124');
  await expect(page.locator('.airport-period-frame')).toHaveCount(0);
+ await expect(page.getByTestId('shift-briefing')).toHaveCount(0);
+ await page.locator('#airport-insight-tab-briefing').click();
+ const briefing=page.locator('#airport-insight-briefing');await expect(briefing).toBeVisible();await expect(briefing.getByTestId('shift-settings')).toBeVisible();await expect(briefing).not.toContainText(/[가-힣]/);
+ await expect(page.locator('.airport-period-frame')).toHaveCount(0);await expect(page.locator('#airport-insight-overview')).toBeHidden();
  for(const view of ['rhythm','weekday','terminal','holiday']){
   const tab=page.locator('#airport-insight-tab-'+view);await tab.click();await expect(tab).toHaveAttribute('aria-selected','true');
+  await expect(page.getByTestId('shift-briefing')).toHaveCount(0);
   const frame=page.frameLocator('.airport-period-frame');await expect(frame.locator('html')).toHaveAttribute('data-preview-ready','true');
   await expect(frame.locator('#chart')).not.toBeEmpty();await noKoreanFrame(frame);
   if(view==='rhythm'){

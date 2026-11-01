@@ -28,7 +28,7 @@ export function AirportView({
   lang, terminal, setTerminal, concourse, setConcourse, section, setSection, date, setDate, industry, setIndustry, industryContext,
 }: {
   industryContext?: ReactNode;
-  industry: IndustryId; setIndustry: (value: IndustryId) => void;
+  industry: IndustryId | null; setIndustry: (value: IndustryId) => void;
   lang: Lang; terminal: Terminal; setTerminal: (value: Terminal) => void;
   concourse:boolean;setConcourse:(value:boolean)=>void;
   section: AirportSection; setSection: (value: AirportSection) => void;

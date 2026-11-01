@@ -16,7 +16,7 @@ import { placeKey } from '../lib/last-check';
 import { placeName } from '../lib/business-prep-copy';
 import { trackPersonalEvent } from '../lib/personal-analytics';
 
-export function WeeklyReviewBlock({ lang, summary, place, industry }: { lang: Lang; summary: LiveSummary; place: PrepPlace; industry: IndustryId }) {
+export function WeeklyReviewBlock({ lang, summary, place, industry }: { lang: Lang; summary: LiveSummary; place: PrepPlace; industry: IndustryId | null }) {
   const usual = useUsualComparison(place.kind === 'area' && summary.dayRelation === 'TODAY' ? place.area : null);
   const review = buildWeeklyReview(summary, place, industry, usual);
   return <details className="prep-block prep-review" data-testid="weekly-review">

@@ -13,6 +13,7 @@ import {similarDestinationNote} from '../lib/airport-day-copy';
 import { useEffect, useId, useMemo, useState } from 'react';
 import type { Lang } from './retailpulse-data';
 import { useFlights } from './flights-client';
+import { useAirportHistory } from './airport-history-client';
 import { dailyFlightProfile, type ProfileRow } from '../lib/airport-day-profile';
 import { lastSeenOf, radar, similarDays, terminalDay, type LastSeen, type TerminalDay, type ViewTerminal } from '../lib/airport-day-compare';
 import { dayCopy as copy, dayEastShare, dayHourSpan, dayLabel, shortDayLabel, radarLine, similarLines, similarHighlights, topGroups } from '../lib/airport-day-copy';
@@ -38,39 +39,11 @@ function writeLastSeen(entry: LastSeen) {
 
 type History = { status: 'OK'; days: TerminalDay[]; stored: number } | { status: 'FAILED' };
 
-type HistoryBody = { mode: string; history: Array<Record<ViewTerminal, TerminalDay>> };
-
-// One /api/live/airport-days read per date for the whole page visit: the answer
-// carries both terminals, so "all" (T1 and T2 blocks) must not read it twice.
-// A failure is forgotten so a later open can try again.
-const historyReads = new Map<string, Promise<HistoryBody | null>>();
-function loadHistory(date: string): Promise<HistoryBody | null> {
-  let request = historyReads.get(date);
-  if (!request) {
-    request = fetch(`/api/live/airport-days?date=${encodeURIComponent(date)}`, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15_000) })
-      .then(async (response) => {
-        const body = response.ok ? await response.json() as HistoryBody : null;
-        return body?.mode === 'airport-days' ? body : null;
-      })
-      .catch(() => null);
-    historyReads.set(date, request);
-    void request.then((body) => { if (!body) historyReads.delete(date); });
-  }
-  return request;
-}
-
 function useHistory(date: string, terminal: ViewTerminal): History | undefined {
-  const [state, setState] = useState<{ key: string; value: History } | undefined>(undefined);
-  const key = `${date}:${terminal}`;
-  useEffect(() => {
-    let live = true;
-    void loadHistory(date).then((body) => {
-      const value: History = body ? { status: 'OK', days: body.history.map((day) => day[terminal]), stored: body.history.length } : { status: 'FAILED' };
-      if (live) setState({ key, value });
-    });
-    return () => { live = false; };
-  }, [date, terminal, key]);
-  return state && state.key === key ? state.value : undefined;
+  const history = useAirportHistory(date);
+  return history?.status === 'OK'
+    ? { status: 'OK', days: history.payload.history.map(day => day[terminal]), stored: history.payload.history.length }
+    : history;
 }
 
 function kstClock(iso: string): string {

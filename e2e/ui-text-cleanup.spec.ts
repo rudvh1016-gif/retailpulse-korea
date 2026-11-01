@@ -15,7 +15,7 @@ for(const width of [320,390,430,1280]) {
   await page.setViewportSize({width,height:900});
   await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
   await page.route('**/api/live/usual*',route=>route.fulfill({status:503,json:{error:'usual_comparison_unavailable'}}));
-  await page.goto('/ko/business');
+  await page.goto('/ko/business?place=area&area=myeongdong');
   const comparison=page.getByTestId('usual-comparison'),last=page.getByTestId('last-check');
   await expect(comparison.locator('summary')).toContainText(compareCopy.loadFailed.ko);
   await expect(comparison.getByText(compareCopy.unavailable.ko,{exact:true})).not.toBeVisible();
