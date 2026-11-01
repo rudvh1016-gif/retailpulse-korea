@@ -1,5 +1,5 @@
 'use client';
-import {useEffect,useRef,type CSSProperties} from 'react';
+import {useEffect,useRef,useId,type CSSProperties} from 'react';
 import type {Lang} from './retailpulse-data';
 import {longestCheckpoint} from '../lib/checkpoint-longest';
 import {CHECKPOINT_SOURCE_URLS,checkpointLayout} from '../lib/airport-checkpoint-layout';
@@ -12,7 +12,7 @@ const t=(lang:Lang,ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lan
 type CheckpointReading=QueueHeatReading & {waitingCount?:number|null};
 /** Floor marker in front of each lane of the base render (960×400), left to
  * right in CHECKPOINT_GROUPS order. Both terminals use the same drawing. */
-const WALKERS=[{x:274,y:270,drift:10,coat:'#66776c',skin:'#d9bca7'},{x:695,y:270,drift:10,coat:'#796472',skin:'#c49e83'},{x:480,y:247,drift:10,coat:'#55636b',skin:'#e1c7ae'},{x:80,y:310,drift:7,coat:'#9b886e',skin:'#ba8f73'}] as const;
+const WALKERS=[{x:274,y:270,drift:10,coat:'#66776c',skin:'#d9bca7'},{x:695,y:270,drift:10,coat:'#796472',skin:'#c49e83'},{x:480,y:247,drift:10,coat:'#55636b',skin:'#e1c7ae'},{x:80,y:310,drift:7,coat:'#4d657c',skin:'#ba8f73'}] as const;
 const LANE_ANCHORS=[[139,279],[198,279],[346,238],[406,238],[553,240],[612,240],[760,279],[819,279]] as const;
 /** Each reading sits in one of eight equal columns under the drawing and is
  * tied to its lane by a leader, so the left-to-right order is the floor order. */
@@ -20,6 +20,7 @@ const leaderPath=(index:number)=>{const [x,y]=LANE_ANCHORS[index],column=(index+
 
 export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=false}:{showSeverity?:boolean;terminal:'T1'|'T2';rows:readonly CheckpointReading[];now:number;lang:Lang}) {
  const groups=checkpointLayout(terminal,rows),minute=t(lang,'분','min','分','分');
+ const paintId=useId();
  const host=useRef<HTMLElement>(null),longest=longestCheckpoint(terminal,rows,now);
  const motionKey=JSON.stringify(rows.map(row=>[row.zone,row.observedAt,row.freshness]));
  useEffect(()=>{
@@ -50,11 +51,11 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=
   <div className="checkpoint-schematic-stage">
    <div className="checkpoint-schematic-drawing">
     {/* eslint-disable-next-line @next/next/no-img-element -- Original responsive Blender render; dimensions reserve space. */}
-    <img src="/visuals/airport-queue/checkpoint-base-480.webp" srcSet="/visuals/airport-queue/checkpoint-base-480.webp 480w, /visuals/airport-queue/checkpoint-base-960.webp 960w" sizes="(max-width:600px) calc(100vw - 36px), 640px" width="960" height="400" alt="" loading="lazy" decoding="async"/>
+    <img src="/visuals/airport-queue/checkpoint-colors-20261101-480.webp" srcSet="/visuals/airport-queue/checkpoint-colors-20261101-480.webp 480w, /visuals/airport-queue/checkpoint-colors-20261101-960.webp 960w" sizes="(max-width:600px) calc(100vw - 36px), 640px" width="960" height="400" alt="" loading="lazy" decoding="async"/>
     <svg className="checkpoint-schematic-leaders" viewBox="0 0 960 400" preserveAspectRatio="none" aria-hidden="true" focusable="false">
      {LANE_ANCHORS.map(([x,y],index)=><g key={index} data-longest={showSeverity&&longest.keys.includes(groups.flat()[index].key)||undefined}><path d={leaderPath(index)} pathLength="1"/><circle cx={x} cy={y} r="7"/></g>)}
     </svg>
-    {showSeverity&&<svg className="checkpoint-walkers" viewBox="0 0 960 400" aria-hidden="true" focusable="false">{WALKERS.map((walker,index)=><g key={index} transform={`translate(${walker.x} ${walker.y})`}><g className="checkpoint-walker" data-coat={walker.coat} style={{animationDelay:`${index*.12}s`,'--walker-drift':`${walker.drift}px`,'--walker-delay':`${index*.12}s`} as CSSProperties}><ellipse className="checkpoint-walker-shadow" cy="3" rx="13" ry="4" fill="#766e63" opacity=".18"/><g className="checkpoint-walker-body"><circle cy="-32" r="7" fill={walker.skin}/><path d="M-6-23Q0-27 6-23L8-9H-8Z" fill={walker.coat}/><path className="checkpoint-walker-arm" d="M-6-20L-11-9M6-20L11-12" stroke={walker.coat} strokeWidth="4" strokeLinecap="round"/><g className="checkpoint-walker-bag"><path d="M13-10V-16H18V-10" fill="none" stroke="#69665f" strokeWidth="2"/><rect x="10" y="-10" width="11" height="13" rx="2" fill="#a18e75"/><circle cx="12" cy="4" r="1.5" fill="#514f4b"/><circle cx="19" cy="4" r="1.5" fill="#514f4b"/></g><path className="checkpoint-walker-leg" d="M-4-10L-6 1"/><path className="checkpoint-walker-leg checkpoint-walker-leg-back" d="M4-10L6 1"/></g></g></g>)}</svg>}
+    {showSeverity&&<svg className="checkpoint-walkers" viewBox="0 0 960 400" aria-hidden="true" focusable="false"><defs>{WALKERS.map((walker,index)=><g key={index}><linearGradient id={`${paintId}-coat-${index}`} x1="0" y1="0" x2="1" y2="1"><stop stopColor={walker.coat}/><stop offset=".5" stopColor={walker.coat}/><stop offset="1" stopColor="#293942"/></linearGradient><radialGradient id={`${paintId}-skin-${index}`} cx=".32" cy=".25" r=".8"><stop stopColor="#f1ddd0"/><stop offset=".5" stopColor={walker.skin}/><stop offset="1" stopColor="#92735f"/></radialGradient></g>)}</defs>{WALKERS.map((walker,index)=><g key={index} transform={`translate(${walker.x} ${walker.y})`}><g className="checkpoint-walker" data-coat={walker.coat} style={{animationDelay:`${index*.12}s`,'--walker-drift':`${walker.drift}px`,'--walker-delay':`${index*.12}s`} as CSSProperties}><ellipse className="checkpoint-walker-shadow" cy="3" rx="13" ry="4" fill="#36424d" opacity=".18"/><g className="checkpoint-walker-body"><circle cy="-32" r="7" fill={`url(#${paintId}-skin-${index})`}/><path d="M-7-32Q-8-41 0-40Q8-40 7-31L4-35Q0-33-4-35Z" fill="#41484c"/><path d="M-6-23Q0-27 6-23L8-9H-8Z" fill={`url(#${paintId}-coat-${index})`}/><path className="checkpoint-walker-arm" d="M-6-20L-11-9M6-20L11-12" stroke={walker.coat} strokeWidth="4" strokeLinecap="round"/><g className="checkpoint-walker-bag"><path d="M13-10V-16H18V-10" fill="none" stroke="#69665f" strokeWidth="2"/><rect x="10" y="-10" width="11" height="13" rx="2" fill={walker.coat}/><circle cx="12" cy="4" r="1.5" fill="#514f4b"/><circle cx="19" cy="4" r="1.5" fill="#514f4b"/></g><path className="checkpoint-walker-leg" d="M-4-10L-6 1"/><path className="checkpoint-walker-leg checkpoint-walker-leg-back" d="M4-10L6 1"/></g></g></g>)}</svg>}
    </div>
    <div className="checkpoint-schematic-readings">{groups.flat().map(slot=>{
     const {heat,value,shown}=wait(slot.row);
