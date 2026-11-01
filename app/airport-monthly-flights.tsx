@@ -28,7 +28,8 @@ export function useAirportMonthRequest(date:string|null){
  const setChosen=(value:string)=>{if(date)choose({date,month:value});};
  const request=usePreparedMonth<Reply>(month,`/api/live/airport-months?month=${encodeURIComponent(month)}`,month,date??'');
  const previous=request.reply?.data?.months.find(value=>value.month===previousFlightMonth(month||'2000-01'));
- const provisional=useCurrentFlightPeriod(date,month,previous);
+ const stored=request.reply?.data?.months.find(value=>value.month===month);
+ const provisional=useCurrentFlightPeriod(date,month,previous,request.reply?.status==='READY'&&Boolean(previous?.includedDays.length)&&!stored?.includedDays.length);
  return {month,setChosen,request,provisional};
 }
 export function AirportMonthlyFlights({lang,terminal,date,monthly,showCountryRanking=true}:{lang:Lang;terminal:'all'|Terminal|'CONCOURSE';date:string;monthly?:ReturnType<typeof useAirportMonthRequest>;showCountryRanking?:boolean}){

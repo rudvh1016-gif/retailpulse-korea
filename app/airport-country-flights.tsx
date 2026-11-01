@@ -65,7 +65,7 @@ export default function CountryFlightPanel({lang='ko',date=null}:{lang?:Lang;dat
  const names=useMemo(()=>new Intl.DisplayNames([lang],{type:'region'}),[lang]);
  const months=reply?.status==='READY'&&Array.isArray(reply.data?.months)?reply.data.months:[];
  const storedCurrent=months.find(m=>m.month===month),storedPrevious=months.find(m=>m.month===previousFlightMonth(month));
- const provisional=useCurrentFlightPeriod(capturedDay,month,storedPrevious);
+ const provisional=useCurrentFlightPeriod(capturedDay,month,storedPrevious,reply?.status==='READY'&&Boolean(storedPrevious?.includedDays.length)&&!storedCurrent?.includedDays.length);
  const effectiveCurrent=provisional.active?provisional.value?.period:storedCurrent;
  const current=scope==='T1'?mainBuildingMonth(effectiveCurrent):effectiveCurrent,previous=scope==='T1'?mainBuildingMonth(storedPrevious):storedPrevious;
  const comparisonCopy=currentFlightPeriodCopy(lang,capturedDay,previous?.includedDays.length??0,provisional.value?.collectedAt??null);

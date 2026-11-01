@@ -9,10 +9,10 @@ import {useFlights} from './flights-client';
 import {usePreparedMonth} from './use-prepared-month';
 type Reply={status:string;month:string;data:GlanceWeekReference|null};
 /** The existing cached flight read + one bounded same-epoch witness read.
- * Historical month choices never start either additional read. */
-export function useCurrentFlightPeriod(day:string|null,month:string,previous:AirportFlightMonth|undefined){
+ * Historical and already-populated monthly views never start either additional read. */
+export function useCurrentFlightPeriod(day:string|null,month:string,previous:AirportFlightMonth|undefined,enabled:boolean){
  const now=usePresentationClock(new Date().toISOString()),today=kstDayOf(new Date(now).toISOString());
- const active=day===today&&month===today.slice(0,7);
+ const active=enabled&&day===today&&month===today.slice(0,7);
  const [revision,refresh]=useState(0);
  const flights=useFlights(active?day:null,'all',revision),payload=flights?.status==='OK'?flights.payload:null;
  const witnessMonth=active&&payload?month:'';
