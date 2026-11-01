@@ -85,7 +85,7 @@ for(const width of [360,1440])test(`airport navigation has clear aligned selecti
  const terminals=page.locator('#airport-data-flow');
  await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toBeVisible();
  await expect(async()=>{const tab=terminals.getByRole('tab',{name:'T2',exact:true});await tab.click();await expect(tab).toHaveAttribute('aria-selected','true',{timeout:500});}).toPass();
- await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveCSS('border-bottom-color','rgb(52, 91, 123)');
+ await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveCSS('border-bottom-color',width>=1000?'rgb(17, 17, 17)':'rgb(52, 91, 123)');
  const nav=page.locator('.airport-context-nav');await nav.getByRole('button',{name:'항공편',exact:true}).click();
  await expect(nav.getByRole('button',{name:'항공편',exact:true})).toHaveAttribute('aria-current','page');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
