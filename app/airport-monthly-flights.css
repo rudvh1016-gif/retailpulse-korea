@@ -102,3 +102,6 @@
 .airport-month-flights .airport-month-airline-name{flex:1 1 4em;min-width:0;overflow-wrap:anywhere}
 .airport-month-flights .airport-month-airline-logo{display:inline-block;width:40px;height:20px;object-fit:contain}
 .airport-month-flights .airport-month-airline-note{font-size:12px;color:#59636c}
+
+/* Current-day labels need their own column; historical month labels keep their layout. */
+.airport-country-changes[data-current-day] .airport-country-bar-row{grid-template-columns:8em minmax(0,1fr) 5ch}
