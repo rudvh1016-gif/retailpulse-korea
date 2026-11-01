@@ -1,4 +1,5 @@
 'use client';
+import { ShoppingMobileEntry } from './shopping-entry';
 import {useEffect,useLayoutEffect,useRef,useState,useSyncExternalStore,type ReactNode,type KeyboardEvent} from 'react';
 import dynamic from 'next/dynamic';
 import type {Lang} from './retailpulse-data';
@@ -69,7 +70,7 @@ function GlanceTabNavigation({view,lang}:{view:string;lang:Lang}){
 function LocalizedGlance({children,date,lang}:{children:ReactNode;date?:string|null;lang:Lang}){
  const t=(value:string)=>airportAnalysisText(lang,value);
  const query=useQuery(),raw=query.get('insight'),view=tabs.some(([key])=>key===raw)?raw!:'overview';
- return <section className="airport-insight-shell" aria-label={t('인천공항 한눈에')}><div className="glance-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{t('인천공항 한눈에')}</h1></div>
+ return <section className="airport-insight-shell" aria-label={t('인천공항 한눈에')}><div className="glance-heading"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{t('인천공항 한눈에')}</h1>{lang === 'ko' && <ShoppingMobileEntry />}</div>
   <GlanceTabNavigation view={view} lang={lang}/>
   <div id="airport-insight-overview" role="tabpanel" aria-labelledby="airport-insight-tab-overview" hidden={view!=='overview'}>{children}</div>
   {view!=='overview'&&<div id="airport-insight-analysis" role="tabpanel" aria-labelledby={'airport-insight-tab-'+view}><PeriodFrame key={lang+':'+(date??'today')} lang={lang} date={date} view={view as View}/></div>}

@@ -1,3 +1,7 @@
+# 2026-11-01 approved shopping entry
+
+The approved title `외국인은 뭘 살까?` adds only U+BB58 (`뭘`). The pinned Pretendard 1.3.9 TTF SHA-256 below was verified. FontTools 4.66.0/Brotli 1.2.0 retain the previous cmap union, layout feature set, KORETAIL name records, fvar axes and named-instance IDs. Coverage grows 1,535→1,536 codepoints and size 231,104→231,380 bytes; no prior codepoint is removed. The actual font hash and cmap regenerate the coverage fixture. Font SHA-256: `2b43b85e9a287575555e02b185e4b17168cc01e26b2e3b6f8d61e88ed8b486dd`.
+
 # Local font asset provenance
 
 ## 2026-10-10 monthly comparison copy
