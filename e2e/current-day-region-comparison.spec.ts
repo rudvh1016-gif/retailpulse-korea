@@ -20,6 +20,9 @@ for(const lang of ['ko','en'])for(const width of [390,1440])test(`Nov 1 zones an
  await page.setViewportSize({width,height:1000});await prepare(page);await page.goto(`/${lang}/airport-countries?mode=zones&date=${day}&building=T2`);
  const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section.locator('.airport-month-total')).toContainText('1 → 4');
  await expect(section.getByTestId('airport-month-basis')).toContainText('31');await expect(section.getByTestId('current-period-collected')).toContainText('KST');
+ const removed=section.locator(':scope > h3, :scope > label, :scope > .airport-month-basis, :scope > .airport-month-source-summary, :scope > .airport-month-total, :scope > .airport-country-changes > h4 + p');
+ for(const item of await removed.all()){if(width>=1000)await expect(item).toBeHidden();else await expect(item).toBeVisible();}
+ await expect(section.getByTestId('destination-daily-changes').locator('h4')).toBeVisible();await expect(section.getByTestId('destination-daily-changes').locator('ul')).toBeVisible();
  const zones=section.getByTestId('airport-month-zones');await expect(zones.locator('thead')).toContainText(day);
  if(width===390){await expect(section.locator('.airport-month-zone-title')).toHaveCSS('font-size','15px');for(const summary of await section.locator(':scope > details > summary').all())await expect(summary).toHaveCSS('font-size','14px');await expect(zones.locator('tbody tr').first().locator('td').nth(1)).toHaveCSS('font-size','13px');}else await expect(section.locator('.airport-month-zone-title')).toHaveCSS('font-size','18px');
  const counts=await zones.locator('tbody tr td:nth-child(3)').allTextContents();expect(counts.map(Number).reduce((a,b)=>a+b,0)).toBe(4);
@@ -49,3 +52,8 @@ test('a different snapshot never becomes zero flights in the zone comparison',as
 });
 
 test('the default airport view uses the witnessed day without a date query',async({page})=>{await prepare(page);await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section.locator('.airport-month-total')).toContainText('3 → 7');await expect(section.getByTestId('airport-month-basis')).toContainText(day);});
+
+test('other terminal desktop comparisons remain visible',async({page})=>{
+ await page.setViewportSize({width:1440,height:1000});await prepare(page);await page.goto(`/ko/airport-countries?mode=zones&date=${day}&building=T1`);
+ const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section.locator(':scope > h3')).toBeVisible();await expect(section.locator('.airport-month-total')).toBeVisible();
+});
