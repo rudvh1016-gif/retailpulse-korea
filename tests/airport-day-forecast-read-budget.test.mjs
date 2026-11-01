@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
-import {Miniflare} from 'miniflare';
+import {Miniflare} from './helpers/miniflare.mjs';
 import {composeTodayAnswer,readTodayAnswer,resetTodayAnswerMemo} from '../lib/today-answer.ts';
 
 const source=readFileSync('lib/today-answer.ts','utf8');

@@ -9,7 +9,7 @@ import {dutyFreeCacheControl} from '../app/api/live/duty-free-exchange/route.ts'
 import {shouldRouteToSummaryCache} from '../worker/summary-cache-routing.ts';
 import {canonicalSummaryUrl} from '../worker/summary-cache-key.ts';
 import {build} from 'esbuild';
-import {Miniflare} from 'miniflare';
+import {Miniflare} from './helpers/miniflare.mjs';
 import {fileURLToPath} from 'node:url';
 
 const now=Date.parse('2026-10-08T03:00:00Z');
