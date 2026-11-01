@@ -28,3 +28,14 @@ test('monthly gate identity and composition remain complete without manufacturin
   assert.equal(Number((data.values[8][3][0] - data.values[7][3][0]).toFixed(1)), 1.5);
   assert.ok(html.includes('실제 건수·매출액이 아닌 기준지수'));
 });
+
+test('all thirty store comparisons match disclosed August and September composition', () => {
+  const rows = [...html.matchAll(/class="mix-comparison"><span>([\d.]+)% → ([\d.]+)%<\/span><strong>([+−]?[\d.]+)%p<\/strong>/g)];
+  assert.equal(rows.length, 30);
+  rows.forEach((row, i) => {
+    const store = Math.floor(i / 5), category = i % 5;
+    assert.equal(Number(row[1]), data.values[7][store][category]);
+    assert.equal(Number(row[2]), data.values[8][store][category]);
+    assert.equal(Number(row[3].replace('−', '-')), Number((Number(row[2]) - Number(row[1])).toFixed(1)));
+  });
+});
