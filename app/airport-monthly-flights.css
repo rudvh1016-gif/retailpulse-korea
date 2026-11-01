@@ -105,3 +105,16 @@
 
 /* Current-day labels need their own column; historical month labels keep their layout. */
 .airport-country-changes[data-current-day] .airport-country-bar-row{grid-template-columns:8em minmax(0,1fr) 5ch}
+
+/* Compact phone comparison typography across airport and country-detail routes. */
+@media(max-width:600px){
+ .app .airport-month-flights>h3 {border-bottom:0}
+ .app .airport-month-flights>.methodology-details {border-block:0}
+ .app .airport-month-flights .airport-month-zone-title {font-size:15px}
+ .app .airport-month-flights>details>summary {font-size:14px}
+ .app .airport-month-flights [data-testid="airport-month-zones"] th {font-size:11px}
+ .app .airport-month-flights [data-testid="airport-month-zones"] tbody td:nth-child(2) {font-size:12px}
+ .app .airport-month-flights [data-testid="airport-month-zones"] tbody td:nth-child(n+3) {font-size:13px}
+ .app .airport-month-flights .airport-month-table table {font-size:12px}
+ .app .airport-month-flights .airport-month-table caption{font-size:12px}
+}

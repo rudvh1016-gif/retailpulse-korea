@@ -21,6 +21,7 @@ for(const lang of ['ko','en'])for(const width of [390,1440])test(`Nov 1 zones an
  const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section.locator('.airport-month-total')).toContainText('1 → 4');
  await expect(section.getByTestId('airport-month-basis')).toContainText('31');await expect(section.getByTestId('current-period-collected')).toContainText('KST');
  const zones=section.getByTestId('airport-month-zones');await expect(zones.locator('thead')).toContainText(day);
+ if(width===390){await expect(section.locator('.airport-month-zone-title')).toHaveCSS('font-size','15px');for(const summary of await section.locator(':scope > details > summary').all())await expect(summary).toHaveCSS('font-size','14px');await expect(zones.locator('tbody tr').first().locator('td').nth(1)).toHaveCSS('font-size','13px');}else await expect(section.locator('.airport-month-zone-title')).toHaveCSS('font-size','18px');
  const counts=await zones.locator('tbody tr td:nth-child(3)').allTextContents();expect(counts.map(Number).reduce((a,b)=>a+b,0)).toBe(4);
  const shares=section.locator('details').filter({has:page.locator('summary',{hasText:lang==='ko'?'동편·서편·중앙 항공편 비율':'East, west and centre flight shares'})});
  await shares.locator(':scope > summary').click();await expect(shares.locator('tbody tr').last().locator('td').nth(1)).toHaveText('25%');await expect(shares).toContainText('(3)');
