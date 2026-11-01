@@ -19,7 +19,7 @@ for(const width of [320,390,430,820,1280])for(const contrast of ['no-preference'
  expect(parseFloat(await group.evaluate(el=>getComputedStyle(el).gap))).toBeCloseTo(expectedGap,2);
  for(const side of ['top','right','left'])await expect(group).toHaveCSS(`border-${side}-width`,'0px');
  await expect(group).toHaveCSS('border-bottom-width','1px');
- await expect(group).toHaveCSS('background-color',width<=600?'rgb(243, 246, 248)':'rgba(0, 0, 0, 0)');
+ await expect(group).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
  await expect(group).toHaveCSS('background-image','none');
  await expect(group).toHaveCSS('box-shadow','none');
  const boxes=await days.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom};}));
@@ -31,8 +31,8 @@ for(const width of [320,390,430,820,1280])for(const contrast of ['no-preference'
   const box=await target.boundingBox();expect(box!.height).toBeGreaterThanOrEqual(44);expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.x+box!.width).toBeLessThanOrEqual(width);
  }
  for(const target of [news]){await expect(target).toHaveCSS('min-height','64px');expect((await target.boundingBox())!.height).toBeLessThan(80);}
- for(const day of await days.all()){await expect(day).toHaveCSS('min-height','46px');expect((await day.boundingBox())!.height).toBeLessThan(52);}
- for(const i of [0,2,1]){await days.nth(i).click();await expect(days.nth(i)).toHaveAttribute('aria-pressed','true');await expect(days.nth(i)).toHaveAttribute('aria-current','date');await expect(days.nth(i)).toHaveCSS('border-bottom-color','rgb(52, 91, 123)');}
+ for(const day of await days.all()){await expect(day).toHaveCSS('min-height','46px');if(width<=600)await expect(day).toHaveCSS('border-left-width','0px');expect((await day.boundingBox())!.height).toBeLessThan(52);}
+ for(const i of [0,2,1]){await days.nth(i).click();await expect(days.nth(i)).toHaveAttribute('aria-pressed','true');await expect(days.nth(i)).toHaveAttribute('aria-current','date');await expect(days.nth(i)).toHaveCSS('border-bottom-color','rgb(52, 91, 123)');if(width<=600){await expect(days.nth(i)).toHaveCSS('background-color','rgb(36, 57, 79)');await expect(days.nth(i)).toHaveCSS('color','rgb(255, 255, 255)');await expect(days.nth(i).locator('time')).toHaveCSS('color','rgb(255, 255, 255)');for(const other of await group.locator('button[aria-pressed="false"]').all())await expect(other).toHaveCSS('background-color','rgb(237, 242, 246)');}}
  await expect(page.getByTestId('departure-guide-entry')).toHaveCount(0);
  await news.focus();await expect(news).toBeFocused();await expect(news).toHaveAttribute('href','/ko/airport-news');
  await expect(page.locator('body')).toHaveCSS('background-color','rgb(255, 255, 255)');await expect(page.locator('.airport-focus-shell').first()).toHaveCSS('background-color','rgb(255, 255, 255)');

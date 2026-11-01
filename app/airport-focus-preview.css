@@ -408,3 +408,12 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 
 /* Calculation notes must not inherit the headline metric paragraph size. */
 .airport-focus-shell .focus-report .focus-core-metric :is(.focus-passenger-calculation,.focus-monthly-calculation)>p{font-size:11px!important;line-height:1.6;margin:4px 0;color:var(--text-muted,#667484)}
+
+/* Phone return-planning cards share the core forecast/flight numeric hierarchy. */
+@media(max-width:600px){
+ .airport-focus-shell .focus-report .focus-return-context .event-country-flights .staff-route-metric b{font-size:20px;font-weight:700}
+ .airport-focus-shell .focus-report .focus-return-context .event-country-flights .event-flight-change{font-size:12px;font-weight:700;line-height:1.5}
+ .airport-focus-shell .focus-report .focus-return-context .event-flight-change>.glance-count-change,
+ .airport-focus-shell .focus-report .focus-return-context .event-flight-change>.staff-route-rate{font-size:inherit;font-weight:inherit}
+ .airport-focus-shell .focus-report .focus-return-context :is(.focus-event-dates,.focus-event-dates time,.focus-event-dates small,.event-flight-context,.event-flight-baseline,.event-flight-basis,.event-flight-note,.focus-event-scope,.focus-event-timing){font-size:10px;font-weight:400;line-height:1.6;color:#53616e}
+}

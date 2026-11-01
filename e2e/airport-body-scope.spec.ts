@@ -51,6 +51,7 @@ for(const width of [320,390,430,1280])test(`one zone summary survives closed sou
  await expect(overview.getByTestId('departure-map-section')).toHaveCount(0);
  await expect(map).toBeVisible();
  await expect(map.getByTestId('map-counts')).not.toBeVisible();
+ if(width>600){
  await summary.scrollIntoViewIfNeeded();
  expect((await summary.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -61,12 +62,14 @@ for(const width of [320,390,430,1280])test(`one zone summary survives closed sou
  await expect(map.getByTestId('map-counts')).toBeVisible();
  await expect(summary).toBeFocused();
  expect(await summary.evaluate(el=>getComputedStyle(el).outlineStyle)).not.toBe('none');
+ }else await expect(details).not.toBeVisible();
  await map.locator('[data-preset="NEXT3"]').click();
  await expect(model).toHaveAttribute('data-denominator','2');
  await expect(map.getByTestId('model-whole-day')).toContainText('3편');
  await expect(map.getByTestId('map-counts')).toContainText('서편 0편');
  await expect(map.getByTestId('map-counts')).toContainText('동편 1편');
  await expect(map.getByTestId('map-counts')).toContainText('중앙 1편');
+ if(width>600){
  await map.getByTestId('map-destinations').locator('summary').click();
  await expect(map.getByTestId('map-groups')).toBeVisible();
  await expect(map.getByTestId('map-flights')).toHaveCount(0);
@@ -75,10 +78,11 @@ for(const width of [320,390,430,1280])test(`one zone summary survives closed sou
  await summary.focus();await page.keyboard.press('Space');
  await expect(details).not.toHaveAttribute('open','');
  await expect(map.getByTestId('map-counts')).not.toBeVisible();
+ }
  await expect(map).toBeVisible();
  await expect(model).toHaveAttribute('data-denominator','2');
  await expect(model).toBeVisible();
- await summary.tap();
+ if(width>600)await summary.tap();
  await expect(map.locator('[data-preset="NEXT3"]')).toHaveAttribute('aria-pressed','true');
  expect(reads).toBe(1);
  expect(errors).toEqual([]);

@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page,textScale=1){
   // The owner requested smaller guide copy; assert its exact hierarchy at both
   // normal size and 200% text enlargement, while retaining every overflow check.
   if(row.compactGuide)expect(row.size,`compact guide ${row.role}: ${row.text}`).toBe((row.role==='section'?18:15)*textScale);
-  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.approvedBand?16:row.figuresTitle?(page.viewportSize()!.width<=600?15:18):row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem&&page.viewportSize()!.width<=600?14:row.approvedBand?16:row.figuresTitle?(page.viewportSize()!.width<=600?15:18):row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -100,9 +100,9 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  }));
  for(const row of rows){
   expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);expect(row.markerDisplay).toBe('none');expect(row.markerWidth).toBe(0);
-  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([enlarged?'32px':'16px',row.staticCjk?'600':'700','rgb(34, 35, 38)','10px']);
+  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([page.viewportSize()!.width<=600?(enlarged?'28px':'14px'):(enlarged?'32px':'16px'),row.staticCjk?'600':'700','rgb(34, 35, 38)',page.viewportSize()!.width<=600?'8px':'10px']);
   expect([row.family,row.lineHeight,row.spacing]).toEqual([rows[0].family,rows[0].lineHeight,rows[0].spacing]);
-  expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(9);expect(row.bodyGap!).toBeLessThanOrEqual(11);
+  expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(page.viewportSize()!.width<=600?7:9);expect(row.bodyGap!).toBeLessThanOrEqual(page.viewportSize()!.width<=600?9:11);
   expect(row.overflow).toBeLessThanOrEqual(1);
  }
  for(const title of await titles.all())await expect(title).toHaveAccessibleName(await headingName(title));
@@ -168,11 +168,11 @@ for(const width of [320,390,768,1440])for(const route of routes)test(`sitewide h
   const parentSize=await page.locator('#airport-staff-briefing-title').evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
   for(const heading of await staff.all())expect(parentSize).toBeGreaterThan(await heading.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
   const body=page.locator('.staff-brief-grid p').first();
-  await expect(body).toHaveCSS('font-size','14px');await expect(body).toHaveCSS('font-weight','400');
+  await expect(body).toHaveCSS('font-size',width<=600?'13px':'14px');await expect(body).toHaveCSS('font-weight','400');
   // The approved hierarchy distinguishes these peers by size, weight and spacing,
   // rather than enlarging every title above the existing numeric/body values.
   for(const heading of await staff.all()){
-   await expect(heading).toHaveCSS('font-size','16px');await expect(heading).toHaveCSS('font-weight','700');
+   await expect(heading).toHaveCSS('font-size',width<=600?'14px':'16px');await expect(heading).toHaveCSS('font-weight','700');
    expect(await heading.evaluate(e=>Number(getComputedStyle(e).fontWeight))).toBeGreaterThan(await body.evaluate(e=>Number(getComputedStyle(e).fontWeight)));
   }
   await expect(page.locator('.staff-brief-grid').getByText('품목별 확인',{exact:true})).toHaveCount(0);

@@ -23,7 +23,7 @@ for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins 
  await expect(holiday.locator('p').first()).toHaveCSS('font-weight','400');
  await expect(holiday.locator('h4')).not.toContainText('금융기관');
 
- await expect(briefing).toContainText('선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님');
+ await expect(briefing).not.toContainText('선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님');
  await expect(briefing.locator('.staff-brief-heading')).toContainText('2026-10-19');
  await expect(briefing.locator('.staff-brief-heading')).toContainText('KST 수집');
  expect(await flow.getByTestId('glance-key-growth').evaluate(e=>e.nextElementSibling?.classList.contains('airport-staff-briefing'))).toBe(true);

@@ -50,6 +50,39 @@
     flex: 0 1 auto;
     gap: clamp(16px, 4.5vw, 20px);
     margin-inline: 0;
-    background-color: #f3f6f8;
+    background-color: transparent;
   }
+}
+
+/* Phone date choices carry the navy selection; their gaps remain the page white. */
+@media (max-width: 600px) and (forced-colors: none) {
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] {
+  border-inline:0; background:#edf2f6; color:#24394f;
+ }
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"] {
+  background:#24394f; color:#fff;
+ }
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time {color:inherit}
+ :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:focus-visible {outline:2px solid #24394f;outline-offset:2px}
+}
+
+/* Phone airport details: remove requested repeat entries, retaining their data on other views. */
+@media(max-width:600px){
+ .airport-focus-operating .airport-view [data-testid="map-counting-basis"],
+ :root body .app .airport-focus-operating .focus-country-jump,
+ .airport-focus-operating .airport-summary-details {display:none}
+ .airport-focus-operating .airport-view .passenger-scope-note {border-block:0}
+}
+
+.airport-comparison-mobile{display:none}
+@media(max-width:600px){
+ .airport-view .airport-comparison-desktop{display:none}
+ .airport-view .airport-comparison-mobile{display:block}
+ .airport-view .airport-comparison-sentence{margin:6px 0;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+ .airport-view .airport-comparison-sentence small{display:block;font-size:10px;color:#53616e;line-height:1.6}
+}
+
+@media(max-width:600px){
+ .airport-focus-operating .airport-today>.airport-current-brief.current-brief{border-bottom:0}
+ .airport-focus-operating .airport-today>.airport-composition{border-top:0}
 }

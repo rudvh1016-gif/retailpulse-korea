@@ -79,3 +79,14 @@
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>.airport-staff-briefing>.staff-brief-heading{margin-top:0;margin-bottom:24px;padding-top:0}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a[data-testid="glance-key-growth"]{padding-bottom:2px}
 }
+
+/* Compact only the five checked phone flow topics; preserve desktop hierarchy. */
+@media(max-width:600px){
+ :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title:has(>.airport-flow-check){font-size:14px!important;line-height:1.45!important;margin-bottom:8px}
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"],
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid{row-gap:20px}
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>strong,
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>p{font-size:13px}
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>small,
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>small{font-size:11px}
+}
