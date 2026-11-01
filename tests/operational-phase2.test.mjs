@@ -203,6 +203,10 @@ for(const [file,patches] of Object.entries(JSON.parse(readFileSync("tests/fixtur
 for(const [file,patches] of Object.entries(JSON.parse(readFileSync('tests/fixtures/ui-localization-20261031-approved-patches.json','utf8')))){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }
+// Owner approved only these exact shopping entry and static-report header edits.
+for(const [file,patches] of Object.entries(JSON.parse(readFileSync('tests/fixtures/shopping-briefing-approved-patches.json','utf8')))){
+ approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+}
 // Owner explicitly approved only these five mobile display expressions.
 // Keep the protected file fixed, the five-entry bound and all canonical hashes.
 const mobileDisplayPatches=JSON.parse(readFileSync('tests/fixtures/mobile-airport-ui-20261101-approved-patches.json','utf8'));
