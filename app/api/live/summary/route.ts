@@ -1,3 +1,4 @@
+import {projectDepartureCongestion} from '../../../../lib/airport-congestion-observation';
 import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
 import { RECORD_AREAS, validRecordMonth, type RecordArea } from '../../../../lib/monthly-records';
@@ -750,8 +751,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     0.5,
     distinctFlightsByTerminal,
   );
+  const publicCongestion = projectDepartureCongestion(congestionRows,sources,now);
   const currentBusiest = summarizeCurrentBusiestDepartureHalls(
-    congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })) as unknown as AirportCongestionSummaryRow[],
+    publicCongestion.filter(row=>row.freshness==='LIVE') as unknown as AirportCongestionSummaryRow[],
   );
   const latestCongestionRetrieval = congestionRows.reduce<string | null>((latest, row) => {
     const value = typeof row.retrievedAt === "string" ? row.retrievedAt : null;
@@ -840,7 +842,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
       transferForecast: transferRows,
       monthToDate,
       periodComparisons,
-      congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),
+      congestion: publicCongestion,
       currentBusiestDepartureHallByTerminal: currentBusiest,
       departuresTrackedToday: flightsToday.departuresTrackedToday,
       departuresTrackedTodayByTerminal,

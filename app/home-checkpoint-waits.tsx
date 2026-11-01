@@ -6,6 +6,7 @@ import AirportCheckpointDeferred from './airport-checkpoint-deferred';
 import {rankCurrentDepartureHallCheckpoints} from '../lib/airport-today-summary';
 import {animateChoice} from './use-choice-motion';
 import './home-checkpoint-waits.css';
+import {checkpointMethodCopy,checkpointTimingCopy} from '../lib/checkpoint-method-copy';
 
 /** Reuses the glance's existing summary and clock. No independent reads or polling. */
 export function HomeCheckpointWaits({summary,now,lang}:{summary:LiveSummary|null|undefined;now:number;lang:Lang}){
@@ -23,7 +24,7 @@ export function HomeCheckpointWaits({summary,now,lang}:{summary:LiveSummary|null
   return()=>{observer.disconnect();changed.disconnect();stops.forEach(stop=>stop());};
  },[observationKey]);
  return <section className="home-checkpoint-waits" ref={root} aria-labelledby="home-checkpoint-waits-title">
-  <h2 data-heading="section" id="home-checkpoint-waits-title"><span className="heading-marker" aria-hidden="true"/>{text.title}</h2><p className="home-checkpoint-note">{text.note}</p>
+  <h2 data-heading="section" id="home-checkpoint-waits-title"><span className="heading-marker" aria-hidden="true"/>{text.title}</h2><p className="home-checkpoint-note">{text.note}. {checkpointMethodCopy(lang)} {checkpointTimingCopy(lang)}</p>
   {!summary?<p role="status">{summary===undefined?text.pending:text.missing}</p>:<div className="airport-checkpoint-schematics">{(['T1','T2'] as const).map(terminal=><AirportCheckpointDeferred key={terminal} terminal={terminal} rows={(rows[terminal]??[]).map(row=>({...row,freshness:row.freshness??'UNKNOWN'}))} now={now} lang={lang} showSeverity/>)}</div>}
  </section>;
 }

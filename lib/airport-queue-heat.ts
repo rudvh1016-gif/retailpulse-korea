@@ -1,5 +1,5 @@
 export type QueueHeatLevel = 'neutral' | 'clear' | 'normal' | 'busy' | 'very-busy';
-export type QueueHeatState = 'current' | 'stale' | 'missing' | 'closed' | 'zero' | 'unverified' | 'unavailable';
+export type QueueHeatState = 'current' | 'stale' | 'missing' | 'closed' | 'zero' | 'unverified' | 'unavailable' | 'failed';
 export interface QueueHeatReading {
   terminal: string;
   zone: string;
@@ -7,6 +7,7 @@ export interface QueueHeatReading {
   waitTimeRaw?: string | null;
   observedAt: string;
   freshness: string;
+  collectionStatus?: import('./airport-congestion-observation').CongestionCollectionStatus;
 }
 
 /** Same 20-minute freshness limit used by /api/live/summary for A4 observations. */
@@ -22,6 +23,8 @@ export function queueHeat(reading: QueueHeatReading, now: number): { level: Queu
   const raw = reading.waitTimeRaw?.trim() ?? '';
   const age = now - Date.parse(reading.observedAt);
   if (!Number.isFinite(age) || age < 0 || !['LIVE','STALE'].includes(reading.freshness)) return {level:'neutral', state:'unavailable'};
+  if(reading.collectionStatus==='FAILED')return {level:'neutral',state:'failed'};
+  if(reading.collectionStatus==='UNKNOWN')return {level:'neutral',state:'unavailable'};
   if (reading.freshness === 'STALE' || age > QUEUE_FRESH_MS) {
     return {level:'neutral', state:'stale'};
   }
@@ -39,10 +42,10 @@ export function queueHeat(reading: QueueHeatReading, now: number): { level: Queu
 }
 
 const labels = {
-  ko: {clear:'원활', normal:'보통', busy:'혼잡', 'very-busy':'매우 혼잡', stale:'오래된 관측', missing:'대기시간 미확인', closed:'운영 안 함', zero:'0분 표시 · 운영 여부 확인', unverified:'등급 기준 미확인', unavailable:'관측 확인 불가'},
-  en: {clear:'Smooth', normal:'Moderate', busy:'Busy', 'very-busy':'Very busy', stale:'Past observation', missing:'Wait unavailable', closed:'Not operating', zero:'0 min · check operation', unverified:'Category unverified', unavailable:'Observation unavailable'},
-  zh: {clear:'通畅', normal:'一般', busy:'拥挤', 'very-busy':'非常拥挤', stale:'较早观测', missing:'等候时间未知', closed:'未运营', zero:'显示0分钟 · 请确认运营', unverified:'等级标准未确认', unavailable:'观测无法确认'},
-  ja: {clear:'円滑', normal:'通常', busy:'混雑', 'very-busy':'非常に混雑', stale:'過去の観測', missing:'待ち時間未確認', closed:'営業外', zero:'0分表示・運営状況を確認', unverified:'区分基準未確認', unavailable:'観測確認不可'},
+  ko: {failed:'수집 실패 · 이전 관측',clear:'원활', normal:'보통', busy:'혼잡', 'very-busy':'매우 혼잡', stale:'오래된 관측', missing:'대기시간 미확인', closed:'운영 안 함', zero:'0분 표시 · 운영 여부 확인', unverified:'등급 기준 미확인', unavailable:'관측 확인 불가'},
+  en: {failed:'Collection failed · previous observation',clear:'Smooth', normal:'Moderate', busy:'Busy', 'very-busy':'Very busy', stale:'Past observation', missing:'Wait unavailable', closed:'Not operating', zero:'0 min · check operation', unverified:'Category unverified', unavailable:'Observation unavailable'},
+  zh: {failed:'采集失败 · 先前观测',clear:'通畅', normal:'一般', busy:'拥挤', 'very-busy':'非常拥挤', stale:'较早观测', missing:'等候时间未知', closed:'未运营', zero:'显示0分钟 · 请确认运营', unverified:'等级标准未确认', unavailable:'观测无法确认'},
+  ja: {failed:'収集失敗・前回の観測',clear:'円滑', normal:'通常', busy:'混雑', 'very-busy':'非常に混雑', stale:'過去の観測', missing:'待ち時間未確認', closed:'営業外', zero:'0分表示・運営状況を確認', unverified:'区分基準未確認', unavailable:'観測確認不可'},
 };
 
 export function queueHeatLabel(heat: ReturnType<typeof queueHeat>, lang: string): string {
