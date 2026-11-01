@@ -31,7 +31,7 @@ test('incomplete month uses only included days, names the actual month and never
  const result=eventCountryFlights(eventFlights({baseline:flightBaseline({TH:10},2)}),'TH');
  assert.equal(result.mean,5);assert.equal(result.days,2);assert.equal(result.expectedDays,30);assert.equal(result.partial,true);assert.equal(result.delta,11);
  const html=renderToStaticMarkup(h(EventCountryFlights,{country:'TH',label:'태국',lang:'ko',context:eventFlights({baseline:flightBaseline({TH:10},2,'2026-08')})}));
- assert.match(html,/2026-08월 수집분 일평균 \(2\/31일\) 5편 대비/);assert.doesNotMatch(html,/전월/);
+ assert.match(html.replace(/<[^>]*>/g,''),/2026-08월 수집분 일평균 \(2\/31일\) 5편 대비/);assert.doesNotMatch(html,/전월/);
  for(const dates of [[],['2026-09-01','2026-09-01'],['2026-08-01'],['2026-09-31'],['2026-11-01']]){
   const baseline=flightBaseline();baseline.includedDays=dates;assert.equal(eventCountryFlights(eventFlights({baseline}),'TH').mean,null);
  }
@@ -77,5 +77,6 @@ test('folded flight basis adds exact coverage without repeating adjacent metrics
   if(lang!=='ko')assert.doesNotMatch(html,/[가-힣]/);
  }
  const partial=renderToStaticMarkup(h(EventCountryFlightBasis,{country:'TH',label:'태국',context:eventFlights({baseline:flightBaseline({TH:10},2,'2026-08')}),lang:'ko',eventForecastNote:true}));
- for(const fact of ['2026-08-01 ~ 2026-08-02','포함일 2/31일','월전체 평균 아님','행사일 예측 아님','증감 원인 미확인'])assert.ok(partial.includes(fact),fact);
+ for(const fact of ['2026-08-01 ~ 2026-08-02','포함일 2/31일','월전체 평균 아님','행사일 예측 아님'])assert.ok(partial.includes(fact),fact);
+ assert.doesNotMatch(partial,/증감 원인 미확인|때문에|caused by|due to/);
 });
