@@ -25,6 +25,7 @@ export interface AirportCongestionSummaryRow {
   waitingCount: number | null;
   observedAt: string;
   freshness?: "LIVE" | "STALE";
+  collectionStatus?: import('./airport-congestion-observation').CongestionCollectionStatus;
 }
 
 export interface ForecastBand {

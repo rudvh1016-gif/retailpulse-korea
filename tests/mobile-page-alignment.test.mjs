@@ -18,7 +18,12 @@ test('country phone tabs override the old last-odd grid placement without editin
  assert.match(css,/\.airport-insight-tabs\.country-tabs button\{flex:0 0 auto;min-width:44px;min-height:44px;white-space:nowrap;/);
 });
 test('airport date alignment is phone-only and changes no typography',()=>{
- const css=readFileSync('app/airport-models.css','utf8'),added=css.slice(css.indexOf('/* Keep the first phone date label'));
+ const css=readFileSync('app/airport-models.css','utf8'),tail=css.slice(css.indexOf('/* Keep the first phone date label'));
+ // The phone alignment patch stays unchanged; the separately approved PC block follows it.
+ const start=tail.indexOf('@media(max-width:600px){');assert.ok(start>=0);
+ let depth=1,end=start+'@media(max-width:600px){'.length;
+ while(depth&&end<tail.length){if(tail[end]==='{')depth++;if(tail[end]==='}')depth--;end++;}
+ assert.equal(depth,0);const added=tail.slice(start,end);
  assert.match(added,/@media\(max-width:600px\)/);assert.match(added,/button\[aria-pressed\]:first-child\{padding-inline-start:0\}/);
  assert.doesNotMatch(added,/font|line-height|letter-spacing|color|background|@media\(min-width/);
 });

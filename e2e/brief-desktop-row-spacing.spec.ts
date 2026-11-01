@@ -92,7 +92,7 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
   if(width<1000){expect(topicGap).toBeGreaterThanOrEqual(24);expect(topicGap).toBeLessThanOrEqual(28);}
   else{
    const {returnBox,cards}=layout;
-   expect(returnBox.y).toBeGreaterThanOrEqual(right.y+right.height);expect(returnBox.width).toBeGreaterThan(numbers.width+right.width);
+   expect(right.y).toBeGreaterThanOrEqual(returnBox.y+returnBox.height);expect(right.width).toBeGreaterThan(numbers.width+returnBox.width);expect(returnBox.x).toBeGreaterThanOrEqual(numbers.x+numbers.width);
    if(cards.length>1){const [a,b]=cards;expect(a.y).toBeCloseTo(b.y,0);expect(b.x).toBeGreaterThanOrEqual(a.x+a.width);}
   }
   for(const {figures:isFigures,heading:hb,content:cb} of layout.topicBoxes){
@@ -102,10 +102,11 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
   if(width>=1000){
    expect(numbers.y-title.y-title.height).toBeGreaterThanOrEqual(7);
    expect(numbers.y-title.y-title.height).toBeLessThanOrEqual(9);
-   expect(changeTitle.y-numbers.y-numbers.height).toBeGreaterThanOrEqual(24);
-   expect(changeTitle.y-numbers.y-numbers.height).toBeLessThanOrEqual(28);
-   expect(right.x).toBeGreaterThan(numbers.x+numbers.width);
-   expect(Math.abs(layout.firstFuture.y-title.y)).toBeLessThanOrEqual(1);
+   const topEnd=Math.max(numbers.y+numbers.height,layout.returnBox.y+layout.returnBox.height);
+   expect(changeTitle.y-topEnd).toBeGreaterThanOrEqual(24);
+   expect(changeTitle.y-topEnd).toBeLessThanOrEqual(28);
+   expect(right.x).toBeCloseTo(numbers.x,0);
+   expect(Math.abs(returnTitle.y-title.y)).toBeLessThanOrEqual(1);
   }else{
    expect(layout.gridTemplateRows).toBe('none');
    expect(right.y).toBeGreaterThanOrEqual(layout.changes.y+layout.changes.height-1);
@@ -136,6 +137,6 @@ for(const width of [390,1440])for(const count of [0,1,2])test(`return planning k
  const boxes=await cards.evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().toJSON()));
  if(count===2){if(width>=1000){expect(boxes[0].y).toBeCloseTo(boxes[1].y,0);expect(boxes[1].x).toBeGreaterThanOrEqual(boxes[0].right);}else expect(boxes[1].y).toBeGreaterThanOrEqual(boxes[0].bottom);}
  const future=(await page.locator('.focus-preparation-brief').boundingBox())!,bounds=(await group.boundingBox())!;
- if(width>=1000)expect(bounds.y).toBeGreaterThanOrEqual(future.y+future.height);else expect(future.y).toBeGreaterThanOrEqual(bounds.y+bounds.height);
+ expect(future.y).toBeGreaterThanOrEqual(bounds.y+bounds.height);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

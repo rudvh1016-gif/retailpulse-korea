@@ -28,7 +28,7 @@ export function EventCountryFlights({country,label,context,lang}:Props){
  return <div className="event-country-flights" data-country={metric.country} data-flight-day={context?.day} data-flight-scope={context?.scope}>
   <p className="event-flight-context">{text.selected} {context?.day||'—'} · {scope}</p>
   <p className="staff-route-metric">{route} {metric.count===null?(context?.status==='PARTIAL'?text.partial:context?.status==='LOADING'?text.loading:text.missing):<b>{number.format(metric.count)}{unit}</b>}</p>
-  <p className="event-flight-change">{metric.mean===null?<>{metric.month&&`${metric.month} · `}{context?.baselinePending?text.baselineLoading:text.comparison}</>:<><span className="event-flight-baseline">{airportMonthPeriodLabel(context?.baseline,metric.month!,lang)} {number.format(metric.mean)}{unit} {lang==='ko'?'대비':lang==='en'?'comparison':lang==='zh'?'相比':'比'}</span>  {metric.delta===null?text.held:<><CountChange delta={metric.delta} format={number.format} unit={unit} lang={lang}/>{' '}<span className="staff-route-rate">(<ChangeRate value={metric.percent} lang={lang}/>)</span>{metric.mean===0&&<> · {text.zero}</>}</>}</>}</p>
+  <p className="event-flight-change">{metric.mean===null?<>{metric.month&&`${metric.month} · `}{context?.baselinePending?text.baselineLoading:text.comparison}</>:<><span className="event-flight-baseline"><span className="event-flight-period">{airportMonthPeriodLabel(context?.baseline,metric.month!,lang)}</span> {number.format(metric.mean)}{unit} {lang==='ko'?'대비':lang==='en'?'comparison':lang==='zh'?'相比':'比'}</span>  {metric.delta===null?text.held:<><CountChange delta={metric.delta} format={number.format} unit={unit} lang={lang}/>{' '}<span className="staff-route-rate">(<ChangeRate value={metric.percent} lang={lang}/>)</span>{metric.mean===0&&<> · {text.zero}</>}</>}</>}</p>
  </div>;
 }
 export function EventCountryFlightBasis(props:Props & {eventForecastNote?:boolean}){
@@ -37,6 +37,5 @@ export function EventCountryFlightBasis(props:Props & {eventForecastNote?:boolea
  // The adjacent metric already states flight date, terminal, mean and changes.
  // Keep only the extra evidence here: route definition and actual included dates.
  const reference=({ko:'선택일 항공편 참고 · 행사일 예측 아님',en:'Selected-day flights · not an event-day forecast',zh:'所选日期航班参考 · 非活动日期预测',ja:'選択日の便数参考・行事日の予測ではありません'} as const)[props.lang];
- const association=({ko:'증감 원인 미확인',en:'Cause of change unconfirmed',zh:'变化原因未确认',ja:'増減の原因は未確認'} as const)[props.lang];
- return <><p className="event-flight-basis" data-country={metric.country}>{text.basis} · {text.scheduled}{metric.mean!==null&&<> · {metric.start} ~ {metric.end} <span className="staff-route-sample">({sample})</span>{metric.partial&&<> · {text.notMonth}</>}</>}</p><p className="event-flight-note">{props.eventForecastNote&&<>{reference} · </>}{association}</p></>;
+ return <><p className="event-flight-basis" data-country={metric.country}>{text.basis}{metric.mean!==null&&<> · <span className="event-flight-period">{metric.start} ~ {metric.end}</span> <span className="staff-route-sample">({sample})</span>{metric.partial&&<> · {text.notMonth}</>}</>}</p>{props.eventForecastNote&&<p className="event-flight-note">{reference}</p>}</>;
 }

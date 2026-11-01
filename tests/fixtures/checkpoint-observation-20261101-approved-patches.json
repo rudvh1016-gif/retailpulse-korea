@@ -1,0 +1,14 @@
+[
+  [
+    "import {projectDepartureCongestion} from '../../../../lib/airport-congestion-observation';\n",
+    ""
+  ],
+  [
+    "  const publicCongestion = projectDepartureCongestion(congestionRows,sources,now);\n  const currentBusiest = summarizeCurrentBusiestDepartureHalls(\n    publicCongestion.filter(row=>row.freshness==='LIVE') as unknown as AirportCongestionSummaryRow[],\n  );",
+    "  const currentBusiest = summarizeCurrentBusiestDepartureHalls(\n    congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })) as unknown as AirportCongestionSummaryRow[],\n  );"
+  ],
+  [
+    "      congestion: publicCongestion,",
+    "      congestion: congestionRows.map((row) => ({ ...row, freshness: freshnessOf(row.observedAt, 20, now) })),"
+  ]
+]

@@ -1,4 +1,5 @@
 'use client';
+import {checkpointMethodCopy,checkpointTimingCopy} from '../lib/checkpoint-method-copy';
 import {useEffect,useRef,useId,type CSSProperties} from 'react';
 import type {Lang} from './retailpulse-data';
 import {longestCheckpoint} from '../lib/checkpoint-longest';
@@ -22,7 +23,7 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=
  const groups=checkpointLayout(terminal,rows),minute=t(lang,'분','min','分','分');
  const paintId=useId();
  const host=useRef<HTMLElement>(null),longest=longestCheckpoint(terminal,rows,now);
- const motionKey=JSON.stringify(rows.map(row=>[row.zone,row.observedAt,row.freshness]));
+ const motionKey=JSON.stringify(rows.map(row=>[row.zone,row.observedAt,row.freshness,row.collectionStatus]));
  useEffect(()=>{
   const node=host.current;if(!showSeverity||!node||!window.IntersectionObserver)return;
   const preference=window.matchMedia('(prefers-reduced-motion: reduce)');let visible=false;
@@ -38,12 +39,12 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=
  const stamp=(at:string)=>Number.isFinite(Date.parse(at))?new Intl.DateTimeFormat(locale,{timeZone:'Asia/Seoul',...(showSeverity?{year:'numeric' as const}:{}),month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(at)):t(lang,'시각 미확인','Time unconfirmed','时间未确认','時刻未確認');
  const wait=(row:CheckpointReading|null)=>{
   const heat:ReturnType<typeof queueHeat>=row?queueHeat(row,now):{level:'neutral',state:'missing'};
-  const value=row?displayedQueueMinutes(row):null;
+  const value=row&&heat.state!=='unavailable'?displayedQueueMinutes(row):null;
   const shown=heat.state==='closed'?t(lang,'중단','Off','暂停','停止'):value===null?'—':`${value}${row?.waitTimeRaw==='60+'?'+':''}`;
   return {heat,value,shown};
  };
  const observationClock=<>{t(lang,'관측','Observed','观测','観測')}: {observed.length?observed.length===1?stamp(observed[0]):`${stamp(observed[0])} / ${stamp(observed.at(-1)!)}`:'—'} KST{observed.length>1?` · ${t(lang,'출국장별 시각 다름','Clocks differ by hall','各厅时刻不同','出国場ごとに時刻が異なります')}`:''}</>;
- const clockWarning=!observed.length?t(lang,'시각 미확인','Time unconfirmed','时间未确认','時刻未確認'):terminalRows.some(row=>queueHeat(row,now).state==='unavailable')?t(lang,'시각·상태 확인 필요','Time/status needs verification','时间或状态待确认','時刻・状態を要確認'):terminalRows.every(row=>queueHeat(row,now).state==='stale')?t(lang,'오래된 관측','Past observation','过期观测','過去の観測'):terminalRows.some(row=>queueHeat(row,now).state==='stale')?t(lang,'일부 오래된 관측','Includes past observations','含过期观测','過去の観測を含む'):'';
+ const clockWarning=!observed.length?t(lang,'시각 미확인','Time unconfirmed','时间未确认','時刻未確認'):terminalRows.some(row=>queueHeat(row,now).state==='unavailable')?t(lang,'시각·상태 확인 필요','Time/status needs verification','时间或状态待确认','時刻・状態を要確認'):terminalRows.some(row=>queueHeat(row,now).state==='failed')?t(lang,'수집 실패 · 이전 관측','Collection failed · prior observation','采集失败·先前观测','収集失敗・前回の観測'):terminalRows.every(row=>queueHeat(row,now).state==='stale')?t(lang,'오래된 관측','Past observation','过期观测','過去の観測'):terminalRows.some(row=>queueHeat(row,now).state==='stale')?t(lang,'일부 오래된 관측','Includes past observations','含过期观测','過去の観測を含む'):'';
  return <figure ref={host} className="checkpoint-schematic" data-testid="checkpoint-schematic" data-terminal={terminal} data-enhanced={showSeverity||undefined}>
   <figcaption><strong>{terminal}</strong> {t(lang,'출국장 대기','Departure-hall waits','出境厅等候','出国場の待ち時間')}</figcaption>
   {showSeverity&&<p className="checkpoint-schematic-time checkpoint-observation-heading"><strong>{observationClock}{clockWarning&&` · ${clockWarning}`}</strong></p>}
@@ -62,20 +63,20 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=
     const side=slot.key.endsWith('W')?t(lang,'서','W','西','西'):t(lang,'동','E','东','東');
     const name=terminal==='T1'?`${slot.key.slice(0,1)} ${side}`:slot.key;
     const count=slot.row?.waitingCount;
-    const known=typeof count==='number'&&Number.isFinite(count)&&count>=0,n=known?count.toLocaleString(locale):'';
+    const known=heat.state!=='unavailable'&&typeof count==='number'&&Number.isFinite(count)&&count>=0,n=known?count.toLocaleString(locale):'';
     const people=known
      ?t(lang,`대기 ${n}명`,`Waiting ${n}`,`等候 ${n}人`,`待機 ${n}人`)
-     :t(lang,'인원 미제공','Count unavailable','人数未提供','人数未提供');
+     :heat.state==='unavailable'&&slot.row?t(lang,'인원 미확인','Count unconfirmed','人数未确认','人数未確認'):t(lang,'인원 미제공','Count unavailable','人数未提供','人数未提供');
     // A lane is about 35px wide on a 320px phone: English words longer than that
     // would split mid-word, so the label shows short words and speaks in full.
     const peopleShown=lang==='en'?known?`${n} in line`:'No count':people;
     return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-longest={showSeverity&&longest.keys.includes(slot.key)||undefined} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
      <span>{name}</span><strong><span>{shown}{heat.state==='zero'&&<sup>*</sup>}</span>{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}</strong>
-     <small className="checkpoint-schematic-people">{peopleShown}</small>{showSeverity&&heat.state==='current'&&heat.level==='very-busy'&&<small className="checkpoint-severity">{heat.basis?t(lang,'60분+','60+ min','60分+','60分以上'):queueHeatLabel(heat,lang)}</small>}
+     <small className="checkpoint-schematic-people">{peopleShown}</small>{slot.row&&(heat.state==='stale'||heat.state==='failed'||heat.state==='unavailable')&&<small className="checkpoint-reading-status">{heat.state==='stale'?t(lang,'지난값','Prior','旧值','前回'):heat.state==='failed'?t(lang,'실패','Failed','失败','失敗'):t(lang,'미확인','Unknown','未确认','未確認')}</small>}{showSeverity&&heat.state==='current'&&heat.level==='very-busy'&&<small className="checkpoint-severity">{heat.basis?t(lang,'60분+','60+ min','60分+','60分以上'):queueHeatLabel(heat,lang)}</small>}
     </div>;
    })}</div>
   </div>
-  {!showSeverity&&<p className="checkpoint-schematic-time">{observationClock}</p>}
+  {!showSeverity&&<><p className="checkpoint-schematic-time">{observationClock}</p><p className="checkpoint-schematic-basis">{checkpointMethodCopy(lang)} {checkpointTimingCopy(lang)}</p></>}
   <p className="checkpoint-schematic-basis">{t(lang,'— 미확인 · *0분은 운영 확인 · 오래된 값은 회색','— unconfirmed · *0 min: check operation · old values are grey','— 未确认 · *0分需确认运营 · 旧值为灰色','— 未確認 · *0分は運営を確認 · 古い値は灰色')}</p>
   {showSeverity&&terminal==='T1'&&<p className="checkpoint-schematic-basis">{t(lang,'T1 색상은 코리테일 분 단위 기준 · 공식 혼잡 등급 아님','T1 colors use KORETAIL minute bands, not official congestion grades.','T1配色采用KORETAIL分钟标准，非官方拥挤等级。','T1の色はKORETAILの分単位基準で、公式混雑等級ではありません。')}</p>}<details className="checkpoint-schematic-details">
    <summary>{t(lang,'대기 인원·시각·출처','People, times and source','等候人数、时刻与来源','待機人数・時刻・出典')}</summary>

@@ -451,3 +451,10 @@ nav.bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 @media(max-width:600px){
  .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:first-child{padding-inline-start:0}
 }
+
+/* Desktop airport controls share one compact left-aligned rhythm. */
+@media(min-width:1000px){
+ .app .airport-view>#airport-data-flow,.app .airport-view>.airport-context-nav{display:flex;justify-content:flex-start;align-items:stretch;flex-wrap:wrap;gap:0 20px;width:max-content;max-width:100%}
+ .app .airport-view>#airport-data-flow>button,.app .airport-view>.airport-context-nav>button{flex:0 0 96px;width:96px;min-width:96px;min-height:44px;padding:6px;background:transparent;text-align:center;font-size:13px}
+ .app .airport-view>#airport-data-flow>button.active,.app .airport-view>.airport-context-nav>button[aria-current=page]{color:var(--ink);border-bottom-color:var(--ink);font-weight:650}
+}
