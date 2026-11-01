@@ -55,14 +55,16 @@ async function expectContainedNumbers(table:Locator){
   const range=document.createRange();range.selectNodeContents(cell);
   const box=cell.getBoundingClientRect(),text=range.getBoundingClientRect(),style=getComputedStyle(cell);
   const lines=new Set(Array.from(range.getClientRects(),rect=>Math.round(rect.top)));
-  return {value:cell.textContent,whiteSpace:style.whiteSpace,fontSize:Number.parseFloat(style.fontSize),left:text.left-box.left,right:box.right-text.right,lines:lines.size};
+  return {compact:innerWidth<=600,zone:!!cell.closest('[data-testid="airport-month-zones"]'),header:cell.tagName==='TH',column:(cell as HTMLTableCellElement).cellIndex,value:cell.textContent,whiteSpace:style.whiteSpace,fontSize:Number.parseFloat(style.fontSize),left:text.left-box.left,right:box.right-text.right,lines:lines.size};
  }));
  for(const cell of cells){
   expect(cell.whiteSpace,JSON.stringify(cell)).toBe('nowrap');
   expect(cell.lines,JSON.stringify(cell)).toBe(1);
   expect(cell.left,JSON.stringify(cell)).toBeGreaterThanOrEqual(-1);
   expect(cell.right,JSON.stringify(cell)).toBeGreaterThanOrEqual(-1);
-  expect(cell.fontSize,JSON.stringify(cell)).toBeGreaterThanOrEqual(13);
+  // Owner-approved phone hierarchy: quiet month headers, baseline, then current/rate.
+  if(cell.compact)expect(cell.fontSize,JSON.stringify(cell)).toBe(cell.zone?(cell.header?11:cell.column===1?12:13):12);
+  else expect(cell.fontSize,JSON.stringify(cell)).toBeGreaterThanOrEqual(13);
  }
  expect(await table.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true);
 }

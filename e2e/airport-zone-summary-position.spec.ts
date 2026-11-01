@@ -35,6 +35,8 @@ for(const width of[320,390,430,1280])test(`three live zones sit with the picture
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath(`zone-summary-${width}.png`)});
  const map=page.getByTestId('departure-map'),basis=map.getByTestId('map-counting-basis');await expect(map).toBeVisible();await expect(map.getByTestId('map-counts')).not.toBeVisible();await expect(map.getByTestId('map-lead')).not.toBeVisible();await expect(basis).not.toHaveAttribute('open');
  await map.locator('[data-preset=NEXT3]').click();await expect(model).toHaveAttribute('data-denominator','138');await expect(counts.locator('[data-side=CENTER] small')).toHaveText('12%');await expect(counts.locator('[data-side=WEST] strong')).toHaveText('0편');
+ // Keep phone model/preset geometry above; verify the retained source disclosure on PC.
+ if(width<=600){await expect(basis).not.toBeVisible();await page.setViewportSize({width:1280,height:900});}
  await basis.locator(':scope > summary').focus();await page.keyboard.press('Enter');await expect(map.getByTestId('map-counts')).toBeVisible();await expect(map.getByTestId('map-lead')).toBeVisible();await expect(map.getByTestId('map-destinations')).toBeVisible();await expect(map.getByTestId('map-official-coordinates')).toBeVisible();await expect(model.getByTestId('zone-range-CENTER')).toContainText('249–252');expect(errors).toEqual([]);
 });
 
