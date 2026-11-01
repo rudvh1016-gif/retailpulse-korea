@@ -9,5 +9,7 @@ export function longestCheckpoint(terminal:'T1'|'T2',rows:readonly QueueHeatRead
  });
  if(!candidates.length)return {keys:[] as string[],value:null,lowerBound:false,uncertain:false};
  const value=Math.max(...candidates.map(row=>row.value)),lowerBound=candidates.some(row=>row.bounded);
- return {keys:candidates.filter(row=>row.value===value||row.bounded).map(row=>row.key),value,lowerBound,uncertain:lowerBound&&value>60};
+ const uncertain=lowerBound&&(value>60||candidates.filter(row=>row.bounded).length>1);
+ const keys=candidates.filter(row=>lowerBound&&value<=60?row.bounded:row.value===value||row.bounded).map(row=>row.key);
+ return {keys,value,lowerBound,uncertain};
 }
