@@ -8,7 +8,7 @@ async function setup(page:Page){
 // More's approved aligned rows include the generated chevron in their accessible names.
 for(const width of [360,390,430,1440])test(`glass navigation preserves menus, dates, area and history ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await setup(page);await page.goto('/ko/hongdae?date=2026-08-31');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- const nav=page.locator(width<821?'.bottom-nav':'.top-nav'),links=nav.locator('a');await expect(nav).toBeVisible();await expect(links).toHaveCount(5);
+ const nav=page.locator(width<821?'.bottom-nav':'.top-nav'),links=nav.locator('a');await expect(nav).toBeVisible();await expect(links).toHaveCount(width<821?5:6);
  await expect(nav.getByRole('link',{name:'미리 준비',exact:true})).toBeVisible();
  for(const link of await links.all()){const box=await link.boundingBox();expect(box!.width).toBeGreaterThanOrEqual(44);expect(box!.height).toBeGreaterThanOrEqual(44);}
  await nav.getByRole('link',{name:'공항현황',exact:true}).click();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await expect(nav.getByRole('link',{name:'공항현황',exact:true})).toHaveAttribute('aria-current','page');
@@ -33,7 +33,7 @@ for(const lang of ['en','zh','ja'])test(`glass navigation keeps readable localiz
 test('desktop preserves plain operating menu and cancels mobile feedback on resize',async({page})=>{
  await page.setViewportSize({width:390,height:950});await setup(page);await page.goto('/ko');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.locator('.bottom-nav a').last().click();await page.setViewportSize({width:1440,height:950});
- const nav=page.locator('.top-nav');await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(5);await expect(nav.locator('svg,.navigation-icon')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeHidden();
+ const nav=page.locator('.top-nav');await expect(nav).toBeVisible();await expect(nav.locator('a')).toHaveCount(6);await expect(nav.locator('svg,.navigation-icon')).toHaveCount(0);await expect(page.locator('.bottom-nav')).toBeHidden();
  await expect.poll(()=>page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
  await page.locator('.more-section-links').getByRole('link',{name:'매장 ›',exact:true}).click();await expect(page).toHaveURL(/\/ko\/business$/);await expect(nav.getByRole('link',{name:'더보기',exact:true})).toHaveAttribute('aria-current','location');
  expect(await page.locator('main.page-shell').evaluate(e=>e.getAnimations().length)).toBe(0);
