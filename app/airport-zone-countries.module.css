@@ -49,3 +49,14 @@
 @media(max-width:600px){
  :global(.airport-zone-countries) .heading:lang(ko){font-size:clamp(10px,3vw,12px)}
 }
+
+/* Preserve the phone layout; keep desktop country columns close to their data. */
+@media(min-width:1000px){
+ :global(.airport-zone-countries) :global(.airport-zone-country-grid){width:100%;max-width:784px;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 32px;justify-content:start;margin-inline:0}
+ :global(.airport-zone-countries) .row{grid-template-columns:28px minmax(0,1fr) auto;padding-block:6px;gap:8px}
+ .flag,.flag img{width:28px;height:28px}
+ .name{font-size:13px}
+ .count,.zoneTotal strong{font-size:14px}
+ .share,.zoneTotal small{font-size:11px}
+ :global(.airport-zone-countries) h5.zoneHeading{font-size:13px;gap:8px}
+}
