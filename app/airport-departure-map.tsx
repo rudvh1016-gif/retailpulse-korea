@@ -142,7 +142,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
   // The architectural illustration is data-free. Keep it available while counts
   // are withheld; do not show zone counts, shares or official coordinates here.
   const routePassengers=referenceSummary&&<AirportRouteCountryPassengers lang={lang} month={referenceSummary.serviceDateKst.slice(0,7)} terminal={terminal}/>;
-  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>{routePassengers}<AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly} showCountryRanking={lang!=='ko'&&lang!=='zh'&&lang!=='en'}/></>,modelTarget):null;
+  const unavailableModel=modelTarget?createPortal(<><AirportSceneModel scope={buildingScope??terminal} lang={lang} className="airport-concept-picture"/>{routePassengers}<AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly} showSummary={lang!=='ko'} showCountryRanking={lang!=='ko'&&lang!=='zh'&&lang!=='en'}/></>,modelTarget):null;
   if (current === undefined) return <>{unavailableModel}<p className="prep-note" data-testid="map-loading">{copy.loading[lang]}</p></>;
   if (current.status === 'FAILED' || !map) return <>{unavailableModel}<p className="prep-note" data-testid="map-failed">{copy.failed[lang]}</p></>;
   if (current.payload.truncated || (span.endMin > 1440 && next?.status === 'OK' && next.payload.truncated)) return <>{unavailableModel}
@@ -201,7 +201,7 @@ export default function DepartureMapBlock({ lang, date, todayKst, dayRelation, t
         <button type="button" className="install-app-button" onClick={copyText} data-testid="map-copy">{copy.copy[lang]}</button>{copied==='OK'&&<p role="status">{copy.copied[lang]}</p>}{copied==='FAILED'&&<><p role="status">{copy.copyFailed[lang]}</p><pre data-testid="map-share-text" style={{whiteSpace:'pre-wrap'}}>{share}</pre></>}
       </details>
       {topReference}
-      <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly} showCountryRanking={lang!=='ko'&&lang!=='zh'&&lang!=='en'}/>
+      <AirportMonthlyFlights lang={lang} terminal={buildingScope??terminal} date={date} monthly={monthly} showSummary={lang!=='ko'} showCountryRanking={lang!=='ko'&&lang!=='zh'&&lang!=='en'}/>
       {(lang==='ko'||lang==='zh'||lang==='en')&&<p><a href={`/${lang}/airport-countries?mode=zones&date=${encodeURIComponent(date)}&building=${encodeURIComponent(buildingScope??terminal)}`}>{lang==='zh'?'查看各国出发区域 ↗':lang==='en'?'Departures by country and zone ↗':'국가별 출발 구역 보기 ↗'}</a></p>}
       {lang!=='ko'&&lang!=='zh'&&lang!=='en'&&map.nextDay!=='MISSING'&&<AirportZoneCountries map={map} lang={lang} date={date} isToday={today}/>}
     </div>,modelTarget);
