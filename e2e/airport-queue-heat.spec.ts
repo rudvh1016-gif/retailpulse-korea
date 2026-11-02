@@ -27,7 +27,9 @@ for(const [lang,label] of [['en','Very busy'],['zh','非常拥挤'],['ja','非�
  const model=await open(page,390,lang);await expect(model.locator('[data-observation="DG1_D"] small')).toHaveText(label);
 });
 test('decorative scene stays static with normal motion and runtime reduced-motion changes',async({page})=>{
- const model=await open(page,1280,'ko','no-preference');expect(await model.evaluate(el=>el.getAnimations({subtree:true}).length)).toBe(0);
+ const model=await open(page,1280,'ko','no-preference');
+ // The decorative drawing stays static; owner-requested data gauges may reveal once.
+ expect(await model.locator('.checkpoint-schematic-drawing').evaluate(el=>el.getAnimations({subtree:true}).length)).toBe(0);
  await page.emulateMedia({reducedMotion:'reduce'});expect(await model.evaluate(el=>el.getAnimations({subtree:true}).length)).toBe(0);
  await page.evaluate(()=>window.scrollTo(0,0));await model.scrollIntoViewIfNeeded();expect(await model.evaluate(el=>el.getAnimations({subtree:true}).length)).toBe(0);
 });
