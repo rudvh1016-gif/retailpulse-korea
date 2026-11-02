@@ -37,3 +37,7 @@ Avoided waits include T1's 57 seconds of backoff and three extra connection atte
 ## Release / rollback
 
 Local commit only. Push, PR creation, merge, deploy and remote collection execution were not attempted and need separate authorization. Before publishing, rebase/review against then-current main, run applicable CI, and verify workflow behavior with authorized observation. Rollback is removing the primary opt-in flag (or reverting the commit); the existing bounded policies remain the default. Production benchmarks and post-change latency evidence are intentionally not claimed.
+
+## Publication authorization follow-up
+
+The owner subsequently explicitly authorized publication, PR, merge after full checks, deployment and observation of a regular realtime run. The local-only statements above describe the initial delegated phase. Before publication the branch was rebased onto `755abad5` after reviewing #561; #562 and #563 were already included. Their UI changes remain intact. Deployment must use the existing main CI-to-Cloudflare workflow; no additional scheduler or ad hoc provider request is introduced. Post-release SHA, CI and deployment results belong in the PR record.
