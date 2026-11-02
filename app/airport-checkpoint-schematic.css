@@ -41,3 +41,12 @@
 
 .checkpoint-schematic-reading:is([data-state="failed"],[data-state="unavailable"]){color:var(--muted)}
 .checkpoint-schematic-reading .checkpoint-reading-status{font-size:10px;line-height:1.4;overflow-wrap:anywhere}
+
+/* The observed number stays fixed while only its decorative scale fills once. */
+.checkpoint-schematic-reading .checkpoint-gauge{display:block;width:calc(100% - 8px);height:4px;margin-top:auto;padding-top:0;background:#d9dee2;border-radius:2px;overflow:hidden;flex-shrink:0}
+.checkpoint-gauge-fill{display:block;width:100%;height:100%;background:#929aa3;transform-origin:left center}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="clear"] .checkpoint-gauge-fill{background:#437895}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="normal"] .checkpoint-gauge-fill{background:#3f816f}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="busy"] .checkpoint-gauge-fill{background:#ad6b3e}
+.checkpoint-schematic-reading[data-state="current"][data-wait-level="very-busy"] .checkpoint-gauge-fill{background:#aa5360}
+@media(forced-colors:active){.checkpoint-schematic-reading .checkpoint-gauge{background:Canvas;border:1px solid CanvasText}.checkpoint-schematic-reading .checkpoint-gauge-fill{background:CanvasText;forced-color-adjust:none}}
