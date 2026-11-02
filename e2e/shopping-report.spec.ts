@@ -6,6 +6,14 @@ const storeMix=JSON.parse(readFileSync('data/shopping-briefing-panpan-2026.json'
 for(const width of [320,390,600,820,821,1440])test(`all six store mixes open before the relocated monthly choices ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/shopping-report/index.html');
+ const summary=page.locator('#monthly-mix');
+ await expect(summary.locator('.monthly-summary-store')).toHaveCount(6);
+ expect(await summary.evaluate(node=>node.parentElement?.lastElementChild===node)).toBe(true);
+ await expect(summary).toContainText('매출액 증감이 아닌 구성비 차이');
+ for(let i=0;i<6;i++){
+  const category=storeMix.values[8][i].indexOf(Math.max(...storeMix.values[8][i]));
+  await expect(summary.locator('.monthly-summary-values').nth(i)).toContainText(`8월 ${storeMix.values[7][i][category].toFixed(1)}% → 9월 ${storeMix.values[8][i][category].toFixed(1)}%`);
+ }
  const stores=page.locator('.store-overview');await expect(stores).toHaveCount(6);
  await expect(stores.locator('details[open]')).toHaveCount(6);
  for(let i=0;i<6;i++){
@@ -28,7 +36,7 @@ for(const width of [320,390,600,820,821,1440])test(`all six store mixes open bef
   await expect(page.locator('.monthly-row>b')).toHaveText(storeMix.values.map(month=>month[i][4].toFixed(1)+'%'));
  }
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- if(width===390||width===1440){await page.locator('.store-overview-grid').screenshot({path:info.outputPath('all-six-stores.png')});await monthly.screenshot({path:info.outputPath('monthly-after-stores.png')});}
+ if(width===390||width===1440){await page.locator('.store-overview-grid').screenshot({path:info.outputPath('all-six-stores.png')});await monthly.screenshot({path:info.outputPath('monthly-after-stores.png')});await summary.screenshot({path:info.outputPath('six-store-summary-at-bottom.png')});}
 });
 
 test('a store can still be collapsed and its mobile choice survives desktop resizing',async({page})=>{

@@ -1,10 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {panpanMonthlyRows,renderPanpanMonthlySummary} from '../scripts/panpan-monthly-summary.mjs';
 
 const html = readFileSync('public/shopping-report/index.html', 'utf8');
 const script = readFileSync('public/shopping-report/report.js', 'utf8');
 const data = JSON.parse(readFileSync('data/shopping-briefing-panpan-2026.json', 'utf8'));
+
+test('the bottom monthly summary covers all six stores using the same category and original month values',()=>{
+ const rows=panpanMonthlyRows(data);
+ assert.deepEqual(rows.map(row=>row.store),data.stores);
+ for(const [index,row] of rows.entries()){
+  const category=data.categories.indexOf(row.category);
+  assert.equal(row.before,data.values[7][index][category]);
+  assert.equal(row.after,data.values[8][index][category]);
+  assert.equal(row.after,Math.max(...data.values[8][index]));
+  assert.equal(row.delta,Number((row.after-row.before).toFixed(1)));
+ }
+ const summary=renderPanpanMonthlySummary(data);
+ assert.ok(html.includes(summary));
+ assert.match(html,/<section id="source"[\s\S]*<section id="monthly-mix"[\s\S]*<\/section><\/main>/);
+ assert.equal((summary.match(/class="monthly-summary-store"/g)||[]).length,6);
+ const missing=structuredClone(data);missing.values[7][1][3]=null;
+ assert.equal(panpanMonthlyRows(missing)[1].available,false);
+ assert.match(renderPanpanMonthlySummary(missing),/전월 비교 자료 없음/);
+ assert.doesNotMatch(renderPanpanMonthlySummary(missing),/NaN|undefined|null/);
+});
 
 test('shopping report preserves source periods and separates survey, card index and store composition', () => {
   for (const source of ['bcIdx=311046', 'https://knto.or.kr/pressRelease/549938', 'https://www.data.go.kr/data/15084726/fileData.do']) assert.ok(html.includes(source));
