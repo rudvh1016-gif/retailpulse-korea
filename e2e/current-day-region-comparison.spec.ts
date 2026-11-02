@@ -52,7 +52,20 @@ test('a different snapshot never becomes zero flights in the zone comparison',as
  await prepare(page,true);await page.goto(`/ko/airport-countries?mode=zones&date=${day}&building=T2`);const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section).toContainText('미확인 자료는 0으로 계산하지 않습니다');await expect(section.locator('.airport-month-total')).toHaveCount(0);
 });
 
-test('the default airport view uses the witnessed day without a date query',async({page})=>{await prepare(page);await page.goto('/ko/airport');const section=page.getByTestId('airport-month-flights');await section.scrollIntoViewIfNeeded();await expect(section.locator('.airport-month-total')).toContainText('3 → 7');await expect(section.getByTestId('airport-month-basis')).toContainText(day);});
+for(const width of [390,1440])test(`the default airport view uses the witnessed day without a date query ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await prepare(page);await page.goto('/ko/airport');
+ const section=page.getByTestId('airport-month-flights'),zones=section.getByTestId('airport-month-zones');
+ await zones.scrollIntoViewIfNeeded();
+ // The owner removed the standalone summary. Verify the same witnessed-day
+ // data through the retained zone table instead of requiring deleted UI.
+ await expect(section.locator('.airport-month-total')).toHaveCount(0);
+ await expect(section.getByTestId('airport-month-basis')).toHaveCount(0);
+ await expect(zones.locator('caption')).toContainText(day);
+ await expect(zones.locator('tbody tr')).toHaveCount(4);
+ for(const [column,total] of [[2,3],[3,7]]){
+  await expect.poll(async()=> (await zones.locator(`tbody td:nth-child(${column})`).allTextContents()).map(Number).reduce((sum,value)=>sum+value,0)).toBe(total);
+ }
+});
 
 test('other terminal desktop comparisons remain visible',async({page})=>{
  await page.setViewportSize({width:1440,height:1000});await prepare(page);await page.goto(`/ko/airport-countries?mode=zones&date=${day}&building=T1`);
