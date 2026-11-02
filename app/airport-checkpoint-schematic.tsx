@@ -19,6 +19,33 @@ const LANE_ANCHORS=[[139,279],[198,279],[346,238],[406,238],[553,240],[612,240],
  * tied to its lane by a leader, so the left-to-right order is the floor order. */
 const leaderPath=(index:number)=>{const [x,y]=LANE_ANCHORS[index],column=(index+.5)*120;return `M${x} ${y+6}V352L${column} 400`;};
 
+/** A wait-time scale, never a live countdown or a percentage of capacity.
+ * Text and server-rendered geometry always retain the actual observation. */
+function CheckpointGauge({value,state,observation}:{value:number|null;state:ReturnType<typeof queueHeat>['state'];observation?:string}){
+ const fill=useRef<HTMLSpanElement>(null);
+ const fraction=value!==null&&Number.isFinite(value)&&value>=0&&state!=='closed'&&state!=='unavailable'?Math.min(value/60,1):0;
+ useEffect(()=>{
+  const node=fill.current;
+  if(!node||state!=='current'||fraction<=0||!window.IntersectionObserver||!node.animate)return;
+  const preference=window.matchMedia('(prefers-reduced-motion: reduce)');
+  if(preference.matches)return;
+  let animation:Animation|undefined,started=false;
+  const stop=()=>animation?.cancel();
+  const changed=()=>{if(preference.matches||document.hidden)stop();};
+  const observer=new IntersectionObserver(entries=>{
+   const visible=entries.some(entry=>entry.isIntersecting&&entry.intersectionRatio>0);
+   if(!visible){stop();return;}
+   if(started||preference.matches||document.hidden)return;
+   started=true;
+   animation=node.animate([{transform:'scaleX(0)'},{transform:`scaleX(${fraction})`}],{duration:560,easing:'cubic-bezier(.2,.7,.2,1)'});
+  },{threshold:.1});
+  preference.addEventListener('change',changed);document.addEventListener('visibilitychange',changed);
+  observer.observe(node.parentElement!);
+  return()=>{observer.disconnect();stop();preference.removeEventListener('change',changed);document.removeEventListener('visibilitychange',changed);};
+ },[fraction,state,observation]);
+ return <div className="checkpoint-gauge" aria-hidden="true"><span ref={fill} className="checkpoint-gauge-fill" style={{transform:`scaleX(${fraction})`}}/></div>;
+}
+
 export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=false}:{showSeverity?:boolean;terminal:'T1'|'T2';rows:readonly CheckpointReading[];now:number;lang:Lang}) {
  const groups=checkpointLayout(terminal,rows),minute=t(lang,'분','min','分','分');
  const paintId=useId();
@@ -73,11 +100,13 @@ export function AirportCheckpointSchematic({terminal,rows,now,lang,showSeverity=
     return <div className="checkpoint-schematic-reading" key={slot.key} data-checkpoint={slot.key} data-longest={showSeverity&&longest.keys.includes(slot.key)||undefined} data-state={heat.state} data-wait-level={heat.level} data-basis={heat.basis} aria-label={`${terminal} ${slot.key} · ${shown} ${value===null?'':minute} · ${people} · ${queueHeatLabel(heat,lang)}`}>
      <span>{name}</span><strong><span>{shown}{heat.state==='zero'&&<sup>*</sup>}</span>{value!==null&&heat.state!=='closed'&&<small>{minute}</small>}</strong>
      <small className="checkpoint-schematic-people">{peopleShown}</small>{slot.row&&(heat.state==='stale'||heat.state==='failed'||heat.state==='unavailable')&&<small className="checkpoint-reading-status">{heat.state==='stale'?t(lang,'지난값','Prior','旧值','前回'):heat.state==='failed'?t(lang,'실패','Failed','失败','失敗'):t(lang,'미확인','Unknown','未确认','未確認')}</small>}{showSeverity&&heat.state==='current'&&heat.level==='very-busy'&&<small className="checkpoint-severity">{heat.basis?t(lang,'60분+','60+ min','60分+','60分以上'):queueHeatLabel(heat,lang)}</small>}
+     <CheckpointGauge value={value} state={heat.state} observation={slot.row?.observedAt}/>
     </div>;
    })}</div>
   </div>
   {!showSeverity&&<><p className="checkpoint-schematic-time">{observationClock}</p><p className="checkpoint-schematic-basis">{checkpointMethodCopy(lang)} {checkpointTimingCopy(lang)}</p></>}
   <p className="checkpoint-schematic-basis">{t(lang,'— 미확인 · *0분은 운영 확인 · 오래된 값은 회색','— unconfirmed · *0 min: check operation · old values are grey','— 未确认 · *0分需确认运营 · 旧值为灰色','— 未確認 · *0分は運営を確認 · 古い値は灰色')}</p>
+  <p className="checkpoint-schematic-basis">{t(lang,'막대는 대기시간 0~60분 기준 · 60분 이상은 가득 표시','Bars show waits on a 0–60 min scale · full at 60 min or more','等候条以0至60分钟为基准 · 60分钟以上显示满格','バーは待ち時間0〜60分の目盛り・60分以上で満杯表示')}</p>
   {showSeverity&&terminal==='T1'&&<p className="checkpoint-schematic-basis">{t(lang,'T1 색상은 코리테일 분 단위 기준 · 공식 혼잡 등급 아님','T1 colors use KORETAIL minute bands, not official congestion grades.','T1配色采用KORETAIL分钟标准，非官方拥挤等级。','T1の色はKORETAILの分単位基準で、公式混雑等級ではありません。')}</p>}<details className="checkpoint-schematic-details">
    <summary>{t(lang,'대기 인원·시각·출처','People, times and source','等候人数、时刻与来源','待機人数・時刻・出典')}</summary>
    {terminalRows.length?<ul className="checkpoint-observation-list">{terminalRows.map((row,index)=>{
