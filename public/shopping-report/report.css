@@ -54,7 +54,13 @@ header .brand{text-decoration:none}html{scroll-behavior:smooth}@media(prefers-re
 @media(min-width:821px) and (max-width:1100px){.mix-comparison{grid-template-columns:1fr;gap:2px}}
 
 .store-month-delta strong{font-weight:700}
-@media(min-width:821px){.monthly-mix>.monthly-highlight{display:none}}
+.monthly-summary-list{list-style:none;padding:0;margin:20px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px}
+.monthly-summary-store{min-width:0;padding:16px 0;border-top:1px solid var(--line)}
+.monthly-summary-store h3{font-size:15px;margin:0 0 8px}
+.monthly-summary-store p{font-size:13px;margin:4px 0;line-height:1.8}
+.monthly-summary-category,.monthly-summary-missing{color:var(--muted)}
+.monthly-summary-values strong{display:block;font-weight:700;font-variant-numeric:tabular-nums}
+@media(max-width:820px){.monthly-summary-list{grid-template-columns:minmax(0,1fr)}}
 
 /* Keep the relocated monthly disclosure and all six mobile store details readable. */
 #store-monthly-view>.caption{font-size:11px}
