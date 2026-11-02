@@ -107,6 +107,8 @@ export interface CollectorEnv {
    * cycle needs, so the retry is bounded to one request per source per cycle.
    */
   A4_MAX_ATTEMPTS_PER_REQUEST?: number;
+  /** Primary realtime cycle only: hand its first connect failure to the existing retry job. */
+  A4_STOP_ON_INITIAL_CONNECT_TIMEOUT?: boolean;
 }
 
 /**
@@ -115,10 +117,12 @@ export interface CollectorEnv {
  * It can only ever LOWER a policy's attempt count — an env value larger than
  * the configured ladder is ignored rather than allowed to widen it.
  */
-export function boundedA4Policy<T extends { maxAttempts: number }>(policy: T, env: CollectorEnv): T {
+export function boundedA4Policy<T extends { maxAttempts: number }>(policy: T, env: CollectorEnv, initialRequest = true): T & { stopOnInitialConnectTimeout?: boolean } {
   const ceiling = env.A4_MAX_ATTEMPTS_PER_REQUEST;
-  if (!Number.isSafeInteger(ceiling) || !ceiling || ceiling < 1) return policy;
-  return { ...policy, maxAttempts: Math.min(policy.maxAttempts, ceiling) };
+  return { ...policy,
+    maxAttempts: Number.isSafeInteger(ceiling) && ceiling && ceiling > 0 ? Math.min(policy.maxAttempts, ceiling) : policy.maxAttempts,
+    stopOnInitialConnectTimeout: initialRequest && env.A4_STOP_ON_INITIAL_CONNECT_TIMEOUT === true,
+  };
 }
 
 function nowIso(): string {
@@ -1997,7 +2001,7 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
         env.DATA_GO_KR_SERVICE_KEY,
         { pageNo: String(pageNo), numOfRows: String(A4_T2_PAGE_SIZE), type: "json" },
       );
-      const payload = await fetchOfficialJson(url, boundedA4Policy(DATA_GO_KR_PAGED_POLICY, env));
+      const payload = await fetchOfficialJson(url, boundedA4Policy(DATA_GO_KR_PAGED_POLICY, env, pageNo === 1));
       const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: number } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_t2_result_${String(resultCode ?? "missing")}`);
