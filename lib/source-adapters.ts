@@ -138,6 +138,8 @@ export interface FetchOfficialJsonOptions {
   /** Backwards-compatible number of retries. Prefer maxAttempts for new policies. */
   retries?: number;
   maxAttempts?: number;
+  /** Opt in only when the caller already owns a bounded fresh-runner fallback. */
+  stopOnInitialConnectTimeout?: boolean;
   retryDelayMs?: number;
   retryDelaysMs?: readonly number[];
   jitterMs?: number;
@@ -269,9 +271,11 @@ async function fetchOfficialJsonWithRecheck(
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     let failure: SourceFetchError | null = null;
     let payloadRecheck = false;
+    let receivedHeaders = false;
     let retryAfter: string | null = null;
     try {
       const response = await fetchImpl(url, { signal: controller.signal, headers: { accept: "application/json" } });
+      receivedHeaders = true;
       if (!response.ok) {
         retryAfter = response.headers.get("retry-after");
         // The body is read only to name the refusal (classifyProviderBody); it
@@ -310,6 +314,15 @@ async function fetchOfficialJsonWithRecheck(
       failure = classifySourceFetchFailure(error);
     } finally {
       clearTimeout(timer);
+    }
+
+    // Only the first connection attempt, before any HTTP response. Body/read
+    // failures and later failures retain the normal bounded ladder. The source
+    // still fails visibly; the existing caller decides whether to start its
+    // single fresh runner. This does not assert that the egress is the cause.
+    if (options.stopOnInitialConnectTimeout === true && attempt === 0 && !receivedHeaders
+      && failure!.code === "NETWORK" && failure!.causeCode === "UND_ERR_CONNECT_TIMEOUT") {
+      throw withFetchContext(failure!, 1, nowMs() - startedAt, false);
     }
 
     const retryable = payloadRecheck || isTransientSourceFailure(failure!);

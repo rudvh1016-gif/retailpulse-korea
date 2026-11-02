@@ -1,6 +1,10 @@
 name: Realtime Collection Cycle
 
 # The existing primary and fresh retry remain one serialized cycle.
+# Initial connect timeouts now leave the primary after one request per A4
+# source (T2 page 1 only). Other failures retain the budgets below; those
+# remain conservative ceilings, not the new connect-timeout path cost.
+# See docs/AIRPORT_CONNECT_HANDOFF_LOCAL_2026-11-02.md.
 on:
   workflow_call:
 
@@ -33,6 +37,8 @@ jobs:
           set -o pipefail
           npm run collect:production 2>&1 | tee "$RUNNER_TEMP/collector.log"
         env:
+          # Only this primary has the existing serialized one-runner fallback.
+          RPK_A4_STOP_ON_INITIAL_CONNECT_TIMEOUT: "true"
           ENABLE_PRODUCTION_COLLECTOR: "true"
           RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

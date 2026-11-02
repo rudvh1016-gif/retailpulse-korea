@@ -79,6 +79,8 @@ const env = {
   // so gate assignments published after the early run still reach the screen.
   A1_RESCAN_TODAY: process.env.RPK_A1_RESCAN_TODAY === "true",
   A1_EXPECTED_TARGET_DATE: process.env.RPK_A1_EXPECTED_TARGET_DATE || undefined,
+  // Only the serialized primary realtime cycle opts in to connection handoff.
+  A4_STOP_ON_INITIAL_CONNECT_TIMEOUT: process.env.RPK_A4_STOP_ON_INITIAL_CONNECT_TIMEOUT === "true",
   // Set only by the A4 fresh-runner retry, which must never consume the quota
   // the next normal 15-minute cycle needs. Unset here means the normal ladder.
   A4_MAX_ATTEMPTS_PER_REQUEST:
