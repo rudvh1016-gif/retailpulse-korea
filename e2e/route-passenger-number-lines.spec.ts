@@ -11,7 +11,7 @@ const data=(month:string)=>({operationId:'ROUTE_COUNTRY_PASSENGERS',month,
   departures:month==='2026-08'?baseline:selected,total:null,aggregate:false,startHour:null,endHour:null})),
  retrievedAt:'2026-11-03T00:00:00Z',completeness:'TOTAL_NOT_PROVIDED'});
 
-for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,700,701,1440])
+for(const lang of ['ko','en','zh','ja'])for(const width of (lang==='en'?[320,360,361,390,700,701,1440]:[320,390,700,701,1440]))
 test(`route passenger daily means stay on one line ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:1000});
  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
@@ -30,13 +30,28 @@ test(`route passenger daily means stay on one line ${lang} ${width}`,async({page
  if(width<=700){
   for(const mean of await means.all())await expect(mean).toHaveCSS('white-space','nowrap');
   const lines=await means.evaluateAll(nodes=>nodes.map(node=>{
-   const range=document.createRange();range.selectNodeContents(node);
-   const rects=[...range.getClientRects()];const cell=node.closest('td')!.getBoundingClientRect();
+   const walker=document.createTreeWalker(node,NodeFilter.SHOW_TEXT),rects:DOMRect[]=[];
+   for(let text=walker.nextNode();text;text=walker.nextNode()){
+    const parent=text.parentElement!,style=getComputedStyle(parent),box=parent.getBoundingClientRect();
+    if(!text.textContent?.trim()||style.display==='none'||box.width<=1&&box.height<=1)continue;
+    const range=document.createRange();range.selectNodeContents(text);rects.push(...range.getClientRects());
+   }
+   const cell=node.closest('td')!.getBoundingClientRect();
    return {lines:new Set(rects.map(rect=>Math.round(rect.top))).size,
     left:Math.min(...rects.map(rect=>rect.left)),right:Math.max(...rects.map(rect=>rect.right)),cellLeft:cell.left,cellRight:cell.right};
   }));
   for(const line of lines){expect(line.lines).toBe(1);expect(line.left).toBeGreaterThanOrEqual(line.cellLeft-1);expect(line.right).toBeLessThanOrEqual(line.cellRight+1);}
  }else await expect(block.locator('table').first()).toHaveCSS('table-layout','fixed');
+ if(lang==='en'){
+  const compact=means.first().locator('.route-month-mean-compact');
+  await expect(compact).toHaveAttribute('aria-hidden','true');
+  await expect(compact).toHaveCSS('display',width<=360?'inline':'none');
+ }
+ const countryNames=await block.locator('.route-country-name').evaluateAll(nodes=>nodes.map(node=>{
+  const style=getComputedStyle(node),lineHeight=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.6;
+  return {height:node.getBoundingClientRect().height,lineHeight};
+ }));
+ for(const name of countryNames)expect(name.height).toBeLessThanOrEqual(name.lineHeight*3+1);
  const tables=await block.locator('table').evaluateAll(nodes=>nodes.map(node=>{
   const table=node.getBoundingClientRect(),wrapper=node.parentElement!.getBoundingClientRect();
   return {left:table.left,right:table.right,wrapperLeft:wrapper.left,wrapperRight:wrapper.right};
