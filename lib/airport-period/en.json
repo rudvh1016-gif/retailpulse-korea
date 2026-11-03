@@ -6,7 +6,7 @@
   "완료 자료": "Complete records",
   "일수는 날짜가 아닌 평균에 사용한 표본 수입니다.": "Day counts are samples used in the average, not calendar dates.",
   "표본 ": "Samples ",
-  "미수집 날짜는 평균에서 제외합니다. 자료 없음은 0편을 뜻하지 않습니다.": "Dates without collected records are excluded from averages. Missing data does not mean zero flights.",
+  "미수집 날짜는 평균에서 제외합니다. 자료 없음은 0편을 뜻하지 않습니다.": "Dates without collected records are excluded from averages. Missing data does not mean 0 flights.",
   "\" role=\"group\" aria-label=\"시간별 비교 기간 막대, 기준 회색 점선, 비교 남색 실선\">": "\" role=\"group\" aria-label=\"Hourly departures: comparison bars, dashed grey baseline and solid navy comparison line\">",
   "편/일": "flights/day",
   "\" y=\"22\">집중 ": "\" y=\"22\">Peak ",
