@@ -33,6 +33,17 @@ export function latestDayFlights<T extends SideFlightRow>(rows: readonly T[], da
 export const cancelledFlight = (row: SideFlightRow): boolean => String(row.status ?? "") === "cancelled";
 export const scheduledFlightHour = (row: SideFlightRow): number => Number(String(row.scheduledAt).slice(11, 13));
 export interface FlightHours { total: number; hours: number[] }
+/** Optional precise history must agree with every existing hourly count. Old
+ * hourly-only profiles remain usable without inventing half-hour proportions. */
+export function verifiedHalfHours(value: { total?: unknown; hours?: unknown; halfHours?: unknown }): number[] | null {
+  const valid = (n: unknown): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0;
+  const { total, hours, halfHours } = value;
+  if (!valid(total) || !Array.isArray(hours) || hours.length !== 24 || !hours.every(valid)
+    || !Array.isArray(halfHours) || halfHours.length !== 48 || !halfHours.every(valid)
+    || hours.reduce((a, b) => a + b, 0) !== total
+    || !hours.every((n, hour) => halfHours[hour * 2] + halfHours[hour * 2 + 1] === n)) return null;
+  return halfHours;
+}
 /** T1's comparison scope includes the concourse; T2 does not. */
 export function terminalFlightHours(profile: Record<"T1" | "T2" | "CONCOURSE", FlightHours>, terminal: "T1" | "T2"): FlightHours {
   const a = profile[terminal], b = terminal === "T1" ? profile.CONCOURSE : null;

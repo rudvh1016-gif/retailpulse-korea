@@ -86,10 +86,10 @@ test('T1 whole terminal matches history including concourse; side never absorbs 
   assert.equal(side.scope.includesConcourse, false);
 });
 
-test('half-hour current shift is exact but hourly history is explicitly unsupported', () => {
+test('half-hour current shift is exact but legacy history explicitly lacks minute precision', () => {
   const result = buildShiftBriefing(input({ hours: { open: '07:30', close: '15:00' } }));
   assert.equal(result.current.total, 1);
-  assert.equal(result.comparisons.week.reason, 'UNSUPPORTED_MINUTE_HISTORY');
+  assert.equal(result.comparisons.week.reason, 'MINUTE_HISTORY_MISSING');
   assert.equal(result.comparisons.month.baseline, null);
 });
 

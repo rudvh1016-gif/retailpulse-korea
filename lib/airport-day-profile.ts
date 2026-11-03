@@ -27,6 +27,8 @@ export interface TerminalProfile {
   total: number;
   /** Departures by scheduled KST hour, 0..23. */
   hours: number[];
+  /** Exact scheduled KST half hours; absent on legacy profiles. */
+  halfHours?: number[];
   /** Evidenced gate sides, east / west / centre / unconfirmed. */
   sides: [number, number, number, number];
   /** Stored destination name (normalised) -> departures. */
@@ -45,7 +47,7 @@ export interface DayProfile {
   cancelled: number;
 }
 
-const empty = (): TerminalProfile => ({ total: 0, hours: Array.from({ length: 24 }, () => 0), sides: [0, 0, 0, 0], destinations: {} });
+const empty = (): TerminalProfile => ({ total: 0, hours: Array.from({ length: 24 }, () => 0), halfHours: Array.from({ length: 48 }, () => 0), sides: [0, 0, 0, 0], destinations: {} });
 
 export function dailyFlightProfile(rows: readonly ProfileRow[], day: string, complete: boolean): DayProfile {
   const sides = summarizeGateSides(rows, day);
@@ -62,14 +64,21 @@ export function dailyFlightProfile(rows: readonly ProfileRow[], day: string, com
   }
   // Destinations of the same physical flights summarizeGateSides counted.
   const latest = latestDayFlights(rows, day);
+  let precise = true;
   for (const row of latest.values()) {
     if (cancelledFlight(row)) continue;
+    const scheduled = String(row.scheduledAt ?? '');
+    const time = /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):([0-5]\d):[0-5]\d(?:\.\d{1,3})?\+09:00$/.exec(scheduled);
+    if (!time || scheduled.slice(0, 10) !== day) precise = false;
     const area = boardingAreaOf(row);
     if (area === "UNKNOWN") continue;
+    if (time) profile[area].halfHours![Number(time[1]) * 2 + Math.floor(Number(time[2]) / 30)]++;
     const raw = row.airportCode === null || row.airportCode === undefined ? "" : String(row.airportCode).trim();
     const key = raw ? normalizeDestination(raw) : "";
     profile[area].destinations[key] = (profile[area].destinations[key] ?? 0) + 1;
   }
+  // A malformed source clock must not acquire false minute precision.
+  if (!precise) for (const area of ['T1', 'T2', 'CONCOURSE'] as const) delete profile[area].halfHours;
   return profile;
 }
 

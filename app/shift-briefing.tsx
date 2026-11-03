@@ -70,6 +70,11 @@ const copy={
  partialMonthLabel:row('② 전월 확인일 평균','② Mean of verified previous-month days','② 上月已确认日期的日均','② 前月の確認日の平均'),
  zeroDifference:row('확인일 기준 차이 0편','0-flight difference on verified days','已确认日期差值为0班','確認日基準の差0便'),
  noComparison:row('비교자료 없음','Comparison unavailable','暂无比较资料','比較資料なし'),
+ minuteMissing:row('30분 비교자료 미확인','Half-hour history unverified','半小时比较资料未确认','30分単位の比較資料が未確認'),
+ baselineMissing:row('해당 날짜 자료 없음','No data for those dates','对应日期暂无资料','該当日の資料なし'),
+ baselineInvalid:row('과거 자료 검증 필요','Historical data needs verification','历史资料需验证','過去資料の検証が必要'),
+ currentUnverified:row('선택일 전체 자료 확인 전','Selected-day coverage unverified','所选日期完整资料未确认','選択日の全体資料が未確認'),
+ minuteBasis:row('확인된 30분 단위 과거 자료가 없어 정확한 비교를 보류합니다.','Exact comparison is withheld without verified half-hour history.','尚无已确认的半小时历史资料，暂不进行精确比较。','確認できた30分単位の履歴がないため、正確な比較は保留します。'),
  baseline:row('비교 기준','Baseline','比较基准','比較基準'),
  included:row('포함일','Included days','计入日期','集計日数'),
  days:row('일',' days','天','日'),
@@ -89,7 +94,7 @@ const copy={
  unavailable:row('선택한 근무시간의 자료가 없습니다.','No data for the selected shift.','所选当班时间暂无资料。','選択した勤務時間の資料がありません。'),
  partial:row('일부 자료만 확인되어 전체 합계·집중 시간은 보류합니다.','Partial data; the full total and busiest hour are withheld.','仅确认部分资料，暂不显示完整总数和集中时段。','一部資料のみのため、全体合計・集中時間は保留します。'),
  overnight:row('자정을 넘는 근무는 다음 날 자료까지 필요해 현재 집계를 제공하지 않습니다.','Overnight shifts require next-day data; no total is shown yet.','跨午夜班次需要次日资料，目前不提供汇总。','日をまたぐ勤務には翌日資料が必要なため、現在は集計を表示しません。'),
- minutes:row('과거 자료는 1시간 단위로만 있어 이 근무시간과 비교할 수 없습니다.','History is hourly, so this shift cannot be compared exactly.','历史资料仅按整小时保存，无法精确比较本班次。','履歴が1時間単位のため、この勤務時間と正確に比較できません。'),
+ minutes:row('30분보다 세밀한 근무시간은 과거 자료와 정확히 비교할 수 없습니다.','Shift boundaries finer than 30 minutes cannot be compared exactly.','不足30分钟的班次边界无法与历史资料精确比较。','30分より細かい勤務時刻は履歴と正確に比較できません。'),
  partialMonth:row('전월 중 자료가 확인된 날짜만 평균에 포함합니다.','Only verified dates from the previous month enter the mean.','均值仅计入上月已确认资料的日期。','前月の資料を確認できた日のみ平均に含めます。'),
  sample:row('시안용 예시 자료','Example data for design review','设计预览示例数据','デザイン確認用の例'),
  savedCopy:row('복사·이미지는 저장 시점의 내용입니다.','Copied text and images keep the data shown when saved.','复制文字和图片保留保存时的资料。','コピー・画像は保存時点の内容です。'),
@@ -104,7 +109,11 @@ function stamp(iso:string|null|undefined){if(!iso)return '—';const at=Date.par
 function shortDay(day:string){return /^\d{4}-\d{2}-\d{2}$/.test(day)?`${Number(day.slice(5,7))}/${Number(day.slice(8,10))}`:day;}
 function scopeLabel(preferences:BusinessPreferences,lang:Lang){return `${preferences.terminal} · ${preferences.side==='WEST'?copy.west[lang]:preferences.side==='EAST'?copy.east[lang]:copy.unspecified[lang]}`;}
 function hoursText(preferences:BusinessPreferences,lang:Lang){const h=preferences.hours;return !h||h.open===h.close?copy.wholeDay[lang]:`${h.open}–${h.close}${h.close<h.open?` (${copy.nextDay[lang]})`:''}`;}
-function reasonText(reason:ShiftReason|null|undefined,lang:Lang){return reason==='UNSUPPORTED_OVERNIGHT'?copy.overnight[lang]:reason==='UNSUPPORTED_MINUTE_HISTORY'?copy.minutes[lang]:reason==='PENDING'?copy.loading[lang]:copy.noComparison[lang];}
+function reasonText(reason:ShiftReason|null|undefined,lang:Lang){
+ return reason==='UNSUPPORTED_OVERNIGHT'?copy.overnight[lang]:reason==='UNSUPPORTED_MINUTE_HISTORY'?copy.minutes[lang]
+  :reason==='MINUTE_HISTORY_MISSING'?copy.minuteMissing[lang]:reason==='BASELINE_MISSING'?copy.baselineMissing[lang]
+  :reason==='BASELINE_INVALID'?copy.baselineInvalid[lang]:reason==='PENDING'?copy.loading[lang]:copy.currentUnverified[lang];
+}
 
 function ShiftSettings({lang,preferences,industry,configured,onSave,onCancel,preview=false}:{lang:Lang;preferences:BusinessPreferences;industry:IndustryId|null;configured:boolean;onSave:(preferences:BusinessPreferences,industry:IndustryId|null)=>void;onCancel:()=>void;preview?:boolean}){
  const id=useId();
@@ -133,9 +142,9 @@ function ComparisonLine({comparison,lang,showBasis=false}:{comparison:ShiftCompa
  const available=comparison.delta!==null&&comparison.baseline!==null;
  const unavailableReason=reasonText(comparison.reason,lang);
  const format=new Intl.NumberFormat(lang,{maximumFractionDigits:1}).format;
- return <div className="shift-comparison" data-testid={`shift-comparison-${comparison.kind.toLowerCase()}`}>
+ return <div className="shift-comparison" data-testid={`shift-comparison-${comparison.kind.toLowerCase()}`} data-status={comparison.status} data-reason={comparison.reason??undefined} data-baseline={comparison.baseline??undefined} data-delta={comparison.delta??undefined}>
   <p>{comparison.kind==='WEEK'?copy.week[lang]:comparison.status==='PARTIAL'?copy.partialMonthLabel[lang]:copy.month[lang]}</p>
-  <strong>{available?(comparison.delta===0?(comparison.status==='PARTIAL'?copy.zeroDifference[lang]:copy.same[lang]):<><CountChange delta={comparison.delta} format={format} lang={lang} unit={copy.flights[lang]}/>{comparison.percent!==null&&<> (<ChangeRate value={comparison.percent} lang={lang}/>)</>}</>):comparison.status==='LOADING'?copy.loading[lang]:copy.noComparison[lang]}</strong>
+  <strong>{available?(comparison.delta===0?(comparison.status==='PARTIAL'?copy.zeroDifference[lang]:copy.same[lang]):<><CountChange delta={comparison.delta} format={format} lang={lang} unit={copy.flights[lang]}/>{comparison.percent!==null&&<> (<ChangeRate value={comparison.percent} lang={lang}/>)</>}</>):comparison.status==='LOADING'?copy.loading[lang]:unavailableReason}</strong>
   {showBasis&&<small>{available?<>{comparison.kind==='WEEK'?comparison.start:comparison.start.slice(0,7)} · {copy.baseline[lang]} {format(comparison.baseline!)}{copy.flights[lang]}{comparison.kind==='MONTH'&&<> · {copy.included[lang]} <b>{comparison.includedDates.length}/{comparison.expectedDays}{copy.days[lang]}</b></>}</>:unavailableReason===copy.noComparison[lang]?(comparison.kind==='WEEK'?comparison.start:comparison.start.slice(0,7)):unavailableReason}</small>}
  </div>;
 }
@@ -180,7 +189,7 @@ export function ShiftBriefingView({lang,day,preferences,industry,configured,resu
   ...(destinations?.unknown?[{kind:'note' as const,text:`${copy.destinationUnknown[lang]} ${format(destinations.unknown)}${copy.flights[lang]}`}]:[]),
   {kind:'note',text:copy.destinationBasis[lang]},
   {kind:'heading',text:copy.compare[lang]},
-  ...([['week',copy.week[lang]],['month',result?.comparisons.month.status==='PARTIAL'?copy.partialMonthLabel[lang]:copy.month[lang]]] as const).map(([key,label])=>{const comp=result?.comparisons[key];return {kind:'item' as const,text:`${label}: ${comp?.delta!==null&&comp?.delta!==undefined&&comp.baseline!==null?`${comp.delta>0?'+':comp.delta<0?'△ ':''}${format(Math.abs(comp.delta))}${copy.flights[lang]}${comp.percent!==null?` (${formatChangeRate(comp.percent)})`:''} · ${copy.baseline[lang]} ${format(comp.baseline)}${copy.flights[lang]} · ${comp.start}${key==='month'?`–${comp.end} · ${copy.included[lang]} ${comp.includedDates.length}/${comp.expectedDays}${copy.days[lang]}`:''}`:copy.noComparison[lang]}`};}),
+  ...([['week',copy.week[lang]],['month',result?.comparisons.month.status==='PARTIAL'?copy.partialMonthLabel[lang]:copy.month[lang]]] as const).map(([key,label])=>{const comp=result?.comparisons[key];return {kind:'item' as const,text:`${label}: ${comp?.delta!==null&&comp?.delta!==undefined&&comp.baseline!==null?`${comp.delta>0?'+':comp.delta<0?'△ ':''}${format(Math.abs(comp.delta))}${copy.flights[lang]}${comp.percent!==null?` (${formatChangeRate(comp.percent)})`:''} · ${copy.baseline[lang]} ${format(comp.baseline)}${copy.flights[lang]} · ${comp.start}${key==='month'?`–${comp.end} · ${copy.included[lang]} ${comp.includedDates.length}/${comp.expectedDays}${copy.days[lang]}`:''}`:reasonText(comp?.reason,lang)}`};}),
   {kind:'heading',text:copy.prepare[lang]},...actions.map(action=>({kind:'item' as const,text:`${action.title}: ${action.summary}`})),
   {kind:'note',text:copy.preparationBasis[lang]},
   {kind:'note',text:`${copy.source[lang]} ${stamp(current?.checkedAt??current?.retrievedAt)} KST`},
@@ -223,7 +232,7 @@ export function ShiftBriefingView({lang,day,preferences,industry,configured,resu
    <details className="shift-details" data-testid="shift-details"><summary>{copy.details[lang]}</summary><div className="shift-details-content">
     {preferences.side&&<section><h3>{copy.areaReference[lang]}</h3><p>{preferences.terminal} · {preferences.side==='WEST'?copy.westArea[lang]:copy.eastArea[lang]} · {hoursText(preferences,lang)}</p><p>{areaCount===null?copy.unavailable[lang]:`${areaReference?.current.status==='PARTIAL'?copy.confirmed[lang]:copy.current[lang]} ${format(areaCount)}${copy.flights[lang]}`}</p><p>{copy.sideLimits[lang]}</p></section>}
     <section><h3>{copy.allDestinations[lang]}</h3>{destinations?.countries.length?<ul>{destinations.countries.map(item=><li key={item.country}>{destinationName(item.country,lang)} <b>{format(item.flights)}{copy.flights[lang]}</b></li>)}</ul>:<p>{destinationFallback}</p>}{destinations?.unknown? <p>{copy.destinationUnknown[lang]} {format(destinations.unknown)}{copy.flights[lang]}</p>:null}<p>{copy.destinationBasis[lang]}</p></section>
-    {result&&<section><h3>{copy.basis[lang]}</h3><p>{day} · {mainScope}</p><ComparisonLine comparison={result.comparisons.week} lang={lang} showBasis/><ComparisonLine comparison={result.comparisons.month} lang={lang} showBasis/><p>{copy.boundary[lang]}</p>{result.comparisons.month.status==='PARTIAL'&&<p>{copy.partialMonth[lang]}</p>}{[result.comparisons.week.reason,result.comparisons.month.reason].includes('UNSUPPORTED_MINUTE_HISTORY')&&<p>{copy.minutes[lang]}</p>}</section>}
+    {result&&<section><h3>{copy.basis[lang]}</h3><p>{day} · {mainScope}</p><ComparisonLine comparison={result.comparisons.week} lang={lang} showBasis/><ComparisonLine comparison={result.comparisons.month} lang={lang} showBasis/><p>{copy.boundary[lang]}</p>{result.comparisons.month.status==='PARTIAL'&&<p>{copy.partialMonth[lang]}</p>}{[result.comparisons.week.reason,result.comparisons.month.reason].includes('UNSUPPORTED_MINUTE_HISTORY')&&<p>{copy.minutes[lang]}</p>}{[result.comparisons.week.reason,result.comparisons.month.reason].includes('MINUTE_HISTORY_MISSING')&&<p>{copy.minuteBasis[lang]}</p>}</section>}
     <p>{copy.limits[lang]}</p>
    </div></details>
    <p className="shift-source-line">{copy.source[lang]} {stamp(current?.checkedAt??current?.retrievedAt)} KST</p>
