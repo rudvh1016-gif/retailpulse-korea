@@ -9,8 +9,9 @@ export function ChangeRate({value,lang,unit='%'}:{value:number|null;lang:RateLan
   return <RateText text={formatChangeRate(value,unit)} lang={lang}/>;
 }
 /** Count/day units stay outside the formatter; only presentation uses absolute magnitude. */
-export function CountChange({delta,format,lang,unit='',integer=false}:{delta:number|null;format:(value:number)=>string;lang:RateLang;unit?:string;integer?:boolean}){
+export function CountChange({delta,format,lang,unit='',integer=false,showSymbol=true}:{delta:number|null;format:(value:number)=>string;lang:RateLang;unit?:string;integer?:boolean;showSymbol?:boolean}){
   const text=formatCountChange(delta,format,integer);
+  const visible=showSymbol?text:text.replace(/^(?:△ |\+)/,'');
   const direction=delta===null||!Number.isFinite(delta)||delta===0?'neutral':delta>0?'up':'down';
-  return <span className="glance-count-change change-rate" data-direction={direction} data-delta={direction==='neutral'?undefined:direction}><span aria-hidden="true">{text}{unit}</span><span className="sr-only">{spokenRateText(text+unit,lang)}</span></span>;
+  return <span className="glance-count-change change-rate" data-direction={direction} data-delta={direction==='neutral'?undefined:direction}><span aria-hidden="true">{visible}{unit}</span><span className="sr-only">{spokenRateText(text+unit,lang)}</span></span>;
 }
