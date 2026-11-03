@@ -25,9 +25,10 @@
  .airport-route-passengers .airport-month-table td .route-month-mean{white-space:nowrap;overflow-wrap:normal}
 }
 .route-month-mean-compact{display:none}
-/* A short English label preserves room for country names on 320px phones.
+/* A short English label preserves room for country names through 430px.
+ * Switching back at 360px squeezed names into four or more lines at 361px.
  * The full label stays available to assistive technology. */
-@media(max-width:360px){
+@media(max-width:430px){
  .route-month-mean-compact{display:inline}
  .route-month-mean-full{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 }

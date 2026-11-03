@@ -11,7 +11,7 @@ const data=(month:string)=>({operationId:'ROUTE_COUNTRY_PASSENGERS',month,
   departures:month==='2026-08'?baseline:selected,total:null,aggregate:false,startHour:null,endHour:null})),
  retrievedAt:'2026-11-03T00:00:00Z',completeness:'TOTAL_NOT_PROVIDED'});
 
-for(const lang of ['ko','en','zh','ja'])for(const width of (lang==='en'?[320,360,361,390,700,701,1440]:[320,390,700,701,1440]))
+for(const lang of ['ko','en','zh','ja'])for(const width of (lang==='en'?[320,360,361,375,390,414,429,430,431,440,700,701,1440]:[320,390,700,701,1440]))
 test(`route passenger daily means stay on one line ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:1000});
  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
@@ -45,7 +45,8 @@ test(`route passenger daily means stay on one line ${lang} ${width}`,async({page
  if(lang==='en'){
   const compact=means.first().locator('.route-month-mean-compact');
   await expect(compact).toHaveAttribute('aria-hidden','true');
-  await expect(compact).toHaveCSS('display',width<=360?'inline':'none');
+  await expect(compact).toHaveCSS('display',width<=430?'inline':'none');
+  await expect(means.first()).toHaveCSS('font-size','12px');
  }
  const countryNames=await block.locator('.route-country-name').evaluateAll(nodes=>nodes.map(node=>{
   const style=getComputedStyle(node),lineHeight=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.6;
