@@ -4,7 +4,7 @@ import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
 const reference={month:'2026-09',start:'2026-09-01',end:'2026-09-30',expectedDays:30,completeDays:30,status:'COMPLETE',mean:60000,missingDates:[]};
-for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440])test(`compact metric roles ${lang} ${width}`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440])test(`compact metric roles ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
  await page.route('**/api/**',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
@@ -44,8 +44,13 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size',width<=600||(lang==='ko'&&width>700)?'10px':'11px');await expect(basis).toHaveCSS('font-weight','400');}
  const change=report.locator('.focus-comparison-change'),signed=change.locator(':scope > .glance-count-change');
  await expect(signed).toHaveAttribute('data-direction',width===320?'down':width===390?'neutral':'up');
- if(width===320){await expect(change).toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toContainText('△');await expect(change.locator('.focus-passenger-rate .change-rate')).toHaveCSS('color','rgb(161, 45, 63)');}
+ if(width===320){await expect(change).toHaveCSS('color','rgb(161, 45, 63)');if(lang==='ko')await expect(signed.locator('[aria-hidden="true"]')).not.toContainText('△');else await expect(signed).toContainText('△');await expect(change.locator('.focus-passenger-rate .change-rate')).toHaveCSS('color','rgb(161, 45, 63)');await expect(change.locator('.focus-passenger-rate .change-rate')).toContainText('△');}
  else {await expect(change).not.toHaveCSS('color','rgb(161, 45, 63)');await expect(signed).toHaveCSS('color',width===390?'rgb(89, 99, 110)':'rgb(36, 89, 166)');}
+ if(lang==='ko'){
+  const counts=report.locator('.focus-comparison-change > .glance-count-change,.focus-flight-comparison .glance-count-change');
+  await expect(counts).toHaveCount(2);
+  for(const count of await counts.all())await expect(count.locator('[aria-hidden="true"]')).not.toHaveText(/^[△+−-]/);
+ }
  if(width<=700){
   const overflow=await report.locator('.focus-core-metric').evaluateAll(nodes=>nodes.flatMap(metric=>{
    const box=metric.getBoundingClientRect(),walker=document.createTreeWalker(metric,NodeFilter.SHOW_TEXT),issues=[];
@@ -59,6 +64,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  const label=(await toggle.locator(':scope > span').first().boundingBox())!,partBox=(await parts.boundingBox())!;expect(partBox.y-label.y-label.height).toBeGreaterThanOrEqual(0);expect(partBox.y-label.y-label.height).toBeLessThanOrEqual(3);
  await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
  // Stress narrow columns without altering fixture/source calculations.
+ if(lang==='ko'&&(width===390||width===1440))await report.screenshot({path:info.outputPath('brief-count-symbols.png')});
  await report.locator('.focus-metric-total').first().evaluate(node=>{node.textContent='1,234,567,890 people';});
  expect(await report.locator('.focus-metric-total').first().evaluate(node=>{const box=node.closest('.focus-core-metric')!.getBoundingClientRect(),range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()].every(rect=>rect.left>=box.left-1&&rect.right<=box.right+1);}),'long headline figures wrap inside their own column').toBe(true);
  expect(await report.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

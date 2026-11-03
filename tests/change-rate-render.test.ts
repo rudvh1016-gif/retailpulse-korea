@@ -6,6 +6,17 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {ChangeRate,CountChange,RateText} from '../app/change-rate';
 const render=<P extends object>(component:FunctionComponent<P>,props:P)=>renderToStaticMarkup(createElement(component,props));
 const format=new Intl.NumberFormat('ko',{maximumFractionDigits:1}).format;
+test('opt-in symbol-free counts preserve original direction, accessible meaning and missing values',()=>{
+ for(const delta of [-3606,3606,0,-.01,.01,null,NaN,Infinity]){
+  const html=render(CountChange,{delta,format,lang:'ko',unit:'명/일',showSymbol:false});
+  const visible=html.match(/aria-hidden="true">([^<]*(?:&lt;[^<]*)?)<\/span>/)?.[1];
+  assert.ok(visible);assert.doesNotMatch(visible,/^(?:△|\+|-)/);
+  const valid=delta!==null&&Number.isFinite(delta),direction=!valid||delta===0?'neutral':delta!>0?'up':'down';
+  assert.match(html,new RegExp(`data-direction="${direction}"`));
+  if(valid&&delta!==0)assert.ok(html.includes(delta!>0?'class="sr-only">증가':'class="sr-only">감소'));
+  if(!valid)assert.equal(visible,'—명/일');
+ }
+});
 for(const lang of ['ko','en','zh','ja'] as const)test(`rendered rate and count directions preserve units and accessible words: ${lang}`,()=>{
  const words={ko:['증가','감소'],en:['increase','decrease'],zh:['增长','下降'],ja:['増加','減少']}[lang];
  for(const unit of ['%','%p'] as const)for(const [value,direction,visible,word] of [[2.7,'up','+3',words[0]],[-2.7,'down','△ 3',words[1]],[0,'neutral','0','0'],[-0,'neutral','0','0'],[.001,'up','+0',words[0]],[-.001,'down','△ 0',words[1]]] as const){

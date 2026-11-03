@@ -6,6 +6,19 @@ import {DailyAverageComparison} from '../app/daily-average-comparison';
 import {PassengerBriefComparison} from '../app/airport-brief-comparison';
 import type {PassengerReferenceMonth} from '../lib/passenger-reference-month';
 const visible=(html:string)=>html.replace(/<span class="sr-only">.*?<\/span>/g,'').replace(/<[^>]*>/g,'');
+
+test('briefing opt-in removes count symbols but keeps decrease wording, rate triangle and signed colors',()=>{
+ const baseline:PassengerReferenceMonth={month:'2026-09',start:'2026-09-01',end:'2026-09-30',expectedDays:30,completeDays:30,status:'COMPLETE',missingDates:[],mean:52000};
+ const people=renderToStaticMarkup(h(PassengerBriefComparison,{total:48394,day:'2026-10-21',baseline,lang:'ko',marker:'②',showCountSymbol:false}));
+ assert.match(visible(people),/② 3,606명\/일 감소 \(△ 7%\)/);
+ assert.match(people,/data-direction="down"/);assert.match(people,/class="sr-only">감소/);
+ for(const [delta,percent,direction,word] of [[-11.9,-5,'down','감소'],[11.9,5,'up','증가'],[0,0,'neutral','차이 없음']] as const){
+  const html=renderToStaticMarkup(h(DailyAverageComparison,{basis:'10월',mean:261.9,delta,percent,lang:'ko',marker:'②',showCountSymbol:false}));
+  assert.ok(visible(html).includes(`② ${Math.abs(delta)}편/일 ${word}`));
+  assert.match(html,new RegExp(`data-direction="${direction}"`));
+  assert.ok(visible(html).includes(percent<0?'(△ 5%)':percent>0?'(+5%)':'(0%)'));
+ }
+});
 test('count appears once with direction, honest basis, rate and four locales',()=>{
  for(const lang of ['ko','en','zh','ja'] as const){
   const html=visible(renderToStaticMarkup(h(DailyAverageComparison,{basis:'2026-09',mean:100000,delta:505,percent:.505,lang})));
