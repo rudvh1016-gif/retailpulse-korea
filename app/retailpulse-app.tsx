@@ -19,6 +19,7 @@ const LazyAirportPreparation=dynamic(()=>import('./airport-focus-production').th
 const LazyAirportGlance=dynamic(loadAirportGlance);
 const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
+const SiteShare=dynamic(()=>import('./site-share').then(module=>module.SiteShare));
 const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));
 const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));
 // The Seoul signals (./live-signals) load with the today and business screens.
@@ -1136,6 +1137,7 @@ function MoreView({
   }, []);
   return (
     <section className="view-section more-view">
+      <SiteShare key={lang} lang={lang} />
       <div className="view-intro">
         <div>
           <p className="eyebrow">SETTINGS &amp; SOURCES</p>

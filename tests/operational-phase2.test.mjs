@@ -234,6 +234,11 @@ assert.equal(shiftBriefingPatches['app/globals.css'].length,1);
 for(const [file,patches] of Object.entries(shiftBriefingPatches)){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }
+// Owner-approved More sharing: reverse only the lazy import and top-of-More
+// insertion. Every other protected shell byte and canonical hash stays fixed.
+const moreSharePatches=JSON.parse(readFileSync('tests/fixtures/more-site-share-approved-patches.json','utf8'));
+assert.equal(moreSharePatches.length,2);
+approvedCanonicalPatches['app/retailpulse-app.tsx']=[...moreSharePatches,...(approvedCanonicalPatches['app/retailpulse-app.tsx']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

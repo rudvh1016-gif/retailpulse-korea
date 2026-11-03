@@ -1,0 +1,20 @@
+.share { padding: 24px 0; border-bottom: 1px solid var(--line); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.intro { min-width: 0; }
+.title { margin: 0; color: var(--ink); font-size: var(--type-body); font-weight: var(--weight-strong); line-height: 1.5; }
+.help { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.primary, .copy { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--navy); border-radius: 4px; background: var(--paper); color: var(--navy); font: inherit; font-size: 12px; font-weight: var(--weight-strong); line-height: 1.4; white-space: nowrap; cursor: pointer; touch-action: manipulation; }
+.primary { flex: none; background: var(--navy); color: var(--paper); }
+.primary:hover { background: var(--ink); }
+.copy:hover { border-color: var(--ink); }
+.primary:disabled, .copy:disabled { opacity: .65; cursor: wait; }
+.primary:focus-visible, .copy:focus-visible, .linkRow input:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+.status { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.status:empty { margin: 0; }
+.linkRow { display: flex; align-items: stretch; gap: 8px; margin-top: 12px; }
+.linkRow input { flex: 1; min-width: 0; width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); font: inherit; font-size: 16px; line-height: 1.5; }
+.copy { flex: none; padding-inline: 12px; }
+@media (max-width: 380px) {
+  .row { flex-wrap: wrap; gap: 12px; }
+  .primary { width: 100%; }
+}
