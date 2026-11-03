@@ -14,3 +14,13 @@
 .route-month-controls select { border:0; border-bottom:1px solid #aab6c0; border-radius:0; padding:9px 28px 9px 2px; background-color:transparent; color:#1c2f3d; font-variant-numeric:tabular-nums; cursor:pointer; }
 .route-month-controls select:hover { border-bottom-color:#345b7b; }
 .route-month-controls select:focus-visible { outline:2px solid #345b7b; outline-offset:2px; }
+
+/* On phones, size the two value columns from their complete daily-mean lines.
+ * The country and change headings may wrap, but a passenger count never does.
+ * Desktop keeps its existing fixed-column layout. */
+@media(max-width:700px){
+ .airport-route-passengers .airport-month-table table{table-layout:auto}
+ .airport-route-passengers .airport-month-value-column{width:1%}
+ .airport-route-passengers .airport-month-rate-column{width:18%}
+ .airport-route-passengers .airport-month-table td .route-month-mean{white-space:nowrap;overflow-wrap:normal}
+}
