@@ -54,6 +54,10 @@ for(const state of ['missing','partial','zero','partial-flights'] as const)test(
 for(const [lang,width] of [['ko',320],['ko',390],['ko',430],['ko',600],['ko',601],['ko',1280],['en',390],['ja',390]] as const)test(`return planning numeric hierarchy ${lang} ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:1000});await fixture(page,{multiple:true,typography:true});await page.goto(`/${lang}?date=${day}`);
  const returned=page.locator('.focus-return-context'),ph=returned.locator('.focus-preparation-event[data-country="PH"]'),metric=ph.locator('.event-country-flights');await expect(metric).toContainText('5');await expect(metric.locator('.glance-count-change')).toContainText('+0.3');await expect(metric.locator('.staff-route-rate')).toContainText('+6%');await expect(metric.locator('.event-flight-baseline')).toContainText('4.7');
+ // Remove only the first of the two phone rules after the schedule details.
+ await expect(returned).toHaveCSS('border-bottom-width',width<=600||width>=1000?'0px':'1px');
+ const nextWeek=page.locator('.focus-preparation-brief');
+ await expect(width>=1000?nextWeek:nextWeek.locator(':scope>div').first()).toHaveCSS('border-top-width','1px');
  const value=metric.locator('.staff-route-metric b'),change=metric.locator('.event-flight-change'),basis=metric.locator('.event-flight-baseline');await expect(value).toHaveCSS('font-size',width<=600?'20px':'24px');await expect(value).toHaveCSS('font-weight','700');await expect(change).toHaveCSS('font-size',width<=600?'12px':'16px');await expect(basis).toHaveCSS('font-size',width<=600?'10px':width>=1000?'11px':'12px');
  await expect(metric.locator('.glance-count-change')).toHaveCSS('color','rgb(36, 89, 166)');await expect(returned.locator('[data-country="TH"] .glance-count-change')).toHaveCSS('color','rgb(161, 45, 63)');
  if(width<=600){await expect(value).toHaveCSS('font-size',await page.locator('.focus-flight-metric .focus-metric-total').evaluate(el=>getComputedStyle(el).fontSize));await expect(change).toHaveCSS('font-weight','700');await expect(ph.locator('.focus-event-dates')).toHaveCSS('font-size','10px');}
