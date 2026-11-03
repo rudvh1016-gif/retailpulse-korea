@@ -18,6 +18,7 @@ for(const width of [320,390,430,700,701,1440])test(`B wait highlight is mobile o
  const flow=page.getByRole('region',{name:'주목할 공항 흐름',exact:true}),wait=flow.getByTestId('glance-key-wait');
  await expect(wait).toContainText('T2 출국장 1A');await expect(wait.locator('.flow-wait-number')).toHaveText('17');
  await expect(wait).toContainText('10:00 KST');await expect(wait).toHaveAttribute('href',/#airport-checkpoints-title$/);
+ await expect(wait).toHaveAccessibleName(/T2 출국장 1A · 17 분/);
  await expect(flow.getByTestId('glance-key-upcoming')).toHaveAttribute('href',/#airport-departure-model-slot$/);
  await expect(flow.locator('.staff-brief-grid>section')).toHaveCount(2);
  const waitNumber=wait.locator('.flow-wait-number');
