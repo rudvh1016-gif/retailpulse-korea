@@ -28,7 +28,7 @@ const copy={
  eastArea:row('동편·중앙 포함','East + centre','东侧·含中央','東側・中央を含む'),
  sideLimits:row('탑승구 위치 기준이며 매장 방문 구역을 뜻하지 않습니다.','Gate locations do not identify which stores passengers visit.','登机口位置不代表旅客会到访的门店区域。','搭乗口の位置は来店するエリアを示しません。'),
  destinations:row('주요 출발 목적지','Main destinations','主要出发目的地','主な出発先'),
- topThree:row('상위 3곳','Top 3','前3位','上位3地域'),
+ topSix:row('상위 6곳','Top 6','前6位','上位6地域'),
  destinationBasis:row('국가·지역 기준 · 승객 국적과 다름','Countries and regions · not passenger nationality','按国家与地区·不代表旅客国籍','国・地域別・旅客の国籍とは異なります'),
  destinationPartial:row('확인된 목적지 기준 · 전체 순위 미확정','Verified destinations only · full ranking unconfirmed','仅已确认目的地·整体排名未确定','確認できた目的地のみ・全体順位は未確定'),
  destinationUnknown:row('목적지 미확인','Unknown destination','目的地未确认','目的地未確認'),
@@ -158,7 +158,7 @@ export function ShiftBriefingView({lang,day,preferences,industry,configured,resu
  const [editing,setEditing]=useState(false),[saved,setSaved]=useState(false);
  const id=useId(),format=new Intl.NumberFormat(lang,{maximumFractionDigits:1}).format;
  const current=result?.current,peak=current?.peak,destinations=current?.destinations;
- const leading=destinations?.countries.slice(0,3)??[];
+ const leading=destinations?.countries.slice(0,6)??[];
  const destinationFallback=!result||current?.status==='LOADING'?copy.loading[lang]:copy.destinationEmpty[lang];
  const actions=buildShiftStoreChecks(industry,lang);
  const count=current?.total??current?.confirmed??null;
@@ -207,7 +207,7 @@ export function ShiftBriefingView({lang,day,preferences,industry,configured,resu
     <div className="shift-comparisons"><h3>{copy.compare[lang]}</h3>{result?<div className="shift-comparison-pair"><ComparisonLine comparison={result.comparisons.week} lang={lang}/><ComparisonLine comparison={result.comparisons.month} lang={lang}/></div>:<p className="shift-data-note">{copy.loading[lang]}</p>}</div>
    </div>
    <section className="shift-destinations" aria-labelledby={`${id}-destinations`} data-testid="shift-destinations">
-    <div className="shift-section-heading"><h3 id={`${id}-destinations`}>{copy.destinations[lang]}</h3>{leading.length===3&&<small>{copy.topThree[lang]}</small>}</div>
+    <div className="shift-section-heading"><h3 id={`${id}-destinations`}>{copy.destinations[lang]}</h3>{leading.length===6&&<small>{copy.topSix[lang]}</small>}</div>
     {leading.length?<ul>{leading.map(item=><li key={item.country}><span className="shift-destination-name"><CountryFlag code={item.country} size={18}/><span>{destinationName(item.country,lang)}</span></span><strong>{format(item.flights)}<small>{copy.flights[lang]}</small></strong></li>)}</ul>:<p className="shift-data-note">{destinationFallback}</p>}
     <p className="shift-destination-note">{copy.destinationBasis[lang]}</p>
     {destinations&&!destinations.complete&&<p className="shift-data-note">{copy.destinationPartial[lang]}{destinations.unknown>0&&<> · {copy.destinationUnknown[lang]} {format(destinations.unknown)}{copy.flights[lang]}</>}</p>}
