@@ -93,7 +93,7 @@
 
 /* Owner-selected B: one live wait highlight, then quiet blue topic rails.
    Only the named overview group changes; desktop and the exchange header do not. */
-@media(max-width:700px){
+@media(max-width:600px){
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]{row-gap:24px;margin-block:24px}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>.glance-workday-heading{margin-bottom:0}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a[data-testid="glance-key-wait"]{
@@ -140,7 +140,7 @@
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a:focus-visible{outline:2px solid #24578a;outline-offset:4px}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a[data-testid="glance-key-wait"]:focus-visible{outline-color:#183c67}
 }
-@media(max-width:700px) and (forced-colors:active){
+@media(max-width:600px) and (forced-colors:active){
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a[data-testid="glance-key-wait"]{background:Canvas;border:1px solid CanvasText;color:CanvasText}
  :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a[data-testid="glance-key-wait"] :is(.airport-flow-item-title,strong,small){color:CanvasText!important}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section,

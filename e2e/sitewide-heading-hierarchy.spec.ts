@@ -31,7 +31,7 @@ async function verifyHeadings(page:Page,textScale=1){
   const range=document.createRange();if(textNode)range.selectNodeContents(textNode);
   const approvedBand=node.matches('.airport-focus-shell .focus-report h3.focus-brief-band,.glance-insights[aria-labelledby="airport-staff-briefing-title"] h3.airport-flow-item-title');
   const icon=node.querySelector(':scope > svg.ui-line-icon');
-  return {mobileFlowRail:innerWidth<=700&&node.matches('.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>.airport-flow-item-title'),compactGuide:!!node.closest('.site-usage-guide'),markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
+  return {mobileFlowRail:innerWidth<=600&&node.matches('.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>.airport-flow-item-title'),compactGuide:!!node.closest('.site-usage-guide'),markerGlyph:marker?getComputedStyle(marker,"::before").content:null,connected:node.isConnected,fontDefined:!!font.weight&&!!font.size&&!!font.family,approvedBand,iconCount:node.querySelectorAll(':scope > svg.ui-line-icon').length,iconHidden:icon?.getAttribute('aria-hidden'),paddingEnd:parseFloat(style.paddingInlineEnd),border:style.borderInlineStartWidth,background:style.backgroundColor,figuresTitle:node.classList.contains('focus-figures-title'),blackMiddle:node.matches('.focus-report h3,.airport-top-reference > h3,.airport-month-flights > h3'),flowItem:node.classList.contains('airport-flow-item-title'),question:node.classList.contains('focus-trend-question'),text:node.textContent?.trim(),role:node.getAttribute('data-heading'),size:parseFloat(style.fontSize),
    left:bounds.left,right:bounds.right,overflow:node.scrollWidth-node.clientWidth,paddingStart:parseFloat(style.paddingInlineStart),
    textLeft:textNode?range.getClientRects()[0]?.left:null,whiteSpace:style.whiteSpace,clipped:node.scrollHeight>node.clientHeight+1&&style.overflowY!=='visible',
    leftAligned:style.textAlign==='left'||(style.textAlign==='start'&&style.direction==='ltr'),contentLeft:bounds.left+parseFloat(style.borderLeftWidth),
@@ -49,7 +49,7 @@ async function verifyHeadings(page:Page,textScale=1){
   // The owner requested smaller guide copy; assert its exact hierarchy at both
   // normal size and 200% text enlargement, while retaining every overflow check.
   if(row.compactGuide)expect(row.size,`compact guide ${row.role}: ${row.text}`).toBe((row.role==='section'?18:15)*textScale);
-  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem&&page.viewportSize()!.width<=700?14:row.approvedBand?16:row.figuresTitle?(page.viewportSize()!.width<=600?15:18):row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
+  else expect(row.size,`${row.role}: ${row.text}`).toBeGreaterThanOrEqual(row.flowItem&&page.viewportSize()!.width<=600?14:row.approvedBand?16:row.figuresTitle?(page.viewportSize()!.width<=600?15:18):row.question&&page.viewportSize()!.width<=380?17:row.role==='page'?26:row.role==='section'?21:18);
   expect(row.hidden,`decorative marker: ${row.text}`).toBe('true');
   expect(row.markerText).toBe('');
   expect(row.markerCount).toBe(1);
@@ -64,7 +64,7 @@ async function verifyHeadings(page:Page,textScale=1){
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
   const palette={page:['rgb(34, 35, 38)','750'],section:['rgb(34, 35, 38)','700'],subsection:['rgb(34, 35, 38)','600']} as const;
-  const [color,weight]=row.flowItem?[page.viewportSize()!.width<=700?'rgb(49, 87, 119)':'rgb(34, 35, 38)','700']:row.approvedBand?['rgb(34, 35, 38)','600']:row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
+  const [color,weight]=row.flowItem?[page.viewportSize()!.width<=600?'rgb(49, 87, 119)':'rgb(34, 35, 38)','700']:row.approvedBand?['rgb(34, 35, 38)','600']:row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
   expect(row.opacity).toBe('1');
@@ -100,7 +100,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  }));
  for(const row of rows){
   expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);expect(row.markerDisplay).toBe('none');expect(row.markerWidth).toBe(0);
-  const mobile=page.viewportSize()!.width<=700,margin=mobile&&row.wait?12:mobile&&page.viewportSize()!.width<=600?8:10;
+  const mobile=page.viewportSize()!.width<=600,margin=mobile&&row.wait?12:mobile&&page.viewportSize()!.width<=600?8:10;
   expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([mobile?(enlarged?'28px':'14px'):(enlarged?'32px':'16px'),row.staticCjk?'600':'700',mobile?(row.wait?'rgb(237, 244, 252)':'rgb(49, 87, 119)'):'rgb(34, 35, 38)',margin+'px']);
   expect([row.family,row.lineHeight,row.spacing]).toEqual([rows[0].family,rows[0].lineHeight,rows[0].spacing]);
   expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(margin-1);expect(row.bodyGap!).toBeLessThanOrEqual(margin+1);
@@ -113,7 +113,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
   expect(rows[3].y).toBeCloseTo(rows[4].y,0);expect(rows[3].x).toBeCloseTo(rows[0].x,0);
   expect(rows[3].width).toBeCloseTo(rows[0].width,0);expect(rows[4].x).toBeCloseTo(rows[1].x,0);expect(rows[4].width).toBeGreaterThan(rows[3].width);
  }else{
-  for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x-4,0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
+  for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x-(width<=600?4:0),0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }
  await expect(flow.locator(':scope > a > strong')).toHaveCount(3);
  const locale=new URL(page.url()).pathname.split('/')[1];

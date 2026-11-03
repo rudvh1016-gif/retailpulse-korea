@@ -33,11 +33,11 @@ test('the metrics and staff topics retain the vertical mobile reading order',()=
  assert.match(read('app/airport-staff-briefing.css'),/@media\(max-width:700px\)\{\.staff-brief-grid\{grid-template-columns:1fr/);
  for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>{
   if(decl.prop==='background'&&decl.value!=='transparent'){
-   assert.equal(node.type,'atrule');assert.match(node.params,/max-width:700px/);
+   assert.equal(node.type,'atrule');assert.match(node.params,/max-width:600px/);
    assert.match(decl.parent.selector,/glance-key-wait|airport-flow-item-title::before/);
    assert.ok(['#183c67','#315f91','Canvas','CanvasText'].includes(decl.value));
   }else if(decl.prop==='order'){
-   assert.equal(node.type,'atrule');assert.match(node.params,/max-width:700px/);
+   assert.equal(node.type,'atrule');assert.match(node.params,/max-width:600px/);
    assert.equal(decl.parent.selector,scope+' .flow-wait-reading');assert.equal(decl.value,'-1');
   }else assert.notEqual(decl.prop,'box-shadow');
  });

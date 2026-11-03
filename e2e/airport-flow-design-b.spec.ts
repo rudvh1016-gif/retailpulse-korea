@@ -12,7 +12,7 @@ async function data(page:Page,raw='17',fresh=true){
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
 }
-for(const width of [320,390,430,700,701,1440])test(`B wait highlight is mobile only and keeps real values and links ${width}`,async({page})=>{
+for(const width of [320,390,430,600,601,700,701,1440])test(`B wait highlight is mobile only and keeps real values and links ${width}`,async({page})=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await data(page);
  await page.goto('/ko?date='+date);
  const flow=page.getByRole('region',{name:'주목할 공항 흐름',exact:true}),wait=flow.getByTestId('glance-key-wait');
@@ -22,7 +22,7 @@ for(const width of [320,390,430,700,701,1440])test(`B wait highlight is mobile o
  await expect(flow.getByTestId('glance-key-upcoming')).toHaveAttribute('href',/#airport-departure-model-slot$/);
  await expect(flow.locator('.staff-brief-grid>section')).toHaveCount(2);
  const waitNumber=wait.locator('.flow-wait-number');
- if(width<=700){
+ if(width<=600){
   await expect(wait).toHaveCSS('background-color','rgb(24, 60, 103)');await expect(waitNumber).toHaveCSS('font-size','40px');
   await expect(waitNumber).toHaveCSS('color','rgb(255, 255, 255)');
   await expect(wait.locator('.flow-wait-unit')).toHaveCSS('font-size','14px');
