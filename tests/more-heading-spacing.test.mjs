@@ -14,5 +14,5 @@ test('shared intro, font, More links and keyboard targets keep their existing co
  assert.match(css,/\.more-section-links :is\(a,button.update-notice-trigger\)\{[^}]*min-height:48px/);
  assert.match(css,/\.more-section-links :is\(a,button.update-notice-trigger\):focus-visible\{outline:2px/);
  const source=readFileSync(new URL('../app/retailpulse-app.tsx',import.meta.url),'utf8');
- assert.match(source,/<section className="view-section more-view">\s*<div className="view-intro">/);
+ assert.match(source,/<section className="view-section more-view">\s*<SiteShare key=\{lang\} lang=\{lang\} \/>\s*<div className="view-intro">/);
 });

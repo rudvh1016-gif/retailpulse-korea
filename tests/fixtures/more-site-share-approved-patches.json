@@ -1,0 +1,10 @@
+[
+  [
+    "const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));\nconst SiteShare=dynamic(()=>import('./site-share').then(module=>module.SiteShare));",
+    "const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));"
+  ],
+  [
+    "    <section className=\"view-section more-view\">\n      <SiteShare key={lang} lang={lang} />\n      <div className=\"view-intro\">",
+    "    <section className=\"view-section more-view\">\n      <div className=\"view-intro\">"
+  ]
+]
