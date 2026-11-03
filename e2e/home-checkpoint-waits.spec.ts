@@ -28,3 +28,31 @@ for(const width of [320,390,1440])for(const reduced of [false,true])test(`home c
  if(reduced)expect(await section.evaluate(el=>el.getAnimations({subtree:true}).filter(a=>a.playState==='running').length)).toBe(0);
  await section.screenshot({path:`test-results/home-checkpoint-${width}-${reduced}.png`});
 });
+
+for(const width of [390,1440])test(`home checkpoint waits follow the selected terminal and restore it ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
+ await page.route('**/api/**',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:SUMMARY_FIXTURE}));
+ await page.goto('/ko?insight=briefing&terminal=T2',{waitUntil:'domcontentloaded'});
+ await page.locator('#airport-insight-tab-overview').click();
+ const section=page.locator('.home-checkpoint-waits');
+ const controls=page.locator('.glance-controls [role=group]');
+ const schematics=section.locator('figure[data-testid=checkpoint-schematic]');
+ await section.scrollIntoViewIfNeeded();
+ await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T2');
+ await controls.getByRole('button',{name:'T1',exact:true}).click();await section.scrollIntoViewIfNeeded();
+ await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T1');
+ await controls.getByRole('button',{name:'탑승동',exact:true}).click();await section.scrollIntoViewIfNeeded();
+ await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T1');
+ await controls.getByRole('button',{name:'전체',exact:true}).click();await section.scrollIntoViewIfNeeded();await expect(schematics).toHaveCount(2);
+ await controls.getByRole('button',{name:'T2',exact:true}).click();await section.scrollIntoViewIfNeeded();
+ await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T2');
+ // A bare home URL restores the device choice, whereas an explicit URL wins.
+ await page.goto('/ko');await section.scrollIntoViewIfNeeded();
+ await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T2');
+ await page.goto('/ko?terminal=T1');await section.scrollIntoViewIfNeeded();
+ await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T1');
+ await page.goBack();await section.scrollIntoViewIfNeeded();
+ await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T2');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});

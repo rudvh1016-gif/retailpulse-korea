@@ -15,11 +15,12 @@ for(const file of ['airport-focus-production.tsx','airport-focus-preview.tsx'])t
  assert.equal((prop('trailingContent').match(/<HomeCheckpointWaits /g)||[]).length,1);
  assert.match(prop('trailingContent'),/summary=\{summary\} now=\{now\} lang=\{lang\}/);
  assert.doesNotMatch(prop('trailingContent'),/\bfull\b/);
+ assert.match(prop('trailingContent'),/scope=\{scope\}/);
 });
 test('shared glance renders trailing content after future section and immediately before metadata footer',()=>{
  const source=readFileSync(new URL('../app/airport-glance-preview.tsx',import.meta.url),'utf8');
  assert.match(source,/overviewExtras\?:ReactNode;trailingContent\?:ReactNode/);
  assert.ok(source.indexOf("typeof trailingContent==='function'")>source.indexOf('className="glance-future"'));
- assert.match(source,/trailingContent\(\{summary,now:clock\}\):trailingContent\}\s*<footer><span>\{c.collected\}/);
- assert.equal((source.match(/trailingContent\(\{summary,now:clock\}\)/g)||[]).length,1);
+ assert.match(source,/trailingContent\(\{summary,now:clock,scope\}\):trailingContent\}\s*<footer><span>\{c.collected\}/);
+ assert.equal((source.match(/trailingContent\(\{summary,now:clock,scope\}\)/g)||[]).length,1);
 });

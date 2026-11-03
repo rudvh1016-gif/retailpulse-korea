@@ -128,3 +128,30 @@ test('Japanese exposes only overview and briefing while locale changes preserve 
  }
  await page.goto(`/ja?insight=rhythm&date=${day}`);await expect(page.locator('#airport-insight-tab-overview')).toHaveAttribute('aria-selected','true');await expect(page.locator('.airport-period-frame')).toHaveCount(0);
 });
+
+for(const width of [320,390,1440])test(`shift briefing shows six destinations and FIFO stock guidance ${width}`,async({page},info)=>{
+ await page.setViewportSize({width,height:1000});await fixtures(page);
+ const airports=['NRT','PEK','LAX','HAN','TPE','BKK','SIN','HKG'];
+ const template=flightData(day),base=template.flights[0];
+ template.flights=airports.flatMap((airportCode,index)=>Array.from({length:8-index},(_,i)=>({...base,physicalFlightId:`${airportCode}-${i}`,flightNumber:`${airportCode}-${i}`,airportCode})));
+ await page.route('**/api/live/flights*',route=>route.fulfill({json:template}));
+ await page.route('**/api/live/glance-week-reference*',route=>route.fulfill({json:{status:'READY',month:day.slice(0,7),data:{day,previousDay:'2026-10-25',passengers:{all:null,T1:null,T2:null},flights:null,selectedFlights:{all:36,T1:0,T2:36,CONCOURSE:0},selectedFlightSnapshot:{day,retrievedAt:template.retrievedAt,provisional:true}}}}));
+ await page.addInitScript(({key,value})=>{
+  localStorage.setItem(key,JSON.stringify(value));
+  localStorage.setItem('retailpulse-preferences',JSON.stringify({industry:'fashion'}));
+ },{key:BUSINESS_KEY,value:shift});
+ await page.goto(`/ko?insight=briefing&date=${day}&terminal=T2`);
+ const destinations=page.getByTestId('shift-destinations'),rows=destinations.locator(':scope > ul > li');
+ await expect(rows).toHaveCount(6);await expect(destinations).toContainText('상위 6곳');
+ for(const [index,country] of ['일본','중국','미국','베트남','대만','태국'].entries())await expect(rows.nth(index)).toContainText(country);
+ await expect(destinations).not.toContainText('싱가포르');await expect(destinations).not.toContainText('홍콩');
+ const shared=page.getByTestId('shift-briefing').getByTestId('share-preview');
+ for(const country of ['베트남','대만','태국'])await expect(shared).toContainText(country);
+ await expect(shared).not.toContainText('싱가포르');await expect(shared).not.toContainText('홍콩');await expect(shared).toContainText('선입선출');
+ const checks=page.getByTestId('shift-store-check-display-stock');await expect(checks.locator('summary')).toContainText('선입선출');
+ await checks.locator('summary').click();await expect(checks.locator('ol')).toContainText('먼저 입고된 판매 가능 상품부터 진열·판매');await expect(checks.locator('ol')).toContainText('기존 상품을 먼저 판매할 수 있도록');
+ const details=page.getByTestId('shift-details');await details.locator(':scope > summary').click();
+ await expect(details).toContainText('싱가포르');await expect(details).toContainText('홍콩');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.screenshot({path:info.outputPath(`shift-six-destinations-fifo-${width}.png`),fullPage:true});
+});
