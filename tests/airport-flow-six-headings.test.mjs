@@ -31,7 +31,16 @@ test('the metrics and staff topics retain the vertical mobile reading order',()=
  assert.ok(readingOrder.every((position,index)=>position>0&&(!index||position>readingOrder[index-1])));
  assert.match(read('app/airport-glance-preview.css'),/@media\(max-width:700px\)\{\.glance-insights\{grid-template-columns:1fr/);
  assert.match(read('app/airport-staff-briefing.css'),/@media\(max-width:700px\)\{\.staff-brief-grid\{grid-template-columns:1fr/);
- for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>{if(decl.prop==='background'){assert.equal(decl.parent.selector,`:root body ${scope} .airport-flow-item-title`);assert.equal(decl.value,'transparent');}else assert.doesNotMatch(decl.prop,/^(?:box-shadow|order)$/);});
+ for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>{
+  if(decl.prop==='background'&&decl.value!=='transparent'){
+   assert.equal(node.type,'atrule');assert.match(node.params,/max-width:700px/);
+   assert.match(decl.parent.selector,/glance-key-wait|airport-flow-item-title::before/);
+   assert.ok(['#183c67','#315f91','Canvas','CanvasText'].includes(decl.value));
+  }else if(decl.prop==='order'){
+   assert.equal(node.type,'atrule');assert.match(node.params,/max-width:700px/);
+   assert.equal(decl.parent.selector,scope+' .flow-wait-reading');assert.equal(decl.value,'-1');
+  }else assert.notEqual(decl.prop,'box-shadow');
+ });
  assert.equal((read('app/airport-glance-preview.tsx').match(/<UiLineIcon /g)||[]).length,0);
  assert.equal((read('app/airport-staff-briefing.tsx').match(/<UiLineIcon /g)||[]).length,0);
 });
