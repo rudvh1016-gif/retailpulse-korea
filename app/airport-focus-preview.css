@@ -392,6 +392,11 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report .focus-selected-country-changes:not(.focus-return-context){border-bottom:0}
 }
 
+/* Phone: remove the rule after return-planning details; keep next week's top rule. */
+@media(max-width:600px){
+ .airport-focus-shell .focus-report .focus-selected-country-changes.focus-return-context{border-bottom:0}
+}
+
 /* Tighten only the phone gap after the removed holiday-end note. */
 @media(max-width:700px){
  .airport-focus-shell .focus-report .focus-preparation-brief .focus-preparation-events{margin-bottom:0}
