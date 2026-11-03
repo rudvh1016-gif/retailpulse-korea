@@ -81,3 +81,5 @@ html:lang(zh) :is(.section-heading h2,.finding h3){word-break:normal;overflow-wr
 @media(max-width:600px){
  .holiday-calendar-context>.holiday-period-key,.comparison-caption,.context-note,#finding-subtitle,.chart-help,.boundary,.source-line{font-size:10px;line-height:1.6}
 }
+
+.weekday-coverage .data-table{table-layout:fixed;width:100%}.weekday-coverage .data-table th:first-child{width:12%}.weekday-coverage .data-table td{white-space:normal;text-align:left;font-size:12px;line-height:1.7;vertical-align:top}.weekday-coverage small{display:inline-block;font-size:11px;color:var(--muted,#526170)}
