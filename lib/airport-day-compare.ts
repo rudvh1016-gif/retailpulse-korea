@@ -18,7 +18,7 @@
  * table, so a table revision that confirms more gates is never read as more
  * flights on a side.
  */
-import { terminalFlightHours } from "./airport-flight-hours";
+import { terminalFlightHours, verifiedHalfHours } from "./airport-flight-hours";
 import { DESTINATION_GROUPS, destinationOf, type DestinationGroup } from "./airport-destinations";
 import type { DayProfile, TerminalProfile } from "./airport-day-profile";
 
@@ -31,6 +31,7 @@ export interface TerminalDay {
   sidesVersion: string;
   total: number;
   hours: number[];
+  halfHours?: number[] | null;
   sides: [number, number, number, number];
   groups: Partial<Record<DestinationGroup, number>>;
 }
@@ -57,9 +58,17 @@ function merge(a: TerminalProfile, b: TerminalProfile | null): { total: number; 
 
 export function terminalDay(profile: DayProfile, terminal: ViewTerminal): TerminalDay {
   const scope = merge(profile[terminal], terminal === "T1" ? profile.CONCOURSE : null);
+  const own = verifiedHalfHours(profile[terminal]);
+  const concourse = terminal === 'T1' ? verifiedHalfHours(profile.CONCOURSE) : null;
+  const invalidPrecision = (profile[terminal].halfHours !== undefined && !own)
+    || (terminal === 'T1' && profile.CONCOURSE.halfHours !== undefined && !concourse);
+  // Preserve rejected precision as null through JSON; absence means legacy
+  // hourly-only history, not a failed validation that can be upgraded blindly.
+  const halfHours = own && (terminal === 'T2' || concourse) ? own.map((n, i) => n + (concourse?.[i] ?? 0))
+    : invalidPrecision ? null : undefined;
   return {
     day: profile.day, complete: profile.complete, sidesVersion: profile.sidesVersion,
-    ...terminalFlightHours(profile, terminal), sides: [...profile[terminal].sides] as TerminalDay["sides"], groups: groupDestinations(scope.destinations),
+    ...terminalFlightHours(profile, terminal), ...(halfHours !== undefined ? { halfHours } : {}), sides: [...profile[terminal].sides] as TerminalDay["sides"], groups: groupDestinations(scope.destinations),
   };
 }
 

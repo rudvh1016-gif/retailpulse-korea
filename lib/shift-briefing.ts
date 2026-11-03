@@ -4,7 +4,8 @@
  * passengers, shop traffic or a side-by-hour history that is not stored.
  *
  * airport-days stores terminal/hour and whole-day side marginals separately.
- * Only whole-terminal, whole-hour windows can therefore use that history.
+ * Whole-terminal windows use verified half-hour profiles when available;
+ * legacy hourly profiles remain valid for whole-hour windows only.
  * T1's whole-terminal history includes the concourse; a chosen T1 side does
  * not. A side selection always includes CENTER and exposes unplaced flights.
  */
@@ -14,7 +15,7 @@ import type { MapFlightRow } from './airport-departure-map';
 import type { GlanceWeekReference } from './glance-week-comparison';
 import { minutesOf, type AirportSide, type BusinessHours, type PrepTerminal } from './business-hours';
 import { AIRPORT_SIDES_VERSION, boardingAreaOf, gateSideOf } from './airport-sides';
-import { cancelledFlight, latestDayFlights } from './airport-flight-hours';
+import { cancelledFlight, latestDayFlights, verifiedHalfHours } from './airport-flight-hours';
 import { destinationOf } from './airport-destinations';
 import { isValidKstDay, kstDayOf, kstNowIsoOf, shiftKstDay } from './kst';
 
@@ -24,6 +25,7 @@ export type ShiftReason =
   | 'TRUNCATED_RECORDS' | 'INVALID_RECORDS' | 'STALE_RECORDS'
   | 'CURRENT_UNVERIFIED' | 'UNVERIFIED_LOCATION'
   | 'UNSUPPORTED_SIDE_HISTORY' | 'UNSUPPORTED_MINUTE_HISTORY' | 'UNSUPPORTED_OVERNIGHT'
+  | 'MINUTE_HISTORY_MISSING'
   | 'BASELINE_MISSING' | 'BASELINE_INVALID' | 'PARTIAL_MONTH';
 export type ShiftAvailability = 'READY' | 'PARTIAL' | 'LOADING' | 'UNAVAILABLE';
 export interface ShiftWindow {
@@ -234,6 +236,10 @@ function historicalCount(value: TerminalDay | undefined, day: string, window: Sh
   if (!value || value.day !== day || value.complete !== true || value.sidesVersion !== AIRPORT_SIDES_VERSION
     || !count(value.total) || !Array.isArray(value.hours) || value.hours.length !== 24 || !value.hours.every(count)
     || sum(value.hours) !== value.total) return null;
+  if (window.startMin % 60 || window.endMin % 60) {
+    const halfHours = verifiedHalfHours(value);
+    return halfHours ? sum(halfHours.slice(window.startMin / 30, window.endMin / 30)) : null;
+  }
   return sum(value.hours.slice(window.startMin / 60, window.endMin / 60));
 }
 
@@ -242,7 +248,7 @@ function fillComparison(base: ShiftComparison, input: ShiftBriefingInput, window
   if (!window) return unavailable('INVALID_SELECTION');
   if (window.crossesMidnight) return unavailable('UNSUPPORTED_OVERNIGHT');
   if (input.side) return unavailable('UNSUPPORTED_SIDE_HISTORY');
-  if (window.startMin % 60 || window.endMin % 60) return unavailable('UNSUPPORTED_MINUTE_HISTORY');
+  if (window.startMin % 30 || window.endMin % 30) return unavailable('UNSUPPORTED_MINUTE_HISTORY');
   if (current.status === 'LOADING' || input.history === undefined) return unavailable('PENDING', 'LOADING');
   if (!current.comparisonEligible || current.total === null) return unavailable(current.reason ?? 'CURRENT_UNVERIFIED');
   if (input.history === null) return unavailable('READ_FAILED');
@@ -253,13 +259,18 @@ function fillComparison(base: ShiftComparison, input: ShiftBriefingInput, window
     const found = byDay.get(value.day) ?? []; found.push(value); byDay.set(value.day, found);
   }
   const includedDates: string[] = [], missingDates: string[] = [], excludedDates: string[] = [], values: number[] = [];
+  let missingPrecision = false;
   for (let day = base.start; day <= base.end; day = shiftKstDay(day, 1)) {
     const candidates = byDay.get(day) ?? [];
     const value = candidates.length === 1 ? historicalCount(candidates[0], day, window) : null;
+    if (value === null && candidates.length === 1 && candidates[0].halfHours === undefined
+      && (window.startMin % 60 || window.endMin % 60)
+      && historicalCount(candidates[0], day, { ...window, startMin: 0, endMin: 1440 }) !== null) missingPrecision = true;
     if (value === null) { missingDates.push(day); if (candidates.length) excludedDates.push(day); }
     else { includedDates.push(day); values.push(value); }
   }
-  if (!values.length) return { ...base, missingDates, excludedDates, reason: excludedDates.length ? 'BASELINE_INVALID' : 'BASELINE_MISSING' };
+  if (!values.length) return { ...base, missingDates, excludedDates, reason: missingPrecision ? 'MINUTE_HISTORY_MISSING'
+    : excludedDates.length ? 'BASELINE_INVALID' : 'BASELINE_MISSING' };
   const baseline = sum(values) / values.length, delta = current.total - baseline;
   return { ...base, status: missingDates.length ? 'PARTIAL' : 'READY', reason: missingDates.length ? 'PARTIAL_MONTH' : null,
     baseline, current: current.total, delta, percent: baseline > 0 ? delta / baseline * 100 : null,

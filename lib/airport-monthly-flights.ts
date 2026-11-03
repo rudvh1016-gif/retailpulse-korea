@@ -22,6 +22,8 @@ export interface AirportFlightMonth {
 }
 export interface AirportMonthlyRollups {
  version:number; asOf:string; preparedAt?:string; sidesVersion:string; destinationsVersion:string; months:AirportFlightMonth[];
+ /** Preparation attempt marker; individual days still prove their own precision. */
+ shiftProfileVersion?:number;
 }
 export function previousFlightMonth(month:string) {
  return new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7))-2,1)).toISOString().slice(0,7);
