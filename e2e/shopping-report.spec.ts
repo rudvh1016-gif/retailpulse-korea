@@ -19,6 +19,11 @@ for(const width of [320,390,600,820,821,1440])test(`all six store mixes open bef
  for(let i=0;i<6;i++){
   const card=stores.nth(i);await expect(card.locator('summary')).toHaveCSS('border-top-width','0px');
   await expect(card.locator('details')).toHaveCSS('border-top-width',width<=820?'0px':'1px');
+  await expect(card.locator('summary')).toContainText('5개 품목별 매출 비중');
+  await expect(card.locator('.mix-collapse')).toBeVisible();
+  await expect(card.locator('.mix-expand')).toBeHidden();
+  await expect(card.locator('.mix-basis')).toHaveText('2026년 9월 · 이 매장 전체 매출=100%');
+  expect(await card.locator('summary').evaluate(node=>getComputedStyle(node,'::after').content)).toBe('none');
   await expect(card.locator('.mix-list dt')).toHaveText(storeMix.categories);
   for(const value of await card.locator('.mix-list dd').all())await expect(value).toBeVisible();
   await expect(card.locator('.mix-current')).toHaveText(storeMix.values[8][i].map(value=>value.toFixed(1)+'%'));
@@ -43,10 +48,12 @@ test('a store can still be collapsed and its mobile choice survives desktop resi
  await page.setViewportSize({width:390,height:1000});await page.goto('/shopping-report/index.html');
  const first=page.locator('.store-overview details').first();await expect(first).toHaveAttribute('open','');
  await first.locator('summary').click();await expect(first).not.toHaveAttribute('open');
+ await expect(first.locator('.mix-expand')).toBeVisible();await expect(first.locator('.mix-collapse')).toBeHidden();
  await page.setViewportSize({width:1440,height:1000});await expect(page.locator('.store-overview details[open]')).toHaveCount(6);
  await page.setViewportSize({width:390,height:1000});await expect(first).not.toHaveAttribute('open');
  await expect(page.locator('.store-overview details[open]')).toHaveCount(5);
  await first.locator('summary').press('Enter');await expect(first).toHaveAttribute('open','');
+ await expect(first.locator('.mix-collapse')).toBeVisible();await expect(first.locator('.mix-expand')).toBeHidden();
 });
 
 for (const width of [320, 390, 820, 821, 1440]) {
@@ -132,19 +139,24 @@ test('desktop detail charts keep a common growth scale and mobile disclosures', 
   await expect(page.locator('.detail-chart').first()).toBeHidden();
 });
 
-test('year comparison focuses on 2025 and 2026 without fabricating missing values', async ({ page }) => {
+for (const width of [320, 390, 821, 1440]) test(`year comparison is chronological without fabricating missing values ${width}`, async ({ page }, info) => {
+  await page.setViewportSize({width,height:1000});
+  await page.emulateMedia({reducedMotion:'reduce'});
   await page.goto('/shopping-report/index.html');
   await expect(page.locator('#card-trends h2')).toHaveText('2025년 vs 2026년, 관광 지출은?');
   await expect(page.locator('.spending-row > b')).toHaveText(['107,940','159,416']);
   await expect(page.locator('.spending-growth strong')).toHaveText('+47.7%');
+  await expect(page.locator('.index-key > span')).toHaveText(['2024년 1~9월 · 기준','2025년 1~9월','2026년 1~9월 · 미확보']);
   const indices = ['158.1', '140.4', '123.4', '118.8', '109.9', '106.2'];
   for (let industry = 0; industry < indices.length; industry++) {
     await page.locator('#industry-choice').selectOption(String(industry));
     const group = page.locator('.index-group:visible');
-    await expect(group.locator('.index-bar-row > span')).toHaveText(['2025', '2026', '2024']);
-    await expect(group.locator('.index-bar-row > b')).toHaveText([indices[industry], '미확보', '100.0']);
+    await expect(group.locator('.index-bar-row > span')).toHaveText(['2024', '2025', '2026']);
+    await expect(group.locator('.index-bar-row > b')).toHaveText(['100.0', indices[industry], '미확보']);
     await expect(group.locator('.missing-year-row i')).toHaveCount(0);
   }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  if(width===390||width===1440) await page.locator('#card-trends').screenshot({path:info.outputPath('chronological-card-years.png')});
 });
 
  test('latest amount bars share a scale and respect reduced motion',async({page})=>{

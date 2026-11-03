@@ -79,3 +79,30 @@ test('three-year card view preserves historical indices and leaves 2026 unknown'
 });
 
 test("latest spending uses the same-release nationwide amount pair without inventing 2024",()=>{const d=JSON.parse(readFileSync("data/shopping-tourism-card-spending-2026.json","utf8"));assert.equal(d.sameReleaseComparison[2024],null);assert.equal(d.sameReleaseComparison[2025],107940);assert.equal(d.sameReleaseComparison[2026],159416);assert.equal(d.monthly2026.reduce((a,b)=>a+b,0),159416);assert.equal(Math.round((159416/107940-1)*1000)/10,47.7);assert.ok(html.includes("온라인 소비 포함"));assert.ok(html.includes("pSeq=22790"));});
+
+test('card legends and every industry use chronological years with unchanged observations', () => {
+  const coverage = JSON.parse(readFileSync('data/shopping-card-year-coverage-2026.json', 'utf8'));
+  const legend = html.match(/<div class="index-key">([\s\S]*?)<\/div>/)?.[1] ?? '';
+  assert.deepEqual([...legend.matchAll(/>(202\d)년/g)].map(match => Number(match[1])), [2024, 2025, 2026]);
+  const groups = [...html.matchAll(/<div class="index-group" data-industry="(\d+)"[^>]*>([\s\S]*?)(?=<div class="index-group"|<p class="caption">실제 건수)/g)];
+  assert.equal(groups.length, coverage.series.length);
+  for (const [index, group] of groups.entries()) {
+    const rows = [...group[2].matchAll(/<div class="index-bar-row[^\"]*"><span>(202\d)<\/span>[\s\S]*?<b>([^<]+)<\/b><\/div>/g)];
+    assert.deepEqual(rows.map(row => Number(row[1])), [2024, 2025, 2026]);
+    assert.deepEqual(rows.map(row => row[2]), ['100.0', coverage.series[index].indices['2025'].toFixed(1), '미확보']);
+  }
+});
+
+test('store shares identify the sales denominator and month without a missing-value disclosure icon', () => {
+  assert.doesNotMatch(html, /5개 품목 전체 비중/);
+  assert.equal((html.match(/5개 품목별 매출 비중/g) ?? []).length, 6);
+  assert.equal((html.match(/2026년 9월 · 이 매장 전체 매출=100%/g) ?? []).length, 6);
+  assert.equal((html.match(/class="mix-expand">펼치기/g) ?? []).length, 6);
+  assert.equal((html.match(/class="mix-collapse">접기/g) ?? []).length, 6);
+  const values = [...html.matchAll(/class="mix-current">([\d.]+)%<\/b>/g)].map(match => Number(match[1]));
+  assert.deepEqual(values, data.values[8].flat());
+  const css = readFileSync('public/shopping-report/report.css', 'utf8');
+  assert.match(css, /\.store-overview \.compact-detail summary:after\{content:none\}/);
+  assert.match(css, /\.store-overview details\[open\] \.mix-expand\{display:none\}/);
+  assert.match(css, /\.store-overview details\[open\] \.mix-collapse\{display:inline\}/);
+});
