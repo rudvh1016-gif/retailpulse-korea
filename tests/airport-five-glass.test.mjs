@@ -27,7 +27,7 @@ test('only airport shortcut wrapper loses its rectangle and gains a small gap',(
  const matches=[];tree.walkRules(rule=>{if(rule.selector===selector)matches.push(rule);});
  assert.equal(matches.length,1);
  assert.deepEqual(matches[0].nodes.map(node=>[node.prop,node.value]),[['gap','6px'],['border','0'],['background','transparent']]);
- assert.match(read('app/live-signals.tsx'),/<div className="date-nav-shortcuts" role="group">/);
+ assert.match(read('app/live-signals.tsx'),/<div className="date-nav-shortcuts" role="group" aria-label=/);
 });
 
 
