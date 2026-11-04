@@ -623,6 +623,20 @@ test('the plan surfaces stuck attempts and full capability coverage', () => {
   assert.ok(!plan.capabilityCoverage.humanReviewOnly.includes('INCHEON_FLIGHT_DETAIL'));
 });
 
+test('stuck recovery attempts degrade the verdict even without an open incident', () => {
+  const stuck = [{ attemptId: 'orphan', sourceId: 'KMA_VILAGE_FCST', logicalJob: 'collect-weather.yml',
+    executionId: 'e', startedAt: at, ageMs: 90_000_000 }];
+  for (const incidents of [[], [incident({ currentState: 'RESOLVED' })]]) {
+    const plan = buildOrchestrationPlan(planInput({ incidents, stuck }));
+    assert.equal(plan.executionStatus, 'PASS');
+    assert.equal(plan.productionVerdict, 'DEGRADED');
+    assert.equal(plan.stuckControlledAttempts[0].disposition, 'HUMAN_REVIEW_REQUIRED');
+  }
+  assert.equal(buildOrchestrationPlan(planInput({ incidents: [] })).productionVerdict, 'UNKNOWN');
+  assert.equal(buildOrchestrationPlan(planInput({ incidents: [incident({ currentState: 'RESOLVED' })] }))
+    .productionVerdict, 'NO_UNRESOLVED_INCIDENTS');
+});
+
 test('the real-world failure types resolve the way the direction requires', () => {
   const cases = [
     // A4 network timeout: the next 15-minute cycle is the repair.

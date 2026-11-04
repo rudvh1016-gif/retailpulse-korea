@@ -25,6 +25,8 @@ Do not blindly rename active technical identifiers such as repository slug, Clou
 
 Claude Code must treat `docs/ENGINEERING_DIRECTION.md` as the canonical cross-agent engineering direction and `docs/ZERO_COST_HYBRID_AUDIT.md` as the mandatory pessimistic audit gate.
 
+Use the concise Ponytail adaptation in `AGENTS.md` (Minimal complete changes); do not duplicate or install the upstream plugin. Reproduction commands and measurement limits are in `docs/ops/PONYTAIL_STABILITY_RUNBOOK.md`.
+
 At the start of every session:
 
 1. `git fetch origin`
