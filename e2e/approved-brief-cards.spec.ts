@@ -12,6 +12,7 @@ for(const width of [320,390,700,701,768,1440])test(`approved briefing metric lay
  const report=page.locator('.focus-report[data-brief-cards=approved]');
  await expect(report.locator('.focus-passenger-total')).toHaveText('112,403명');
  await expect(report).not.toContainText('공항 리테일 분석');
+ await expect(report.getByText('계산 기준',{exact:true})).toHaveCount(0);await expect(report.locator('.focus-people-metric details')).toHaveCount(0);
  await expect(report.locator('.focus-brief-parts')).toHaveText('출국 103,124명 + 환승 9,279명');
  const people=(await report.locator('.focus-people-metric').boundingBox())!,flightsBox=(await report.locator('.focus-flight-metric').boundingBox())!;
  if(width<=700){expect(flightsBox.y).toBeGreaterThanOrEqual(people.y+people.height+18);expect(flightsBox.x).toBeCloseTo(people.x,0);}
@@ -46,6 +47,7 @@ for(const [direction,delta,color] of [['up',1000,'rgb(36, 89, 166)'],['down',-10
  await page.route('**/api/live/glance-week-reference*',r=>r.fulfill({json:{status:'READY',month:'2026-10',data:reference}}));
  await page.goto(`/ko?date=${day}`);
  const report=page.locator('.focus-report[data-brief-cards=approved]');await expect(report).not.toContainText('공항 리테일 분석');
+ await expect(report.getByText('계산 기준',{exact:true})).toHaveCount(0);await expect(report.locator('.focus-people-metric details')).toHaveCount(0);
  for(const kind of ['people','flights']){
   const comparison=report.locator(`.focus-week-comparison[data-kind=${kind}]`),count=comparison.locator('.glance-count-change');
   await expect(count).toHaveAttribute('data-direction',direction);await expect(count).toHaveCSS('color',color);

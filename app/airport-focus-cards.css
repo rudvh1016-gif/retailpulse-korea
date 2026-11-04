@@ -61,3 +61,5 @@
 @media(forced-colors:active){
  .airport-focus-shell .focus-report[data-brief-cards=approved] :is(.focus-week-comparison,.focus-flight-comparison,.focus-passenger-comparison-core,.focus-brief-emblem){border:1px solid CanvasText}
 }
+
+.airport-focus-shell .focus-report[data-brief-cards=approved] .focus-report-basis>.focus-calculation-evidence{font-size:11px;line-height:1.6;font-weight:400;margin:4px 0;color:var(--text-muted,#667484)}

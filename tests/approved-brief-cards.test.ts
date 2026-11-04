@@ -16,8 +16,8 @@ test('approved briefing moves component counts before both comparisons without d
  assert.equal((html.match(/class="focus-brief-parts focus-passenger-parts"/g)??[]).length,1);
  assert.ok(html.indexOf('focus-passenger-total')<html.indexOf('focus-brief-parts'));
  assert.ok(html.indexOf('focus-brief-parts')<html.indexOf('focus-week-comparison'));
- for(const text of ['52,919명','출국 43,319명','환승 9,600명','264편','7,081명/일','감소','△ 12%','계산 기준','숫자 비교 기준','중복을 제거한 공식 총출국객 수가 아닙니다.','항공편 수는 승객 수가 아닙니다.'])assert.ok(html.includes(text),text);
- assert.match(html,/data-direction="down"/);assert.match(html,/class="focus-passenger-calculation"/);
+ for(const text of ['52,919명','출국 43,319명','환승 9,600명','264편','7,081명/일','감소','△ 12%','숫자 비교 기준','중복을 제거한 공식 총출국객 수가 아닙니다.','항공편 수는 승객 수가 아닙니다.'])assert.ok(html.includes(text),text);
+ assert.match(html,/data-direction="down"/);assert.doesNotMatch(html,/class="focus-passenger-calculation"/);assert.doesNotMatch(html,/>계산 기준</);assert.match(html,/전월 30일 기준 일평균 60,000명\/일/);
 });
 test('pending and unavailable comparisons remain distinct and never become zero',()=>{
  const values={...context,flights:null,passengers:null,transferPassengers:null,referenceSum:null,flightBaseline:null,passengerBaseline:null,weekPending:true,comparisonPending:true};
@@ -48,4 +48,14 @@ for(const [direction,delta] of [['up',1000],['down',-1000],['neutral',0]] as con
   if(direction==='neutral'){assert.ok(metric.includes('차이 없음'));assert.ok(metric.includes('0%'));}
  }
  assert.doesNotMatch(html,/공항 리테일 분석/);
+});
+
+test('Korean calculation evidence moves intact into the existing bottom disclosure without a spare metric toggle',()=>{
+ const passengerBaseline={...context.passengerBaseline!,status:'PARTIAL' as const,mean:null,completeDays:22,missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50000,transfers:10000}))};
+ const html=render({...context,passengerBaseline});
+ const metric=html.slice(html.indexOf('class="focus-core-metric focus-people-metric"'),html.indexOf('class="focus-core-metric focus-flight-metric"'));
+ assert.doesNotMatch(metric,/<details|계산 기준|1,320,000/);
+ const evidence=html.slice(html.indexOf('<details class="focus-report-basis">'));
+ assert.match(evidence,/<summary>숫자 비교 기준<\/summary>/);
+ for(const text of ['1,320,000명 ÷ 22일','8일 미확인','월전체 평균 아님','전월 수집 22일 기준 일평균','2026-09-23','환승은 도착 기준 예보'])assert.ok(evidence.includes(text),text);
 });

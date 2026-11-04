@@ -21,6 +21,13 @@ for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins 
  const holiday=briefing.locator('.staff-holiday-event');await expect(holiday).toBeVisible();
  await expect(holiday.locator('h4')).toHaveCSS('font-weight','400');
  await expect(holiday.locator('p').first()).toHaveCSS('font-weight','400');
+ const peerBody=briefing.locator('.staff-brief-grid>section').first().locator(':scope>p').first();
+ const peerTypography=await peerBody.evaluate(el=>{const css=getComputedStyle(el);return {family:css.fontFamily,size:css.fontSize,leading:css.lineHeight,weight:css.fontWeight};});
+ for(const body of await briefing.locator('.staff-brief-grid>section:nth-child(2) :is(p,h4):visible').all()){
+  await expect(body).toHaveCSS('font-family',peerTypography.family);await expect(body).toHaveCSS('font-size',peerTypography.size);
+  await expect(body).toHaveCSS('line-height',peerTypography.leading);await expect(body).toHaveCSS('font-weight',peerTypography.weight);
+ }
+ await expect(peerBody).toHaveCSS('line-height',width<=600?'24.5px':'23.8px');
  await expect(holiday.locator('h4')).not.toContainText('금융기관');
 
  await expect(briefing).not.toContainText('선택일 전체 예정편·확인된 게이트 기준 · 승객 수 아님');
