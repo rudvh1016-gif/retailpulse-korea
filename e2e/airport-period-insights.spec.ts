@@ -172,13 +172,17 @@ for(const width of [320,390,1440])test(`mobile airport controls and country head
  const days=page.locator('.airport-date-reserved .date-nav-shortcuts > button');
  await expect(terminal).toHaveCount(4);await expect(nav).toHaveCount(5);await expect(days).toHaveCount(3);
  if(width<=600){
-  for(const button of [...await terminal.all(),...await nav.all(),...await days.all()]){
+  for(const button of [...await terminal.all(),...await nav.all()]){
    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
    await expect(button).toHaveCSS('text-align','left');
   }
   await expect(terminal.first()).toHaveCSS('font-size','11px');
   await expect(nav.first()).toHaveCSS('font-size','11px');
-  await expect(days.first()).toHaveCSS('font-size','12px');
+  for(const button of await days.all()){
+   expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(56);
+   await expect(button).toHaveCSS('text-align','center');
+  }
+  await expect(days.first()).toHaveCSS('font-size','13px');
  }
  await days.last().click();await expect(days.last()).toHaveAttribute('aria-pressed','true');
  await page.goto('/ko/airport-countries?date=2026-10-19');
