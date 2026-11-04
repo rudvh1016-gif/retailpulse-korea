@@ -65,14 +65,24 @@ test('live exchange ordinary desktop hover reads exact stored dates without clic
 
 test.describe('live exchange native mobile touch',()=>{
  test.use({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ test('close responds to a native tap before chart interaction',async({page},info)=>{
+  const {panel}=await openPanel(page);await panel.locator('.duty-free-close').tap();
+  await expect(panel.locator('.duty-free-rate-sources')).not.toHaveAttribute('open','');
+  await panel.locator('.duty-free-rate-sources>summary').tap();await expect(panel.locator('.duty-free-rate-detail')).toBeVisible();
+  await panel.locator('.duty-free-close').tap();await expect(panel.locator('.duty-free-rate-sources')).not.toHaveAttribute('open','');
+  await page.screenshot({path:info.outputPath('live-exchange-close-repeated-390.png')});
+ });
  test('tap and drag retain exact stored date and amount',async({page,context},info)=>{
   const {panel,history,observed}=await openHistory(page,info);const slider=panel.getByRole('slider');await slider.scrollIntoViewIfNeeded();const bounds=(await slider.boundingBox())!,y=bounds.y+bounds.height/2,x=(i:number)=>bounds.x+bounds.width*(48+i*256/6)/332;
   await page.touchscreen.tap(x(observed[0]),y);await expect(panel.locator('.duty-free-month-readout')).toHaveText(exact(history,observed[0]));
   const end=observed.at(-1)!,cdp=await context.newCDPSession(page);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:x(observed[0]),y}]});
-  for(let i=observed[0]+1;i<=end;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x(i),y}]});
+  // Pace a real swipe. Chromium suppresses the following click after an instantaneous
+  // CDP drag even on minimal HTML; this is input timing, not a close retry or fallback.
+  for(let i=observed[0]+1;i<=end;i++){await page.waitForTimeout(100);await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x(i),y}]});}
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect(panel.locator('.duty-free-month-readout')).toHaveText(exact(history,end));
   await panel.locator('.duty-free-rate-detail').screenshot({path:info.outputPath('live-exchange-touch-390.png')});
+
   await panel.locator('.duty-free-close').tap();await expect(panel.locator('.duty-free-rate-sources')).not.toHaveAttribute('open','');
  });
 });
