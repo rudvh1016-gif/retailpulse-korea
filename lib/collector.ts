@@ -555,7 +555,7 @@ export async function collectSeoulRealtime(env: CollectorEnv): Promise<Collector
     let citydata: Record<string, unknown>;
     const requestedAt = nowIso();
     try {
-      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1, retryDelaysMs: [2_000], jitterMs: 500, fetchImpl: countedFetch });
+      const payload = await fetchOfficialJson(url, { timeoutMs: 8_000, retries: 1, retryDelaysMs: [2_000], jitterMs: 500, fetchImpl: countedFetch, diagnoseResponsePhase: true });
       citydata = seoulIntegratedCitydata(payload);
     } catch (error) {
       const detail = `${failureDetail(areaId, error)} requestedAt=${requestedAt}`;
