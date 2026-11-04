@@ -1,33 +1,31 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { Lang } from './retailpulse-data';
-import { activeDutyFreeVendors, DUTY_FREE_CACHE_KEY, dutyFreeDatedPresentation, dutyFreeReadDelay, dutyFreeRetryAfter, dutyFreeSources, kstExchangeDate, mergeDutyFreeSnapshot, nextKstExchangeMidnight, shiftExchangeDate, validDutyFreeSnapshot, type DutyFreeExchangeSnapshot } from '../lib/duty-free-exchange';
+import { activeDutyFreeVendors, DUTY_FREE_CACHE_KEY, dutyFreeDatedPresentation, dutyFreeReadDelay, dutyFreeRetryAfter, dutyFreeSources, kstExchangeDate, mergeDutyFreeSnapshot, nextKstExchangeMidnight, validDutyFreeSnapshot, type DutyFreeExchangeSnapshot } from '../lib/duty-free-exchange';
 import './airport-duty-free-exchange.css';
 import { DutyFreeMonthlyTrend } from './duty-free-monthly-trend';
 
 const copy = {
-  ko: {unread:'확인 전',loadFailure:'조회 실패',collectionFailure:'수집 실패',blocked:'수집 차단',applies:'적용일',title:'면세환율',collapse:'환율 접기',today:'오늘',pending:'오늘 환율 확인 중',previous:'어제 환율',next:'내일 환율',checked:'확인',source:'공식 출처',shilla:'신라',internet:'인터넷점 참고',missing:'확인된 환율 없음',nextMissing:'공식 출처에서 내일 적용일이 명시된 환율만 표시합니다.',failed:'새 환율을 가져오지 못했어요',attempt:'수집 시도',nextAttempt:'다음 수집 가능',readUnavailable:'환율을 불러오지 못했어요',readFailed:'새 환율을 불러오지 못해 마지막으로 확인한 환율을 보여드려요. 공식 안내를 다시 확인해 주세요.',caution:'인터넷점 표시 환율입니다. 공항 현장 매장의 동일 적용 여부는 확인되지 않았으며, 최종 결제 금액은 달라질 수 있습니다.'},
-  en: {unread:'Not yet verified',loadFailure:'Read failed',collectionFailure:'Collection failed',blocked:'Collection blocked',applies:'Applies',title:'Duty-free exchange',collapse:'Collapse rates',today:'Today',pending:'Checking today’s rate',previous:'Yesterday’s rate',next:'Tomorrow’s rate',checked:'Checked',source:'Official source',shilla:'Shilla',internet:'Online-shop reference',missing:'No verified rate',nextMissing:'Tomorrow is shown only when the official source explicitly dates its application.',failed:'We couldn’t collect the latest rate',attempt:'Attempt',nextAttempt:'Next eligible collection',readUnavailable:'We couldn’t load the rate',readFailed:'We couldn’t refresh the rates, so we’re showing the last verified rates. Please check the official source before using them.',caution:'Displayed online-shop rates. The same rate at airport stores is unverified; the final payment may differ.'},
-  zh: {unread:'待确认',loadFailure:'读取失败',collectionFailure:'采集失败',blocked:'采集受阻',applies:'适用日期',title:'免税汇率',collapse:'收起汇率',today:'今天',pending:'正在确认今日汇率',previous:'昨日汇率',next:'明日汇率',checked:'确认',source:'官方来源',shilla:'新罗',internet:'网上店参考',missing:'暂无确认汇率',nextMissing:'仅显示官方来源明确注明明日适用日期的汇率。',failed:'未能获取最新汇率',attempt:'采集时间',nextAttempt:'下次可采集时间',readUnavailable:'未能加载汇率',readFailed:'未能更新汇率，现显示上次确认的汇率。使用前请再次查看官方说明。',caution:'网上店显示汇率。尚未确认机场实体店是否适用相同汇率，最终支付金额可能不同。'},
-  ja: {unread:'確認前',loadFailure:'読込失敗',collectionFailure:'収集失敗',blocked:'収集が遮断',applies:'適用日',title:'免税レート',collapse:'レートを閉じる',today:'今日',pending:'今日のレートを確認中',previous:'昨日のレート',next:'翌日のレート',checked:'確認',source:'公式出典',shilla:'新羅',internet:'オンライン店の参考',missing:'確認済みレートなし',nextMissing:'公式出典に翌日の適用日が明記されたレートのみ表示します。',failed:'最新のレートを取得できませんでした',attempt:'収集時刻',nextAttempt:'次回収集可能時刻',readUnavailable:'レートを読み込めませんでした',readFailed:'更新できなかったため、最後に確認したレートを表示しています。ご利用前に公式案内をご確認ください。',caution:'オンライン店の表示レートです。空港実店舗での同率適用は未確認で、最終決済額は異なる場合があります。'},
+  ko: {unread:'확인 전',loadFailure:'조회 실패',collectionFailure:'수집 실패',blocked:'수집 차단',applies:'적용일',title:'면세환율',collapse:'환율 접기',today:'오늘 환율',pending:'오늘 환율 확인 중',checked:'확인',source:'공식 출처',shilla:'신라',internet:'인터넷점 참고',missing:'확인된 환율 없음',failed:'새 환율을 가져오지 못했어요',attempt:'수집 시도',nextAttempt:'다음 수집 가능',readUnavailable:'환율을 불러오지 못했어요',readFailed:'새 환율을 불러오지 못해 마지막으로 확인한 환율을 보여드려요. 공식 안내를 다시 확인해 주세요.',},
+  en: {unread:'Not yet verified',loadFailure:'Read failed',collectionFailure:'Collection failed',blocked:'Collection blocked',applies:'Applies',title:'Duty-free exchange',collapse:'Collapse rates',today:'Today’s rate',pending:'Checking today’s rate',checked:'Checked',source:'Official source',shilla:'Shilla',internet:'Online-shop reference',missing:'No verified rate',failed:'We couldn’t collect the latest rate',attempt:'Attempt',nextAttempt:'Next eligible collection',readUnavailable:'We couldn’t load the rate',readFailed:'We couldn’t refresh the rates, so we’re showing the last verified rates. Please check the official source before using them.',},
+  zh: {unread:'待确认',loadFailure:'读取失败',collectionFailure:'采集失败',blocked:'采集受阻',applies:'适用日期',title:'免税汇率',collapse:'收起汇率',today:'今日汇率',pending:'正在确认今日汇率',checked:'确认',source:'官方来源',shilla:'新罗',internet:'网上店参考',missing:'暂无确认汇率',failed:'未能获取最新汇率',attempt:'采集时间',nextAttempt:'下次可采集时间',readUnavailable:'未能加载汇率',readFailed:'未能更新汇率，现显示上次确认的汇率。使用前请再次查看官方说明。',},
+  ja: {unread:'確認前',loadFailure:'読込失敗',collectionFailure:'収集失敗',blocked:'収集が遮断',applies:'適用日',title:'免税レート',collapse:'レートを閉じる',today:'今日のレート',pending:'今日のレートを確認中',checked:'確認',source:'公式出典',shilla:'新羅',internet:'オンライン店の参考',missing:'確認済みレートなし',failed:'最新のレートを取得できませんでした',attempt:'収集時刻',nextAttempt:'次回収集可能時刻',readUnavailable:'レートを読み込めませんでした',readFailed:'更新できなかったため、最後に確認したレートを表示しています。ご利用前に公式案内をご確認ください。',},
 } as const;
 const locales={ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'} as const;
 
-/** Existing dated evidence only: no tomorrow estimate and no copied current value. */
+/** Show only evidence whose service date is the current KST date. */
 export function DutyFreeDayRates({snapshot,now,readFailed,lang}:{snapshot:DutyFreeExchangeSnapshot|null;now:number|null;readFailed:boolean;lang:Lang}){
- const words=copy[lang],today=now===null?null:kstExchangeDate(now),rows=now===null?[]:dutyFreeDatedPresentation(snapshot,now);
+ const words=copy[lang],today=now===null?null:kstExchangeDate(now);
+ const row=now===null?undefined:dutyFreeDatedPresentation(snapshot,now).find(item=>item.current);
  const status=snapshot?.sources.find(source=>source.vendor==='shilla')?.lastAttemptStatus;
  const missing=readFailed?words.loadFailure:status==='ERROR'?words.collectionFailure:status==='BLOCKED'?words.blocked:!status||status==='NEVER'||status==='RUNNING'?words.unread:words.missing;
  const number=new Intl.NumberFormat(locales[lang],{minimumFractionDigits:2,maximumFractionDigits:2});
  const clock=new Intl.DateTimeFormat(locales[lang],{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
- return <div className="duty-free-adjacent-days">{(['previous','next'] as const).map(day=>{
-  const date=today&&shiftExchangeDate(today,day==='previous'?-1:1),row=rows.find(item=>item.serviceDateKst===date);
-  return <div className="duty-free-day-rate" data-rate-day={day} data-rate-date={date??undefined} data-state={row?'VERIFIED':readFailed?'READ_FAILED':status??'UNREAD'} key={day}>
-   <p className="duty-free-day-value"><span>{words[day]}:</span>{' '}<strong>{row?<><span className="duty-free-day-unit">1 USD = </span>{number.format(row.krwPerUnit)}{lang==='ko'?'원':' KRW'}</>:missing}</strong></p>
-   {date&&<p className="prep-note duty-free-day-basis">{words.applies} {date}{row&&<> · {words.checked} <time dateTime={row.verifiedAt}>{clock.format(new Date(row.verifiedAt))} KST</time></>}</p>}
-   {day==='next'&&!row&&<p className="prep-note duty-free-day-limit">{words.nextMissing}</p>}
-  </div>;
- })}</div>;
+ return <div className="duty-free-today" data-rate-day="today" data-rate-date={today??undefined} data-state={row?'VERIFIED':readFailed?'READ_FAILED':status??'UNREAD'}>
+  <div className="duty-free-today-heading"><strong>{words.today}</strong>{today&&<time dateTime={today}>{today}</time>}</div>
+  <p className="duty-free-today-value">{row?<><span>1 USD = </span><strong>{number.format(row.krwPerUnit)}{lang==='ko'?'원':' KRW'}</strong></>:<strong>{missing}</strong>}</p>
+  {row&&<p className="prep-note duty-free-day-basis">{words.checked} <time dateTime={row.verifiedAt}>{clock.format(new Date(row.verifiedAt))} KST</time></p>}
+ </div>;
 }
 
 // The header always follows the current KST day, independently of the airport date filter.
@@ -98,7 +96,6 @@ export function AirportDutyFreeExchange({lang}:{lang:Lang;date:string|null}) {
     return()=>{disposed=true;clearTimeout(timer);clearTimeout(rollover);controller?.abort();window.removeEventListener('focus',focused);document.removeEventListener('visibilitychange',visible);};
   },[]);
   const rows=now===null?[]:dutyFreeDatedPresentation(snapshot,now);
-  const today=now===null?null:kstExchangeDate(now);
   const current=rows.find(row=>row.current);
   const words=copy[lang],source=snapshot?.sources.find(row=>row.vendor==='shilla');
   const number=new Intl.NumberFormat(locales[lang],{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -110,14 +107,11 @@ export function AirportDutyFreeExchange({lang}:{lang:Lang;date:string|null}) {
       <div className="duty-free-rate-detail">
         <div className="duty-free-panel-heading"><strong>{words.title}</strong><button type="button" className="duty-free-close" onClick={event=>{const details=event.currentTarget.closest('details');if(details){details.open=false;details.querySelector('summary')?.focus();}}}>{words.collapse} <span aria-hidden="true">⌃</span></button></div>
         <p className="prep-note">{words.internet} · {words.source} <a href={dutyFreeSources.shilla} target="_blank" rel="noopener noreferrer">{words.shilla}</a></p>
-        <p className="prep-note">{words.today} · {today}</p>
-        {current&&<p className="prep-note">{words.checked} <time dateTime={current.verifiedAt}>{clock.format(new Date(current.verifiedAt))} KST</time></p>}
-        {readFailed&&<p className="prep-note" role="status">{words.readFailed}</p>}
+        {readFailed&&<p className="prep-note" role="status">{current?words.readFailed:words.readUnavailable}</p>}
         {(source?.lastAttemptStatus==='ERROR'||source?.lastAttemptStatus==='BLOCKED')&&<p className="prep-note">{words.failed}{source.lastAttemptAt&&Number.isFinite(Date.parse(source.lastAttemptAt))&&<> · {words.attempt} <time dateTime={source.lastAttemptAt}>{clock.format(new Date(source.lastAttemptAt))} KST</time></>}</p>}
         {(source?.lastAttemptStatus==='ERROR'||source?.lastAttemptStatus==='BLOCKED')&&source.nextAttemptAt&&Number.isFinite(Date.parse(source.nextAttemptAt))&&<p className="prep-note">{words.nextAttempt} <time dateTime={source.nextAttemptAt}>{clock.format(new Date(source.nextAttemptAt))} KST</time></p>}
         <DutyFreeDayRates snapshot={snapshot} now={now} readFailed={readFailed} lang={lang}/>
         <DutyFreeMonthlyTrend lang={lang}/>
-        <p className="prep-note">{words.caution}</p>
       </div>
     </details>
   </aside>;
