@@ -70,3 +70,14 @@ test('requested holiday basis control is smaller while preserving its native tou
  assert.match(styles,/\.staff-route-details>summary\{font-size:12px;line-height:1\.7\}/);
  assert.match(styles,/\.staff-route-details>summary\{min-height:44px/);
 });
+
+
+test('route holiday body uses the same typography as time terminal without changing inline signs or emphasis',()=>{
+ const block=styles.slice(styles.indexOf('/* Match route/holiday body copy'));
+ assert.match(block,/staff-brief-grid>section>p,/);
+ assert.match(block,/staff-brief-grid>section:nth-child\(2\) :is\(p,h4\)/);
+ assert.match(block,/font-family:var\(--font-ui\);font-size:14px;line-height:var\(--staff-brief-body-leading\);font-weight:400/);
+ assert.match(block,/--staff-brief-body-leading:1\.7\}/);
+ assert.match(block,/@media\(max-width:600px\)[^]*--staff-brief-body-leading:1\.75/);
+ assert.doesNotMatch(block,/color:|:is\(b|strong|change-rate|display:|margin:|padding:/);
+});

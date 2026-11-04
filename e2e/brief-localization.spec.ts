@@ -21,8 +21,10 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
  await expect(brief).not.toContainText(lang==='en'?'Next month':lang==='zh'?'下月':'다음 달');
  await expect(brief.locator('.focus-preparation-brief > div')).toHaveCount(1);
  const comparison=brief.locator('.focus-passenger-comparison');
- for(const value of ['120,000','7,597','△ 6%','2,640,000','22','30','8'])await expect(comparison).toContainText(value);
- await expect(comparison).toContainText(lang==='ko'?'월전체 평균 아님':lang==='en'?'Not a full-month average':'非全月平均值');
+ for(const value of ['120,000','7,597','△ 6%'])await expect(comparison).toContainText(value);
+ if(lang==='ko'){await expect(brief.locator('.focus-report-basis,.focus-calculation-evidence,.focus-passenger-calculation')).toHaveCount(0);await expect(brief).not.toContainText('2,640,000');}else{
+ for(const value of ['2,640,000','22','30','8'])await expect(comparison).toContainText(value);
+ await expect(comparison).toContainText(lang==='en'?'Not a full-month average':'非全月平均值');
  const calculation=comparison.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
  await expect(calculation).not.toHaveAttribute('open','');
  await expect(calculation.locator('.focus-observed-days-basis')).not.toBeVisible();
@@ -30,6 +32,7 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
  await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');
  await expect(calculation.locator('.focus-observed-days-basis')).toBeVisible();
  await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
+ }
  const dates=brief.locator('.focus-preparation-brief time.focus-event-date');
  await expect(dates.first()).toBeVisible();
  for(const date of await dates.all()){
@@ -39,7 +42,7 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
   expect(await date.evaluate(el=>parseFloat(getComputedStyle(el.querySelector('small')!).fontSize)<parseFloat(getComputedStyle(el).fontSize))).toBe(true);
  }
  for(const detail of await brief.locator('details').all()){await detail.locator('summary').click();await expect(detail).toHaveAttribute('open','');}
- await expect(brief).toContainText('2026-09-23');await expect(brief).toContainText('2026-09-30');
+ if(lang!=='ko'){await expect(brief).toContainText('2026-09-23');await expect(brief).toContainText('2026-09-30');}else await expect(brief).not.toContainText('2026-09-23');
  if(lang!=='ko')expect(await brief.textContent()).not.toMatch(/[가-힣]/);
  await expect(brief.locator('.focus-people-metric > .focus-metric-label')).toHaveText(lang==='ko'?'예상 인원 · 단순합계':lang==='en'?'Forecast people · arithmetic sum':'预计人数 · 简单合计');
  await expect(brief.locator('.focus-passenger-total')).toHaveText(lang==='ko'?'112,403명':lang==='en'?'112,403 people':'112,403人');

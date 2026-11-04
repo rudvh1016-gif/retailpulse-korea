@@ -20,3 +20,16 @@ CSS와 표현 마크업만 바꾼다. 새 의존성, 외부 요청, 수집기·�
 검증 명령, 정확한 최종 SHA, PR/CI와 배포 결과는 해당 PR 기록을 최종 근거로 삼는다. 이 실행 환경은 Chromium의 socket 생성을 차단하므로 로컬 브라우저 실행을 완료라고 쓰지 않는다. 브라우저 회귀는 필수 GitHub Actions 전체 분할 검사와 스크린샷 산출물로 확인하고, 운영 배포 후 실제 화면을 별도로 확인한다.
 
 로컬 검증: 전체 단위 2,818건, 렌더링 53건, 프로덕션 빌드, TypeScript, ESLint(오류 0·기존 경고), 비밀정보 검사 통과. 의존성 감사에서 high/critical 0건, 기존 moderate 23건. 운영 검사 스크립트는 실행 통과지만 자격증명 없는 로컬 운영 상태는 UNKNOWN을 유지한다. 브라우저 실행은 환경 제한으로 미실행이며 CI 결과를 기다린다.
+
+## Owner follow-up superseding evidence placement
+
+On 2026-11-04 the owner explicitly requested removal of the standalone Korean
+`계산 기준` control and the entire bottom `숫자 비교 기준` disclosure, including
+its grey explanatory text, with no relocation. The Korean report now omits both
+from the DOM and has no empty disclosure wrapper. Visible forecast/arithmetic-sum
+labels, departure/transfer breakdown, comparison dates, totals, sign colors and
+all calculations are unchanged. Other locales retain their prior disclosures.
+Mobile passenger-to-flight separation is reduced to 12px margin plus 12px padding.
+Route/holiday body typography matches time/terminal body typography. Focused
+regressions and read-only production checks cover removal, compact geometry and
+body font parity, plus the earlier FX today-only/hover/touch interaction request.

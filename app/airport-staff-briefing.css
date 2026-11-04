@@ -209,3 +209,15 @@
  :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{color:CanvasText!important}
  :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title::before{background:CanvasText!important}
 }
+
+/* Match route/holiday body copy to its time/terminal peer. Nested event
+   paragraphs previously kept the older 1.5 line-height instead of the peer's
+   1.7 desktop / 1.75 phone rhythm. Preserve inline emphasis, signs and links. */
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid{--staff-brief-body-leading:1.7}
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>p,
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section:nth-child(2) :is(p,h4){
+ font-family:var(--font-ui);font-size:14px;line-height:var(--staff-brief-body-leading);font-weight:400
+}
+@media(max-width:600px){
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid{--staff-brief-body-leading:1.75}
+}

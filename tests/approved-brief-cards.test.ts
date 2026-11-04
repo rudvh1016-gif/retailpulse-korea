@@ -16,8 +16,8 @@ test('approved briefing moves component counts before both comparisons without d
  assert.equal((html.match(/class="focus-brief-parts focus-passenger-parts"/g)??[]).length,1);
  assert.ok(html.indexOf('focus-passenger-total')<html.indexOf('focus-brief-parts'));
  assert.ok(html.indexOf('focus-brief-parts')<html.indexOf('focus-week-comparison'));
- for(const text of ['52,919명','출국 43,319명','환승 9,600명','264편','7,081명/일','감소','△ 12%','계산 기준','숫자 비교 기준','중복을 제거한 공식 총출국객 수가 아닙니다.','항공편 수는 승객 수가 아닙니다.'])assert.ok(html.includes(text),text);
- assert.match(html,/data-direction="down"/);assert.match(html,/class="focus-passenger-calculation"/);
+ for(const text of ['52,919명','출국 43,319명','환승 9,600명','264편','7,081명/일','감소','△ 12%'])assert.ok(html.includes(text),text);
+ assert.match(html,/data-direction="down"/);assert.doesNotMatch(html,/class="focus-passenger-calculation"/);assert.doesNotMatch(html,/>계산 기준</);assert.doesNotMatch(html,/focus-report-basis|focus-calculation-evidence|숫자 비교 기준/);
 });
 test('pending and unavailable comparisons remain distinct and never become zero',()=>{
  const values={...context,flights:null,passengers:null,transferPassengers:null,referenceSum:null,flightBaseline:null,passengerBaseline:null,weekPending:true,comparisonPending:true};
@@ -27,7 +27,7 @@ test('pending and unavailable comparisons remain distinct and never become zero'
  const unavailable=render({...values,weekPending:false,comparisonPending:false});assert.ok(unavailable.includes('비교 불가'));assert.ok(unavailable.includes('같은 기준의 수집분 일평균 없음'));
 });
 test('other locales keep original presentation scope and original component-count disclosure',()=>{
- for(const lang of ['en','zh','ja'] as const){const html=render(context,lang);assert.doesNotMatch(html,/data-brief-cards|focus-brief-emblem|focus-brief-parts/);assert.match(html,/<summary[^>]+aria-describedby=/);}
+ for(const lang of ['en','zh','ja'] as const){const html=render(context,lang);assert.doesNotMatch(html,/data-brief-cards|focus-brief-emblem|focus-brief-parts/);assert.match(html,/<summary[^>]+aria-describedby=/);assert.match(html,/focus-report-basis/);}
 });
 test('approved stylesheet stays scoped and uses CSS-only breakpoint layout without data or animation changes',()=>{
  const css=readFileSync('app/airport-focus-cards.css','utf8');
@@ -48,4 +48,13 @@ for(const [direction,delta] of [['up',1000],['down',-1000],['neutral',0]] as con
   if(direction==='neutral'){assert.ok(metric.includes('차이 없음'));assert.ok(metric.includes('0%'));}
  }
  assert.doesNotMatch(html,/공항 리테일 분석/);
+});
+
+test('Korean bottom comparison disclosure and its grey evidence are removed rather than relocated',()=>{
+ const passengerBaseline={...context.passengerBaseline!,status:'PARTIAL' as const,mean:null,completeDays:22,missingDates:Array.from({length:8},(_,i)=>`2026-09-${i+23}`),observedDays:Array.from({length:22},(_,i)=>({date:`2026-09-${String(i+1).padStart(2,'0')}`,departures:50000,transfers:10000}))};
+ for(const values of [context,{...context,passengerBaseline},{...context,referenceSum:null,passengerBaseline:null}]){
+  const html=render(values);
+  assert.doesNotMatch(html,/focus-report-basis|focus-calculation-evidence|숫자 비교 기준|계산 기준|1,320,000|환승은 도착 기준 예보/);
+  assert.match(html,/예상 인원 · 단순합계/);assert.match(html,/출국 43,319명/);assert.match(html,/환승 9,600명/);
+ }
 });

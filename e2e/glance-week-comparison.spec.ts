@@ -39,8 +39,7 @@ for(const width of [320,390,1440])test(`exact collected periods and emphasized w
  const report=page.locator('.focus-report'),basis=report.locator('.focus-passenger-comparison .focus-comparison-basis');
  await expect(basis.locator('strong')).toHaveText('9/9 ~ 9/30 (수집 22일)');
  await expect(basis).not.toContainText('MTD');
- await report.locator('.focus-passenger-calculation>summary').click();
- for(const note of await report.locator('.focus-passenger-calculation>p').all())await expect(note).toHaveCSS('font-size','11px');
+ await expect(report.locator('.focus-report-basis,.focus-calculation-evidence')).toHaveCount(0);
  await expect(report.locator('.focus-preparation-brief>.focus-planning-basis')).toHaveCount(0);
  await expect(report.locator('.focus-preparation-brief .focus-planning-link')).toHaveCount(0);
  for(const row of await report.locator('.focus-week-basis').all()){

@@ -12,25 +12,25 @@ for(const width of [320,390,700,701,768,1440])test(`approved briefing metric lay
  const report=page.locator('.focus-report[data-brief-cards=approved]');
  await expect(report.locator('.focus-passenger-total')).toHaveText('112,403명');
  await expect(report).not.toContainText('공항 리테일 분석');
+ await expect(report.getByText('계산 기준',{exact:true})).toHaveCount(0);await expect(report.locator('.focus-people-metric details')).toHaveCount(0);
  await expect(report.locator('.focus-brief-parts')).toHaveText('출국 103,124명 + 환승 9,279명');
  const people=(await report.locator('.focus-people-metric').boundingBox())!,flightsBox=(await report.locator('.focus-flight-metric').boundingBox())!;
- if(width<=700){expect(flightsBox.y).toBeGreaterThanOrEqual(people.y+people.height+18);expect(flightsBox.x).toBeCloseTo(people.x,0);}
+ if(width<=700){expect(flightsBox.y).toBeGreaterThanOrEqual(people.y+people.height+12);expect(flightsBox.x).toBeCloseTo(people.x,0);}
  else{expect(flightsBox.x).toBeGreaterThanOrEqual(people.x+people.width+27);expect(flightsBox.y).toBeLessThan(people.y);}
  const parts=(await report.locator('.focus-brief-parts').boundingBox())!,weekly=(await report.locator('.focus-week-comparison').first().boundingBox())!;
  expect(parts.y+parts.height).toBeLessThanOrEqual(weekly.y);
  await expect(report.locator('.focus-week-comparison')).toHaveCount(2);
  const context=report.locator('.focus-selected-country-stack'),topics=context.locator(':scope>.focus-selected-country-changes');
  if(await topics.count()===1)expect((await topics.first().boundingBox())!.width).toBeCloseTo((await context.boundingBox())!.width,1);
- const evidence=report.locator('.focus-report-basis'),toggle=evidence.locator('summary');
- await toggle.focus();await page.keyboard.press('Enter');await expect(evidence).toHaveAttribute('open','');
- await expect(evidence).toContainText('중복을 제거한 공식 총출국객 수가 아닙니다.');
- await expect(evidence).toContainText('항공편 수는 승객 수가 아닙니다.');
- await page.keyboard.press('Space');await expect(evidence).not.toHaveAttribute('open','');
+ await expect(report.locator('.focus-report-basis,.focus-calculation-evidence')).toHaveCount(0);
+ await expect(report).not.toContainText('숫자 비교 기준');
+ expect(await report.evaluate(node=>node.lastElementChild?.classList.contains('focus-preparation-brief'))).toBe(true);
+ if(width<=700){const flightLabel=(await report.locator('.focus-flight-metric>.focus-metric-label').boundingBox())!;expect(flightLabel.y-people.y-people.height).toBeLessThanOrEqual(32);}
  const metricOverflow=await report.locator('.focus-core-metric').evaluateAll(nodes=>nodes.flatMap(metric=>{const box=metric.getBoundingClientRect(),walker=document.createTreeWalker(metric,NodeFilter.SHOW_TEXT),issues:string[]=[];for(let text=walker.nextNode();text;text=walker.nextNode()){if(!text.textContent?.trim()||text.parentElement?.closest('.sr-only'))continue;const range=document.createRange();range.selectNodeContents(text);for(const rect of range.getClientRects())if(rect.width>0&&(rect.left<box.left-1||rect.right>box.right+1))issues.push(text.textContent);}return issues;}));
  expect(metricOverflow,'all metric text remains inside its own column').toEqual([]);
  expect(await report.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- await report.screenshot({path:info.outputPath(`approved-brief-${width}.png`),style:".topbar,.bottom-nav{visibility:hidden!important}"});
+ await report.screenshot({path:info.outputPath(`approved-brief-${width}.png`),style:".site-header,.topbar,.bottom-nav{visibility:hidden!important}"});
 });
 
 // Synthetic comparison baselines exercise presentation states only. The selected
@@ -46,6 +46,7 @@ for(const [direction,delta,color] of [['up',1000,'rgb(36, 89, 166)'],['down',-10
  await page.route('**/api/live/glance-week-reference*',r=>r.fulfill({json:{status:'READY',month:'2026-10',data:reference}}));
  await page.goto(`/ko?date=${day}`);
  const report=page.locator('.focus-report[data-brief-cards=approved]');await expect(report).not.toContainText('공항 리테일 분석');
+ await expect(report.getByText('계산 기준',{exact:true})).toHaveCount(0);await expect(report.locator('.focus-people-metric details')).toHaveCount(0);
  for(const kind of ['people','flights']){
   const comparison=report.locator(`.focus-week-comparison[data-kind=${kind}]`),count=comparison.locator('.glance-count-change');
   await expect(count).toHaveAttribute('data-direction',direction);await expect(count).toHaveCSS('color',color);
