@@ -41,7 +41,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','normal');
  await expect(page.locator('.focus-passenger-comparison-core .focus-comparison-basis')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
- await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width>=1000?'28px':width<=600?'20px':'24px');
+ await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width<=700?'38px':'44px');
  await expect(page.getByTestId('glance-day-comparison')).toHaveCount(0);
  await expect(page.locator('#focus-country-trends')).toHaveCount(0);
  await expect(page.locator('.focus-report')).toContainText('567편');
@@ -59,14 +59,14 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
   await expect(event.locator('h4')).toBeVisible();
   for(const date of await event.locator('time').all())await expect(date).toBeVisible();
  }
- await expect(page.locator('.focus-report-lines p').first()).toHaveCSS('font-size',width<=600?'13px':'16px');
+ await expect(page.locator('.focus-report-lines p').first()).toHaveCSS('font-size','13px');
  await expect(page.locator('.focus-people-metric > .focus-metric-label')).toHaveText('예상 인원 · 단순합계');
  await expect(page.locator('.focus-report-date')).toHaveCSS('padding-bottom','0px');
  await expect(page.locator('.focus-report-date')).toHaveCSS('border-bottom-width','0px');
  const metricBoxes=await page.locator('.focus-core-metric').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,scroll:node.scrollWidth,width:node.clientWidth};}));
  expect(metricBoxes).toHaveLength(2);
  for(const box of metricBoxes)expect(box.scroll).toBeLessThanOrEqual(box.width+1);
- if(width>=1200)expect(Math.abs(metricBoxes[0].y-metricBoxes[1].y)).toBeLessThanOrEqual(1);
+ if(width<=700){expect(metricBoxes[1].y).toBeGreaterThanOrEqual(metricBoxes[0].bottom+18);expect(metricBoxes[1].x).toBeCloseTo(metricBoxes[0].x,0);}
  else {
   expect(metricBoxes[0].right).toBeLessThanOrEqual(metricBoxes[1].x);
   const labels=await page.locator('.focus-figures-title,.focus-flight-metric > .focus-metric-label').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right};}));
@@ -101,7 +101,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(detail.getByRole('link',{name:'공식 일정 ↗'})).toBeVisible();
  await detail.locator('summary').click();
  await expect(detail).not.toHaveAttribute('open','');
- await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size','22px');
+ await expect(page.locator('.focus-report-title h2')).toHaveCSS('font-size',width<=700?'22px':'26px');
  await expect(page.locator('.focus-preparation-brief>div>small')).toHaveCount(0);
  await expect(page.locator('.focus-preparation-brief>.focus-planning-basis')).toHaveCount(0);
  await expect(page.locator('.focus-preparation-brief .focus-planning-link')).toHaveCount(0);

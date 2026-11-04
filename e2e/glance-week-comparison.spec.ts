@@ -107,9 +107,9 @@ for(const width of [320,390,1440])test(`witnessed today schedule and honest pass
  await expect(report.locator('.focus-figures-title')).toHaveText('출국객 수 (환승객 포함)');await expect(report.locator('.focus-passenger-total')).toContainText('112,403');
  await expect(flight).toContainText('△ 10편');await expect(flight.locator('.focus-week-snapshot')).toHaveCount(0);
  await expect(flight).not.toContainText('편/일');await expect(flight.locator('.focus-week-change')).toHaveCSS('color','rgb(161, 45, 63)');
- const parts=report.locator('.focus-passenger-parts');await expect(parts).toContainText('출국 103,124명 + 환승 9,279명');await expect(parts).toHaveCSS('font-size',width<=600?'9px':'11px');
+ const parts=report.locator('.focus-passenger-parts');await expect(parts).toContainText('출국 103,124명 + 환승 9,279명');await expect(parts).toHaveCSS('font-size',width<=700?'12px':'13px');
  const bounds=await parts.evaluate(node=>{const b=node.getBoundingClientRect();return {height:b.height,overflow:node.scrollWidth>node.clientWidth,pieces:[...node.children].map(n=>{const r=n.getBoundingClientRect();return r.left>=b.left-1&&r.right<=b.right+1;})};});
- expect(bounds.overflow).toBe(false);expect(bounds.pieces.every(Boolean)).toBe(true);if(width===390)expect(bounds.height).toBeLessThanOrEqual(14);
+ expect(bounds.overflow).toBe(false);expect(bounds.pieces.every(Boolean)).toBe(true);if(width===390)expect(bounds.height).toBeLessThanOrEqual(36);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.screenshot({path:`test-results/glance-today-${width}.png`,fullPage:false});
 });

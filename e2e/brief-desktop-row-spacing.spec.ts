@@ -21,13 +21,13 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
  const figuresTitle=figures.locator('h3');
  await expect(figuresTitle).toHaveText(({ko:'출국객 수 (환승객 포함)',en:'Departing passengers (incl. transfers)',zh:'出境旅客人数（含中转）',ja:'出国者数（乗継客含む）'} as Record<string,string>)[lang]);
  await expect(figuresTitle).toHaveAttribute('data-heading','subsection');
- await expect(figuresTitle).toHaveCSS('font-size',width<=600?'15px':'18px');
- await expect(report.locator('.focus-report-date')).toHaveCSS('font-size','12px');
+ await expect(figuresTitle).toHaveCSS('font-size',lang==='ko'?(width<=700?'18px':'20px'):(width<=600?'15px':'18px'));
+ await expect(report.locator('.focus-report-date')).toHaveCSS('font-size',lang==='ko'&&width<=700?'11px':'12px');
  const parent=report.locator('.focus-report-title > h2');
- await expect(parent).toHaveCSS('font-size','22px');await expect(parent).toHaveAttribute('data-heading','section');
+ await expect(parent).toHaveCSS('font-size',lang==='ko'&&width>700?'26px':'22px');await expect(parent).toHaveAttribute('data-heading','section');
  const parentSize=await parent.evaluate(e=>parseFloat(getComputedStyle(e).fontSize));
  expect(parentSize).toBeGreaterThan(await figuresTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)));
- const keyNumber=report.locator('.focus-passenger-total');await expect(keyNumber).toHaveCSS('font-size',width>=1000?'28px':width<=600?'20px':'24px');
+ const keyNumber=report.locator('.focus-passenger-total');await expect(keyNumber).toHaveCSS('font-size',lang==='ko'?(width<=700?'38px':'44px'):(width>=1000?'28px':width<=600?'20px':'24px'));
  expect(await keyNumber.evaluate(e=>parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(width<=600?await figuresTitle.evaluate(e=>parseFloat(getComputedStyle(e).fontSize)):parentSize);
  const topics=stack.locator(':scope > .focus-selected-country-changes');await expect(topics).toHaveCount(2);
  await page.evaluate(()=>document.fonts.ready);
@@ -77,7 +77,7 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
     topicBoxes:[figures,...topics,...future.querySelectorAll(':scope > div')].map(topic=>({
      figures:topic===figures,
      heading:box(requireElement(topic,':scope > h3')),
-     content:box(requireElement(topic,topic===figures&&viewportWidth<1000?'.focus-people-metric':':scope > h3 + *')),
+     content:box(requireElement(topic,topic===figures&&(viewportWidth<1000||element.hasAttribute('data-brief-cards'))?'.focus-people-metric':':scope > h3 + *')),
     })),
     firstFuture:box(requireElement(future,':scope > div > h3')),
     gridTemplateRows:getComputedStyle(element).gridTemplateRows,
@@ -85,9 +85,19 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
    };
   },width);
   const {title,reportTitle,numbers,right,changeTitle,returnTitle,changeEnd,scrollY}=layout;
+  heights.push(right.height);leftTops.push([title.y,numbers.y,changeTitle.y,returnTitle.y].map(y=>y+scrollY));
+  if(lang==='ko'){
+   expect(title.y-reportTitle.y-reportTitle.height).toBeGreaterThanOrEqual(-7);
+   expect(title.y-reportTitle.y-reportTitle.height).toBeLessThanOrEqual(1);
+   expect(numbers.y).toBeGreaterThan(title.y+title.height);
+   expect(layout.changes.y).toBeGreaterThanOrEqual(numbers.y+numbers.height+20);
+   expect(right.y).toBeGreaterThanOrEqual(layout.changes.y+layout.changes.height+16);
+   if(width<=700)expect(returnTitle.y).toBeGreaterThan(changeEnd.y+changeEnd.height);
+   else expect(Math.abs(returnTitle.y-changeTitle.y)).toBeLessThanOrEqual(1);
+   expect(right.x).toBeCloseTo(numbers.x,0);
+  }else{
   expect(title.y-reportTitle.y-reportTitle.height).toBeGreaterThanOrEqual(19);
   expect(title.y-reportTitle.y-reportTitle.height).toBeLessThanOrEqual(21);
-  heights.push(right.height);leftTops.push([title.y,numbers.y,changeTitle.y,returnTitle.y].map(y=>y+scrollY));
   const topicGap=returnTitle.y-changeEnd.y-changeEnd.height;
   if(width<1000){expect(topicGap).toBeGreaterThanOrEqual(24);expect(topicGap).toBeLessThanOrEqual(28);}
   else{
@@ -110,6 +120,7 @@ for(const {lang,width} of cases)test(`${lang} briefing hierarchy and compact row
   }else{
    expect(layout.gridTemplateRows).toBe('none');
    expect(right.y).toBeGreaterThanOrEqual(layout.changes.y+layout.changes.height-1);
+  }
   }
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   await report.screenshot({path:info.outputPath(`brief-${lang}-${width}-${expanded?'expanded':'closed'}.png`)});
@@ -135,7 +146,7 @@ for(const width of [390,1440])for(const count of [0,1,2])test(`return planning k
   await details.locator('summary').focus();await page.keyboard.press('Space');await expect(details).not.toHaveAttribute('open','');
  }
  const boxes=await cards.evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().toJSON()));
- if(count===2){if(width>=1000){expect(boxes[0].y).toBeCloseTo(boxes[1].y,0);expect(boxes[1].x).toBeGreaterThanOrEqual(boxes[0].right);}else expect(boxes[1].y).toBeGreaterThanOrEqual(boxes[0].bottom);}
+ if(count===2)expect(boxes[1].y).toBeGreaterThanOrEqual(boxes[0].bottom);
  const future=(await page.locator('.focus-preparation-brief').boundingBox())!,bounds=(await group.boundingBox())!;
  expect(future.y).toBeGreaterThanOrEqual(bounds.y+bounds.height);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);

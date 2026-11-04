@@ -12,7 +12,7 @@ async function data(page:Page,raw='17',fresh=true){
  await page.route('**/api/live/flights*',r=>r.fulfill({json:flights}));
  await page.route('**/api/live/airport-months*',r=>r.fulfill({json:months}));
 }
-for(const width of [320,390,430,600,601,700,701,1440])test(`B wait highlight is mobile only and keeps real values and links ${width}`,async({page})=>{
+for(const width of [320,390,430,600,601,700,701,1440])test(`B phone and approved desktop wait keep real values and links ${width}`,async({page},info)=>{
  await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});await data(page);
  await page.goto('/ko?date='+date);
  const flow=page.getByRole('region',{name:'주목할 공항 흐름',exact:true}),wait=flow.getByTestId('glance-key-wait');
@@ -34,13 +34,28 @@ for(const width of [320,390,430,600,601,700,701,1440])test(`B wait highlight is 
   }
   for(const topic of await flow.locator(':scope>a:not([data-testid="glance-key-wait"])').all())await expect(topic).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
  }else{
-  await expect(wait).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(waitNumber).toHaveCSS('font-size','14px');
+  await expect(wait).toHaveCSS('background-color','rgb(16, 43, 80)');await expect(waitNumber).toHaveCSS('font-size','44px');
+  await expect(waitNumber).toHaveCSS('font-weight','700');await expect(waitNumber).toHaveCSS('color','rgb(255, 255, 255)');
+  await expect(wait.locator('.flow-wait-location')).toHaveCSS('font-size','14px');await expect(wait.locator('.flow-wait-location')).toHaveCSS('font-weight','500');
   await expect(wait.locator('.flow-inline-separator')).not.toHaveCSS('display','none');
+  for(const topic of await flow.locator(':scope>a:not([data-testid="glance-key-wait"])').all())await expect(topic).toHaveCSS('background-color','rgb(255, 255, 255)');
+  const cards=flow.locator('.staff-brief-grid>section');
+  const topBoxes=await Promise.all(['wait','upcoming','growth'].map(async key=>(await flow.getByTestId(`glance-key-${key}`).boundingBox())!));
+  const [waitBox,upcomingBox,growthBox]=topBoxes;
+  expect(upcomingBox.y).toBeCloseTo(growthBox.y,1);expect(upcomingBox.width).toBeCloseTo(growthBox.width,1);expect(growthBox.x).toBeGreaterThan(upcomingBox.x+upcomingBox.width);
+  if(width>900){expect(waitBox.y).toBeCloseTo(upcomingBox.y,1);expect(waitBox.width).toBeCloseTo(upcomingBox.width,1);expect(upcomingBox.x).toBeGreaterThan(waitBox.x+waitBox.width);}
+  else {expect(upcomingBox.y).toBeGreaterThan(waitBox.y+waitBox.height);expect(waitBox.width).toBeCloseTo((await flow.boundingBox())!.width,1);}
+  for(const key of ['wait','upcoming','growth']){const card=flow.getByTestId(`glance-key-${key}`);await expect(card.locator('h3')).toBeVisible();await expect(card.locator('strong')).toBeVisible();await expect(card.locator(':scope>small')).toBeVisible();await expect(card).toHaveAttribute('href',/^\/ko\//);}
+  await expect(flow.locator('.staff-brief-heading')).toContainText('출발편');await expect(flow.locator('.staff-brief-heading')).toContainText('수집');
+  await expect(cards.first().getByRole('link')).toHaveAttribute('href',new RegExp(`/ko/airport\\?date=${date}`));
+  await expect(cards.nth(1).getByRole('link',{name:'국가별 흐름·휴일 맥락 ↗'})).toHaveAttribute('href',new RegExp(`/ko/airport-countries\\?date=${date}`));
+  if(width>900){const first=(await cards.first().boundingBox())!,second=(await cards.nth(1).boundingBox())!;expect(first.width).toBeCloseTo(second.width,1);expect(first.y).toBeCloseTo(second.y,1);}
+  else {const first=(await cards.first().boundingBox())!,second=(await cards.nth(1).boundingBox())!;expect(second.y).toBeGreaterThan(first.y+first.height);}
  }
  await wait.focus();await expect(wait).toBeFocused();await expect(wait).toHaveCSS('outline-style','solid');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await flow.getByRole('heading',{name:'주목할 공항 흐름',exact:true}).click();
- await flow.screenshot({path:`../design-b-local-${width}.png`});
+ await flow.screenshot({path:info.outputPath(`airport-flow-${width}.png`)});
 });
 for(const [raw,fresh] of [['60+',true],['0',true],['17',false]] as const)test(`wait truth survives B layout: ${raw} fresh=${fresh}`,async({page})=>{
  await page.setViewportSize({width:390,height:1000});await data(page,raw,fresh);await page.goto('/ko?date='+date);
@@ -48,4 +63,13 @@ for(const [raw,fresh] of [['60+',true],['0',true],['17',false]] as const)test(`w
  if(fresh&&raw!=='0')await expect(wait.locator('.flow-wait-number')).toHaveText(raw);
  else if(raw==='0'){await expect(wait.locator('.flow-wait-number')).toHaveCount(0);await expect(wait).not.toContainText('17');}
  else {await expect(wait.locator('.flow-wait-number')).toHaveCount(0);await expect(wait).not.toContainText('17');}
+});
+
+for(const width of [601,1440])test(`desktop cards preserve forced-colors contrast ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});await page.emulateMedia({forcedColors:'active'});await data(page);await page.goto('/ko?date='+date);
+ const flow=page.getByRole('region',{name:'주목할 공항 흐름',exact:true}),wait=flow.getByTestId('glance-key-wait');
+ await expect(wait.locator('.flow-wait-number')).toHaveText('17');
+ for(const title of await flow.locator('.airport-flow-item-title').all())await expect(title).toHaveCSS('color','rgb(0, 0, 0)');
+ await wait.focus();await expect(wait).toBeFocused();await expect(wait).toHaveCSS('outline-style','solid');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
