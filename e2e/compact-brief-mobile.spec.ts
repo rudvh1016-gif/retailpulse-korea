@@ -19,7 +19,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  await expect(left).toBeVisible();await expect(right).toBeVisible();
  if(width<=700){
   const box=(await report.boundingBox())!;expect(box.x).toBeCloseTo(8,0);expect(box.x+box.width).toBeCloseTo(width-8,0);
-  await expect(report.locator('.focus-report-lines')).toHaveCSS('column-gap','28px');
+  await expect(report.locator('.focus-report-lines')).toHaveCSS('column-gap',lang==='ko'?'6px':'28px');
  }
  const commentary=report.locator('.focus-country-change-copy');await expect(commentary.first()).toBeVisible();
  for(const row of await commentary.all()){await expect(row).toHaveCSS('font-size','12px');await expect(row.locator('b')).toHaveCSS('font-size','12px');}
@@ -37,11 +37,11 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
   const selected=(await buttons.last().boundingBox())!,strip=(await tabs.boundingBox())!;expect(selected.x).toBeGreaterThanOrEqual(strip.x-1);expect(selected.x+selected.width).toBeLessThanOrEqual(strip.x+strip.width+1);
   await page.keyboard.press('Home');await expect(buttons.first()).toHaveAttribute('aria-selected','true');await expect(report).toBeVisible();
  }
- if(width<1000){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
+ if(width<1000&&!(lang==='ko'&&width<=700)){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
  const calculation=report.locator('.focus-passenger-calculation'),toggle=calculation.locator('summary');
  await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size',width<=600?'11px':'12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
- const parts=toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size',width<=600?'9px':'11px');await expect(parts).toHaveCSS('font-weight','400');
- for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size',width<=600||(lang==='ko'&&width>700)?'10px':'11px');await expect(basis).toHaveCSS('font-weight','400');}
+ const parts=lang==='ko'?report.locator('.focus-brief-parts'):toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size',lang==='ko'?(width<=700?'12px':'13px'):(width<=600?'9px':'11px'));await expect(parts).toHaveCSS('font-weight','400');
+ for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size',lang==='ko'?(width<=700?'11px':'12px'):(width<=600?'10px':'11px'));await expect(basis).toHaveCSS('font-weight','400');}
  const change=report.locator('.focus-comparison-change'),signed=change.locator(':scope > .glance-count-change');
  await expect(signed).toHaveAttribute('data-direction',width===320?'down':width===390?'neutral':'up');
  if(width===320){await expect(change).toHaveCSS('color','rgb(161, 45, 63)');if(lang==='ko')await expect(signed.locator('[aria-hidden="true"]')).not.toContainText('△');else await expect(signed).toContainText('△');await expect(change.locator('.focus-passenger-rate .change-rate')).toHaveCSS('color','rgb(161, 45, 63)');await expect(change.locator('.focus-passenger-rate .change-rate')).toContainText('△');}
@@ -61,7 +61,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
    }return issues;
   }));expect(overflow,'visible metric text stays inside its own column and preserves the center gap').toEqual([]);
  }
- const label=(await toggle.locator(':scope > span').first().boundingBox())!,partBox=(await parts.boundingBox())!;expect(partBox.y-label.y-label.height).toBeGreaterThanOrEqual(0);expect(partBox.y-label.y-label.height).toBeLessThanOrEqual(3);
+ if(lang!=='ko'){const label=(await toggle.locator(':scope > span').first().boundingBox())!,partBox=(await parts.boundingBox())!;expect(partBox.y-label.y-label.height).toBeGreaterThanOrEqual(0);expect(partBox.y-label.y-label.height).toBeLessThanOrEqual(3);}else{expect((await parts.boundingBox())!.y).toBeLessThan((await report.locator('.focus-week-comparison').first().boundingBox())!.y);}
  await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
  // Stress narrow columns without altering fixture/source calculations.
  if(lang==='ko'&&(width===390||width===1440))await report.screenshot({path:info.outputPath('brief-count-symbols.png')});

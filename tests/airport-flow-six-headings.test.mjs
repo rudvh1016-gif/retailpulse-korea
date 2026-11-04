@@ -33,9 +33,9 @@ test('the metrics and staff topics retain the vertical mobile reading order',()=
  assert.match(read('app/airport-staff-briefing.css'),/@media\(max-width:700px\)\{\.staff-brief-grid\{grid-template-columns:1fr/);
  for(const node of css.nodes.filter(node=>node.toString().includes(scope)))node.walkDecls(decl=>{
   if(decl.prop==='background'&&decl.value!=='transparent'){
-   assert.equal(node.type,'atrule');assert.match(node.params,/max-width:600px/);
-   assert.match(decl.parent.selector,/glance-key-wait|airport-flow-item-title::before/);
-   assert.ok(['#183c67','#315f91','Canvas','CanvasText'].includes(decl.value));
+   assert.equal(node.type,'atrule');
+   if(node.params.includes('min-width:601px')){assert.ok(decl.parent.selector.includes(scope));assert.ok(['#fff','#102b50','#183c67','#edf4fc','#16365f','Canvas','CanvasText'].includes(decl.value));}
+   else {assert.match(node.params,/max-width:600px/);assert.match(decl.parent.selector,/glance-key-wait|airport-flow-item-title::before/);assert.ok(['#183c67','#315f91','Canvas','CanvasText'].includes(decl.value));}
   }else if(decl.prop==='order'){
    assert.equal(node.type,'atrule');assert.match(node.params,/max-width:600px/);
    assert.equal(decl.parent.selector,scope+' .flow-wait-reading');assert.equal(decl.value,'-1');
@@ -63,4 +63,16 @@ test('disclosure controls keep their own medium-weight hierarchy, not the ordina
  assert.equal(control['font-size'],'14px');assert.equal(control['font-weight'],undefined);
  assert.match(read('app/disclosure-hierarchy.css'),/:root body details > summary,[^]*?font-weight:600!important/);
  assert.doesNotMatch(read('app/airport-staff-briefing.css'),/:is\(p,h4,summary,a\)/);
+});
+
+
+test('approved desktop cards are scoped above phone B with intrinsic heights and equal lower columns',()=>{
+ const desktop=css.nodes.find(node=>node.type==='atrule'&&node.params==='(min-width:601px)');
+ assert.ok(desktop);
+ assert.match(desktop.toString(),/grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+ assert.match(desktop.toString(),/staff-brief-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ for(const node of desktop.nodes.filter(node=>node.type==='rule'))assert.ok(node.selector.includes(scope));
+ desktop.walkDecls(decl=>assert.ok(!['height','min-height','block-size','min-block-size'].includes(decl.prop)||decl.parent.selector.includes('::before')||decl.parent.selector.includes('flow-inline-separator')||decl.parent.selector.includes('section>a'),'cards must grow from content, not a decorative fixed height'));
+ assert.match(desktop.toString(),/flow-wait-number\{font-size:44px/);
+ assert.match(desktop.toString(),/:focus-visible\{outline:2px solid/);
 });

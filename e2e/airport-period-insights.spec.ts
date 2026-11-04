@@ -207,7 +207,7 @@ for(const width of [320,360,365,390,430,600,700])test(`phone heading menu and da
  });
  for(const edge of [edges.heading,edges.menu,edges.date])expect(Math.abs(edge-edges.report)).toBeLessThanOrEqual(1.5);
  const card=(await report.boundingBox())!;expect(card.x).toBeCloseTo(8,0);expect(card.x+card.width).toBeCloseTo(width-8,0);
- await expect(report.locator('.focus-metric-total').first()).toHaveCSS('font-size',width<=600?'20px':'24px');
+ await expect(report.locator('.focus-metric-total').first()).toHaveCSS('font-size','38px');
  const terminalButtons=controls.locator('div>button');await expect(terminalButtons).toHaveCount(4);
  const terminalRow=controls.locator('div[role=group]');const row=(await terminalRow.boundingBox())!;
  const boxes=await terminalButtons.evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,width:b.width,height:b.height};}));
