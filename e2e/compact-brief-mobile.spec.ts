@@ -39,7 +39,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
  }
  if(width<1000&&!(lang==='ko'&&width<=700)){const a=(await left.boundingBox())!,b=(await right.boundingBox())!;expect(a.x+a.width).toBeLessThanOrEqual(b.x);expect(Math.abs(a.y-b.y)).toBeLessThanOrEqual(1);}
  const calculation=report.locator(lang==='ko'?'.focus-report-basis':'.focus-passenger-calculation'),toggle=calculation.locator('summary');
- await expect(toggle).toBeVisible();if(lang!=='ko')await expect(toggle).toHaveCSS('font-size',width<=600?'11px':'12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ if(lang==='ko')await expect(calculation).toHaveCount(0);else{await expect(toggle).toBeVisible();await expect(toggle).toHaveCSS('font-size',width<=600?'11px':'12px');expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);}
  const parts=lang==='ko'?report.locator('.focus-brief-parts'):toggle.locator('.focus-passenger-parts');await expect(parts).toContainText('103,124');await expect(parts).toContainText('9,279');await expect(parts).toHaveCSS('font-size',lang==='ko'?(width<=700?'12px':'13px'):(width<=600?'9px':'11px'));await expect(parts).toHaveCSS('font-weight','400');
  for(const basis of await report.locator('.focus-comparison-basis,.daily-comparison-basis').all()){await expect(basis).toHaveCSS('font-size',lang==='ko'?(width<=700?'11px':'12px'):(width<=600?'10px':'11px'));await expect(basis).toHaveCSS('font-weight','400');}
  const change=report.locator('.focus-comparison-change'),signed=change.locator(':scope > .glance-count-change');
@@ -62,7 +62,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [320,390,430,768,1440
   }));expect(overflow,'visible metric text stays inside its own column and preserves the center gap').toEqual([]);
  }
  if(lang!=='ko'){const label=(await toggle.locator(':scope > span').first().boundingBox())!,partBox=(await parts.boundingBox())!;expect(partBox.y-label.y-label.height).toBeGreaterThanOrEqual(0);expect(partBox.y-label.y-label.height).toBeLessThanOrEqual(3);}else{expect((await parts.boundingBox())!.y).toBeLessThan((await report.locator('.focus-week-comparison').first().boundingBox())!.y);}
- await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');
+ if(lang!=='ko'){await toggle.focus();await page.keyboard.press('Enter');await expect(calculation).toHaveAttribute('open','');await page.keyboard.press('Space');await expect(calculation).not.toHaveAttribute('open','');}
  // Stress narrow columns without altering fixture/source calculations.
  if(lang==='ko'&&(width===390||width===1440))await report.screenshot({path:info.outputPath('brief-count-symbols.png')});
  await report.locator('.focus-metric-total').first().evaluate(node=>{node.textContent='1,234,567,890 people';});

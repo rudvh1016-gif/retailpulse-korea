@@ -37,7 +37,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await expect(page.locator('.focus-report-lines')).toContainText('단순합계 112,403명');
  await expect(page.locator('.focus-passenger-parts')).toBeVisible();
  await expect(page.locator('.focus-passenger-parts')).toContainText('출국 103,124명 + 환승 9,279명');
- await expect(page.locator('.focus-report-basis')).toContainText('누락일을 0으로 계산하지 않습니다');
+ await expect(page.locator('.focus-report-basis')).toHaveCount(0);
  await expect(page.locator('.focus-report-lines')).not.toContainText('9,546');
  await expect(page.locator('.focus-passenger-total')).toHaveCSS('white-space','normal');
  await expect(page.locator('.focus-passenger-comparison-core .focus-comparison-basis')).toHaveText('전월 일평균 대비: 같은 기준의 비교자료 확인 중');
@@ -66,7 +66,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  const metricBoxes=await page.locator('.focus-core-metric').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right,bottom:b.bottom,scroll:node.scrollWidth,width:node.clientWidth};}));
  expect(metricBoxes).toHaveLength(2);
  for(const box of metricBoxes)expect(box.scroll).toBeLessThanOrEqual(box.width+1);
- if(width<=700){expect(metricBoxes[1].y).toBeGreaterThanOrEqual(metricBoxes[0].bottom+18);expect(metricBoxes[1].x).toBeCloseTo(metricBoxes[0].x,0);}
+ if(width<=700){expect(metricBoxes[1].y).toBeGreaterThanOrEqual(metricBoxes[0].bottom+12);expect(metricBoxes[1].x).toBeCloseTo(metricBoxes[0].x,0);}
  else {
   expect(metricBoxes[0].right).toBeLessThanOrEqual(metricBoxes[1].x);
   const labels=await page.locator('.focus-figures-title,.focus-flight-metric > .focus-metric-label').evaluateAll(nodes=>nodes.map(node=>{const b=node.getBoundingClientRect();return {x:b.x,y:b.y,right:b.right};}));

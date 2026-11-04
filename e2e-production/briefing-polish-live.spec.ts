@@ -6,10 +6,10 @@ for(const width of [390,1440])test(`briefing label removal and peer typography l
  await expect(report.getByText('계산 기준',{exact:true})).toHaveCount(0);
  await expect(report.locator('.focus-people-metric details')).toHaveCount(0);
  await expect(report.locator('.focus-brief-parts')).toBeVisible();
- const evidence=report.locator('.focus-report-basis'),toggle=evidence.locator('summary');
- await toggle.focus();await page.keyboard.press('Enter');await expect(evidence).toHaveAttribute('open','');
- await expect(evidence).toContainText('중복을 제거한 공식 총출국객 수가 아닙니다.');
- await page.keyboard.press('Space');await expect(evidence).not.toHaveAttribute('open','');
+ await expect(report.locator('.focus-report-basis,.focus-calculation-evidence')).toHaveCount(0);
+ await expect(report).not.toContainText('숫자 비교 기준');
+ if(width===390){const people=(await report.locator('.focus-people-metric').boundingBox())!,flightLabel=(await report.locator('.focus-flight-metric>.focus-metric-label').boundingBox())!;expect(flightLabel.y-people.y-people.height).toBeLessThanOrEqual(32);}
+ expect(await report.evaluate(node=>node.lastElementChild?.classList.contains('focus-preparation-brief'))).toBe(true);
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]'),reference=flow.locator('.staff-brief-grid>section:first-child>p').first();
  await expect(reference).toBeVisible();
  const typography=await reference.evaluate(el=>{const s=getComputedStyle(el);return {fontFamily:s.fontFamily,fontSize:s.fontSize,lineHeight:s.lineHeight,fontWeight:s.fontWeight};});

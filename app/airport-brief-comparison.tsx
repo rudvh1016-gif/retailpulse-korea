@@ -32,8 +32,8 @@ export function PassengerBriefComparison({total,day,baseline,parts,marker,pendin
 }
 
 
-// Shared calculation evidence can live under the overview’s single disclosure.
-export function PassengerBriefCalculation({total,day,baseline,lang='ko'}:{total:number|null;day:string;baseline?:PassengerReferenceMonth|null;lang?:Lang}){
+// Default calculation disclosure for the unchanged locale presentations.
+function PassengerBriefCalculation({total,day,baseline,lang='ko'}:{total:number|null;day:string;baseline?:PassengerReferenceMonth|null;lang?:Lang}){
  const t=(ko:string,en:string,zh:string,ja:string)=>({ko,en,zh,ja})[lang];
  const change=passengerReferenceDailyChange(total,day,baseline);
  if(!change)return null;
