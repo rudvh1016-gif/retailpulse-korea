@@ -35,8 +35,9 @@ for (const width of [360, 390]) test(`personalization and chart repair on Produc
   for(const control of await dateButtons.all()){
     await expect(control).toHaveCSS('border-top-width','0px');
     await expect(control).toHaveAccessibleName(/.+/);
-    // Compact airport day controls keep 46px, above the 44px touch minimum.
-    expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(46);
+    // The approved day rail keeps a generous 56px touch target.
+    expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(56);
+    await expect(control).toHaveAccessibleDescription(await control.locator('time').innerText());
   }
   await dateButtons.last().focus();
   await page.keyboard.press('Tab');
@@ -192,6 +193,20 @@ for (const width of [320, 360, 390, 430, 600, 1440]) test(`production airport me
   await expect(page.locator('.airport-date-reserved .date-nav-shortcuts')).toHaveCSS('gap',airportDateGapPx(width));
   const dateRow=page.locator('.airport-date-reserved .date-nav-shortcuts');
   await expect(dateRow).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+  await expect(dateRow).toHaveCSS('display','grid');
+  await expect(dateRow).toHaveCSS('border-bottom-width','1px');
+  const dayButtons=dateRow.locator(':scope > button');
+  await expect(dayButtons).toHaveCount(3);
+  const dayGeometry=await dayButtons.evaluateAll(nodes=>nodes.map(node=>{const box=node.getBoundingClientRect();return {left:box.left,right:box.right,width:box.width,height:box.height,clipped:node.scrollWidth>node.clientWidth};}));
+  for(const box of dayGeometry){expect(box.width).toBeCloseTo(dayGeometry[0].width,1);expect(box.height).toBeGreaterThanOrEqual(56);expect(box.clipped).toBe(false);}
+  for(let i=1;i<dayGeometry.length;i++)expect(dayGeometry[i].left-dayGeometry[i-1].right).toBeCloseTo(0,1);
+  for(const button of await dayButtons.all()){await expect(button).toHaveCSS('text-align','center');await expect(button).toHaveAccessibleDescription(await button.locator('time').innerText());}
+  const selected=dateRow.locator('button[aria-pressed=true]');
+  expect(await selected.evaluate(node=>getComputedStyle(node,'::after').display)).toBe('block');
+  expect(await selected.evaluate(node=>getComputedStyle(node,'::after').height)).toBe('2px');
+  const dayBounds=(await dateRow.boundingBox())!;
+  expect(dayGeometry[0].left).toBeCloseTo(dayBounds.x,1);expect(dayGeometry[2].right).toBeCloseTo(dayBounds.x+dayBounds.width,1);
+  if(!phone)expect(dayBounds.width).toBeLessThanOrEqual(420);
   if(phone){
     const edge=await dateRow.evaluate(el=>({left:el.getBoundingClientRect().left,parent:el.parentElement!.getBoundingClientRect().left}));
     expect(edge.left).toBeCloseTo(edge.parent,1);
