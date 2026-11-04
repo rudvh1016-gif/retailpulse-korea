@@ -26,7 +26,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [390,1440])test(`fail
 test('an already-open checkpoint view ages out even when its bounded recovery read fails',async({page})=>{
  const summary=structuredClone(SUMMARY_FIXTURE),now=Date.parse(summary.generatedAt),base=summary.airport.congestion[0];
  summary.airport.congestion=[{...base,terminal:'T1',zone:'DG2_E',observedAt:new Date(now-19*60_000-30_000).toISOString(),waitTimeMinutes:15,waitTimeRaw:'15',freshness:'LIVE'}];
- await page.clock.install({time:new Date(now)});let requests=0;
+ await page.clock.install({time:new Date(now)});await page.clock.pauseAt(new Date(now));let requests=0;
  await page.route('**/api/**',r=>r.fulfill({status:503,json:{}}));await page.route('**/api/live/summary*',r=>{requests++;return requests===1?r.fulfill({json:summary}):r.fulfill({status:503,json:{}});});
  await page.goto('/en');const section=page.locator('.home-checkpoint-waits');await section.scrollIntoViewIfNeeded();const figure=section.locator('figure[data-terminal=T1]');await figure.scrollIntoViewIfNeeded();
  await expect(figure.locator('[data-checkpoint="2E"]')).toHaveAttribute('data-state','current');
