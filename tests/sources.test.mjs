@@ -1014,3 +1014,47 @@ test("estimated sales adapter rejects a row without a sales amount", async () =>
 test("tourism adapter requires an event start date", async () => {
   await assert.rejects(normalizeTourismEvent({ contentid: "1", title: "행사" }, "myeongdong", "2026-08-27T15:00:00Z"));
 });
+
+test('Seoul exhausted timeouts preserve seeded last-good rows and timestamps until a successful cycle', async (context) => {
+  const { database, databasePath } = openDatabase('seoul-last-good-timeout');
+  const originalFetch = globalThis.fetch;
+  context.after(() => { globalThis.fetch = originalFetch; database.close(); unlinkSync(databasePath); });
+  let failing = false;
+  const calls = [];
+  globalThis.fetch = async (input) => {
+    const poi = String(input).split('/').at(-1);
+    calls.push(poi);
+    if (failing) throw new DOMException('fixture secret must not appear', 'AbortError');
+    const fixture = seoulIntegratedFixture();
+    fixture.CITYDATA.AREA_CD = poi;
+    fixture.CITYDATA.LIVE_PPLTN_STTS[0] = { ...fixture.CITYDATA.LIVE_PPLTN_STTS[0], AREA_CD: poi };
+    return Response.json(fixture);
+  };
+  const env = { DB: new LocalD1Database(database), SEOUL_OPEN_DATA_KEY: 'fixture' };
+  assert.equal((await collectSeoulRealtime(env)).status, 'SUCCESS');
+  const snapshot = () => ['seoul_realtime_area', 'seoul_realtime_commercial', 'seoul_realtime_forecast']
+    .map(table => database.prepare(`SELECT * FROM ${table} ORDER BY id`).all());
+  const health = () => database.prepare("SELECT source_id, status, last_event_at, last_retrieved_at FROM source_health WHERE source_id IN ('SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL') ORDER BY source_id").all();
+  const before = snapshot();
+  assert.deepEqual(before.map(rows => rows.length), [4, 4, 8]);
+  const beforeHealth = health();
+  failing = true;
+  calls.length = 0;
+  const failed = await collectSeoulRealtime(env);
+  assert.equal(failed.status, 'ERROR');
+  assert.equal(failed.records, 0);
+  assert.equal(failed.providerRequests, 8);
+  for (const poi of ['POI003', 'POI007', 'POI068', 'POI004']) assert.equal(calls.filter(value => value === poi).length, 2);
+  assert.match(failed.detail, /responsePhase=BEFORE_HEADERS timeoutMs=8000/);
+  assert.doesNotMatch(failed.detail, /fixture|openapi\.seoul\.go\.kr/);
+  assert.deepEqual(snapshot(), before, 'no deletion, replacement timestamp, or fabricated gap backfill');
+  assert.deepEqual(health().map(row => ({ ...row })), beforeHealth.map(row => ({ ...row, status: 'STALE' })));
+  failing = false;
+  calls.length = 0;
+  const recovered = await collectSeoulRealtime(env);
+  assert.equal(recovered.status, 'SUCCESS');
+  assert.equal(recovered.providerRequests, 4);
+  assert.equal(recovered.records, 0, 'same semantic data is not rewritten');
+  assert.deepEqual(snapshot(), before);
+  assert.ok(health().every(row => row.status === 'LIVE'));
+});

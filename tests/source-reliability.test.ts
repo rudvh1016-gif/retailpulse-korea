@@ -233,3 +233,60 @@ test("safe diagnostics never contain an authenticated URL or secret", () => {
   assert.equal(detail.includes("https://"), false);
   assert.equal(detail, "failureClass=VALIDATION causeCode=COLLECTOR_ERROR attempts=1 elapsedMs=0 retryExhausted=false");
 });
+
+for (const phase of ['BEFORE_HEADERS', 'BODY'] as const) {
+  test(`opt-in timeout diagnostics identify ${phase} without changing the attempt ceiling`, async () => {
+    let calls = 0;
+    const fetchImpl = (async (_input, init) => {
+      calls += 1;
+      const blocked = () => new Promise<string>((_resolve, reject) => {
+        init!.signal!.addEventListener('abort', () => reject(new DOMException('SECRET-VALUE', 'AbortError')), { once: true });
+      });
+      if (phase === 'BEFORE_HEADERS') return await blocked();
+      return { ok: true, status: 200, text: blocked } as Response;
+    }) as typeof fetch;
+    await assert.rejects(fetchOfficialJson(URL_FIXTURE, {
+      fetchImpl, timeoutMs: 5, maxAttempts: 2, diagnoseResponsePhase: true, sleep: async () => {},
+    }), (error: unknown) => {
+      assert.ok(error instanceof SourceFetchError);
+      assert.equal(error.code, 'TIMEOUT');
+      assert.equal(error.attempts, 2);
+      assert.equal(error.retryExhausted, true);
+      assert.equal(error.responsePhase, phase);
+      assert.equal(error.timeoutMs, 5);
+      const detail = safeSourceFailureDetail(error);
+      assert.match(detail, new RegExp(`responsePhase=${phase} timeoutMs=5`));
+      assert.doesNotMatch(detail, /SECRET-VALUE|provider\.invalid|serviceKey/);
+      return true;
+    });
+    assert.equal(calls, 2);
+  });
+}
+
+test('phase diagnostics remain absent for callers that do not opt in', async () => {
+  const sequence = sequenceFetch([new DOMException('aborted', 'AbortError')]);
+  await assert.rejects(fetchOfficialJson(URL_FIXTURE, { fetchImpl: sequence.fetchImpl, maxAttempts: 1 }), (error: unknown) => {
+    assert.ok(error instanceof SourceFetchError);
+    assert.equal(error.responsePhase, undefined);
+    assert.doesNotMatch(safeSourceFailureDetail(error), /responsePhase|timeoutMs/);
+    return true;
+  });
+});
+
+test('phase diagnostics describe the final failed attempt after a different first phase', async () => {
+  let calls = 0;
+  const fetchImpl = (async () => {
+    if (++calls === 1) throw new DOMException('first', 'AbortError');
+    return { ok: true, text: async () => { throw new DOMException('second', 'AbortError'); } } as unknown as Response;
+  }) as typeof fetch;
+  await assert.rejects(fetchOfficialJson(URL_FIXTURE, {
+    fetchImpl, maxAttempts: 2, diagnoseResponsePhase: true, sleep: async () => {},
+  }), (error: unknown) => {
+    assert.ok(error instanceof SourceFetchError);
+    assert.equal(error.responsePhase, 'BODY');
+    assert.equal(error.attempts, 2);
+    assert.equal(error.retryExhausted, true);
+    return true;
+  });
+  assert.equal(calls, 2);
+});

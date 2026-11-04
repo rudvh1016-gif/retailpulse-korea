@@ -23,16 +23,21 @@ export class SourceFetchError extends Error {
   public readonly providerSignal?: string;
   /** Which field a SCHEMA refusal was about, and its shape (never the value). */
   public readonly schemaField?: string;
+  /** Last failed attempt only; BEFORE_HEADERS does not prove a connection failure. */
+  public readonly responsePhase?: "BEFORE_HEADERS" | "BODY";
+  public readonly timeoutMs?: number;
 
   constructor(
     public readonly code: "TIMEOUT" | "HTTP" | "MALFORMED_JSON" | "SCHEMA" | "NETWORK",
     public readonly status?: number,
     /** Connection-layer cause (ENOTFOUND, ECONNRESET, ...) when the platform reports one. */
     public readonly causeCode?: string,
-    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean; retryDeferred?: boolean; providerSignal?: string; schemaField?: string } = {},
+    context: { attempts?: number; elapsedMs?: number; retryExhausted?: boolean; retryDeferred?: boolean; providerSignal?: string; schemaField?: string; responsePhase?: "BEFORE_HEADERS" | "BODY"; timeoutMs?: number } = {},
   ) {
     super(causeCode ? `${code}_${causeCode}` : code);
     this.name = "SourceFetchError";
+    if (context.responsePhase === "BEFORE_HEADERS" || context.responsePhase === "BODY") this.responsePhase = context.responsePhase;
+    if (Number.isFinite(context.timeoutMs)) this.timeoutMs = Math.max(1, Math.min(Math.trunc(context.timeoutMs!), 60_000));
     this.attempts = Math.max(1, Math.trunc(context.attempts ?? 1));
     this.elapsedMs = Math.max(0, Math.trunc(context.elapsedMs ?? 0));
     this.retryExhausted = context.retryExhausted === true;
@@ -135,6 +140,8 @@ export function classifySourceFetchFailure(error: unknown): SourceFetchError {
 
 export interface FetchOfficialJsonOptions {
   timeoutMs?: number;
+  /** Add safe phase diagnostics without changing request/retry policy. */
+  diagnoseResponsePhase?: boolean;
   /** Backwards-compatible number of retries. Prefer maxAttempts for new policies. */
   retries?: number;
   maxAttempts?: number;
@@ -229,6 +236,7 @@ function withFetchContext(
 ): SourceFetchError {
   return new SourceFetchError(error.code, error.status, error.causeCode, {
     attempts, elapsedMs, retryExhausted, providerSignal: error.providerSignal, schemaField: error.schemaField,
+    responsePhase: error.responsePhase, timeoutMs: error.timeoutMs,
   });
 }
 
@@ -312,6 +320,11 @@ async function fetchOfficialJsonWithRecheck(
       throw incomplete;
     } catch (error) {
       failure = classifySourceFetchFailure(error);
+      if (options.diagnoseResponsePhase && (failure.code === "TIMEOUT" || failure.code === "NETWORK")) {
+        failure = new SourceFetchError(failure.code, failure.status, failure.causeCode, {
+          ...failure, responsePhase: receivedHeaders ? "BODY" : "BEFORE_HEADERS", timeoutMs,
+        });
+      }
     } finally {
       clearTimeout(timer);
     }
@@ -444,6 +457,7 @@ export function safeSourceFailureDetail(error: unknown): string {
       ...(error.retryDeferred ? ["retryDeferred=true"] : []),
       ...(error.providerSignal ? [`providerSignal=${error.providerSignal}`] : []),
       ...(error.schemaField ? [`schemaField=${error.schemaField}`] : []),
+      ...(error.responsePhase ? [`responsePhase=${error.responsePhase}`, `timeoutMs=${error.timeoutMs}`] : []),
     ];
     return parts.join(" ");
   }
