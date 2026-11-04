@@ -18,7 +18,9 @@ The existing server/KST day anchoring, date handlers, URL/history behavior and s
 - Rendered HTML: 53 passed, with the same site origin as the build.
 - Secret scan passed.
 - Browser inventory: 2,315 tests, complete and disjoint across four shards.
-- Local Chromium could not start: the execution environment denies its socket creation even with elevated execution. Therefore local browser assertions and screenshots are **not verified**. The CI browser matrix must pass before merge; review the generated screenshots before publication.
+- Local Chromium could not start because this execution environment denies its socket creation. Browser verification instead ran in GitHub Actions.
+- CI run [41770933182](https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/41770933182) passed at `9573cc88`: all 2,315 Chromium tests across four mandatory shards, core verification, and 494 bounded route/search checks.
+- Reviewed the actual twelve day-rail screenshots (four languages at 320/390/1280px) and three Korean full-view screenshots from `browser-verification-shard-1`. Equal slot widths, text legibility, selected indicator and mobile/desktop bounds matched the intended design.
 - Read-only source review found no state/ARIA blocker. Prior visual assertions were updated only for the requested day rail.
 - Five exact ARIA/hook edits are reversed by the existing protected-file test. Original canonical hashes and all calculation/schedule guards remain intact.
 
@@ -26,4 +28,4 @@ The existing server/KST day anchoring, date handlers, URL/history behavior and s
 
 Korean, English, Chinese and Japanese at 320/390/1280px: equal-width slots, no text overflow, accessible date descriptions, 56px touch areas, touch/Enter/Space, repeated current-day click, URL/back/forward, terminal preservation, arbitrary stored-date selection, forced colors and reduced motion. Existing date/navigation and mobile-reading regressions remain in the full CI matrix.
 
-The collection-recovery change is being handled separately. Rebase onto its merged main while retaining both protected-test exception blocks, rerun checks, and coordinate merge order before release.
+Integrated checkpoint recovery main `339591b099d35a33c08ed701700f584aaf831f0c` while retaining both exact protected-test exception blocks. Full integrated CI is required before merge. Release this UI only after the checkpoint recovery deployment and production visual verification complete.

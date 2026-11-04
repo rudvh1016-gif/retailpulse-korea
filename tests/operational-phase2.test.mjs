@@ -244,6 +244,11 @@ for(const [file,patches] of Object.entries(shiftBriefingPatches)){
 const moreSharePatches=JSON.parse(readFileSync('tests/fixtures/more-site-share-approved-patches.json','utf8'));
 assert.equal(moreSharePatches.length,2);
 approvedCanonicalPatches['app/retailpulse-app.tsx']=[...moreSharePatches,...(approvedCanonicalPatches['app/retailpulse-app.tsx']??[])];
+// Owner-approved checkpoint recovery changes only the summary reader. Reverse
+// its five exact hunks while retaining the existing protected hashes and crons.
+const checkpointRefreshPatches=JSON.parse(readFileSync('tests/fixtures/checkpoint-refresh-20261104-approved-patches.json','utf8'));
+assert.equal(checkpointRefreshPatches.length,5);
+approvedCanonicalPatches['app/live-summary.tsx']=[...checkpointRefreshPatches,...(approvedCanonicalPatches['app/live-summary.tsx']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

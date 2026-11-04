@@ -258,3 +258,71 @@ test('a valid no-data response clears a prior browser refresh failure', async ({
   await expect(page.getByTestId('summary-refresh-failed')).toHaveCount(0);
   await expect(page.locator('.airport-brief-total')).toHaveCount(0);
 });
+
+test('malformed success never poisons recovery; retries back off and retain original checkpoint values', async ({ page }) => {
+  await page.clock.install({ time: new Date(SUMMARY_FIXTURE.generatedAt) });
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  let malformed = false;
+  let requests = 0;
+  await page.route('**/api/live/summary*', route => {
+    requests += 1;
+    const data = summaryFor(TODAY, malformed ? 99123 : 47320);
+    return route.fulfill({ json: malformed ? { ...data, sources: {} } : data });
+  });
+  await openAirport(page);
+  await expect(page.locator('.airport-brief-total')).toContainText('47,320');
+  const first = requests;
+  malformed = true;
+  await page.clock.fastForward(301_000);
+  await expect.poll(() => requests).toBe(first + 1);
+  await expect(page.getByTestId('summary-refresh-failed')).toBeVisible();
+  await expect(page.locator('.airport-brief-total')).toContainText('47,320');
+  await page.clock.fastForward(61_000);
+  await expect.poll(() => requests).toBe(first + 2);
+  await page.clock.fastForward(61_000);
+  expect(requests).toBe(first + 2);
+  await page.evaluate(() => {
+    for (let i = 0; i < 8; i++) {
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('online'));
+      window.dispatchEvent(new Event('pageshow'));
+    }
+  });
+  expect(requests).toBe(first + 2);
+  malformed = false;
+  await page.clock.fastForward(60_000);
+  await expect.poll(() => requests).toBe(first + 3);
+  await expect(page.getByTestId('summary-refresh-failed')).toHaveCount(0);
+  await expect(page.locator('.airport-brief-total')).toContainText('47,320');
+  expect(errors).toEqual([]);
+});
+
+test('stale checkpoint snapshot gets bounded rechecks and becomes current without a reload', async ({ page }) => {
+  await page.clock.install({ time: new Date(SUMMARY_FIXTURE.generatedAt) });
+  let recovered = false;
+  let requests = 0;
+  await page.route('**/api/live/summary*', route => {
+    requests += 1;
+    const data = summaryFor(TODAY);
+    data.generatedAt = recovered ? '2026-08-31T05:12:01Z' : SUMMARY_FIXTURE.generatedAt;
+    data.airport.congestion = data.airport.congestion.map(row => ({
+      ...row, observedAt: recovered ? '2026-08-31T14:11:00+09:00' : '2026-08-31T13:46:00+09:00',
+      retrievedAt: recovered ? '2026-08-31T05:11:30Z' : '2026-08-31T04:47:00Z',
+      freshness: recovered ? 'LIVE' : 'STALE', collectionStatus: recovered ? 'LIVE' : 'STALE',
+    }));
+    return route.fulfill({ json: data });
+  });
+  await openAirport(page);
+  await page.locator('.airport-checkpoints').scrollIntoViewIfNeeded();
+  const t2 = page.locator('[data-testid="checkpoint-schematic"][data-terminal="T2"]');
+  await expect(t2.locator('.checkpoint-schematic-time')).toContainText('13:46');
+  const first = requests;
+  await page.clock.fastForward(61_000);
+  expect(requests).toBe(first);
+  recovered = true;
+  await page.clock.fastForward(60_000);
+  await expect.poll(() => requests).toBe(first + 1);
+  await expect(t2.locator('.checkpoint-schematic-time')).toContainText('14:11');
+  await expect(t2).not.toContainText('오래된 관측');
+});
