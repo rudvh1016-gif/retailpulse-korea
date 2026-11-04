@@ -8,10 +8,12 @@ import type { Lang } from "./retailpulse-data";
 import type { LiveSummary } from "./live-signals";
 import { kstDay } from "../lib/demand-presentation";
 import { shortensSummaryRecheck } from "../lib/summary-recheck";
+import { readStoredJson } from "../lib/read-stored-json";
+import { isValidSummaryRefreshPayload, summaryRefreshDelay, summaryFailureDelay } from "../lib/summary-refresh-policy";
 
 // Rechecks use only the existing summary read API. Each date/month shares one
 // request; an unsuccessful refresh keeps the previous payload and source times.
-type SummaryCacheEntry = { value: LiveSummary | null; recheckAt: number };
+type SummaryCacheEntry = { value: LiveSummary | null; recheckAt: number; failures: number };
 const summaryCache = new Map<string, SummaryCacheEntry>();
 const summaryPending = new Map<string, Promise<LiveSummary | null>>();
 let initialUndatedSummaryDay: string | undefined;
@@ -68,30 +70,41 @@ async function loadSummary(date: string | null, month: string | undefined, key: 
     // toString(), not .size: URLSearchParams.size only exists in Chrome 113+, Firefox 112+ and Safari 17+.
     const queryText = query.toString();
     const url = `/api/live/summary${queryText ? `?${queryText}` : ""}`;
-    pending = fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(15_000) })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const payload = await response.json() as LiveSummary;
-        return payload?.mode === "live-summary" && payload.areas && payload.airport
-          && payload.serviceDateKst === (date ?? payload.todayKst) ? payload : null;
-      })
-      .catch(() => null)
-      .then((value) => {
-        const now = Date.now();
-        // A valid response (including no data) clears the browser-only failure.
-        // Wrap once per failed request, never during render: all original source
-        // fields and times remain the last successful response's values.
-        if (value) delete value.clientRefresh;
-        const retained = value ?? (cached?.value
-          ? { ...cached.value, clientRefresh: { failedAt: new Date(now).toISOString() } }
-          : null);
-        summaryCache.set(key, {
-          value: retained,
-          recheckAt: Math.min(now + summaryRecheckDelay(value), nextKstMidnight(now)),
-        });
-        summaryPending.delete(key);
-        return retained;
+    // Keep the first request preload-compatible. Rechecks bypass only the
+    // browser's stale copy; the gateway preserves the shared edge-cache TTL.
+    pending = Promise.resolve().then(async () => {
+      const payload = await readStoredJson<unknown>(url, {
+        headers: { accept: "application/json" }, cache: cached ? "no-cache" : "default",
       });
+      if (!isValidSummaryRefreshPayload(payload, date)) throw new Error("SUMMARY_INVALID_RESPONSE");
+      const value = payload as LiveSummary;
+      const now = Date.now();
+      // A malformed/future cached clock must not pin the page forever.
+      if (cached?.value && Date.parse(cached.value.generatedAt) <= now
+        && Date.parse(value.generatedAt) < Date.parse(cached.value.generatedAt)) {
+        throw new Error("SUMMARY_OLDER_RESPONSE");
+      }
+      const delay = summaryRefreshDelay(value, now, summaryRecheckDelay(value));
+      // Do not mutate provider values or clocks when clearing browser status.
+      const retained = { ...value };
+      delete retained.clientRefresh;
+      summaryCache.set(key, { value: retained, failures: 0,
+        recheckAt: Math.min(now + delay, nextKstMidnight(now)) });
+      return retained;
+    }).catch(() => {
+      const now = Date.now();
+      const failures = Math.min((cached?.failures ?? 0) + 1, 4);
+      const retained = cached?.value
+        ? { ...cached.value, clientRefresh: { failedAt: new Date(now).toISOString() } }
+        : null;
+      summaryCache.set(key, { value: retained, failures,
+        recheckAt: Math.min(now + summaryFailureDelay(failures), nextKstMidnight(now)) });
+      return retained;
+    }).finally(() => {
+      // Malformed 200s, timeout/body failures and synchronous loader errors
+      // must never poison the shared pending slot and permanently stop retries.
+      summaryPending.delete(key);
+    });
     summaryPending.set(key, pending);
   }
   return pending;
@@ -113,10 +126,15 @@ export function useLiveSummary(date: string | null = null, availabilityMonth?: s
   useEffect(() => {
     let active = true;
     let refreshing = false;
+    let retryNotBefore = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = () => {
       clearTimeout(timer);
       if (!active || refreshing || document.visibilityState === "hidden") return;
+      if (retryNotBefore > Date.now()) {
+        timer = setTimeout(refresh, retryNotBefore - Date.now());
+        return;
+      }
       const currentKey = summaryKey(date, availabilityMonth);
       if (currentKey !== key) {
         setState({ key: currentKey, value: summaryCache.get(currentKey)?.value });
@@ -124,7 +142,7 @@ export function useLiveSummary(date: string | null = null, availabilityMonth?: s
       }
       refreshing = true;
       void loadSummary(date, availabilityMonth, key).then(value => {
-        refreshing = false;
+        retryNotBefore = 0;
         if (!active) return;
         const latestKey = summaryKey(date, availabilityMonth);
         // A response started before midnight or a date switch must never
@@ -134,17 +152,27 @@ export function useLiveSummary(date: string | null = null, availabilityMonth?: s
           return;
         }
         setState({ key, value });
-        if (document.visibilityState !== "hidden") {
-          timer = setTimeout(refresh, Math.max(1, (summaryCache.get(key)?.recheckAt ?? Date.now() + SUMMARY_RECHECK_MS.empty) - Date.now()));
+      }).catch(() => {
+        // Defensive boundary: even an unexpected cache/policy exception must
+        // release this hook's in-flight guard and leave a future retry possible.
+        retryNotBefore = Date.now() + SUMMARY_RECHECK_MS.normal;
+      }).finally(() => {
+        refreshing = false;
+        if (active && document.visibilityState !== "hidden") {
+          timer = setTimeout(refresh, Math.max(1, retryNotBefore - Date.now(), (summaryCache.get(key)?.recheckAt ?? Date.now() + SUMMARY_RECHECK_MS.empty) - Date.now()));
         }
       });
     };
     refresh();
     document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("online", refresh);
+    window.addEventListener("pageshow", refresh);
     return () => {
       active = false;
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("online", refresh);
+      window.removeEventListener("pageshow", refresh);
     };
   }, [date, availabilityMonth, key]);
   return state.key === key ? state.value : undefined;

@@ -103,13 +103,13 @@ export function canonicalSummaryUrl(url: URL, now = new Date()): string {
  */
 export function canonicalSummaryRequest(request: Request, url: URL): Request {
   const canonical = canonicalSummaryUrl(url);
-  // The flight board fetches with `cache: "no-cache"` so the browser never
+  // Summary rechecks and the flight board use `cache: "no-cache"` so the browser never
   // reuses its own copy past the two-minute poll. That adds a request
   // `Cache-Control`/`Pragma`, which must not turn the shared copy into a full
   // D1 read either: the route's own response header is the freshness contract.
   // Prepared month reads similarly use browser no-store, with an existing
   // shared TTL on READY and no-store on missing/error responses.
-  const dropped = (url.pathname === '/api/live/flights' || url.pathname === PREDICTIONS_CACHE_PATH || AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) ? ["authorization", "cache-control", "pragma"] : ["authorization"];
+  const dropped = (url.pathname === '/api/live/summary' || url.pathname === '/api/live/flights' || url.pathname === PREDICTIONS_CACHE_PATH || AIRPORT_MONTH_CACHE_PATHS.some(path => path === url.pathname)) ? ["authorization", "cache-control", "pragma"] : ["authorization"];
   if (canonical === url.href && !dropped.some((name) => request.headers.has(name))) return request;
   const headers = new Headers(request.headers);
   for (const name of dropped) headers.delete(name);

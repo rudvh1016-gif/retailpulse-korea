@@ -242,10 +242,10 @@ test("the flight board's no-cache request headers cannot turn the shared copy in
   assert.equal(request.headers.get("cache-control"), "max-age=0", "the original request is not modified");
   const plain = new Request(`${ORIGIN}/api/live/flights?date=2026-10-14`);
   assert.equal(canonicalSummaryRequest(plain, new URL(plain.url)), plain, "canonical, header-free traffic passes untouched");
-  // The summary keeps its existing rule: only Authorization is dropped.
+  // Summary rechecks now share the same no-cache header protection.
   const summaryUrl = new URL(`${ORIGIN}/api/live/summary?date=2026-09-29`);
   const summary = new Request(summaryUrl, { headers: { "cache-control": "max-age=0" } });
-  assert.equal(canonicalSummaryRequest(summary, summaryUrl), summary);
+  assert.equal(canonicalSummaryRequest(summary, summaryUrl).headers.has("cache-control"), false);
 });
 
 test("the flights route reads only `date`, and nothing from headers, so one entry per day is safe to share", () => {
@@ -256,4 +256,21 @@ test("the flights route reads only `date`, and nothing from headers, so one entr
   assert.doesNotMatch(source, /searchParams\.(getAll|entries|keys|values|forEach|has)\b|\.search\b/, "no other way of reading the query string");
   assert.doesNotMatch(source, /request\.headers|request\.cf\b|headers\.get\(|cookies?\b/i,
     "an answer that depends on a header or a cookie could not share a cache entry");
+});
+
+
+test("summary browser revalidation preserves the shared cache TTL without changing its key", () => {
+  const url = new URL(`${ORIGIN}/api/live/summary?date=2026-11-04`);
+  for (const method of ["GET", "HEAD"]) {
+    const request = new Request(url, { method, headers: { "cache-control": "no-cache", pragma: "no-cache", accept: "application/json", "accept-language": "ko" } });
+    const forwarded = canonicalSummaryRequest(request, url);
+    assert.equal(forwarded.url, url.href);
+    assert.equal(forwarded.method, method);
+    assert.equal(forwarded.headers.has("cache-control"), false);
+    assert.equal(forwarded.headers.has("pragma"), false);
+    assert.equal(forwarded.headers.get("accept"), "application/json");
+    assert.equal(forwarded.headers.get("accept-language"), "ko");
+    assert.equal(request.headers.get("cache-control"), "no-cache");
+    assert.equal(canonicalSummaryRequest(forwarded, url), forwarded);
+  }
 });

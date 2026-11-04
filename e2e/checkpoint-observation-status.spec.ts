@@ -23,15 +23,26 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [390,1440])test(`fail
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 
-test('an already-open checkpoint view ages out without fetching again',async({page})=>{
+test('an already-open checkpoint view ages out even when its bounded recovery read fails',async({page})=>{
  const summary=structuredClone(SUMMARY_FIXTURE),now=Date.parse(summary.generatedAt),base=summary.airport.congestion[0];
  summary.airport.congestion=[{...base,terminal:'T1',zone:'DG2_E',observedAt:new Date(now-19*60_000-30_000).toISOString(),waitTimeMinutes:15,waitTimeRaw:'15',freshness:'LIVE'}];
  await page.clock.install({time:new Date(now)});let requests=0;
- await page.route('**/api/**',r=>r.fulfill({status:503,json:{}}));await page.route('**/api/live/summary*',r=>{requests++;return r.fulfill({json:summary});});
+ await page.route('**/api/**',r=>r.fulfill({status:503,json:{}}));await page.route('**/api/live/summary*',r=>{requests++;return requests===1?r.fulfill({json:summary}):r.fulfill({status:503,json:{}});});
  await page.goto('/en');const section=page.locator('.home-checkpoint-waits');await section.scrollIntoViewIfNeeded();const figure=section.locator('figure[data-terminal=T1]');await figure.scrollIntoViewIfNeeded();
  await expect(figure.locator('[data-checkpoint="2E"]')).toHaveAttribute('data-state','current');
- const before=requests;await page.clock.fastForward(61_000);
+ // Keep the rendering clock running so the deferred schematic can mount.
+ // The pure-policy test verifies the exact 60-second floor; here a half-window
+ // avoids counting real hydration time as part of the browser retry assertion.
+ const before=requests;await page.clock.fastForward(30_000);expect(requests).toBe(before);
+ await page.clock.fastForward(31_000);
  await expect(figure.locator('[data-checkpoint="2E"]')).toHaveAttribute('data-state','stale');
  await expect(figure.locator('[data-checkpoint="2E"] .checkpoint-reading-status')).toHaveText('Prior');
- await expect(figure).toHaveAttribute('data-motion','paused');expect(requests).toBe(before);
+ await expect(figure).toHaveAttribute('data-motion','paused');
+ // The freshness policy permits one recovery read after one minute. A failed
+ // read must neither keep stale observations current nor rewrite their clocks.
+ await expect.poll(()=>requests).toBe(before+1);
+ await expect(figure.locator('[data-checkpoint="2E"] strong')).toContainText('15');
+ await figure.locator('summary').click();
+ await expect(figure.locator('time')).toHaveAttribute('dateTime',summary.airport.congestion[0].observedAt);
+ await page.clock.fastForward(30_000);expect(requests).toBe(before+1);
 });
