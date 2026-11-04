@@ -270,9 +270,9 @@ export function buildOrchestrationPlan(input: OrchestrationPlanInput): Orchestra
     // The planner reached the end of its work. Whether what it found is good
     // news is the next field, deliberately.
     executionStatus: "PASS",
-    productionVerdict: input.incidents.length === 0
-      ? "UNKNOWN"
-      : unresolved > 0 ? "DEGRADED" : "NO_UNRESOLVED_INCIDENTS",
+    productionVerdict: unresolved > 0 || input.stuck.length > 0
+      ? "DEGRADED"
+      : input.incidents.length === 0 ? "UNKNOWN" : "NO_UNRESOLVED_INCIDENTS",
     providerCalls: 0,
     d1Writes: 0,
     deploys: 0,

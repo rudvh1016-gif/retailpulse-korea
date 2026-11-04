@@ -45,6 +45,18 @@ Canonical engineering direction:
 - `docs/ENGINEERING_DIRECTION.md`
 - `docs/ZERO_COST_HYBRID_AUDIT.md` is the mandatory pessimistic audit gate before architecture-changing implementation.
 
+## Minimal complete changes (Ponytail adaptation)
+
+Apply this guidance within all existing safety, truth, UI and release rules:
+
+- Read the affected code and trace callers, tests, fixtures, config and exports before editing. Fix a shared root cause once.
+- Reuse project utilities and conventions first, then platform features and installed dependencies. Add no speculative feature, abstraction or dependency for a few lines.
+- Choose the smallest readable change that completes the requested behavior, including affected callers and tests. Fewer lines never justify weaker security, validation, error handling, accessibility or test coverage.
+- Demonstrate a bug with a focused regression test; verify nontrivial new logic at its boundaries. Keep the applicable existing quality gates.
+- Report actual checks, skipped checks and material limits. Token/cost savings remain **UNVERIFIED** without comparable runtime usage measurements; see `docs/ops/PONYTAIL_STABILITY_RUNBOOK.md`.
+
+Adapted from DietrichGebert's Ponytail (MIT), revision `96608e078b2d5ea607c5c3b8b5a54d1c1fba6846`; provenance and license are in the runbook. This is instruction-only: no external package, plugin, hook, telemetry or session import is enabled.
+
 Hard rules:
 
 - Never assume the prompt's SHA is latest.
