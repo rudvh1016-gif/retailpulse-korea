@@ -14,10 +14,11 @@ for (const width of [320, 390, 430, 820, 1280]) {
     await expect(comparison).toBeVisible();
     await expect(comparison.locator('small')).toBeVisible();
     await expect(preparation).toBeVisible();
-    // At tablet width the original separator remains. Desktop already had no
-    // bottom rule; mobile removes only the first of the two adjacent rules.
-    await expect(comparison).toHaveCSS('border-bottom-width', width > 700 && width < 1000 ? '1px' : '0px');
-    await expect(preparation).toHaveCSS('border-top-width', width < 1000 ? '1px' : '0px');
+    // The approved briefing has one separator on each enclosing group,
+    // never a doubled rule on the first inner preparation item.
+    await expect(comparison).toHaveCSS('border-bottom-width', '0px');
+    await expect(preparation).toHaveCSS('border-top-width', '0px');
+    await expect(report.locator('.focus-preparation-brief')).toHaveCSS('border-top-width', '1px');
     await expect(report.locator('.focus-selected-country-stack')).toHaveCSS('border-top-width', '1px');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
   });

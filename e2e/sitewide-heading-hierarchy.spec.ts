@@ -55,16 +55,16 @@ async function verifyHeadings(page:Page,textScale=1){
   expect(row.markerCount).toBe(1);
   expect(row.markerDisplay,`no heading-prefix marker: ${row.text}`).toBe('none');expect(row.markerWidth).toBe(0);expect(row.markerHeight).toBe(0);expect(row.markerGlyph).toBe('none');
   if(row.approvedBand){
-   expect([row.paddingStart,row.paddingEnd,row.border,row.background]).toEqual([0,0,'0px','rgba(0, 0, 0, 0)']);
+   expect([row.paddingStart,row.paddingEnd,row.border,row.background]).toEqual([row.flowItem&&page.viewportSize()!.width>600?13:0,0,'0px','rgba(0, 0, 0, 0)']);
    expect(row.iconCount).toBe(0);
   }else expect(row.paddingStart,`no reserved marker inset: ${row.text}`).toBe(0);
-  for(const [index,pseudo] of row.pseudo.entries()){if(row.mobileFlowRail&&index===0){expect(pseudo.content).toBe('""');expect(pseudo.display).toBe('block');}else {expect(pseudo.content).toBe('none');expect(pseudo.display).toBe('none');}}
+  for(const [index,pseudo] of row.pseudo.entries()){if((row.mobileFlowRail||(row.flowItem&&page.viewportSize()!.width>600))&&index===0){expect(pseudo.content).toBe('""');expect(pseudo.display).toBe('block');}else {expect(pseudo.content).toBe('none');expect(pseudo.display).toBe('none');}}
   // Removing a prefix must not require centered/right-aligned titles to move.
   if(row.role==='page'&&row.leftAligned)expect(row.textLeft,`title aligns with its own content edge: ${row.text}`).toBeCloseTo(row.contentLeft,1);
   expect(row.whiteSpace).toBe('normal');
   expect(row.clipped,`unclipped heading: ${row.text}`).toBe(false);
   const palette={page:['rgb(34, 35, 38)','750'],section:['rgb(34, 35, 38)','700'],subsection:['rgb(34, 35, 38)','600']} as const;
-  const [color,weight]=row.flowItem?[page.viewportSize()!.width<=600?'rgb(49, 87, 119)':'rgb(34, 35, 38)','700']:row.approvedBand?['rgb(34, 35, 38)','600']:row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
+  const [color,weight]=row.flowItem?[page.viewportSize()!.width<=600?'rgb(49, 87, 119)':'rgb(16, 39, 67)','700']:row.approvedBand?['rgb(34, 35, 38)','600']:row.blackMiddle?['rgb(34, 35, 38)','700']:palette[row.role as keyof typeof palette];
   expect([row.color,row.weight]).toEqual([color,row.staticCjk?'600':weight]);
   expect(row.fontReady,`requested shipped font loaded: ${row.text}`).toBe(true);
   expect(row.opacity).toBe('1');
@@ -92,7 +92,7 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  await expect(titles).toHaveCount(5);await page.evaluate(()=>document.fonts.ready);
  const rows=await titles.evaluateAll(nodes=>nodes.map(node=>{
   const style=getComputedStyle(node),rect=node.getBoundingClientRect(),body=node.nextElementSibling?.getBoundingClientRect(),marker=node.querySelector(':scope > .heading-marker');
-  return {wait:!!node.closest('[data-testid="glance-key-wait"]'),markerDisplay:marker?getComputedStyle(marker).display:null,markerWidth:marker?.getBoundingClientRect().width,text:node.textContent?.trim(),tag:node.tagName,size:style.fontSize,weight:style.fontWeight,color:style.color,
+  return {staff:!!node.closest('.staff-brief-grid'),wait:!!node.closest('[data-testid="glance-key-wait"]'),markerDisplay:marker?getComputedStyle(marker).display:null,markerWidth:marker?.getBoundingClientRect().width,text:node.textContent?.trim(),tag:node.tagName,size:style.fontSize,weight:style.fontWeight,color:style.color,
    family:style.fontFamily,lineHeight:style.lineHeight,spacing:style.letterSpacing,bottomMargin:style.marginBottom,
    staticCjk:!!node.closest('.lang-ja,.lang-zh,[lang="ja"],[lang="zh"]'),
    x:rect.x,y:rect.y,width:rect.width,height:rect.height,bodyGap:body?body.top-rect.bottom:null,
@@ -100,18 +100,20 @@ async function verifyAirportFlowTitles(page:Page,enlarged=false){
  }));
  for(const row of rows){
   expect(row.tag).toBe('H3');expect(row.text).not.toMatch(/^0[123] /);expect(row.markerDisplay).toBe('none');expect(row.markerWidth).toBe(0);
-  const mobile=page.viewportSize()!.width<=600,margin=mobile&&row.wait?12:mobile&&page.viewportSize()!.width<=600?8:10;
-  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([mobile?(enlarged?'28px':'14px'):(enlarged?'32px':'16px'),row.staticCjk?'600':'700',mobile?(row.wait?'rgb(237, 244, 252)':'rgb(49, 87, 119)'):'rgb(34, 35, 38)',margin+'px']);
+  const mobile=page.viewportSize()!.width<=600,margin=mobile&&row.wait?12:mobile?8:row.staff?14:18;
+  expect([row.size,row.weight,row.color,row.bottomMargin]).toEqual([mobile?(enlarged?'28px':'14px'):(enlarged?'32px':'16px'),row.staticCjk?'600':'700',mobile?(row.wait?'rgb(237, 244, 252)':'rgb(49, 87, 119)'):(row.wait?'rgb(242, 246, 252)':'rgb(16, 39, 67)'),margin+'px']);
   expect([row.family,row.lineHeight,row.spacing]).toEqual([rows[0].family,rows[0].lineHeight,rows[0].spacing]);
   expect(row.bodyGap).not.toBeNull();expect(row.bodyGap!).toBeGreaterThanOrEqual(margin-1);expect(row.bodyGap!).toBeLessThanOrEqual(margin+1);
   expect(row.overflow).toBeLessThanOrEqual(1);
  }
  for(const title of await titles.all())await expect(title).toHaveAccessibleName(await headingName(title));
  const width=page.viewportSize()!.width;
- if(width>700){
+ if(width>900){
   expect(rows[0].y).toBeCloseTo(rows[1].y,0);expect(rows[1].y).toBeCloseTo(rows[2].y,0);
   expect(rows[3].y).toBeCloseTo(rows[4].y,0);expect(rows[3].x).toBeCloseTo(rows[0].x,0);
-  expect(rows[3].width).toBeCloseTo(rows[0].width,0);expect(rows[4].x).toBeCloseTo(rows[1].x,0);expect(rows[4].width).toBeGreaterThan(rows[3].width);
+  expect(rows[4].width).toBeCloseTo(rows[3].width,0);expect(rows[4].x).toBeGreaterThan(rows[3].x+rows[3].width);
+ }else if(width>600){
+  expect(rows[1].y).toBeCloseTo(rows[2].y,0);expect(rows[1].y).toBeGreaterThan(rows[0].y+rows[0].height);expect(rows[4].y).toBeGreaterThan(rows[3].y+rows[3].height);expect(rows[4].x).toBeCloseTo(rows[3].x,0);
  }else{
   for(let i=1;i<5;i++){expect(rows[i].x).toBeCloseTo(rows[0].x-(width<=600?4:0),0);expect(rows[i].y).toBeGreaterThan(rows[i-1].y+rows[i-1].height);}
  }

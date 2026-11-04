@@ -26,16 +26,16 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
   await expect(band).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(band).toHaveCSS('border-top-width','0px');await expect(band).toHaveCSS('padding-left','0px');await expect(band).toHaveCSS('font-size','16px');await expect(band).toHaveCSS('font-weight','600');
   await expect(band.locator('svg.ui-line-icon')).toHaveCount(0);
  }
- await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',width===320?'20px':'28px');
+ await expect(page.locator('.focus-passenger-total')).toHaveCSS('font-size',lang==='ko'?(width<=700?'38px':'44px'):(width===320?'20px':'28px'));
  for(const sentence of await page.locator('.focus-selected-country-changes:not([aria-label])>p').all())expect((await sentence.innerText()).trim()).not.toMatch(/\.$/);
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]');await expect(flow.locator('.airport-flow-item-title')).toHaveCount(5);
  for(const heading of await flow.locator('.airport-flow-item-title').all()){await expect(heading.locator('.ui-line-icon')).toHaveCount(0);await expect(heading).toHaveCSS('font-size',width<=600?'14px':'16px');await expect(heading).toHaveCSS('font-weight',lang==='zh'||lang==='ja'?'600':'700');}
- for(const metric of await flow.locator(':scope > a > strong').all()){const wait=await metric.evaluate(el=>el.parentElement?.getAttribute('data-testid')==='glance-key-wait');await expect(metric).toHaveCSS('font-size',width<=600?(wait?'21px':'19px'):'14px');await expect(metric).toHaveCSS('font-weight',width<=600?(wait?'700':'650'):'400');}
+ for(const metric of await flow.locator(':scope > a > strong').all()){const wait=await metric.evaluate(el=>el.parentElement?.getAttribute('data-testid')==='glance-key-wait');await expect(metric).toHaveCSS('font-size',width<=600?(wait?'21px':'19px'):'20px');await expect(metric).toHaveCSS('font-weight',width<=600?(wait?'700':'650'):'650');}
  const content=flow.locator('.staff-brief-grid');
  for(const node of await content.locator('p:visible,h4:visible').all()){await expect(node).toHaveCSS('font-size','14px');await expect(node).toHaveCSS('font-weight','400');}
  for(const node of await flow.locator(':scope > a > small,.staff-brief-grid small:visible').all()){await expect(node).toHaveCSS('font-size',width<=600&&await node.evaluate(el=>el.matches('.glance-insights>a>small,.staff-brief-grid>section>small'))?'11px':'12px');await expect(node).toHaveCSS('font-weight','400');}
  const routeDetails=content.locator('.staff-route-details');await expect(routeDetails).not.toHaveAttribute('open','');await routeDetails.locator('summary').focus();await page.keyboard.press('Enter');await expect(routeDetails).toHaveAttribute('open','');
- if(width>600)for(const node of await flow.locator(':scope > a > strong b,:scope > a > strong span,.staff-brief-grid b:visible,.staff-brief-grid strong:visible').all())await expect(node).toHaveCSS('font-weight','400');
+ if(width>600)for(const node of await flow.locator('.staff-brief-grid b:visible,.staff-brief-grid strong:visible').all())await expect(node).toHaveCSS('font-weight','400');
  else for(const node of await flow.locator('.staff-brief-grid b:visible,.staff-brief-grid strong:visible').all())await expect(node).toHaveCSS('font-weight','650');
  for(const control of await content.locator('summary:visible').all()){const basis=await control.evaluate(node=>node.matches('.staff-route-details>summary'));await expect(control).toHaveCSS('font-size',basis?'12px':'14px');await expect(control).toHaveCSS('font-weight','600');}
  expect((await routeDetails.locator('summary').boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -63,7 +63,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
   expect(await brand.evaluate(node=>{const range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0).length;}),'KORETAIL remains on one line').toBe(1);
  }
  await strip.locator('.duty-free-rate-sources>summary').click();
- for(const [day,value]of [['previous','1,432.87'],['next','1,456.12']]){const row=strip.locator(`[data-rate-day="${day}"]`);await expect(row).toBeVisible();await expect(row).toContainText(value);await expect(row.locator('button')).toHaveCount(0);}
+ const todayRow=strip.locator('[data-rate-day="today"]');await expect(todayRow).toBeVisible();await expect(todayRow).toContainText('1,400.67');await expect(todayRow.locator('button')).toHaveCount(0);
+ await expect(strip.locator('[data-rate-day="previous"],[data-rate-day="next"]')).toHaveCount(0);
  const toggle=strip.locator('.duty-free-monthly-toggle');await expect(toggle).toHaveAttribute('aria-expanded','false');expect(monthlyReads).toBe(0);expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await toggle.focus();await page.keyboard.press('Enter');await expect(toggle).toHaveAttribute('aria-expanded','true');await expect(strip.locator('.duty-free-monthly-chart circle')).toHaveCount(1);await strip.getByRole('slider').focus();await page.keyboard.press('End');await expect(strip.locator('.duty-free-month-readout')).toContainText('1,400.67');
  await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','false');await expect(strip.locator('.duty-free-monthly-chart')).toHaveCount(0);await expect(toggle).toBeFocused();
@@ -91,7 +92,8 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: empty or failed 
   const toggle=strip.locator('.duty-free-monthly-toggle');await toggle.focus();await page.keyboard.press('Enter');
   await expect(strip.locator('.duty-free-monthly [role="status"]')).toHaveText(failure?({ko:'최근 환율 조회 실패',en:'Recent rates could not be loaded',zh:'近期汇率读取失败',ja:'直近の為替を取得できません'} as const)[lang]:({ko:'자료 없음',en:'No data',zh:'暂无数据',ja:'データなし'} as const)[lang]);
   await expect(strip.locator('.duty-free-monthly-chart circle')).toHaveCount(0);if(failure)await expect(strip.locator('.duty-free-monthly-chart')).toHaveCount(0);else await expect(strip.locator('.duty-free-monthly-chart')).not.toContainText('0.00');
-  for(const day of ['previous','next'])await expect(strip.locator(`[data-rate-day="${day}"]`)).not.toContainText('1,400.67');
+  await expect(strip.locator('[data-rate-day="previous"],[data-rate-day="next"]')).toHaveCount(0);
+  await expect(strip.locator('[data-rate-day="today"]')).toContainText('1,400.67');
   await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','false');
  }
 });

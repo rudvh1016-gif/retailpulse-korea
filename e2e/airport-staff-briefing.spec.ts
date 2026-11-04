@@ -32,12 +32,12 @@ for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins 
  expect(briefingBox!.width).toBeCloseTo(flowBox!.width,0);
  await expect(briefing.locator('.staff-brief-heading small')).toHaveCSS('font-size','11px');
  const sourceBox=await briefing.locator('.staff-brief-heading').boundingBox(),timeBox=await briefing.locator('.staff-brief-grid>section').first().boundingBox();
- expect(timeBox!.y-(sourceBox!.y+sourceBox!.height)).toBeGreaterThanOrEqual(width<=700?24:16);
+ expect(timeBox!.y-(sourceBox!.y+sourceBox!.height)).toBeGreaterThanOrEqual(width<=600?24:12);
  const basis=briefing.locator('.staff-route-details');
  await expect(basis.locator('summary')).toHaveCSS('font-size','12px');expect((await basis.locator('summary').boundingBox())!.height).toBeGreaterThanOrEqual(44);
  const routeSection=briefing.locator('.staff-brief-grid>section').nth(1);
- const upper=await flow.getByTestId('glance-key-upcoming').boundingBox(),lower=await routeSection.boundingBox();
- if(width>700)expect(lower!.x).toBeCloseTo(upper!.x,1);
+ const lower=await routeSection.boundingBox();
+ if(width>900){const first=await briefing.locator('.staff-brief-grid>section').first().boundingBox();expect(lower!.width).toBeCloseTo(first!.width,1);expect(lower!.x).toBeGreaterThan(first!.x+first!.width);expect(lower!.y).toBeCloseTo(first!.y,1);}
  else {const first=await briefing.locator('.staff-brief-grid>section').first().boundingBox();expect(lower!.x).toBeCloseTo(first!.x,1);expect(lower!.y).toBeGreaterThan(first!.y+first!.height);}
  const labels=briefing.locator('.staff-terminal-label');expect(await labels.count()).toBeGreaterThan(0);
  const colors={T1:'rgb(161, 45, 63)',T2:'rgb(36, 87, 166)',CONCOURSE:'rgb(23, 103, 91)'};
@@ -63,8 +63,8 @@ for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins 
  await expect(basis.locator('.staff-route-sample')).toHaveCSS('white-space','nowrap');
  await page.keyboard.press('Enter');await expect(basis).not.toHaveAttribute('open','');
  const changeBlock=page.locator('.focus-report .focus-selected-country-changes').first();
- await expect(changeBlock).toHaveCSS('border-bottom-width',width<=700||width>=1000?'0px':'1px');
- await expect(page.locator('.focus-report .focus-preparation-brief>div:first-child')).toHaveCSS('border-top-width',width>=1000?'0px':'1px');
+ await expect(changeBlock).toHaveCSS('border-bottom-width','0px');
+ await expect(page.locator('.focus-report .focus-preparation-brief>div:first-child')).toHaveCSS('border-top-width','0px');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`navy-home-${width}.png`)});
  await briefing.scrollIntoViewIfNeeded();await briefing.screenshot({path:info.outputPath(`navy-staff-${width}.png`)});
