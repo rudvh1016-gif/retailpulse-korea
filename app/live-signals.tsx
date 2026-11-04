@@ -16,7 +16,7 @@ import { pc } from '../lib/personal-copy';
 import { SeoulContextCard, SeoulObservationScene, contextText } from "./operational-context";
 import type { SeoulContext } from "../lib/seoul-context";
 import type { compareComposition } from "../lib/airport-composition-history";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 // The summary reader, the load message and the header date chip live in ./live-summary so the
 // screens that need only those (the home among them) do not download the Seoul signals with them.
 import { airportLocale, LiveLoadMessage, nextKstMidnight, useLiveSummary } from "./live-summary";
@@ -931,6 +931,7 @@ const unfinishedYear = (value: string) => value < "1000-01-01";
 export function DateNavigator({
   lang, date, onChange, historyHref, airportDates = false, modernCalendar = false, compactDatePicker = false,
 }: { lang: Lang; date: string | null; onChange: (date: string | null) => void; historyHref?: string; airportDates?: boolean; modernCalendar?: boolean; compactDatePicker?: boolean }) {
+  const dayDescriptionId = useId();
   const summary = useLiveSummary(date);
   const [navigation, setNavigation] = useState(summary);
   if (summary && summary !== navigation) setNavigation(summary);
@@ -1016,7 +1017,7 @@ export function DateNavigator({
       />
     </label>;
   return <nav className="date-nav" data-selected-date={selected} aria-label={dateNavText.label[lang]}>
-    <div className="date-nav-shortcuts" role="group">
+    <div className="date-nav-shortcuts" role="group" aria-label={dateNavText.label[lang]}>
       {shortcuts.map(([value, label]) => <button
         key={value}
         type="button"
@@ -1024,8 +1025,9 @@ export function DateNavigator({
         aria-current={selected === value ? "date" : undefined}
         aria-pressed={selected === value}
         aria-label={label}
+        aria-describedby={`${dayDescriptionId}-${value}`}
         onClick={() => onChange(value === today ? null : value)}
-      ><span>{label}</span><time dateTime={value}>{new Intl.DateTimeFormat(airportLocale(lang), {
+      ><span>{label}</span><time id={`${dayDescriptionId}-${value}`} dateTime={value}>{new Intl.DateTimeFormat(airportLocale(lang), {
         timeZone: "Asia/Seoul", month: "numeric", day: "numeric", weekday: "short",
       }).format(new Date(`${value}T12:00:00+09:00`))}</time></button>)}
     </div>

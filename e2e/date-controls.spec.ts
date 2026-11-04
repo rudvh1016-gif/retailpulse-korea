@@ -37,7 +37,7 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
      for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeCloseTo(0, 1);
      for (const button of await buttons.all()) await expect(button).toHaveCSS('text-align', 'left');
     } else {
-     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeGreaterThanOrEqual(15.5);
+     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeCloseTo(0, 1);
     }
     const row = await group.boundingBox(), parent = await group.evaluate(node => {
      const rect = node.parentElement!.getBoundingClientRect();
@@ -49,11 +49,10 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
      expect(row!.x).toBeCloseTo(parent.left, 1);
     } else {
      expect(row!.x).toBeCloseTo(parent.left, 1);
-     // Owner removed the grey gutter: only the buttons carry the navy selection.
+     // Day choices form a full-width, white-first rail on phones.
      await expect(group).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
      for(const button of await buttons.all()){
-      const selected=await button.getAttribute('aria-pressed')==='true';
-      await expect(button).toHaveCSS('background-color',selected?'rgb(36, 57, 79)':'rgb(237, 242, 246)');
+      await expect(button).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
       await expect(button).toHaveCSS('border-left-width','0px');
       await expect(button).toHaveCSS('border-right-width','0px');
      }
@@ -127,7 +126,7 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   const personal=page.locator('.date-nav-shortcuts button');
   await expect(personal).toHaveCount(3);
   expect((await personal.first().boundingBox())!.height).toBeGreaterThanOrEqual(46);
-  expect((await personal.first().boundingBox())!.height).toBeLessThan(52);
+  expect((await personal.first().boundingBox())!.height).toBeGreaterThanOrEqual(56);
   await personal.last().focus();await personal.last().press('Space');
   await expect(personal.last()).toHaveAttribute('aria-pressed','true');
   await expectDateSelection(page, '2026-09-01');

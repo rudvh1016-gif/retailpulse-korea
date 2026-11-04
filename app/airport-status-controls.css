@@ -1,5 +1,4 @@
-/* Equal-width phone menu slots keep the first text at the page edge.
-   Desktop and the existing date-shortcut spacing remain unchanged. */
+/* Equal-width phone menu slots keep the first text at the page edge. */
 @media (max-width: 600px) {
   :root body .app .airport-view > #airport-data-flow,
   :root body .app .airport-view > .airport-context-nav {
@@ -44,26 +43,92 @@
     display: none;
   }
 
-  :root body .app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts {
-    width: max-content;
-    max-width: 100%;
-    flex: 0 1 auto;
-    gap: clamp(16px, 4.5vw, 20px);
-    margin-inline: 0;
-    background-color: transparent;
-  }
 }
 
-/* Phone date choices carry the navy selection; their gaps remain the page white. */
-@media (max-width: 600px) and (forced-colors: none) {
- :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] {
-  border-inline:0; background:#edf2f6; color:#24394f;
- }
- :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"] {
-  background:#24394f; color:#fff;
- }
- :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time {color:inherit}
- :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:focus-visible {outline:2px solid #24394f;outline-offset:2px}
+/* Airport day navigation: one quiet, evenly spaced reading rail.
+   This scoped rule owns the final appearance across the earlier shared date
+   styles. Dates, KST clock, stored-date access and request behavior are unchanged. */
+:root body .app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  flex:0 1 420px;
+  width:100%;
+  max-width:420px;
+  gap:0;
+  margin-inline:0;
+  border:0;
+  border-bottom:1px solid #e3e5e8;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+:root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  min-width:0;
+  min-height:56px;
+  width:100%;
+  padding:8px 6px 10px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#626870;
+  box-shadow:none;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+  font-size:14px;
+  font-weight:var(--weight-regular);
+  line-height:1.4;
+  letter-spacing:-.01em;
+  text-align:center;
+  touch-action:manipulation;
+}
+:root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time {
+  color:#626870;
+  font-size:12px;
+  font-weight:var(--weight-regular);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+  white-space:normal;
+}
+:root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"] {
+  color:var(--ink);
+  font-weight:var(--weight-strong);
+}
+:root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"] time {color:var(--ink)}
+:root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"]::after {
+  content:"";
+  display:block;
+  position:absolute;
+  inset:auto 18% -1px;
+  height:2px;
+  border-radius:0;
+  background:currentColor;
+}
+:root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:focus-visible {
+  outline:2px solid var(--ink);
+  outline-offset:3px;
+  z-index:1;
+}
+@media(hover:hover) {
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:hover {background:#f7f7f7;color:var(--ink)}
+}
+:root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:active {background:#f0f1f2}
+@media(max-width:600px) {
+  :root body .app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts {max-width:none;flex-basis:100%}
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] {font-size:13px}
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time {font-size:11px}
+}
+@media(forced-colors:active) {
+  :root body .app .airport-view .airport-date-reserved .date-nav > .date-nav-shortcuts {border-bottom-color:CanvasText}
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] {background:Canvas;color:CanvasText;outline:0}
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed] time {color:CanvasText}
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed="true"]::after {background:Highlight}
+  :root body .app .airport-view .airport-date-reserved .date-nav .date-nav-shortcuts > button[aria-pressed]:focus-visible {outline:2px solid Highlight}
 }
 
 /* Phone airport details: remove requested repeat entries, retaining their data on other views. */

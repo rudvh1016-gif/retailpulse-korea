@@ -1,0 +1,22 @@
+[
+  [
+    "import { useEffect, useId, useRef, useState, type ReactNode }",
+    "import { useEffect, useRef, useState, type ReactNode }"
+  ],
+  [
+    "  const dayDescriptionId = useId();\n",
+    ""
+  ],
+  [
+    "<div className=\"date-nav-shortcuts\" role=\"group\" aria-label={dateNavText.label[lang]}>",
+    "<div className=\"date-nav-shortcuts\" role=\"group\">"
+  ],
+  [
+    "        aria-describedby={`${dayDescriptionId}-${value}`}\n",
+    ""
+  ],
+  [
+    "<time id={`${dayDescriptionId}-${value}`} dateTime={value}>",
+    "<time dateTime={value}>"
+  ]
+]

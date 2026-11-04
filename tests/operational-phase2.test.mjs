@@ -212,6 +212,11 @@ for(const [file,patches] of Object.entries(JSON.parse(readFileSync('tests/fixtur
 const mobileDisplayPatches=JSON.parse(readFileSync('tests/fixtures/mobile-airport-ui-20261101-approved-patches.json','utf8'));
 assert.equal(mobileDisplayPatches.length,5);
 approvedCanonicalPatches['app/live-signals.tsx']=[...mobileDisplayPatches,...(approvedCanonicalPatches['app/live-signals.tsx']??[])];
+// Owner requested the airport day-selector redesign. Reverse only these five
+// accessibility attributes/hook edits; every date calculation and original hash stays locked.
+const airportDayRailPatches=JSON.parse(readFileSync('tests/fixtures/airport-day-rail-20261104-approved-patches.json','utf8'));
+assert.equal(airportDayRailPatches.length,5);
+approvedCanonicalPatches['app/live-signals.tsx']=[...airportDayRailPatches,...(approvedCanonicalPatches['app/live-signals.tsx']??[])];
 // Owner-requested A4 freshness/failure accuracy: only three observer-projection hunks.
 // Keep the API key fixed and restore the unchanged canonical bytes/hash; no SQL/auth/schedule edits.
 const checkpointObservationPatches=JSON.parse(readFileSync('tests/fixtures/checkpoint-observation-20261101-approved-patches.json','utf8'));
