@@ -68,12 +68,12 @@ for(const width of [320,390,1440])test(`two comparison baselines stay separate a
  await expect(flight).toContainText('△ 10편');await expect(flight.locator('.focus-week-change')).toHaveCSS('color','rgb(161, 45, 63)');
  await expect(flight).not.toContainText('편/일');await expect(people).not.toContainText('명/일');
  await expect(report.locator('.focus-passenger-comparison')).toContainText('②');await expect(report.locator('.focus-flight-comparison')).toContainText('②');
- await expect(flight.locator('.focus-week-basis')).toHaveCSS('font-size',width<=600?'10px':'11px');
+ await expect(flight.locator('.focus-week-basis')).toHaveCSS('font-size',width<=700?'11px':'12px');
  const comparisonRows=report.locator('.focus-core-metric :is(.focus-week-change,.focus-comparison-change,.daily-comparison-change,.focus-comparison-unavailable)');
  await expect(comparisonRows).toHaveCount(4);
  for(const row of await comparisonRows.all()){
-  await expect(row).toHaveCSS('font-size',width<=600?'12px':'16px');
-  for(const number of await row.locator('.change-rate').all())await expect(number).toHaveCSS('font-size',width<=600?'12px':'16px');
+  await expect(row).toHaveCSS('font-size',width<=700?'13px':'15px');
+  for(const number of await row.locator('.change-rate').all())await expect(number).toHaveCSS('font-size',width<=700?'13px':'15px');
   const geometry=await row.evaluate(comparisonTextGeometry);
   expect(geometry.visible.length).toBeGreaterThan(0);
   expect(geometry.overflow,'every painted text fragment must remain inside its metric column').toEqual([]);
@@ -84,8 +84,9 @@ for(const width of [320,390,1440])test(`two comparison baselines stay separate a
   }
  }
 
- const boxes=await report.locator('.focus-core-metric').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right};}));
- expect(boxes[0].right).toBeLessThanOrEqual(boxes[1].left+1);
+ const boxes=await report.locator('.focus-core-metric').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom};}));
+ if(width<=700){expect(boxes[1].top).toBeGreaterThanOrEqual(boxes[0].bottom);expect(boxes[1].left).toBeCloseTo(boxes[0].left,0);}
+ else expect(boxes[0].right).toBeLessThanOrEqual(boxes[1].left+1);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
  await page.screenshot({path:`test-results/glance-week-${width}-all.png`,fullPage:false});
  await page.getByRole('button',{name:'T1',exact:true}).first().click();

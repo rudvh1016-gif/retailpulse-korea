@@ -159,7 +159,7 @@
  }
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a{display:flex;flex-direction:column;gap:0;align-items:stretch;text-decoration:none}
  :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title{
-  position:relative;padding-inline-start:13px;margin:0 0 18px;font-size:16px!important;line-height:1.45!important;color:#102743!important
+  position:relative;align-self:stretch;padding-inline-start:13px;margin:0 0 18px;font-size:16px!important;line-height:1.45!important;color:#102743!important
  }
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-check{display:none!important}
  :root body .glance-insights[aria-labelledby="airport-staff-briefing-title"] .airport-flow-item-title::before{

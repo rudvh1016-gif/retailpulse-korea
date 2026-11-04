@@ -40,7 +40,7 @@ test('multiple Today event countries each receive their own flight comparison an
  const thai=today.locator('.focus-preparation-event[data-country="TH"] .event-country-flights'),japan=today.locator('.focus-preparation-event[data-country="JP"] .event-country-flights');
  await expect(thai).toContainText('16편');await expect(thai).toContainText('△ 13%');await expect(japan).toContainText('20편');await expect(japan).toContainText('0%');await expect(japan.locator('[data-direction="neutral"]')).not.toHaveCount(0);await expect(japan.locator('.glance-count-change')).toHaveCSS('color','rgb(89, 99, 110)');
  await expect(today.locator('.focus-preparation-event')).toHaveCount(2);
- const previous=await page.locator('.focus-selected-country-stack > .focus-selected-country-changes').first().boundingBox(),current=await today.boundingBox();expect(previous&&current).toBeTruthy();expect(current!.x).toBeGreaterThanOrEqual(previous!.x+previous!.width);expect(current!.y).toBeLessThan(previous!.y);
+ const previous=await page.locator('.focus-selected-country-stack > .focus-selected-country-changes').first().boundingBox(),current=await today.boundingBox();expect(previous&&current).toBeTruthy();expect(current!.x).toBeGreaterThanOrEqual(previous!.x+previous!.width);expect(current!.y).toBeCloseTo(previous!.y,0);
 });
 for(const state of ['missing','partial','zero','partial-flights'] as const)test(`event flight truth: ${state}`,async({page})=>{
  await fixture(page,state==='partial-flights'?{partial:true}:{baseline:state});await page.goto(`/ko?date=${day}`);

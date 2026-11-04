@@ -19,6 +19,8 @@ for(const width of [320,390,700,701,768,1440])test(`approved briefing metric lay
  const parts=(await report.locator('.focus-brief-parts').boundingBox())!,weekly=(await report.locator('.focus-week-comparison').first().boundingBox())!;
  expect(parts.y+parts.height).toBeLessThanOrEqual(weekly.y);
  await expect(report.locator('.focus-week-comparison')).toHaveCount(2);
+ const context=report.locator('.focus-selected-country-stack'),topics=context.locator(':scope>.focus-selected-country-changes');
+ if(await topics.count()===1)expect((await topics.first().boundingBox())!.width).toBeCloseTo((await context.boundingBox())!.width,1);
  const evidence=report.locator('.focus-report-basis'),toggle=evidence.locator('summary');
  await toggle.focus();await page.keyboard.press('Enter');await expect(evidence).toHaveAttribute('open','');
  await expect(evidence).toContainText('중복을 제거한 공식 총출국객 수가 아닙니다.');
@@ -28,7 +30,7 @@ for(const width of [320,390,700,701,768,1440])test(`approved briefing metric lay
  expect(metricOverflow,'all metric text remains inside its own column').toEqual([]);
  expect(await report.evaluate(node=>node.scrollWidth<=node.clientWidth+1)).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- await report.screenshot({path:info.outputPath(`approved-brief-${width}.png`)});
+ await report.screenshot({path:info.outputPath(`approved-brief-${width}.png`),style:".topbar,.bottom-nav{visibility:hidden!important}"});
 });
 
 // Synthetic comparison baselines exercise presentation states only. The selected

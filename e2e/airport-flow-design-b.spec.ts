@@ -34,6 +34,7 @@ for(const width of [320,390,430,600,601,700,701,1440])test(`B phone and approved
   }
   for(const topic of await flow.locator(':scope>a:not([data-testid="glance-key-wait"])').all())await expect(topic).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
  }else{
+  for(const card of await flow.locator(':scope>a').all()){const cardBox=(await card.boundingBox())!,titleBox=(await card.locator('.airport-flow-item-title').boundingBox())!;expect(titleBox.x).toBeCloseTo(cardBox.x+21,1);expect(titleBox.width).toBeCloseTo(cardBox.width-42,1);}
   await expect(wait).toHaveCSS('background-color','rgb(16, 43, 80)');await expect(waitNumber).toHaveCSS('font-size','44px');
   await expect(waitNumber).toHaveCSS('font-weight','700');await expect(waitNumber).toHaveCSS('color','rgb(255, 255, 255)');
   await expect(wait.locator('.flow-wait-location')).toHaveCSS('font-size','14px');await expect(wait.locator('.flow-wait-location')).toHaveCSS('font-weight','500');
@@ -55,7 +56,8 @@ for(const width of [320,390,430,600,601,700,701,1440])test(`B phone and approved
  await wait.focus();await expect(wait).toBeFocused();await expect(wait).toHaveCSS('outline-style','solid');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await flow.getByRole('heading',{name:'주목할 공항 흐름',exact:true}).click();
- await flow.screenshot({path:info.outputPath(`airport-flow-${width}.png`)});
+ await page.mouse.move(0,0);
+ await flow.screenshot({path:info.outputPath(`airport-flow-${width}.png`),style:".topbar,.bottom-nav{visibility:hidden!important}"});
 });
 for(const [raw,fresh] of [['60+',true],['0',true],['17',false]] as const)test(`wait truth survives B layout: ${raw} fresh=${fresh}`,async({page})=>{
  await page.setViewportSize({width:390,height:1000});await data(page,raw,fresh);await page.goto('/ko?date='+date);

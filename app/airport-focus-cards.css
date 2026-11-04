@@ -32,6 +32,7 @@
 .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-passenger-calculation>summary{min-height:44px;display:flex;align-items:center;color:#52657a}
 .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-selected-country-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:22px;padding-top:18px;border-top:1px solid #e3e8ee}
 .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-selected-country-stack>.focus-selected-country-changes{grid-column:auto;grid-row:auto;margin:0;padding:0;border:0}
+.airport-focus-shell .focus-report[data-brief-cards=approved] .focus-selected-country-stack>.focus-selected-country-changes:only-child{grid-column:1/-1}
 .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-return-events{display:block}
 .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-preparation-brief{margin-top:18px;padding-top:18px;border-top:1px solid #e3e8ee}
 .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-preparation-brief>div{margin:0;padding:0;border:0}
