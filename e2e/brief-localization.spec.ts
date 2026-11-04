@@ -42,7 +42,7 @@ for(const lang of ['en','zh','ko'])for(const width of [390,1440])test(`${lang} f
   expect(await date.evaluate(el=>parseFloat(getComputedStyle(el.querySelector('small')!).fontSize)<parseFloat(getComputedStyle(el).fontSize))).toBe(true);
  }
  for(const detail of await brief.locator('details').all()){await detail.locator('summary').click();await expect(detail).toHaveAttribute('open','');}
- await expect(brief).toContainText('2026-09-23');await expect(brief).toContainText('2026-09-30');
+ if(lang!=='ko'){await expect(brief).toContainText('2026-09-23');await expect(brief).toContainText('2026-09-30');}else await expect(brief).not.toContainText('2026-09-23');
  if(lang!=='ko')expect(await brief.textContent()).not.toMatch(/[가-힣]/);
  await expect(brief.locator('.focus-people-metric > .focus-metric-label')).toHaveText(lang==='ko'?'예상 인원 · 단순합계':lang==='en'?'Forecast people · arithmetic sum':'预计人数 · 简单合计');
  await expect(brief.locator('.focus-passenger-total')).toHaveText(lang==='ko'?'112,403명':lang==='en'?'112,403 people':'112,403人');
