@@ -12,9 +12,14 @@ for(const width of [390,1440])test(`briefing label removal and peer typography l
  expect(await report.evaluate(node=>node.lastElementChild?.classList.contains('focus-preparation-brief'))).toBe(true);
  const flow=page.locator('.glance-insights[aria-labelledby="airport-staff-briefing-title"]'),reference=flow.locator('.staff-brief-grid>section:first-child>p').first();
  await expect(reference).toBeVisible();
- const typography=await reference.evaluate(el=>{const s=getComputedStyle(el);return {fontFamily:s.fontFamily,fontSize:s.fontSize,lineHeight:s.lineHeight,fontWeight:s.fontWeight};});
- for(const item of await flow.locator('.staff-brief-grid>section:nth-child(2) p,.staff-brief-grid>section:nth-child(2) h4').all()){
-  for(const [property,value] of Object.entries(typography))expect(await item.evaluate((el,p)=>getComputedStyle(el)[p as keyof CSSStyleDeclaration],property)).toBe(value);
- }
+ // Capture one synchronous DOM snapshot: public data may refresh the holiday
+ // list between awaits, so a previously enumerated nth locator can disappear.
+ const typography=await flow.evaluate(root=>{
+  const peer=root.querySelector('.staff-brief-grid>section:first-child>p')!;
+  const read=(el:Element)=>{const s=getComputedStyle(el);return {fontFamily:s.fontFamily,fontSize:s.fontSize,lineHeight:s.lineHeight,fontWeight:s.fontWeight};};
+  return {reference:read(peer),bodies:[...root.querySelectorAll('.staff-brief-grid>section:nth-child(2) p,.staff-brief-grid>section:nth-child(2) h4')].map(read)};
+ });
+ expect(typography.bodies.length).toBeGreaterThan(0);
+ for(const body of typography.bodies)expect(body).toEqual(typography.reference);
  await page.screenshot({path:info.outputPath(`briefing-polish-${width}.png`),fullPage:true});
 });
