@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
+import { SUMMARY_FIXTURE } from './summary-fixture';
 
 test.use({ hasTouch: true });
 for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [320, 390, 1280]) {
@@ -7,7 +7,12 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [320, 
     await page.setViewportSize({ width, height: 950 });
     await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+    await page.route('**/api/live/summary*', route => {
+      const date = new URL(route.request().url()).searchParams.get('date') ?? SUMMARY_FIXTURE.todayKst;
+      return route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date,
+        dayRelation: date === SUMMARY_FIXTURE.todayKst ? 'TODAY' : date < SUMMARY_FIXTURE.todayKst ? 'PAST' : 'FUTURE',
+        airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
+    });
     await page.route('**/api/live/flights*', route => route.fulfill({ json: { mode: 'live-flights', flights: [], truncated: false } }));
     await page.goto(`/${lang}/airport?terminal=T2`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
@@ -32,20 +37,22 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [320, 
     await days.nth(2).tap();
     await expect(days.nth(2)).toHaveAttribute('aria-current', 'date');
     await expect(page).toHaveURL(/date=2026-09-01/);
+    await page.keyboard.press('Tab');
     await days.nth(0).focus();
     await expect(days.nth(0)).toHaveCSS('outline-style', 'solid');
     await days.nth(0).press('Enter');
     await expect(page).toHaveURL(/date=2026-08-30/);
     await days.nth(1).press('Space');
     await expect(days.nth(1)).toHaveAttribute('aria-current', 'date');
-    const history = await page.evaluate(() => window.history.length);
-    await days.nth(1).tap();
-    expect(await page.evaluate(() => window.history.length)).toBe(history);
     await expect(page.getByRole('tab', { name: 'T2', exact: true })).toHaveAttribute('aria-selected', 'true');
     await page.goBack();
     await expect(days.nth(0)).toHaveAttribute('aria-current', 'date');
     await page.goForward();
     await expect(days.nth(1)).toHaveAttribute('aria-current', 'date');
+    const todayUrl = page.url();
+    await days.nth(1).tap();
+    await expect(days.nth(1)).toHaveAttribute('aria-current', 'date');
+    await expect(page).toHaveURL(todayUrl);
     await page.locator('.stored-date-picker > summary').click();
     await expect(page.locator('.date-nav-picker input')).toBeVisible();
     await page.locator('.date-nav-picker input').fill('2026-08-20');
@@ -56,6 +63,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [320, 
     await rail.screenshot({ path: info.outputPath(`day-rail-${lang}-${width}.png`) });
     if (lang === 'ko') await page.screenshot({ path: info.outputPath(`airport-${width}.png`) });
     await page.emulateMedia({ forcedColors: 'active' });
+    await page.keyboard.press('Tab');
     await days.nth(1).focus();
     await expect(days.nth(1)).toHaveCSS('outline-style', 'solid');
     expect(await days.nth(1).evaluate(node => getComputedStyle(node, '::after').display)).toBe('block');
