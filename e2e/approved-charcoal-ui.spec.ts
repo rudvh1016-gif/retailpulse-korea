@@ -63,7 +63,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [320,1440])t
   expect(await brand.evaluate(node=>{const range=document.createRange();range.selectNodeContents(node);return [...range.getClientRects()].filter(rect=>rect.width>0&&rect.height>0).length;}),'KORETAIL remains on one line').toBe(1);
  }
  await strip.locator('.duty-free-rate-sources>summary').click();
- for(const [day,value]of [['previous','1,432.87'],['next','1,456.12']]){const row=strip.locator(`[data-rate-day="${day}"]`);await expect(row).toBeVisible();await expect(row).toContainText(value);await expect(row.locator('button')).toHaveCount(0);}
+ const todayRow=strip.locator('[data-rate-day="today"]');await expect(todayRow).toBeVisible();await expect(todayRow).toContainText('1,400.67');await expect(todayRow.locator('button')).toHaveCount(0);
+ await expect(strip.locator('[data-rate-day="previous"],[data-rate-day="next"]')).toHaveCount(0);
  const toggle=strip.locator('.duty-free-monthly-toggle');await expect(toggle).toHaveAttribute('aria-expanded','false');expect(monthlyReads).toBe(0);expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await toggle.focus();await page.keyboard.press('Enter');await expect(toggle).toHaveAttribute('aria-expanded','true');await expect(strip.locator('.duty-free-monthly-chart circle')).toHaveCount(1);await strip.getByRole('slider').focus();await page.keyboard.press('End');await expect(strip.locator('.duty-free-month-readout')).toContainText('1,400.67');
  await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','false');await expect(strip.locator('.duty-free-monthly-chart')).toHaveCount(0);await expect(toggle).toBeFocused();
@@ -91,7 +92,8 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: empty or failed 
   const toggle=strip.locator('.duty-free-monthly-toggle');await toggle.focus();await page.keyboard.press('Enter');
   await expect(strip.locator('.duty-free-monthly [role="status"]')).toHaveText(failure?({ko:'최근 환율 조회 실패',en:'Recent rates could not be loaded',zh:'近期汇率读取失败',ja:'直近の為替を取得できません'} as const)[lang]:({ko:'자료 없음',en:'No data',zh:'暂无数据',ja:'データなし'} as const)[lang]);
   await expect(strip.locator('.duty-free-monthly-chart circle')).toHaveCount(0);if(failure)await expect(strip.locator('.duty-free-monthly-chart')).toHaveCount(0);else await expect(strip.locator('.duty-free-monthly-chart')).not.toContainText('0.00');
-  for(const day of ['previous','next'])await expect(strip.locator(`[data-rate-day="${day}"]`)).not.toContainText('1,400.67');
+  await expect(strip.locator('[data-rate-day="previous"],[data-rate-day="next"]')).toHaveCount(0);
+  await expect(strip.locator('[data-rate-day="today"]')).toContainText('1,400.67');
   await toggle.focus();await page.keyboard.press('Space');await expect(toggle).toHaveAttribute('aria-expanded','false');
  }
 });

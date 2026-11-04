@@ -20,3 +20,21 @@ test('exchange surface has scoped opaque ink/metadata colors, sticky dismissal a
  assert.match(css,/max-height:calc\(100dvh - 150px - var\(--safe-area-top/);
  assert.match(css,/\[open\] \.duty-free-trigger-open\{display:inline\}/);
 });
+test('today-only panel uses current dated evidence and removes adjacent-day summary',()=>{
+ assert.match(component,/find\(item=>item.current\)/);
+ assert.match(component,/data-rate-day="today"/);
+ assert.doesNotMatch(component,/data-rate-day="previous"|data-rate-day="next"|words.nextMissing|words.caution/);
+ assert.match(component,/words.internet/);
+ assert.match(component,/href=\{dutyFreeSources.shilla\}/);
+});
+test('chart has edge-clamped nonintercepting hover readout, keyboard and touch cancellation',()=>{
+ const chart=readFileSync(new URL('../app/duty-free-monthly-trend.tsx',import.meta.url),'utf8');
+ assert.match(chart,/event.pointerType==='mouse'/);
+ assert.match(chart,/role="tooltip"/);
+ assert.match(chart,/left:`clamp\(0px/);
+ for(const handler of ['onPointerLeave','onPointerCancel','onLostPointerCapture','onBlur','ArrowLeft','ArrowRight','Home','End','Escape'])assert.ok(chart.includes(handler),handler);
+ assert.doesNotMatch(chart,/duty-free-recent-source/);
+ assert.match(chart,/<figcaption>/);
+ assert.match(css,/\.duty-free-recent-tooltip\{[^}]*pointer-events:none/);
+ assert.match(css,/@media\(forced-colors:active\)/);
+});
