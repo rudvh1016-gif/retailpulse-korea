@@ -15,7 +15,7 @@ import dynamic from 'next/dynamic';
 // The glance routes pass the glance in from their server pages (see RetailPulseProps).
 const loadAirportGlance=()=>import('./airport-focus-production').then(module=>({default:module.AirportFocusGlance}));
 const AirportCountryFlow=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportCountryFlow));
-const LazyAirportPreparation=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportPreparation));
+const LazyAirportPreparation=dynamic(()=>import('./airport-preparation-production').then(module=>module.AirportPreparation));
 const LazyAirportGlance=dynamic(loadAirportGlance);
 const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));

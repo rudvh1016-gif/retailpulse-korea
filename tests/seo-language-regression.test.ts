@@ -15,7 +15,8 @@ test('English wrapper copy has no Korean and retains the model truth boundary',(
 });
 
 test('wrapper connects localized copy without altering locale-aware links',()=>{
-  const source=readFileSync(new URL('../app/airport-focus-production.tsx',import.meta.url),'utf8');
+  const source=readFileSync(new URL('../app/airport-focus-production.tsx',import.meta.url),'utf8')
+    +readFileSync(new URL('../app/airport-preparation-production.tsx',import.meta.url),'utf8');
   for(const key of Object.keys(airportFocusCopy('en')).filter(key=>key!=='countries')) assert.ok(source.includes(`{copy.${key}}`),key);
   // The country page alone has an explicitly scoped four-language title;
   // navigation and the remaining copy retain their original localized wiring.

@@ -7,8 +7,15 @@ import snapshot from '../data/airport-focus-preview/arrival-allowances.json';
 import {ArrivalReviewedOverview} from '../app/arrival-reviewed-overview';
 import {readFileSync} from 'node:fs';
 const countries=snapshot.countries as unknown as ArrivalCountry[];
+
+test('home entry keeps the preparation calculator outside its eager dependency graph',()=>{
+ const glance=readFileSync('app/airport-focus-production.tsx','utf8');
+ const route=readFileSync('app/[locale]/[slug]/page.tsx','utf8');
+ assert.doesNotMatch(glance,/arrival-allowances-preview|airport-preparation-production/);
+ assert.match(route,/import \{AirportPreparation\} from "\.\.\/\.\.\/airport-preparation-production"/);
+});
 test('preparation route synchronously supplies its initial screen and reviewed guide before client hydration',()=>{
- const route=readFileSync('app/[locale]/[slug]/page.tsx','utf8'),shell=readFileSync('app/retailpulse-app.tsx','utf8'),production=readFileSync('app/airport-focus-production.tsx','utf8');
+ const route=readFileSync('app/[locale]/[slug]/page.tsx','utf8'),shell=readFileSync('app/retailpulse-app.tsx','utf8'),production=readFileSync('app/airport-preparation-production.tsx','utf8');
  assert.match(route,/AirportPreparation=\{slug === "airport-prepare" \? AirportPreparation : undefined\}/);
  assert.match(shell,/AirportPreparation = LazyAirportPreparation/);
  assert.match(production,/import ArrivalAllowances from '\.\/arrival-allowances-preview'/);

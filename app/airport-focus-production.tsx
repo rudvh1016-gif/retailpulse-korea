@@ -2,47 +2,25 @@
 import {AirportGlanceInsights,AirportCountryInsights} from './airport-period-insights';
 import {HomeCheckpointWaits} from './home-checkpoint-waits';
 import {MonthlyAirportScope} from './monthly-airport-scope';
-import {useEffect,useState,type ComponentProps,type ReactNode} from 'react';
+import {useEffect,useState,type ComponentProps} from 'react';
 import dynamic from 'next/dynamic';
+import {FocusLiveData} from './airport-focus-live-data';
 import AirportGlance from './airport-glance-preview';
 import type {AirportView as AirportViewComponent} from './airport-view';
 const AirportView=dynamic(()=>import('./airport-view').then(module=>module.AirportView));
 import {AirportSceneArtwork} from './airport-scene-model';
 import {AirportRouteCountryPassengers,RoutePassengerPlacement} from './airport-route-country-passengers';
-import {useAirportPassengerStats} from './airport-passenger-stats-client';
-import {AirportFocusData,type FocusTrend} from './airport-focus-data';
 import {CountryBriefing,CountryTrends,HolidayList,OverviewHeadline} from './airport-focus-preview';
 import './preparation-calendar.css';
-import {PreparationArrivalLink} from './preparation-arrival-link';
-import {selectHomeMonthlyCountries,homeMonthlyCountryTrends} from '../lib/home-monthly-countries';
-import {previousMonth} from '../lib/calendar-context.mjs';
 import {useLiveSummary} from './live-summary';
-import {useOfficialCalendar} from './official-calendar-client';
 import type {Lang} from './retailpulse-data';
 import {airportFocusCopy} from './airport-focus-copy';
-import ArrivalAllowances from './arrival-allowances-preview';
 import {deviceAirportScope} from '../lib/airport-scope-preference';
 import type {GlanceWeekReference} from '../lib/glance-week-comparison';
 import {useFlights} from './flights-client';
 import {usePreparedMonth} from './use-prepared-month';
 import {usePresentationClock} from './presentation-clock';
 const ShiftBriefing=dynamic(()=>import('./shift-briefing'));
-const majorRoutes=[['JP','일본'],['CN','중국'],['VN','베트남'],['US','미국'],['TW','대만'],['TH','태국'],['HK','홍콩'],['SG','싱가포르'],['PH','필리핀'],['MY','말레이시아'],['AU','호주'],['CA','캐나다']] as const;
-function FocusLiveData({date,children,home=false}:{date?:string|null;children:ReactNode;home?:boolean}){
- const officialCalendar=useOfficialCalendar();
- const summary=useLiveSummary(date??null),asOf=summary?.todayKst??'',requested=date?.slice(0,7)||asOf.slice(0,7)||null;
- const latest=useAirportPassengerStats(requested);
- const newest=latest.reply?.current.ROUTE_COUNTRY_PASSENGERS?.month??null;
- const months=[latest].flatMap(item=>[item.reply?.current.ROUTE_COUNTRY_PASSENGERS,item.reply?.previous.ROUTE_COUNTRY_PASSENGERS]).filter(item=>item!==undefined);
- const byMonth=new Map(months.map(item=>[item.month,item]));
- const expected:string[]=[];if(newest){let cursor:string|null=newest;for(let i=0;i<6&&cursor;i++){expected.unshift(cursor);cursor=previousMonth(cursor);}}
- const availableRoutes=majorRoutes.filter(([,label],index)=>index<6||months.some(item=>item.rows.some(row=>!row.aggregate&&row.label===label&&row.departures!==null)));
- const trends:FocusTrend[]=newest?availableRoutes.map(([code,label])=>({code,label,points:expected.map(month=>({month,departures:byMonth.get(month)?.rows.find(row=>!row.aggregate&&row.label===label)?.departures??null}))})):[];
- const homeMonthlySelection=home?selectHomeMonthlyCountries(latest.reply?.current.ROUTE_COUNTRY_PASSENGERS,requested,asOf):undefined;
- const homeTrends=homeMonthlySelection?homeMonthlyCountryTrends(homeMonthlySelection,months):undefined;
- const checkedAt=months.map(item=>item.retrievedAt).sort().at(-1)??null;
- return <AirportFocusData.Provider value={{...officialCalendar,asOf,trends,homeMonthlySelection,homeTrends,checkedAt,preview:false,failed:summary===null||latest.failed}}>{children}</AirportFocusData.Provider>;
-}
 function go(lang:Lang,slug:string,date?:string|null){const query=new URLSearchParams();if((lang==='ko'||lang==='zh'||lang==='en')&&slug==='airport-countries')query.set('mode','passengers');if(date)query.set('date',date);window.location.assign(`/${lang}/${slug}${query.size?'?'+query:''}`);}
 export function AirportFocusGlance(props:ComponentProps<typeof AirportGlance>){
  const {lang,selectedDate,industry=null,onIndustryChange,onDateChange,onScopeChange}=props;
@@ -74,5 +52,4 @@ function CountryContents({lang,date}:{lang:Lang;date:string|null}){
  return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail">{lang!=='ko'&&lang!=='zh'&&lang!=='en'&&<h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{({ko:'T1 + T2 국가별 흐름',en:'T1 + T2 Route-country trends',zh:'T1 + T2 航线国家趋势',ja:'T1 + T2 路線国別の推移'})[lang]}</h1>}<MonthlyAirportScope lang={lang}/><p className="focus-lead">{copy.countriesHelp}</p>{month&&<><CountryBriefing lang={lang} month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full lang={lang}/></div></div>;
 }
 export function AirportCountryFlow({lang,date}:{lang:Lang;date:string|null}){return <AirportCountryInsights lang={lang} date={date}><FocusLiveData date={date}><CountryContents lang={lang} date={date}/></FocusLiveData></AirportCountryInsights>;}
-export function AirportPreparation({lang}:{lang:Lang}){const copy=airportFocusCopy(lang);return <FocusLiveData><div className="airport-focus-shell airport-focus-operating"><div className="focus-detail"><h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{copy.prepare}</h1><p className="focus-lead">{copy.prepareHelp}</p><PreparationArrivalLink lang={lang}/><HolidayList lang={lang} full/><ArrivalAllowances lang={lang}/><a className="focus-related" href={`/${lang}/airport-news`}>{copy.newsMore}</a></div></div></FocusLiveData>;}
 
