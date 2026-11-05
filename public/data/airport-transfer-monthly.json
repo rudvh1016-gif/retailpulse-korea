@@ -1,0 +1,217 @@
+{
+  "schemaVersion": "incheon-airline-terminal-monthly-v1",
+  "source": "인천국제공항공사 항공사별 통계",
+  "basis": "OFFICIAL_MONTHLY_ACTUAL",
+  "dailyComparisonUsable": false,
+  "scope": {
+    "airport": "ICN",
+    "aircraft": "PASSENGER_AIRCRAFT",
+    "navigation": "ALL",
+    "routes": "ALL",
+    "passengerCategory": "ALL",
+    "flightsUnit": "flight",
+    "passengersUnit": "person",
+    "period": "calendar_month_KST"
+  },
+  "aggregationRule": "ALL is a reconciliation control. Never add ALL to T1 or T2. Never distribute monthly totals into daily flights.",
+  "observations": [
+    {
+      "airline": "BX",
+      "airlineName": "에어부산",
+      "month": "2025-07",
+      "terminal": "ALL",
+      "flights": {
+        "arrivals": 284,
+        "departures": 284,
+        "total": 568
+      },
+      "passengers": {
+        "arrivals": 51945,
+        "departures": 55919,
+        "total": 107864
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=BX&stYear=2025&stMonth=07&edYear=2025&edMonth=07&terminalId=",
+      "retrievedAt": "2026-10-28T15:32:11.475049Z",
+      "fullResponseSha256": "6d8ecddb2f3cb0eb18f2782bf25d31aab3913dc7bdd5342b16f1e1742549914d",
+      "evidenceSha256": "992e91bc4286fcb315457a6ca831af4fae5426a97cd6ea8a35a86a6ad552e085",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/BX-2025-07-ALL.html.gz"
+    },
+    {
+      "airline": "BX",
+      "airlineName": "에어부산",
+      "month": "2025-07",
+      "terminal": "T1",
+      "flights": {
+        "arrivals": 254,
+        "departures": 254,
+        "total": 508
+      },
+      "passengers": {
+        "arrivals": 45733,
+        "departures": 49695,
+        "total": 95428
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=BX&stYear=2025&stMonth=07&edYear=2025&edMonth=07&terminalId=P01",
+      "retrievedAt": "2026-10-28T15:32:10.673467Z",
+      "fullResponseSha256": "df99dc2f134ebfdd5dd8de82cbb58873b6680566317740bba28eaa6621b85850",
+      "evidenceSha256": "db687bcc814762f6b841c566a4b959900f1bb42a43ae107df1c6666d79cee46a",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/BX-2025-07-P01.html.gz"
+    },
+    {
+      "airline": "BX",
+      "airlineName": "에어부산",
+      "month": "2025-07",
+      "terminal": "T2",
+      "flights": {
+        "arrivals": 30,
+        "departures": 30,
+        "total": 60
+      },
+      "passengers": {
+        "arrivals": 6212,
+        "departures": 6224,
+        "total": 12436
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=BX&stYear=2025&stMonth=07&edYear=2025&edMonth=07&terminalId=P03",
+      "retrievedAt": "2026-10-28T15:32:11.067008Z",
+      "fullResponseSha256": "6eaac02806bd25aa58ea8ef786ce0a873fdc33e30557fd9ac01329c3b51cc9ab",
+      "evidenceSha256": "272274b020101e61f7396b25cac1d65413cc5eb45624af3db7f1d580a92a2256",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/BX-2025-07-P03.html.gz"
+    },
+    {
+      "airline": "OZ",
+      "airlineName": "아시아나항공",
+      "month": "2026-01",
+      "terminal": "ALL",
+      "flights": {
+        "arrivals": 1901,
+        "departures": 1902,
+        "total": 3803
+      },
+      "passengers": {
+        "arrivals": 433964,
+        "departures": 460666,
+        "total": 894630
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=OZ&stYear=2026&stMonth=01&edYear=2026&edMonth=01&terminalId=",
+      "retrievedAt": "2026-10-28T15:32:13.948388Z",
+      "fullResponseSha256": "b79bff02f3801589255ed3d04e96a11395a9023ced2d66c309a009b7b26ffdc2",
+      "evidenceSha256": "c2bc3463d2832050291e6d571932728d28d96ea0564b2e206521dcbd4157e5b8",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/OZ-2026-01-ALL.html.gz"
+    },
+    {
+      "airline": "OZ",
+      "airlineName": "아시아나항공",
+      "month": "2026-01",
+      "terminal": "T1",
+      "flights": {
+        "arrivals": 804,
+        "departures": 804,
+        "total": 1608
+      },
+      "passengers": {
+        "arrivals": 173759,
+        "departures": 196497,
+        "total": 370256
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=OZ&stYear=2026&stMonth=01&edYear=2026&edMonth=01&terminalId=P01",
+      "retrievedAt": "2026-10-28T15:32:13.103157Z",
+      "fullResponseSha256": "d03b2bd5a63aa628364c057d8f3452a44126f8b8ef2f9001c45c7334429be226",
+      "evidenceSha256": "17cc8ef2781ad6d144addec18572ddea8104c19d566cb3b97504791b7d722a46",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/OZ-2026-01-P01.html.gz"
+    },
+    {
+      "airline": "OZ",
+      "airlineName": "아시아나항공",
+      "month": "2026-01",
+      "terminal": "T2",
+      "flights": {
+        "arrivals": 1097,
+        "departures": 1098,
+        "total": 2195
+      },
+      "passengers": {
+        "arrivals": 260205,
+        "departures": 264169,
+        "total": 524374
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=OZ&stYear=2026&stMonth=01&edYear=2026&edMonth=01&terminalId=P03",
+      "retrievedAt": "2026-10-28T15:32:13.546094Z",
+      "fullResponseSha256": "7e4259a1edfdc5caf843ef875312cb8f5b897e796509d109d2c085e64e7b6759",
+      "evidenceSha256": "8ea1665621659330e0b88fa8d0f7ca15116088581f7707640fb0fc0a8ba0f6fa",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/OZ-2026-01-P03.html.gz"
+    },
+    {
+      "airline": "RS",
+      "airlineName": "에어서울",
+      "month": "2025-09",
+      "terminal": "ALL",
+      "flights": {
+        "arrivals": 347,
+        "departures": 346,
+        "total": 693
+      },
+      "passengers": {
+        "arrivals": 59518,
+        "departures": 63030,
+        "total": 122548
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=RS&stYear=2025&stMonth=09&edYear=2025&edMonth=09&terminalId=",
+      "retrievedAt": "2026-10-28T15:32:12.694618Z",
+      "fullResponseSha256": "ad72efadcc27d180668bc978ad27a8642f6ec4938e32aabce9f378ac06361a55",
+      "evidenceSha256": "c1194a73cd6f59a063a3411134895a687e04522200dbb2288a6f1f37a0c9c6f6",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/RS-2025-09-ALL.html.gz"
+    },
+    {
+      "airline": "RS",
+      "airlineName": "에어서울",
+      "month": "2025-09",
+      "terminal": "T1",
+      "flights": {
+        "arrivals": 82,
+        "departures": 80,
+        "total": 162
+      },
+      "passengers": {
+        "arrivals": 13996,
+        "departures": 13805,
+        "total": 27801
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=RS&stYear=2025&stMonth=09&edYear=2025&edMonth=09&terminalId=P01",
+      "retrievedAt": "2026-10-28T15:32:11.908281Z",
+      "fullResponseSha256": "8ed549d27cff9d0cd44e2482de8df095aa187ae651ebc98e4911fb81bdbd9632",
+      "evidenceSha256": "781889c275a714dbe3f96e631806a5e28b60948f4210df507177397030de9c5f",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/RS-2025-09-P01.html.gz"
+    },
+    {
+      "airline": "RS",
+      "airlineName": "에어서울",
+      "month": "2025-09",
+      "terminal": "T2",
+      "flights": {
+        "arrivals": 265,
+        "departures": 266,
+        "total": 531
+      },
+      "passengers": {
+        "arrivals": 45522,
+        "departures": 49225,
+        "total": 94747
+      },
+      "sourceUrl": "https://airinfo.airport.kr/fsmFsn/co_ko/statisticCategoryOfAirline.do?layout=636f5f6b6f40403635314040666e637431&firstYn=&nvgSe=&arplnSe=Y&routeSe=&pas=&airline=RS&stYear=2025&stMonth=09&edYear=2025&edMonth=09&terminalId=P03",
+      "retrievedAt": "2026-10-28T15:32:12.305859Z",
+      "fullResponseSha256": "26683d44beb76b46341e829b5322fcdfb02579370302cc46604a832d6b9efb25",
+      "evidenceSha256": "0130c002fc1f277500d137bce974c04fd5289163ed456250b571267f8329db67",
+      "evidenceType": "VERBATIM_STATISTICS_MODULE_EXCERPT",
+      "evidencePath": "data/airport-transfer-monthly/raw/RS-2025-09-P03.html.gz"
+    }
+  ]
+}
