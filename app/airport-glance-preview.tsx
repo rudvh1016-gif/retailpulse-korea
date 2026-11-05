@@ -41,6 +41,9 @@ function startGlanceReads(){
  const day=requested&&/^\d{4}-\d{2}-\d{2}$/.test(requested)?requested:kstDayOf(new Date(Date.now()).toISOString());
  void loadFlights(day);
  primePreparedMonth(`/api/live/airport-months?month=${encodeURIComponent(day.slice(0,7))}`);
+ // The independent exact-day comparison can overlap the flight read. The
+ // existing hook consumes it once and retains its snapshot/basis checks.
+ primePreparedMonth(`/api/live/glance-week-reference?date=${encodeURIComponent(day)}`);
 }
 if(typeof window!=='undefined')startGlanceReads();
 const copy={

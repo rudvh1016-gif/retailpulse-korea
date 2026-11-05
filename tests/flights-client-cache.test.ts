@@ -77,3 +77,30 @@ test('repeated transport failure stays FAILED and HTTP/invalid JSON never trigge
   reads=0;globalThis.fetch=async()=>{reads++;return new Response('invalid');};assert.equal((await loadFlights('2026-11-04')).status,'FAILED');assert.equal(reads,1);
  }finally{globalThis.fetch=saved;}
 });
+
+test('year and leap-day midnight renew the selected-date cache without changing payload values',async t=>{
+ let now=0,reads=0;
+ t.mock.method(Date,'now',()=>now);
+ for(const [before,after,day] of [
+  ['2026-12-31T14:59:59Z','2026-12-31T15:00:01Z','2027-01-01'],
+  ['2028-02-28T14:59:59Z','2028-02-28T15:00:01Z','2028-02-29'],
+ ]){
+  const urls:string[]=[];
+  const payload={mode:'live-flights',serviceDateKst:day,generatedAt:before,retrievedAt:null,
+   basis:'OFFICIAL_DEPARTURE_SCHEDULE',truncated:false,
+   flights:[{physicalFlightId:day,flightNumber:'KE1',terminal:'T2',gate:null,status:'scheduled',scheduledAt:`${day}T09:00:00+09:00`,aircraftSubtype:null}],
+   terminalFallbacks:{T1:{basis:'OFFICIAL_DEPARTURE_SCHEDULE',flights:[],retrievedAt:null,truncated:false}}};
+  const original=structuredClone(payload);
+  t.mock.method(globalThis,'fetch',async (url:Parameters<typeof fetch>[0])=>{reads++;urls.push(String(url));return Response.json(payload);});
+  now=Date.parse(before);
+  const first=loadFlights(day);assert.equal(loadFlights(day),first);
+  const a=await first;assert.equal(a.status,'OK');assert.deepEqual(a.status==='OK'&&a.payload,original);
+  now=Date.parse(after);
+  const next=loadFlights(day);assert.equal(loadFlights(day),next);
+  const b=await next;assert.equal(b.status,'OK');assert.deepEqual(b.status==='OK'&&b.payload,original);
+  assert.equal(urls.length,2);assert.notEqual(urls[0],urls[1]);
+  assert.ok(urls.every(url=>url.includes(`date=${day}`)));
+  assert.deepEqual(payload,original,'the transport/cache must not mutate nulls, metadata or held basis');
+ }
+ assert.equal(reads,4);
+});

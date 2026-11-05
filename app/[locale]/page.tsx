@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
 import {AirportFocusGlance as AirportGlancePreview} from "../airport-focus-production";
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
+import { isValidKstDay, kstDayOf } from "../../lib/kst";
 
 /**
  * Starts the summary request from the HTML head, so it overlaps the JS
@@ -32,10 +33,17 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildMetadata(locale as SeoLocale);
 }
 
-export default async function LocaleHome({ params }: { params: Promise<{ locale: string }> }) {
+export default async function LocaleHome({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams?: Promise<{ date?: string | string[] }> }) {
   const { locale } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
   preloadLiveSummary();
+  // This overview always reads the selected flight day. Reuse the client's
+  // exact URL so its request can consume this preload before JS has hydrated.
+  const query = await searchParams;
+  const selected = Array.isArray(query?.date) ? query.date[0] : query?.date;
+  const today = kstDayOf(new Date().toISOString());
+  const day = isValidKstDay(selected) ? selected : today;
+  preload(`/api/live/flights?date=${encodeURIComponent(day)}&_day=${today}`, { as: "fetch", crossOrigin: "anonymous" });
   return <>
     <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport-glance" initialScope="airport-home" AirportGlance={AirportGlancePreview} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />
