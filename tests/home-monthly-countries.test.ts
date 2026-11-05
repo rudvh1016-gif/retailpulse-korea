@@ -79,7 +79,7 @@ test('captured 59-row provider snapshot is read in full; regional/unknown labels
 });
 
 test('production connects home selection only; existing twelve-country list, requests and thin interactive chart stay separate',()=>{
- const production=readFileSync(new URL('../app/airport-focus-production.tsx',import.meta.url),'utf8');
+ const production=readFileSync(new URL('../app/airport-focus-live-data.tsx',import.meta.url),'utf8');
  const trends=readFileSync(new URL('../app/airport-focus-trends.tsx',import.meta.url),'utf8');
  assert.match(production,/selectHomeMonthlyCountries\(latest.reply\?\.current.ROUTE_COUNTRY_PASSENGERS,requested,asOf\)/);
  assert.match(production,/const availableRoutes=majorRoutes.filter/);assert.match(trends,/full\|\|context.preview\?context.trends:context.homeTrends\?\?\[\]/);

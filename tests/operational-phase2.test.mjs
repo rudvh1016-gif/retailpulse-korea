@@ -249,6 +249,16 @@ approvedCanonicalPatches['app/retailpulse-app.tsx']=[...moreSharePatches,...(app
 const checkpointRefreshPatches=JSON.parse(readFileSync('tests/fixtures/checkpoint-refresh-20261104-approved-patches.json','utf8'));
 assert.equal(checkpointRefreshPatches.length,5);
 approvedCanonicalPatches['app/live-summary.tsx']=[...checkpointRefreshPatches,...(approvedCanonicalPatches['app/live-summary.tsx']??[])];
+// Owner-requested first-screen performance: only the preparation import target
+// moves. Reverse that exact substitution; preserve all protected UI hashes.
+approvedCanonicalPatches['app/retailpulse-app.tsx']=[[
+ "const LazyAirportPreparation=dynamic(()=>import('./airport-preparation-production').then(module=>module.AirportPreparation));",
+ "const LazyAirportPreparation=dynamic(()=>import('./airport-focus-production').then(module=>module.AirportPreparation));",
+],...(approvedCanonicalPatches['app/retailpulse-app.tsx']??[])];
+approvedCanonicalPatches['app/[locale]/[slug]/page.tsx']=[[
+ 'import {AirportFocusGlance as AirportGlancePreview} from "../../airport-focus-production";\nimport {AirportPreparation} from "../../airport-preparation-production";',
+ 'import {AirportFocusGlance as AirportGlancePreview,AirportPreparation} from "../../airport-focus-production";',
+],...(approvedCanonicalPatches['app/[locale]/[slug]/page.tsx']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');
