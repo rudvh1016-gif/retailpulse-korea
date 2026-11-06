@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE} from './summary-fixture';
-import {NOTICE_WEEK_MS,UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY} from '../lib/update-notice-preference';
+import {NOTICE_WEEK_MS,UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY,UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
+import {clickPassengerNotice,expectPassengerNoticeLanding,passengerNoticeHref} from './helpers/notice-passenger-journey';
 test.use({storageState:{cookies:[],origins:[]}});
 test.beforeEach(async({page})=>{
  await page.addInitScript(()=>{localStorage.setItem('koretail-analytics-consent-v1','false');});
@@ -54,6 +55,28 @@ test('More explicitly reopens a hidden notice without clearing the snooze or unr
  await page.reload();
  await expect(dialog).not.toBeVisible();
  expect(await page.evaluate(key=>localStorage.getItem(key),UPDATE_NOTICE_UNTIL_KEY)).toBe(until);
+});
+test.describe('notice passenger journey',()=>{
+ test.use({hasTouch:true});
+ for(const width of [390,1440]){
+  test(`first entry, delayed target, history and same-page reopening ${width}`,async({page},info)=>{
+   test.setTimeout(90_000);await page.setViewportSize({width,height:width<600?844:900});
+   for(const url of ['**/api/live/summary*','**/api/live/airport-passenger-stats*'])await page.route(url,async route=>{await new Promise(resolve=>setTimeout(resolve,1800));await route.fallback();});
+   await page.goto('/ko');await clickPassengerNotice(page,width);
+   await expect(await expectPassengerNoticeLanding(page,info)).toContainText('31,000');
+   await page.goBack();await expect(page).toHaveURL(url=>url.pathname==='/ko');await expect(page.getByRole('dialog')).not.toBeVisible();
+   await page.goForward();await expectPassengerNoticeLanding(page);
+   // Exercise the same supported reopen event used by the More button, without changing this URL.
+   await page.evaluate(event=>window.dispatchEvent(new Event(event)),UPDATE_NOTICE_OPEN_EVENT);
+   await expect(page.getByRole('dialog')).toBeVisible();await clickPassengerNotice(page,width);await expectPassengerNoticeLanding(page);
+   await page.screenshot({path:info.outputPath(`notice-passenger-history-${width}.png`)});
+  });
+  test(`More button reopens the notice and lands below sticky bars ${width}`,async({page},info)=>{
+   await page.setViewportSize({width,height:width<600?844:900});await page.goto('/ko');await page.getByRole('button',{name:'닫기',exact:true}).click();
+   await page.goto('/ko/more');await page.locator('.more-section-links').getByRole('button',{name:'공지사항 보기 ›',exact:true}).click();
+   await clickPassengerNotice(page,width);await expectPassengerNoticeLanding(page,info);await expect(page).toHaveURL(new RegExp(passengerNoticeHref.replace(/[?]/g,'\\?')+'$'));
+  });
+ }
 });
 for(const [width,height]of [[1440,1000],[320,568],[360,568],[390,844],[430,700],[390,500]])test(`first entry is immediate, compact and keyboard safe ${width}x${height}`,async({page},testInfo)=>{
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');

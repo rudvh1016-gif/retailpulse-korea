@@ -26,7 +26,7 @@ function stickyOffset(){
  return bottom+8;
 }
 
-export function useAirportHashReveal(){
+export function useAirportHashReveal(onlyId?:string){
  useEffect(()=>{
   let finish=()=>{},clickTimer:number|undefined;
   // Preserve old Korean links after the destination section moved to country flows.
@@ -39,7 +39,7 @@ export function useAirportHashReveal(){
   const reveal=()=>{
    finish();
    const id=location.hash.slice(1);
-   if(!TARGETS.has(id))return;
+   if(!TARGETS.has(id)||(onlyId&&id!==onlyId))return;
    let done=false,frame=0;
    const align=()=>{
     frame=0;if(done)return;
@@ -66,7 +66,7 @@ export function useAirportHashReveal(){
    const link=event.target instanceof Element?event.target.closest('a[href]'):null;
    if(!(link instanceof HTMLAnchorElement)||link.target||link.hasAttribute('download'))return;
    const url=new URL(link.href);
-   if(url.origin!==location.origin||url.pathname!==location.pathname||url.search!==location.search||!TARGETS.has(url.hash.slice(1)))return;
+   if(url.origin!==location.origin||url.pathname!==location.pathname||url.search!==location.search||!TARGETS.has(url.hash.slice(1))||(onlyId&&url.hash.slice(1)!==onlyId))return;
    window.clearTimeout(clickTimer);
    clickTimer=window.setTimeout(reveal,0);
   };
@@ -75,5 +75,5 @@ export function useAirportHashReveal(){
   window.addEventListener('popstate',reveal);
   window.addEventListener('hashchange',reveal);
   return()=>{finish();window.clearTimeout(clickTimer);window.removeEventListener('click',onClick);window.removeEventListener('popstate',reveal);window.removeEventListener('hashchange',reveal);};
- },[]);
+ },[onlyId]);
 }
