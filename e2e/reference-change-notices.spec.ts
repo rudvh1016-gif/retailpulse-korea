@@ -25,6 +25,8 @@ for(const width of [360,390,430,1440])test(`stored changes appear in the general
  await expect(dialog.locator('#update-notice-title')).toBeFocused();
  expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true);
  await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();
+ await page.keyboard.press('Tab');await expect(dialog.locator('.october-passengers-source')).toBeFocused();
+ await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'국가별 실적 보기 →',exact:true})).toBeFocused();
  await page.keyboard.press('Tab');await expect(dialog.locator('.reference-change-notices a').first()).toBeFocused();
  await page.screenshot({path:info.outputPath(`general-reference-notices-${width}.png`)});
  const ids=await dialog.locator('[data-change-id]').evaluateAll(elements=>elements.map(element=>element.getAttribute('data-change-id')));
