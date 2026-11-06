@@ -51,6 +51,26 @@ permissions:
   contents: read
 
 jobs:
+  observe_schedules:
+    # Same existing trigger, independent of all collector/recovery jobs. Neither
+    # direction has a needs edge; a metadata timeout cannot hold their locks.
+    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.1
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Observe native collector schedule timeliness (read-only)
+        run: npx --no-install tsx scripts/check-schedule-timeliness.ts
+
   collect:
     if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
     # Hold the existing lock across BOTH primary and fresh retry, not the A1 child.
