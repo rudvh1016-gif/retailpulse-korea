@@ -11,8 +11,9 @@ job can therefore be hours late and still ALIVE. A source's collector timestamp
 also cannot prove which workflow ran (A1 has early and daily owners). This change
 does not alter those historical evidence semantics or award false heartbeat credit.
 
-An additional read-only observer runs after the existing realtime primary's retry
-decision. It derives native collector cron expressions from real workflow files,
+An additional read-only observer job shares the existing realtime trigger. It has
+no needs edge to/from collection or recovery and shares no collector lock. It
+derives native collector cron expressions from real workflow files,
 reads one public GitHub runs page per scheduled workflow, and reports nominal UTC
 slot, created_at, run_started_at, status and conclusion separately. It filters
 `event=schedule`; manual/deploy dispatches cannot prove scheduled execution.
@@ -64,8 +65,13 @@ extent and quota evidence remains UNKNOWN. No provider request was made for this
 - Four native workflows today: four unauthenticated GitHub GETs per existing
   primary cycle; nominal 96 cycles/day = 384 GETs/day, 16/hour. The public API's
   shared-IP limit can reject calls; that remains UNKNOWN, with no retries. Eight
-  seconds/request and two-minute step ceiling bound overhead; retry decision is
-  already recorded before observation and step errors cannot change its result.
+  seconds/request and a three-minute independent job ceiling bound overhead.
+  One additional standard ubuntu-latest job per cycle installs the existing locked
+  dependencies with scripts disabled. No larger runner is used. API waits, setup
+  or observer failure cannot delay or change the source-specific recovery job.
+- The observer receives no production environment/secrets and checkout credentials
+  are not persisted. Unexpected checker failure stays a failed observer job;
+  `continue-on-error` never masks a collector or observer result.
 - Adds log warnings and a job summary, not an external notification. It detects
   sibling schedule lateness while realtime runs; it cannot observe total GitHub,
   Worker-trigger or joint outage. Monitor silence still needs external review.
@@ -95,6 +101,16 @@ Full ESLint completed with 0 errors / 25 existing warnings. Full reachable-histo
 secret scan passed. Build/render/browser checks are delegated to mandatory CI;
 no local pass is claimed. Pre-change public HTML build SHA observed at 14:25 UTC:
 `82735a2aa933df33cd2149b2a844449e654f5fc6` (different from current main).
+
+First Linux CI (`42233819172`, head `01ee05b2`) found one real wiring-contract
+failure: continue-on-error in the collector cycle violated the existing no-masked-
+failure guard. Review also found that placing observation after retry_decision
+still delayed retry_congestion (it needs the complete collect job) by up to 32s.
+Both are corrected by an independent job in collect-realtime.yml; the reusable
+collector cycle is restored byte-for-byte. The original contract is not weakened.
+The new regression asserts no dependency in either direction, no collector lock,
+no secrets/environment, no suppressed failures and unchanged source-specific retry
+gating. New-head mandatory CI is required; the first run is not called a pass.
 
 After safe merge, inspect the next naturally occurring Collect Realtime Signals
 run's observation step and summary; do not dispatch a provider collector just to

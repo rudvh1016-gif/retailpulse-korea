@@ -54,13 +54,6 @@ jobs:
         id: retry_decision
         if: always()
         run: npx tsx scripts/decide-congestion-retry.ts "$RUNNER_TEMP/collector.log"
-      - name: Observe native collector schedule timeliness (read-only)
-        # Existing primary cycle only; no new clock, provider call or recovery.
-        # Observation failure must not change the source-specific retry decision.
-        if: ${{ always() && !cancelled() }}
-        continue-on-error: true
-        timeout-minutes: 2
-        run: npx --no-install tsx scripts/check-schedule-timeliness.ts
 
   # ONE FRESH RUNNER, FOR THE SOURCES THIS CYCLE SAYS IT WOULD FIX.
   #

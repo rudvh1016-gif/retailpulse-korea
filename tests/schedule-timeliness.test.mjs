@@ -49,9 +49,18 @@ test('multiple cron expressions are one workflow union, not independent run evid
   assert.equal(result.state,'RECENT_SCHEDULE_RUN');
   assert.equal(evaluateScheduleTimeliness(['7 21 * * *','unsupported'],[], '2026-11-06T09:05:00Z').state,'UNKNOWN');
 });
-test('observer uses existing primary cycle only, without secrets, dispatch, retries or new schedule', async () => {
-  const yaml = await readFile(new URL('../.github/workflows/collect-realtime-cycle.yml', import.meta.url),'utf8');
+test('observer is independent of collection and recovery, without secrets, dispatch or suppressed failures', async () => {
+  const yaml = (await readFile(new URL('../.github/workflows/collect-realtime.yml', import.meta.url),'utf8')).replace(/\r\n/g,'\n');
   assert.equal((yaml.match(/tsx scripts\/check-schedule-timeliness.ts/g)||[]).length,1);
+  const observer = yaml.split('  observe_schedules:\n')[1]?.split('\n  collect:\n')[0];
+  assert.ok(observer);
+  assert.doesNotMatch(observer,/needs:|concurrency:|environment:|secrets\.|continue-on-error|actions:\s*write/);
+  assert.doesNotMatch(yaml,/needs[^\n]*observe_schedules/);
+  assert.match(observer,/persist-credentials: false/);
+  assert.match(observer,/npx --no-install/);
+  const cycle = await readFile(new URL('../.github/workflows/collect-realtime-cycle.yml',import.meta.url),'utf8');
+  assert.doesNotMatch(cycle,/check-schedule-timeliness|continue-on-error/);
+  assert.match(cycle,/needs\.collect\.result == 'failure' && needs\.collect\.outputs\.retry_sources != ''/);
   const script = await readFile(new URL('../scripts/check-schedule-timeliness.ts',import.meta.url),'utf8');
   assert.doesNotMatch(script,/process\.env\.(?:GITHUB_TOKEN|GH_TOKEN|CLOUDFLARE|DATA_GO)|method:\s*['"]POST/);
   assert.match(script,/per_page=5/);
