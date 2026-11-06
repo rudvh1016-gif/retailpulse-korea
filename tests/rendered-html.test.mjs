@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
+import {runInNewContext} from 'node:vm';
 
 async function renderPath(path, documentLanguage = "ko") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -15,6 +16,15 @@ async function renderPath(path, documentLanguage = "ko") {
 }
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
+
+test('production About smoke accepts the actual built server-rendered product',async()=>{
+  const response=await renderPath('/ko/about'),workflow=await read('../.github/workflows/site-smoke.yml');
+  const helper=workflow.match(/\/\/ BEGIN ABOUT CONTENT CONTRACT([\s\S]*?)\/\/ END ABOUT CONTENT CONTRACT/)?.[1]??'';
+  const predicate=workflow.match(/check\("about page is live", (.+), `status /)?.[1];
+  assert.ok(predicate,'the real production predicate must be checked against the product');
+  const check=runInNewContext(`${helper}\n(status,html)=>{const about={status};const aboutHtml=html;return ${predicate};}`);
+  assert.equal(check(response.status,await response.text()),true,'About copy changes must keep the production content contract in sync before deployment');
+});
 
 test('only the public airport analysis document permits same-origin framing',async()=>{
   for(const path of ['/airport-period/frame.html','/airport-period/frame','/airport-period/frame/','/airport-period/frame-zh.html','/airport-period/frame-zh','/airport-period/frame-zh/']){
