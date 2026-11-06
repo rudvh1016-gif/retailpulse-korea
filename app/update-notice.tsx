@@ -68,7 +68,8 @@ export default function UpdateNotice({lang}:{lang:string}){
     <p>미국은 263,371명 → 257,706명으로 2% 감소했고, 홍콩은 97,907명 → 132,480명으로 35% 증가했습니다.</p>
     <small>국가는 승객 국적이 아니라 상대 공항이 위치한 나라입니다. T1·T2 구분 없는 공항 전체 공식 월 실적이며, 지역별 표 합계와 개별 국가 행을 구분합니다. 일평균·증가율은 원자료로 계산한 뒤 정수로 반올림했습니다.</small>
     <a className="october-passengers-source" href="https://www.airport.kr/fsmFsn/co_ko/statisticCategoryOfLocal.do?stYear=2026&stMonth=10&edYear=2026&edMonth=10">인천공항 공식 통계 · 2026년 11월 6일 확인</a>
-   </div><Link href="/ko/airport-countries?mode=passengers#airport-route-passengers" prefetch={false} onClick={()=>dismiss.current(false)}>국가별 실적 보기 →</Link></section>}
+   {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- The country view needs its server-selected route on document navigation. */}
+   </div><a href="/ko/airport-countries?mode=passengers#airport-route-passengers" onClick={()=>dismiss.current(false)}>국가별 실적 보기 →</a></section>}
    {focusNotice&&<ReferenceChangeNotices dialog={dialog} calendarHref={calendarHref} allowanceHref={allowanceHref} onNavigate={()=>dismiss.current(false)}/>}
    <section data-notice-item="shift-briefing"><div><h3>{c.briefingTitle}</h3><p>{c.briefingBody}</p></div><Link href={`/${locale}?insight=briefing`} prefetch={false} onClick={()=>dismiss.current(false)}>{c.briefingLink} →</Link></section>
    {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- The standalone static report requires full document navigation. */}
