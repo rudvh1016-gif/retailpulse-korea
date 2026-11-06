@@ -10,6 +10,7 @@ import type {AirportView as AirportViewComponent} from './airport-view';
 const AirportView=dynamic(()=>import('./airport-view').then(module=>module.AirportView));
 import {AirportSceneArtwork} from './airport-scene-model';
 import {AirportRouteCountryPassengers,RoutePassengerPlacement} from './airport-route-country-passengers';
+import {useAirportHashReveal} from './use-airport-hash-reveal';
 import {CountryBriefing,CountryTrends,HolidayList,OverviewHeadline} from './airport-focus-preview';
 import './preparation-calendar.css';
 import {useLiveSummary} from './live-summary';
@@ -47,6 +48,7 @@ export function AirportFocusStatus(props:ComponentProps<typeof AirportViewCompon
  return <FocusLiveData date={props.date}><div className="airport-focus-shell airport-focus-operating"><AirportSceneArtwork.Provider value="/airport-models/approval-v3"><RoutePassengerPlacement.Provider value={<a className="focus-country-jump" href={`/${props.lang}/airport-countries?mode=passengers${props.date?`&date=${props.date}`:''}`}>{copy.countryJump}</a>}><AirportView {...props}/></RoutePassengerPlacement.Provider></AirportSceneArtwork.Provider></div></FocusLiveData>;
 }
 function CountryContents({lang,date}:{lang:Lang;date:string|null}){
+ useAirportHashReveal('airport-route-passengers');
  const copy=airportFocusCopy(lang);
  const today=useLiveSummary(date)?.todayKst??'',month=(date||today).slice(0,7);
  return <div className="airport-focus-shell airport-focus-operating"><div className="focus-detail">{lang!=='ko'&&lang!=='zh'&&lang!=='en'&&<h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{({ko:'T1 + T2 국가별 흐름',en:'T1 + T2 Route-country trends',zh:'T1 + T2 航线国家趋势',ja:'T1 + T2 路線国別の推移'})[lang]}</h1>}<MonthlyAirportScope lang={lang}/><p className="focus-lead">{copy.countriesHelp}</p>{month&&<><CountryBriefing lang={lang} month={month}/><AirportRouteCountryPassengers lang={lang} month={month} terminal="all"/></>}<CountryTrends full lang={lang}/></div></div>;

@@ -96,6 +96,25 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Record exactly the revision deployed by this run
         run: node -e "const fs=require('node:fs'),cp=require('node:child_process');fs.writeFileSync('deployment-revision.json',JSON.stringify({sha:cp.execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()},null,2))"
+      - name: Install browser for the production notice release gate
+        if: github.event_name == 'workflow_run' || inputs.stage == 'production'
+        run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright install --with-deps chromium
+      - name: Verify actual notice click reaches visible passenger results
+        if: github.event_name == 'workflow_run' || inputs.stage == 'production'
+        # Strict completion gate: uploaded code is not a verified release when this fails.
+        # Same revision guard, real public data, analytics opt-out, no fixtures or new credentials.
+        run: PLAYWRIGHT_BROWSERS_PATH=.playwright-browsers npx playwright test --config playwright.production.config.ts e2e-production/notice-passenger-journey.spec.ts
+      - name: Save notice release-gate evidence
+        if: always() && (github.event_name == 'workflow_run' || inputs.stage == 'production')
+        uses: actions/upload-artifact@v4
+        with:
+          name: notice-passenger-release-verification
+          path: |
+            deployment-revision.json
+            production-visual-report/
+            production-visual-results/
+          retention-days: 14
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: deployment-revision
