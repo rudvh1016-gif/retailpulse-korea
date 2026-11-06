@@ -21,7 +21,9 @@ export async function expectPassengerNoticeLanding(page:Page,info?:TestInfo){
  const target=page.getByTestId('airport-route-passengers');
  await expect(target.locator('tbody tr').first()).toBeVisible();
  await expect(page.getByRole('dialog')).not.toBeVisible();
- await expect.poll(()=>target.evaluate(element=>{
+ let stableSince=0;
+ try{await expect.poll(async()=>{
+ const state=await target.evaluate(element=>{
   let covered=0;
   for(const bar of document.querySelectorAll<HTMLElement>('.site-header,.airport-context-nav')){
    const style=getComputedStyle(bar),rect=bar.getBoundingClientRect();
@@ -31,7 +33,10 @@ export async function expectPassengerNoticeLanding(page:Page,info?:TestInfo){
   const firstRow=element.querySelector('tbody tr')!.getBoundingClientRect();
   const point=document.elementFromPoint(Math.max(1,Math.min(innerWidth-1,heading.x+heading.width/2)),heading.y+heading.height/2);
   return {arrived:box.top>=covered-1&&box.top<=covered+32,headingVisible:heading.top>=covered-1&&heading.bottom<=innerHeight,firstRowVisible:firstRow.top>=covered-1&&firstRow.bottom<=innerHeight,uncovered:!!point&&element.contains(point),unlocked:getComputedStyle(document.documentElement).overflow!=='hidden'&&getComputedStyle(document.body).overflow!=='hidden'};
- }),{timeout:15_000}).toEqual({arrived:true,headingVisible:true,firstRowVisible:true,uncovered:true,unlocked:true});
- if(info){await info.attach('passenger-arrival-geometry.json',{body:Buffer.from(JSON.stringify(await target.evaluate(element=>({section:element.getBoundingClientRect().toJSON(),heading:element.querySelector('h4')!.getBoundingClientRect().toJSON(),scrollY,viewport:{width:innerWidth,height:innerHeight},hash:location.hash})),null,2)),contentType:'application/json'});}
+ });
+ if(Object.values(state).every(Boolean)){if(!stableSince)stableSince=Date.now();}else stableSince=0;
+ return {...state,stable:!!stableSince&&Date.now()-stableSince>=750};
+ },{timeout:15_000}).toEqual({arrived:true,headingVisible:true,firstRowVisible:true,uncovered:true,unlocked:true,stable:true});
+ }finally{if(info){await info.attach('passenger-arrival-geometry.json',{body:Buffer.from(JSON.stringify(await target.evaluate(element=>({section:element.getBoundingClientRect().toJSON(),heading:element.querySelector('h4')!.getBoundingClientRect().toJSON(),firstRow:element.querySelector('tbody tr')!.getBoundingClientRect().toJSON(),bars:[...document.querySelectorAll('.site-header,.airport-context-nav')].map(bar=>bar.getBoundingClientRect().toJSON()),scrollY,viewport:{width:innerWidth,height:innerHeight},hash:location.hash})),null,2)),contentType:'application/json'});}}
  return target;
 }

@@ -3,13 +3,14 @@ import {SUMMARY_FIXTURE} from './summary-fixture';
 import {NOTICE_WEEK_MS,UPDATE_NOTICE_SESSION_KEY,UPDATE_NOTICE_UNTIL_KEY,UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
 import {clickPassengerNotice,expectPassengerNoticeLanding,passengerNoticeHref} from './helpers/notice-passenger-journey';
 test.use({storageState:{cookies:[],origins:[]}});
-test.beforeEach(async({page})=>{
+test.beforeEach(async({page},info)=>{
  await page.addInitScript(()=>{localStorage.setItem('koretail-analytics-consent-v1','false');});
  await page.route(/google-analytics\.com|googletagmanager\.com|analytics\.google\.com/,r=>r.abort());
  await page.route('**/api/**',r=>r.fulfill({status:503,json:{error:'test unavailable'}}));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
  const base={operationId:'',month:'2026-07',retrievedAt:SUMMARY_FIXTURE.generatedAt};
- await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[{label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null}]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
+ await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[...Array.from({length:info.titlePath.includes('notice passenger journey')?58:1},(_,i)=>({label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null,...(i?{label:'Test country '+i}: {})}))]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
+ if(info.titlePath.includes('notice passenger journey'))await page.route('**/api/live/airport-passenger-comparison*',r=>r.fulfill({json:{status:'READY',availableMonths:['2026-06','2026-07'],selected:null,baseline:null}}));
 });
 test('the October notice opens despite prior-release dismissal and preserves those preferences',async({page})=>{
  await page.addInitScript(()=>{
@@ -61,15 +62,30 @@ test.describe('notice passenger journey',()=>{
  for(const width of [390,1440]){
   test(`first entry, delayed target, history and same-page reopening ${width}`,async({page},info)=>{
    test.setTimeout(90_000);await page.setViewportSize({width,height:width<600?844:900});
+   // A full country table leaves room for native fragment scrolling; a single row
+   // can clamp the page and hide the later competing smooth-scroll destination.
    for(const url of ['**/api/live/summary*','**/api/live/airport-passenger-stats*'])await page.route(url,async route=>{await new Promise(resolve=>setTimeout(resolve,1800));await route.fallback();});
    await page.goto('/ko');await clickPassengerNotice(page,width);
-   await expect(await expectPassengerNoticeLanding(page,info)).toContainText('31,000');
+   const target=await expectPassengerNoticeLanding(page,info);
+   await expect(target).toContainText('31,000');await expect(target.locator('tbody tr')).toHaveCount(58);
    await page.goBack();await expect(page).toHaveURL(url=>url.pathname==='/ko');await expect(page.getByRole('dialog')).not.toBeVisible();
    await page.goForward();await expectPassengerNoticeLanding(page);
+   // Let loading/resize observers settle before reproducing the late restore.
+   await page.waitForTimeout(8500);
    // Exercise the same supported reopen event used by the More button, without changing this URL.
    await page.evaluate(event=>window.dispatchEvent(new Event(event)),UPDATE_NOTICE_OPEN_EVENT);
-   await expect(page.getByRole('dialog')).toBeVisible();await clickPassengerNotice(page,width);await expectPassengerNoticeLanding(page);
+   await expect(page.getByRole('dialog')).toBeVisible();await clickPassengerNotice(page,width);
+   // Production vinext can finish a pending history restore after this click.
+   // Reproduce its observed scrollToHashTarget call after the first correction.
+   await page.evaluate(()=>setTimeout(()=>document.getElementById('airport-route-passengers')?.scrollIntoView({behavior:'auto'}),350));
+   // Native smooth fragment scrolling can start after the first aligned frame.
+   await page.waitForTimeout(700);await expectPassengerNoticeLanding(page,info);
    await page.screenshot({path:info.outputPath(`notice-passenger-history-${width}.png`)});
+   await page.mouse.wheel(0,350);
+   await expect.poll(()=>page.locator('#airport-route-passengers').evaluate(element=>element.getBoundingClientRect().top<0)).toBe(true);
+   const readerY=await page.evaluate(()=>scrollY);
+   await page.evaluate(()=>{const node=document.createElement('div');document.body.append(node);node.remove();});
+   await page.waitForTimeout(300);expect(await page.evaluate(()=>scrollY)).toBe(readerY);
   });
   test(`More button reopens the notice and lands below sticky bars ${width}`,async({page},info)=>{
    await page.setViewportSize({width,height:width<600?844:900});await page.goto('/ko');await page.getByRole('button',{name:'닫기',exact:true}).click();

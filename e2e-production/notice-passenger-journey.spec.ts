@@ -18,9 +18,9 @@ for(const width of [390,1440])test(`notice passenger journey · real click and v
  expect(Number.isSafeInteger(japan?.departures)).toBe(true);
  await expect(target.locator('tbody tr').filter({hasText:'일본'})).toContainText(new Intl.NumberFormat('ko-KR').format(japan.departures));
  await page.goBack();await expect(page).toHaveURL(url=>url.pathname==='/ko');await expect(page.getByRole('dialog')).not.toBeVisible();
- await page.goForward();await expectPassengerNoticeLanding(page);
+ await page.goForward();await expectPassengerNoticeLanding(page,info);
  await page.evaluate(event=>window.dispatchEvent(new Event(event)),UPDATE_NOTICE_OPEN_EVENT);
- await clickPassengerNotice(page,width);await expectPassengerNoticeLanding(page);
+ await clickPassengerNotice(page,width);await expectPassengerNoticeLanding(page,info);
  await page.goto('/ko/more');await page.locator('.more-section-links').getByRole('button',{name:'공지사항 보기 ›',exact:true}).click();
  await clickPassengerNotice(page,width);await expectPassengerNoticeLanding(page,info);
  await info.attach(`notice-passenger-production-${width}.png`,{body:await page.screenshot(),contentType:'image/png'});
