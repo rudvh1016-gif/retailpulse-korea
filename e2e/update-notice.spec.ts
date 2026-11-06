@@ -9,8 +9,8 @@ test.beforeEach(async({page},info)=>{
  await page.route('**/api/**',r=>r.fulfill({status:503,json:{error:'test unavailable'}}));
  await page.route('**/api/live/summary*',r=>r.fulfill({json:SUMMARY_FIXTURE}));
  const base={operationId:'',month:'2026-07',retrievedAt:SUMMARY_FIXTURE.generatedAt};
- await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[...Array.from({length:info.title.includes('notice passenger journey')?58:1},(_,i)=>({label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null,...(i?{label:'Test country '+i}: {})}))]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
- if(info.title.includes('notice passenger journey'))await page.route('**/api/live/airport-passenger-comparison*',r=>r.fulfill({json:{status:'READY',availableMonths:['2026-06','2026-07'],selected:null,baseline:null}}));
+ await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[...Array.from({length:info.titlePath.includes('notice passenger journey')?58:1},(_,i)=>({label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null,...(i?{label:'Test country '+i}: {})}))]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
+ if(info.titlePath.includes('notice passenger journey'))await page.route('**/api/live/airport-passenger-comparison*',r=>r.fulfill({json:{status:'READY',availableMonths:['2026-06','2026-07'],selected:null,baseline:null}}));
 });
 test('the October notice opens despite prior-release dismissal and preserves those preferences',async({page})=>{
  await page.addInitScript(()=>{
@@ -66,7 +66,8 @@ test.describe('notice passenger journey',()=>{
    // can clamp the page and hide the later competing smooth-scroll destination.
    for(const url of ['**/api/live/summary*','**/api/live/airport-passenger-stats*'])await page.route(url,async route=>{await new Promise(resolve=>setTimeout(resolve,1800));await route.fallback();});
    await page.goto('/ko');await clickPassengerNotice(page,width);
-   await expect(await expectPassengerNoticeLanding(page,info)).toContainText('31,000');
+   const target=await expectPassengerNoticeLanding(page,info);
+   await expect(target).toContainText('31,000');await expect(target.locator('tbody tr')).toHaveCount(58);
    await page.goBack();await expect(page).toHaveURL(url=>url.pathname==='/ko');await expect(page.getByRole('dialog')).not.toBeVisible();
    await page.goForward();await expectPassengerNoticeLanding(page);
    // Let loading/resize observers settle before reproducing the late restore.
