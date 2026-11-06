@@ -58,8 +58,17 @@ export default function UpdateNotice({lang}:{lang:string}){
   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
  }}>
   <div className="update-notice-top"><span className="update-notice-new">NEW</span></div>
-  <h2 data-heading="section" id="update-notice-title" tabIndex={-1}><span className="heading-marker" aria-hidden="true"/>{UPDATE_NOTICE_TITLE}</h2><small className="update-notice-date">{c.updated} <time dateTime="2026-11-02">{new Intl.DateTimeFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[locale],{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date('2026-11-02T00:00:00Z'))}</time></small>
+  <h2 data-heading="section" id="update-notice-title" tabIndex={-1}><span className="heading-marker" aria-hidden="true"/>{UPDATE_NOTICE_TITLE}</h2><small className="update-notice-date">{c.updated} <time dateTime={locale==='ko'?'2026-11-06':'2026-11-02'}>{new Intl.DateTimeFormat({ko:'ko-KR',en:'en-US',zh:'zh-CN',ja:'ja-JP'}[locale],{year:'numeric',month:'long',day:'numeric',timeZone:'UTC'}).format(new Date(locale==='ko'?'2026-11-06T00:00:00Z':'2026-11-02T00:00:00Z'))}</time></small>
   <div className="update-notice-items">
+   {locale==='ko'&&<section data-notice-item="october-passengers"><div>
+    <h3>10월 인천공항 출발 여객 실적 공개</h3>
+    <p>공식 10월 국가별 실적을 사이트에 반영했습니다. 지역별 표의 공항 전체 출발 여객 합계는 9월 3,123,275명에서 10월 3,413,398명으로 9% 증가했습니다.</p>
+    <p>9월은 30일, 10월은 31일입니다. 일수 차이를 보정한 일평균은 104,109명 → 110,110명으로 6% 증가했습니다.</p>
+    <p>일본 911,297명 → 979,753명, 중국 601,273명 → 699,543명, 베트남 275,406명 → 297,187명입니다. 중국은 일평균 20,042명 → 22,566명으로 13% 증가했습니다.</p>
+    <p>미국은 263,371명 → 257,706명으로 2% 감소했고, 홍콩은 97,907명 → 132,480명으로 35% 증가했습니다.</p>
+    <small>국가는 승객 국적이 아니라 상대 공항이 위치한 나라입니다. T1·T2 구분 없는 공항 전체 공식 월 실적이며, 지역별 표 합계와 개별 국가 행을 구분합니다. 일평균·증가율은 원자료로 계산한 뒤 정수로 반올림했습니다.</small>
+    <a className="october-passengers-source" href="https://www.airport.kr/fsmFsn/co_ko/statisticCategoryOfLocal.do?stYear=2026&stMonth=10&edYear=2026&edMonth=10">인천공항 공식 통계 · 2026년 11월 6일 확인</a>
+   </div><Link href="/ko/airport-countries?mode=passengers#airport-route-passengers" prefetch={false} onClick={()=>dismiss.current(false)}>국가별 실적 보기 →</Link></section>}
    {focusNotice&&<ReferenceChangeNotices dialog={dialog} calendarHref={calendarHref} allowanceHref={allowanceHref} onNavigate={()=>dismiss.current(false)}/>}
    <section data-notice-item="shift-briefing"><div><h3>{c.briefingTitle}</h3><p>{c.briefingBody}</p></div><Link href={`/${locale}?insight=briefing`} prefetch={false} onClick={()=>dismiss.current(false)}>{c.briefingLink} →</Link></section>
    {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- The standalone static report requires full document navigation. */}

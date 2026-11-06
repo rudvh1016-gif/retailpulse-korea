@@ -10,7 +10,7 @@ test.beforeEach(async({page})=>{
  const base={operationId:'',month:'2026-07',retrievedAt:SUMMARY_FIXTURE.generatedAt};
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[{label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null}]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
 });
-test('the briefing notice opens despite prior-release dismissal and preserves those preferences',async({page})=>{
+test('the October notice opens despite prior-release dismissal and preserves those preferences',async({page})=>{
  await page.addInitScript(()=>{
   sessionStorage.setItem('koretail-notice:airport-period-20261028-v1:closed','1');
   localStorage.setItem('koretail-notice:airport-period-20261028-v1:until',String(Date.UTC(2099,0,1)));
@@ -18,10 +18,10 @@ test('the briefing notice opens despite prior-release dismissal and preserves th
  await page.goto('/ko');
  const dialog=page.getByRole('dialog');
  await expect(dialog).toBeVisible();
- await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-11-02');
+ await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-11-06');
  await expect(dialog.locator('[data-notice-item="shift-briefing"]')).toContainText('내 근무 브리핑');
  await expect(dialog.locator('[data-notice-item="shift-briefing"]')).toContainText('터미널 전체 출발편·주요 출발 목적지');
- expect(await dialog.locator('.update-notice-items>section').evaluateAll(items=>items.map(item=>item.getAttribute('data-notice-item')))).toEqual(['shift-briefing','shopping-report']);
+ expect(await dialog.locator('.update-notice-items>section').evaluateAll(items=>items.map(item=>item.getAttribute('data-notice-item')))).toEqual(['october-passengers','shift-briefing','shopping-report']);
  await expect(dialog).toContainText('외국인은 뭘 살까?');
  await expect(dialog).toContainText('판판면세점 6개 매장');
  expect(await page.evaluate(()=>sessionStorage.getItem('koretail-notice:airport-period-20261028-v1:closed'))).toBe('1');
@@ -59,8 +59,12 @@ for(const [width,height]of [[1440,1000],[320,568],[360,568],[390,844],[430,700],
  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height});await page.goto('/ko');
  const dialog=page.getByRole('dialog',{name:'new update!'});await expect(dialog).toBeVisible();
  await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeInViewport({ratio:1});
- await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('.update-notice-items>section')).toHaveCount(2);
- await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(2);
+ await expect(dialog.locator('#update-notice-title')).toBeFocused();await expect(dialog.locator('.update-notice-x')).toHaveCount(0);await expect(dialog.locator('.update-notice-items>section')).toHaveCount(3);
+ await expect(dialog.locator('img,svg,canvas')).toHaveCount(0);await expect(dialog.getByRole('link')).toHaveCount(4);
+ await expect(dialog.locator('#update-notice-title')).toHaveCSS('color','rgb(128, 0, 32)');
+ await expect(dialog.locator('[data-notice-item="october-passengers"] h3')).toHaveCSS('color','rgb(128, 0, 32)');
+ await expect(dialog.locator('[data-notice-item="october-passengers"]')).toContainText('104,109명 → 110,110명');
+ await expect(dialog.locator('[data-notice-item="october-passengers"]')).toContainText('상대 공항');
  await expect(dialog).toContainText('내 근무 브리핑');
  await expect(dialog).toContainText('매장 준비사항과 직원 공유 문구');
  await expect(dialog).toContainText('외국인은 뭘 살까?');
@@ -71,7 +75,7 @@ for(const [width,height]of [[1440,1000],[320,568],[360,568],[390,844],[430,700],
  const box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.width).toBeLessThanOrEqual(width);expect(box!.height).toBeLessThanOrEqual(height);
  expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('notice-no-top-close.png')});
- await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'브리핑 보기'})).toBeFocused();
+ await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'인천공항 공식 통계 · 2026년 11월 6일 확인'})).toBeFocused();
  await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
  await page.reload();await expect(dialog).not.toBeVisible();expect(await page.evaluate(key=>sessionStorage.getItem(key),UPDATE_NOTICE_SESSION_KEY)).toBe('1');expect(errors).toEqual([]);
 });
@@ -86,8 +90,8 @@ test('week hiding lasts exactly seven days across reload and another tab',async(
 });
 for(const lang of ['ko','en','zh','ja'])test(`report shortcut remains after the briefing and opens the complete report ${lang}`,async({page})=>{
  await page.goto(`/${lang}`);const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
- await expect(dialog.locator('.update-notice-items>section')).toHaveCount(2);
- await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-11-02');
+ await expect(dialog.locator('.update-notice-items>section')).toHaveCount(lang==='ko'?3:2);
+ await expect(dialog.locator('time')).toHaveAttribute('datetime',lang==='ko'?'2026-11-06':'2026-11-02');
  const shortcut=dialog.locator('[data-notice-item="shopping-report"]>a');await expect(shortcut).toHaveAttribute('href','/shopping-report/index.html');
  if(lang==='en')expect(await dialog.innerText()).not.toMatch(/[가-힣]/);
  await shortcut.click();await expect(page).toHaveURL(/\/shopping-report\/(?:index\.html)?$/);
@@ -109,7 +113,7 @@ for(const [lang,title] of [['ko','내 근무 브리핑'],['en','My shift briefin
 });
 
 test('the preview notice keeps the report and links to the production briefing entry',async({page})=>{
- await page.goto('/ko/airport-focus-preview');const dialog=page.getByRole('dialog');await expect(dialog.locator('.update-notice-items>section')).toHaveCount(2);
+ await page.goto('/ko/airport-focus-preview');const dialog=page.getByRole('dialog');await expect(dialog.locator('.update-notice-items>section')).toHaveCount(3);
  await expect(dialog.locator('[data-notice-item="shift-briefing"]>a')).toHaveAttribute('href','/ko?insight=briefing');
  await expect(dialog.locator('[data-notice-item="shopping-report"]>a')).toHaveAttribute('href','/shopping-report/index.html');
 });
