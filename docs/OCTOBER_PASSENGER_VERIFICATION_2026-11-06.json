@@ -1,0 +1,868 @@
+{
+  "checkedAt": "2026-11-06",
+  "conditions": {
+    "airport": "Incheon airport-wide",
+    "nvgSe": "",
+    "arplnSe": "",
+    "pas": "",
+    "bag": "",
+    "terminalId": "",
+    "areaSe": "",
+    "unit": "passengers",
+    "direction": "departures",
+    "countryMeaning": "Country of counterpart airport, not passenger nationality"
+  },
+  "source": "https://www.airport.kr/fsmFsn/co_ko/statisticCategoryOfLocal.do",
+  "importRun": "https://github.com/rudvh1016-gif/retailpulse-korea/actions/runs/42173616962",
+  "productionApi": "https://koretaildata.com/api/live/airport-passenger-comparison?selected=2026-10&baseline=2026-09",
+  "months": {
+    "2026-09": {
+      "days": 30,
+      "regionalTableDepartureTotal": 3123275,
+      "htmlSha256": "539edfb2afd76b43ea120cc20ad3f22a503a3ebfa57e3c0d072fd7e5c71958aa",
+      "countries": [
+        {
+          "region": "일본",
+          "label": "일본",
+          "arrivals": 856510,
+          "departures": 911297,
+          "total": 1767807
+        },
+        {
+          "region": "중국",
+          "label": "중국",
+          "arrivals": 697298,
+          "departures": 601273,
+          "total": 1298571
+        },
+        {
+          "region": "동북아",
+          "label": "대만",
+          "arrivals": 116738,
+          "departures": 121778,
+          "total": 238516
+        },
+        {
+          "region": "동북아",
+          "label": "마카오",
+          "arrivals": 15451,
+          "departures": 15056,
+          "total": 30507
+        },
+        {
+          "region": "동북아",
+          "label": "몽골",
+          "arrivals": 40824,
+          "departures": 32662,
+          "total": 73486
+        },
+        {
+          "region": "동북아",
+          "label": "홍콩",
+          "arrivals": 111555,
+          "departures": 97907,
+          "total": 209462
+        },
+        {
+          "region": "동남아",
+          "label": "라오스",
+          "arrivals": 6381,
+          "departures": 6423,
+          "total": 12804
+        },
+        {
+          "region": "동남아",
+          "label": "말레이시아",
+          "arrivals": 31973,
+          "departures": 32143,
+          "total": 64116
+        },
+        {
+          "region": "동남아",
+          "label": "미얀마",
+          "arrivals": 2620,
+          "departures": 1999,
+          "total": 4619
+        },
+        {
+          "region": "동남아",
+          "label": "베트남",
+          "arrivals": 278442,
+          "departures": 275406,
+          "total": 553848
+        },
+        {
+          "region": "동남아",
+          "label": "브루나이",
+          "arrivals": 1263,
+          "departures": 1381,
+          "total": 2644
+        },
+        {
+          "region": "동남아",
+          "label": "싱가포르",
+          "arrivals": 71093,
+          "departures": 70674,
+          "total": 141767
+        },
+        {
+          "region": "동남아",
+          "label": "인도네시아",
+          "arrivals": 52021,
+          "departures": 47441,
+          "total": 99462
+        },
+        {
+          "region": "동남아",
+          "label": "캄보디아",
+          "arrivals": 8930,
+          "departures": 9811,
+          "total": 18741
+        },
+        {
+          "region": "동남아",
+          "label": "태국",
+          "arrivals": 96718,
+          "departures": 95743,
+          "total": 192461
+        },
+        {
+          "region": "동남아",
+          "label": "필리핀",
+          "arrivals": 93105,
+          "departures": 91829,
+          "total": 184934
+        },
+        {
+          "region": "미주",
+          "label": "멕시코",
+          "arrivals": 7247,
+          "departures": 6799,
+          "total": 14046
+        },
+        {
+          "region": "미주",
+          "label": "미국",
+          "arrivals": 235249,
+          "departures": 263371,
+          "total": 498620
+        },
+        {
+          "region": "미주",
+          "label": "브라질",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "미주",
+          "label": "칠레",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "미주",
+          "label": "캐나다",
+          "arrivals": 53548,
+          "departures": 59069,
+          "total": 112617
+        },
+        {
+          "region": "미주",
+          "label": "페루",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "네덜란드",
+          "arrivals": 14025,
+          "departures": 14002,
+          "total": 28027
+        },
+        {
+          "region": "유럽",
+          "label": "노르웨이",
+          "arrivals": 286,
+          "departures": 0,
+          "total": 286
+        },
+        {
+          "region": "유럽",
+          "label": "덴마크",
+          "arrivals": 6655,
+          "departures": 6702,
+          "total": 13357
+        },
+        {
+          "region": "유럽",
+          "label": "독일",
+          "arrivals": 28523,
+          "departures": 29247,
+          "total": 57770
+        },
+        {
+          "region": "유럽",
+          "label": "룩셈부르크",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "벨기에",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "스위스",
+          "arrivals": 6731,
+          "departures": 6826,
+          "total": 13557
+        },
+        {
+          "region": "유럽",
+          "label": "스페인",
+          "arrivals": 14173,
+          "departures": 16225,
+          "total": 30398
+        },
+        {
+          "region": "유럽",
+          "label": "아제르바이잔",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "영국",
+          "arrivals": 18038,
+          "departures": 23764,
+          "total": 41802
+        },
+        {
+          "region": "유럽",
+          "label": "오스트리아",
+          "arrivals": 4651,
+          "departures": 5107,
+          "total": 9758
+        },
+        {
+          "region": "유럽",
+          "label": "우즈베키스탄",
+          "arrivals": 16963,
+          "departures": 15861,
+          "total": 32824
+        },
+        {
+          "region": "유럽",
+          "label": "이탈리아",
+          "arrivals": 20466,
+          "departures": 24239,
+          "total": 44705
+        },
+        {
+          "region": "유럽",
+          "label": "조지아",
+          "arrivals": 0,
+          "departures": 286,
+          "total": 286
+        },
+        {
+          "region": "유럽",
+          "label": "체코",
+          "arrivals": 8579,
+          "departures": 9018,
+          "total": 17597
+        },
+        {
+          "region": "유럽",
+          "label": "카자흐스탄",
+          "arrivals": 17352,
+          "departures": 15033,
+          "total": 32385
+        },
+        {
+          "region": "유럽",
+          "label": "크로아티아",
+          "arrivals": 569,
+          "departures": 510,
+          "total": 1079
+        },
+        {
+          "region": "유럽",
+          "label": "키르기즈스탄",
+          "arrivals": 1844,
+          "departures": 1705,
+          "total": 3549
+        },
+        {
+          "region": "유럽",
+          "label": "투르크메니스탄",
+          "arrivals": 950,
+          "departures": 597,
+          "total": 1547
+        },
+        {
+          "region": "유럽",
+          "label": "튀르키예",
+          "arrivals": 25553,
+          "departures": 26656,
+          "total": 52209
+        },
+        {
+          "region": "유럽",
+          "label": "포르투갈",
+          "arrivals": 3221,
+          "departures": 3857,
+          "total": 7078
+        },
+        {
+          "region": "유럽",
+          "label": "폴란드",
+          "arrivals": 8462,
+          "departures": 8198,
+          "total": 16660
+        },
+        {
+          "region": "유럽",
+          "label": "프랑스",
+          "arrivals": 23515,
+          "departures": 25978,
+          "total": 49493
+        },
+        {
+          "region": "유럽",
+          "label": "핀란드",
+          "arrivals": 7828,
+          "departures": 8504,
+          "total": 16332
+        },
+        {
+          "region": "유럽",
+          "label": "헝가리",
+          "arrivals": 7998,
+          "departures": 8053,
+          "total": 16051
+        },
+        {
+          "region": "대양주",
+          "label": "괌",
+          "arrivals": 16372,
+          "departures": 16472,
+          "total": 32844
+        },
+        {
+          "region": "대양주",
+          "label": "뉴질랜드",
+          "arrivals": 4382,
+          "departures": 4279,
+          "total": 8661
+        },
+        {
+          "region": "대양주",
+          "label": "사이판",
+          "arrivals": 2699,
+          "departures": 2537,
+          "total": 5236
+        },
+        {
+          "region": "대양주",
+          "label": "하와이",
+          "arrivals": 15400,
+          "departures": 17195,
+          "total": 32595
+        },
+        {
+          "region": "대양주",
+          "label": "호주",
+          "arrivals": 37749,
+          "departures": 35217,
+          "total": 72966
+        },
+        {
+          "region": "중동",
+          "label": "레바논",
+          "arrivals": 197,
+          "departures": 186,
+          "total": 383
+        },
+        {
+          "region": "중동",
+          "label": "아랍에미리트",
+          "arrivals": 26437,
+          "departures": 28663,
+          "total": 55100
+        },
+        {
+          "region": "중동",
+          "label": "카타르",
+          "arrivals": 10774,
+          "departures": 10870,
+          "total": 21644
+        },
+        {
+          "region": "기타",
+          "label": "네팔",
+          "arrivals": 2126,
+          "departures": 1644,
+          "total": 3770
+        },
+        {
+          "region": "기타",
+          "label": "스리랑카",
+          "arrivals": 2008,
+          "departures": 1612,
+          "total": 3620
+        },
+        {
+          "region": "기타",
+          "label": "에티오피아",
+          "arrivals": 4309,
+          "departures": 3561,
+          "total": 7870
+        },
+        {
+          "region": "기타",
+          "label": "인도",
+          "arrivals": 9696,
+          "departures": 8609,
+          "total": 18305
+        }
+      ],
+      "apiRows": 59,
+      "matchedCountryRows": 59
+    },
+    "2026-10": {
+      "days": 31,
+      "regionalTableDepartureTotal": 3413398,
+      "htmlSha256": "0f7bc5072942902933198dbf8327dd5c1def5ad83d6f22b78b7debb5e0de9084",
+      "countries": [
+        {
+          "region": "일본",
+          "label": "일본",
+          "arrivals": 987990,
+          "departures": 979753,
+          "total": 1967743
+        },
+        {
+          "region": "중국",
+          "label": "중국",
+          "arrivals": 654097,
+          "departures": 699543,
+          "total": 1353640
+        },
+        {
+          "region": "동북아",
+          "label": "대만",
+          "arrivals": 129008,
+          "departures": 126957,
+          "total": 255965
+        },
+        {
+          "region": "동북아",
+          "label": "마카오",
+          "arrivals": 16057,
+          "departures": 16936,
+          "total": 32993
+        },
+        {
+          "region": "동북아",
+          "label": "몽골",
+          "arrivals": 26121,
+          "departures": 21321,
+          "total": 47442
+        },
+        {
+          "region": "동북아",
+          "label": "홍콩",
+          "arrivals": 126416,
+          "departures": 132480,
+          "total": 258896
+        },
+        {
+          "region": "동남아",
+          "label": "라오스",
+          "arrivals": 7070,
+          "departures": 8262,
+          "total": 15332
+        },
+        {
+          "region": "동남아",
+          "label": "말레이시아",
+          "arrivals": 38736,
+          "departures": 35312,
+          "total": 74048
+        },
+        {
+          "region": "동남아",
+          "label": "미얀마",
+          "arrivals": 2435,
+          "departures": 2494,
+          "total": 4929
+        },
+        {
+          "region": "동남아",
+          "label": "베트남",
+          "arrivals": 298800,
+          "departures": 297187,
+          "total": 595987
+        },
+        {
+          "region": "동남아",
+          "label": "브루나이",
+          "arrivals": 1588,
+          "departures": 1561,
+          "total": 3149
+        },
+        {
+          "region": "동남아",
+          "label": "싱가포르",
+          "arrivals": 93415,
+          "departures": 89715,
+          "total": 183130
+        },
+        {
+          "region": "동남아",
+          "label": "인도네시아",
+          "arrivals": 59029,
+          "departures": 52818,
+          "total": 111847
+        },
+        {
+          "region": "동남아",
+          "label": "캄보디아",
+          "arrivals": 12087,
+          "departures": 11906,
+          "total": 23993
+        },
+        {
+          "region": "동남아",
+          "label": "태국",
+          "arrivals": 125162,
+          "departures": 124668,
+          "total": 249830
+        },
+        {
+          "region": "동남아",
+          "label": "필리핀",
+          "arrivals": 113708,
+          "departures": 109608,
+          "total": 223316
+        },
+        {
+          "region": "미주",
+          "label": "멕시코",
+          "arrivals": 7663,
+          "departures": 7528,
+          "total": 15191
+        },
+        {
+          "region": "미주",
+          "label": "미국",
+          "arrivals": 291203,
+          "departures": 257706,
+          "total": 548909
+        },
+        {
+          "region": "미주",
+          "label": "브라질",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "미주",
+          "label": "칠레",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "미주",
+          "label": "캐나다",
+          "arrivals": 60329,
+          "departures": 49989,
+          "total": 110318
+        },
+        {
+          "region": "미주",
+          "label": "페루",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "네덜란드",
+          "arrivals": 15132,
+          "departures": 14414,
+          "total": 29546
+        },
+        {
+          "region": "유럽",
+          "label": "노르웨이",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "덴마크",
+          "arrivals": 8011,
+          "departures": 7265,
+          "total": 15276
+        },
+        {
+          "region": "유럽",
+          "label": "독일",
+          "arrivals": 29398,
+          "departures": 28085,
+          "total": 57483
+        },
+        {
+          "region": "유럽",
+          "label": "룩셈부르크",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "벨기에",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "스위스",
+          "arrivals": 5822,
+          "departures": 5422,
+          "total": 11244
+        },
+        {
+          "region": "유럽",
+          "label": "스페인",
+          "arrivals": 18482,
+          "departures": 17626,
+          "total": 36108
+        },
+        {
+          "region": "유럽",
+          "label": "아르메니아",
+          "arrivals": 568,
+          "departures": 285,
+          "total": 853
+        },
+        {
+          "region": "유럽",
+          "label": "아제르바이잔",
+          "arrivals": 0,
+          "departures": 0,
+          "total": 0
+        },
+        {
+          "region": "유럽",
+          "label": "영국",
+          "arrivals": 24870,
+          "departures": 21506,
+          "total": 46376
+        },
+        {
+          "region": "유럽",
+          "label": "오스트리아",
+          "arrivals": 5503,
+          "departures": 4724,
+          "total": 10227
+        },
+        {
+          "region": "유럽",
+          "label": "우즈베키스탄",
+          "arrivals": 15203,
+          "departures": 14158,
+          "total": 29361
+        },
+        {
+          "region": "유럽",
+          "label": "이탈리아",
+          "arrivals": 26040,
+          "departures": 22271,
+          "total": 48311
+        },
+        {
+          "region": "유럽",
+          "label": "조지아",
+          "arrivals": 285,
+          "departures": 282,
+          "total": 567
+        },
+        {
+          "region": "유럽",
+          "label": "체코",
+          "arrivals": 9534,
+          "departures": 8536,
+          "total": 18070
+        },
+        {
+          "region": "유럽",
+          "label": "카자흐스탄",
+          "arrivals": 15505,
+          "departures": 12945,
+          "total": 28450
+        },
+        {
+          "region": "유럽",
+          "label": "키르기즈스탄",
+          "arrivals": 1126,
+          "departures": 995,
+          "total": 2121
+        },
+        {
+          "region": "유럽",
+          "label": "투르크메니스탄",
+          "arrivals": 1167,
+          "departures": 495,
+          "total": 1662
+        },
+        {
+          "region": "유럽",
+          "label": "튀르키예",
+          "arrivals": 29259,
+          "departures": 26371,
+          "total": 55630
+        },
+        {
+          "region": "유럽",
+          "label": "포르투갈",
+          "arrivals": 4940,
+          "departures": 4380,
+          "total": 9320
+        },
+        {
+          "region": "유럽",
+          "label": "폴란드",
+          "arrivals": 8151,
+          "departures": 7668,
+          "total": 15819
+        },
+        {
+          "region": "유럽",
+          "label": "프랑스",
+          "arrivals": 28423,
+          "departures": 25777,
+          "total": 54200
+        },
+        {
+          "region": "유럽",
+          "label": "핀란드",
+          "arrivals": 8864,
+          "departures": 8066,
+          "total": 16930
+        },
+        {
+          "region": "유럽",
+          "label": "헝가리",
+          "arrivals": 7752,
+          "departures": 6651,
+          "total": 14403
+        },
+        {
+          "region": "대양주",
+          "label": "괌",
+          "arrivals": 17975,
+          "departures": 17257,
+          "total": 35232
+        },
+        {
+          "region": "대양주",
+          "label": "뉴질랜드",
+          "arrivals": 5092,
+          "departures": 6045,
+          "total": 11137
+        },
+        {
+          "region": "대양주",
+          "label": "사이판",
+          "arrivals": 2668,
+          "departures": 2179,
+          "total": 4847
+        },
+        {
+          "region": "대양주",
+          "label": "하와이",
+          "arrivals": 18680,
+          "departures": 16574,
+          "total": 35254
+        },
+        {
+          "region": "대양주",
+          "label": "호주",
+          "arrivals": 41323,
+          "departures": 43408,
+          "total": 84731
+        },
+        {
+          "region": "중동",
+          "label": "아랍에미리트",
+          "arrivals": 33689,
+          "departures": 32115,
+          "total": 65804
+        },
+        {
+          "region": "중동",
+          "label": "카타르",
+          "arrivals": 11579,
+          "departures": 11357,
+          "total": 22936
+        },
+        {
+          "region": "기타",
+          "label": "네팔",
+          "arrivals": 2287,
+          "departures": 2355,
+          "total": 4642
+        },
+        {
+          "region": "기타",
+          "label": "스리랑카",
+          "arrivals": 1627,
+          "departures": 1506,
+          "total": 3133
+        },
+        {
+          "region": "기타",
+          "label": "에티오피아",
+          "arrivals": 5520,
+          "departures": 4685,
+          "total": 10205
+        },
+        {
+          "region": "기타",
+          "label": "인도",
+          "arrivals": 11030,
+          "departures": 12251,
+          "total": 23281
+        }
+      ],
+      "apiRows": 58,
+      "matchedCountryRows": 58
+    }
+  },
+  "operationalRead": {
+    "checkedAt": "2026-11-06T06:29:46.9632466Z",
+    "status": "READY",
+    "month": "2026-10",
+    "previousMonth": "2026-09",
+    "countryMonth": "2026-10",
+    "countryRetrievedAt": "2026-11-06T06:19:07.91Z",
+    "timeBandMonth": "2026-10",
+    "timeBandRetrievedAt": "2026-11-06T06:19:07.91Z",
+    "countryPreviousRetrievedAt": "2026-10-25T23:09:49.031Z"
+  }
+}

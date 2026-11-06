@@ -25,6 +25,8 @@ for(const width of [360,390,430,1440])test(`stored changes appear in the general
  await expect(dialog.locator('#update-notice-title')).toBeFocused();
  expect(await dialog.evaluate(element=>element.scrollWidth<=element.clientWidth+1)).toBe(true);
  await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();
+ await page.keyboard.press('Tab');await expect(dialog.locator('.october-passengers-source')).toBeFocused();
+ await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'국가별 실적 보기 →',exact:true})).toBeFocused();
  await page.keyboard.press('Tab');await expect(dialog.locator('.reference-change-notices a').first()).toBeFocused();
  await page.screenshot({path:info.outputPath(`general-reference-notices-${width}.png`)});
  const ids=await dialog.locator('[data-change-id]').evaluateAll(elements=>elements.map(element=>element.getAttribute('data-change-id')));
@@ -49,7 +51,7 @@ test('missing and unchanged collector outputs do not create extra notice cards',
  await page.route('**/api/airport/calendar',route=>route.fulfill({json:{...calendar,changes:[]}}));
  await page.route('**/api/airport/allowance-status',route=>route.fulfill({json:{status:'STORED',countries:[],japan:{previous:values,values,changedAt:null},reviewNotices:[]}}));
  await page.goto('/ko/airport-focus-preview');await expect(page.getByRole('dialog')).toBeVisible();
- await expect(page.locator('[data-change-id]')).toHaveCount(0);await expect(page.getByRole('dialog').locator('.update-notice-items>section')).toHaveCount(2);
+ await expect(page.locator('[data-change-id]')).toHaveCount(0);await expect(page.getByRole('dialog').locator('.update-notice-items>section')).toHaveCount(3);
 });
 test('closing during an in-flight check does not reopen the dialog when data arrives',async({page})=>{
  let release:()=>void=()=>{};const gate=new Promise<void>(resolve=>{release=resolve;});
