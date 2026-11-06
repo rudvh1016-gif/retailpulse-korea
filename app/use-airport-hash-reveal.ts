@@ -52,10 +52,14 @@ export function useAirportHashReveal(onlyId?:string){
    const schedule=()=>{if(!done&&!frame)frame=requestAnimationFrame(align);};
    const mutations=new MutationObserver(schedule),sizes=new ResizeObserver(schedule);
    mutations.observe(document.body,{childList:true,subtree:true});sizes.observe(document.body);
+   // A pending vinext Back/Forward restore may scroll after layout has settled.
+   // Keep this passenger landing aligned until the existing user-input/8s stop.
+   if(onlyId)window.addEventListener('scroll',schedule,{passive:true});
    const stop=()=>finish(),timer=window.setTimeout(stop,SETTLE_MS);
    for(const type of STOP_EVENTS)window.addEventListener(type,stop,{capture:true,passive:true});
    finish=()=>{
     if(done)return;done=true;cancelAnimationFrame(frame);mutations.disconnect();sizes.disconnect();window.clearTimeout(timer);
+    if(onlyId)window.removeEventListener('scroll',schedule);
     for(const type of STOP_EVENTS)window.removeEventListener(type,stop,{capture:true});
    };
    schedule();
