@@ -188,6 +188,17 @@ export async function measureSource(db:D1Database,sourceId:string,nowIso:string,
   return output;
 }
 
+/** The exact A1 projection used by verification and its secret-free diagnostics. */
+export function airportPublicationExpectation(measurement:SourceMeasurement) {
+  if(measurement.sourceId!=='INCHEON_FLIGHT_DETAIL'||measurement.storageValid!==true||measurement.dataValid!==true||
+    !measurement.sample.length||measurement.sample.length>=2000)return null;
+  const flights=measurement.sample as unknown as AirportTodayFlightRow[];
+  const total=summarizeTodayTopGate(flights);
+  return {total:total.departuresTrackedToday,retrievedAt:total.retrievedAt,
+    terminals:Object.fromEntries(Object.entries(summarizeTodayTopGateByTerminal(flights)).map(([key,value])=>[key,value.departuresTrackedToday])),
+    scope:flightScopeCounts(flights)};
+}
+
 /** Exact KORETAIL projection comparison. HTTP success alone never sets publicValid. */
 export function matchPublicEvidence(measurement:SourceMeasurement,body:unknown):boolean|null {
   if(!body||typeof body!=='object')return null;
@@ -200,18 +211,16 @@ export function matchPublicEvidence(measurement:SourceMeasurement,body:unknown):
     return Object.entries(fields).every(([published,stored])=>(actual as EvidenceRow)[published]===expected[stored]);
   };
   if(measurement.sourceId==='INCHEON_FLIGHT_DETAIL') {
-    if(measurement.dataValid!==true||measurement.sample.length>=2000)return null;
-    const flights=measurement.sample as unknown as AirportTodayFlightRow[];
-    const scope=flightScopeCounts(flights), expected=summarizeTodayTopGate(flights);
-    const terminals=summarizeTodayTopGateByTerminal(flights);
+    const expected=airportPublicationExpectation(measurement);
+    if(!expected)return null;
     const actual=summary.airport;
     const counts=actual?.departuresTrackedTodayByTerminal as EvidenceRow|undefined;
     const publishedScope=actual?.flightScope as EvidenceRow|undefined;
-    return actual?.departuresTrackedToday===expected.departuresTrackedToday&&
+    return actual?.departuresTrackedToday===expected.total&&
       actual?.departuresTrackedTodayRetrievedAt===expected.retrievedAt&&
-      !!counts&&Object.keys(counts).length===Object.keys(terminals).length&&
-      Object.entries(terminals).every(([terminal,value])=>counts[terminal]===value.departuresTrackedToday)&&
-      publishedScope?.capped===false&&Object.entries(scope).every(([key,value])=>publishedScope[key]===value);
+      !!counts&&Object.keys(counts).length===Object.keys(expected.terminals).length&&
+      Object.entries(expected.terminals).every(([terminal,value])=>counts[terminal]===value)&&
+      publishedScope?.capped===false&&Object.entries(expected.scope).every(([key,value])=>publishedScope[key]===value);
   }
   if(measurement.sourceId==='SEOUL_CITYDATA_PPLTN'||measurement.sourceId==='SEOUL_CITYDATA_CMRCL') {
     const population=measurement.sourceId==='SEOUL_CITYDATA_PPLTN';
