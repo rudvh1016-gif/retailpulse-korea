@@ -2,6 +2,7 @@ import {expectDateSelection} from './date-selection';
 import { expect, test } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
+import {holdPendingAirportStream} from './helpers/airport-stream-fixture';
 
 for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
  test(`airport selector equal slots and date spacing ${lang} ${width}`, async ({ page }, info) => {
@@ -13,10 +14,12 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
   });
   await page.goto(`/${lang}/airport`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  if(lang==='zh'&&width===430)await holdPendingAirportStream(page);
+  const airport=page.locator('.app[data-hydrated="true"] main');
   const groups = [
-   page.locator('#airport-data-flow'),
-   page.locator('.airport-context-nav'),
-   page.locator('.airport-date-reserved .date-nav-shortcuts'),
+   airport.locator('#airport-data-flow'),
+   airport.locator('.airport-context-nav'),
+   airport.locator('.airport-date-reserved .date-nav-shortcuts'),
   ];
   for (const [index, group] of groups.entries()) {
    await expect(group).toBeVisible();
@@ -60,15 +63,15 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
    }
   }
   if (width <= 600) {
-   const labels = page.locator('.airport-view > .airport-menu-label');
+   const labels = airport.locator('.airport-view > .airport-menu-label');
    await expect(labels).toHaveCount(2);
    for (const label of await labels.all()) await expect(label).toHaveCSS('margin-top', '8px');
    await expect(groups[1]).toHaveCSS('min-height', '44px');
-   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '4px');
-   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-bottom', '4px');
+   await expect(airport.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '4px');
+   await expect(airport.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-bottom', '4px');
   } else {
    await expect(groups[1]).toHaveCSS('min-height', '54px');
-   await expect(page.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '8px');
+   await expect(airport.locator('.airport-date-reserved .date-nav')).toHaveCSS('padding-top', '8px');
   }
   const terminal = groups[0].getByRole('tab', { name: 'T1', exact: true });
   await terminal.click(); await expect(terminal).toHaveAttribute('aria-selected', 'true');
