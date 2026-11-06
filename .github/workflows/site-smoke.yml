@@ -106,7 +106,25 @@ jobs:
 
           const about = await fetch(`${origin}/ko/about`, { redirect: "follow", signal: AbortSignal.timeout(15000) });
           const aboutHtml = await about.text();
-          check("about page is live", about.status === 200 && aboutHtml.includes("KORETAIL은 무엇인가요"), `status ${about.status}`);
+          // BEGIN ABOUT CONTENT CONTRACT
+          function aboutContentIsPresent(status, html) {
+            if (status !== 200) return false;
+            const content = html.replace(/<(script|style|template)\b[^>]*>[\s\S]*?<\/\1>/gi, "").replace(/<!--[\s\S]*?-->/g, "");
+            const main = content.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? "";
+            const text = value => value.replace(/<[^>]*>/g, " ").replace(/&nbsp;|&#160;|&#x0*a0;/gi, " ").replace(/\s+/g, " ").trim();
+            const heading = text(main.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i)?.[1] ?? "");
+            const sections = [...main.matchAll(/<section\b[^>]*\bclass="[^"]*\babout-section\b[^"]*"[^>]*>([\s\S]*?)<\/section>/gi)].map(match => ({
+              heading: text(match[1].match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/i)?.[1] ?? ""), body: text(match[1]),
+            }));
+            return heading === "인천공항의 흐름을 한눈에" && text(main).includes("자료별 기준일과 출처를 함께 안내합니다.") && [
+              ["누구를 위한 서비스인가요?", "공항의 오늘과 달라진 흐름을 살펴보는 서비스입니다."],
+              ["어떤 정보를 볼 수 있나요?", "국가별 흐름은 목적지별 여객과 항공편"],
+              ["숫자와 색은 어떻게 읽나요?", "표시 숫자는 반올림하며 계산은 원래 값으로 합니다."],
+              ["자료를 볼 때 주의할 점", "목적지 국가는 승객 국적이 아닙니다."],
+            ].every(([title, body]) => sections.some(section => section.heading === title && section.body.includes(body)));
+          }
+          // END ABOUT CONTENT CONTRACT
+          check("about page is live", aboutContentIsPresent(about.status, aboutHtml), `status ${about.status}; current title, introduction and four populated sections required`);
 
           // "HTTP 200 with no data" must never read as healthy. On 2026-09-01 the
           // D1 free daily row-read allowance ran out: every page still answered
