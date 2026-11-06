@@ -1,4 +1,5 @@
 import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
+import {holdPendingAirportStream} from './helpers/airport-stream-fixture';
 import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 import type {LiveSummary} from '../app/live-signals';
@@ -20,7 +21,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  const resolution=await image.evaluate(async element=>{const im=element as HTMLImageElement,source=new Image();source.src=im.currentSrc;await source.decode();const css=getComputedStyle(im);return {pixels:source.naturalWidth,required:im.getBoundingClientRect().width*devicePixelRatio,filter:css.filter,opacity:css.opacity,transform:css.transform};});
  expect(resolution.pixels).toBeGreaterThanOrEqual(resolution.required);expect(resolution).toMatchObject({filter:'none',opacity:'1',transform:'none'});
  await page.goto('/'+lang+'/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- const travel=page.getByTestId('airport-customs-news-entry');await travel.scrollIntoViewIfNeeded();
+ if(lang==='zh'&&width===390)await holdPendingAirportStream(page);
+ const travel=page.locator('.app[data-hydrated="true"] main').getByTestId('airport-customs-news-entry');await expect(travel).toBeVisible();await travel.scrollIntoViewIfNeeded();
  await expect(page.getByTestId('departure-guide-entry')).toHaveCount(0);expect((await travel.boundingBox())!.height).toBeGreaterThanOrEqual(44);
  await travel.focus();await expect(travel).toBeFocused();await expect(travel).toHaveAttribute('href',`/${lang}/airport-news`);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);await context.close();
