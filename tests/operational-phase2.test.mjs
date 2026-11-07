@@ -259,6 +259,13 @@ approvedCanonicalPatches['app/[locale]/[slug]/page.tsx']=[[
  'import {AirportFocusGlance as AirportGlancePreview} from "../../airport-focus-production";\nimport {AirportPreparation} from "../../airport-preparation-production";',
  'import {AirportFocusGlance as AirportGlancePreview,AirportPreparation} from "../../airport-focus-production";',
 ],...(approvedCanonicalPatches['app/[locale]/[slug]/page.tsx']??[])];
+// Requested shopping-report discovery: reverse only the two sitemap hunks.
+// The original protected hash and all scheduling/UI locks remain unchanged.
+approvedCanonicalPatches['app/sitemap.ts']=[
+ ['  return [...seoLocales.flatMap((locale) => [','  return seoLocales.flatMap((locale) => ['],
+ ['  ]),\n    // This static report exists only in Korean. Do not invent translations or lastmod.\n    { url: `${siteOrigin}/shopping-report/` },\n  ];','  ]);'],
+ ...(approvedCanonicalPatches['app/sitemap.ts']??[]),
+];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

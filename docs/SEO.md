@@ -109,3 +109,18 @@ Official guidance checked 2026-10-21:
 `OAI-SearchBot` is for ChatGPT search; `GPTBot` training permission is independent.
 The existing wildcard policy already permits public pages. No extra bot-specific
 permission or special AI markup is needed for this rendering correction.
+
+### 2026-11-07 Shopping report discovery
+
+Read-only production inspection found `/shopping-report/` serving the published
+Korean report without a canonical or social-preview metadata, and absent from
+`/sitemap.xml`. The report now declares its trailing-slash canonical, reuses its
+existing title/description and approved KORETAIL image for link previews, and has
+one sitemap entry. It has no translated counterparts and no verified modification
+timestamp, so no language alternates or `lastmod` are invented.
+
+This metadata-only change leaves the report body, scripts, source data, restrictive
+CSP, consent and analytics unchanged. The report still sends no analytics and is
+not included in GA page-view totals. Better discovery and previews are intended;
+search indexing, rankings, click-through rate and traffic improvement require
+later evidence and are not guaranteed by this correction.
