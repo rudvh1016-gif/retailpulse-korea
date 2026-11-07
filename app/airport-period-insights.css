@@ -43,3 +43,10 @@
 .shift-panel-controls input:focus-visible,.shift-panel-controls button:focus-visible{outline:2px solid #244c75;outline-offset:2px}
 #airport-insight-briefing .shift-briefing{margin-top:14px;border-top:0;padding-top:0}
 .shift-panel-status{font-size:13px;color:#66727d;line-height:1.7;padding-block:20px}
+
+/* The live home is embedded in .page-shell, which already clears the fixed
+   navigation. Do not stack the standalone preview's bottom spacer above the
+   site footer; keep one compact gap after the source/map links instead. */
+.page-shell > .airport-insight-shell:has(> #airport-insight-overview){padding-bottom:0}
+.airport-insight-shell #airport-insight-overview :is(.airport-focus-operating,.glance-preview){padding-bottom:0}
+.page-shell > .airport-insight-shell:has(> #airport-insight-overview) + .site-footer{margin-top:24px}
