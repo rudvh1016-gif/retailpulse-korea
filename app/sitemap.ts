@@ -25,7 +25,7 @@ function localeAlternates(slug?: SeoSlug, area?: (typeof tourismDeskAreas)[numbe
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   if (isStagingDeployment) return [];
-  return seoLocales.flatMap((locale) => [
+  return [...seoLocales.flatMap((locale) => [
     {
       url: `${siteOrigin}${seoPath(locale)}`,
       changeFrequency: "daily" as const,
@@ -45,5 +45,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
       alternates: { languages: localeAlternates("tourism-desk", area) },
     })),
-  ]);
+  ]),
+    // This static report exists only in Korean. Do not invent translations or lastmod.
+    { url: `${siteOrigin}/shopping-report/` },
+  ];
 }

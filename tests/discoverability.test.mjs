@@ -406,8 +406,10 @@ test("the sitemap does not invent modification dates without content-change evid
   }
 });
 
-test("every sitemap entry declares all four locales plus x-default", () => {
-  const entries = sitemapModule.default();
+test("every localized sitemap entry declares all four locales plus x-default", () => {
+  const allEntries = sitemapModule.default();
+  const entries = allEntries.filter((entry) => entry.url !== `${ORIGIN}/shopping-report/`);
+  assert.equal(allEntries.length, entries.length + 1, "include the Korean-only static report once");
   // Without this, an empty sitemap would pass by iterating nothing — which is
   // exactly how this test first passed under the staging flag while the two
   // beside it failed.
