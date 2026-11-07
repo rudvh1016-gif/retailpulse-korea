@@ -259,6 +259,11 @@ approvedCanonicalPatches['app/[locale]/[slug]/page.tsx']=[[
  'import {AirportFocusGlance as AirportGlancePreview} from "../../airport-focus-production";\nimport {AirportPreparation} from "../../airport-preparation-production";',
  'import {AirportFocusGlance as AirportGlancePreview,AirportPreparation} from "../../airport-focus-production";',
 ],...(approvedCanonicalPatches['app/[locale]/[slug]/page.tsx']??[])];
+// Owner-requested first-screen speed: reverse only the exact import, page
+// signature and resource-hint insertion. All protected hashes remain fixed.
+const earlyFlightPatches=JSON.parse(readFileSync('tests/fixtures/early-flight-preload-20261105-approved-patches.json','utf8'));
+assert.equal(earlyFlightPatches.length,3);
+approvedCanonicalPatches['app/[locale]/page.tsx']=[...earlyFlightPatches,...(approvedCanonicalPatches['app/[locale]/page.tsx']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

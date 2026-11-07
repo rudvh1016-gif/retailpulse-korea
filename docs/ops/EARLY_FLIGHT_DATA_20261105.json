@@ -1,0 +1,475 @@
+{
+  "baselineCommit": "c2ae784db00e174abbb4a0435ce175238154ed43",
+  "capturedAt": "2026-11-05T16:10:25.290Z",
+  "day": "2026-11-06",
+  "method": "Latest main production build; gzip static bytes over local HTTP; 3 cold contexts per width; mobile4xCPU/150ms/1.6Mbps; desktop1xCPU/20ms/20Mbps; fixed latest public API payloads with each captured round-trip replayed as fixed response delay via route fulfillment (API transfer bypasses network throttling); not production speed",
+  "before": [
+    {
+      "width": 390,
+      "fcp": 1560,
+      "lcp": 1560,
+      "cls": 0.0461294517061849,
+      "blocking": 198,
+      "hydratedAt": 4058.5,
+      "flightReadyAt": 4859.299999952316,
+      "transferBytes": 1382652,
+      "flights": [
+        1,
+        1,
+        1
+      ],
+      "week": [
+        1,
+        1,
+        1
+      ],
+      "valid": true
+    },
+    {
+      "width": 1440,
+      "fcp": 296,
+      "lcp": 296,
+      "cls": 0.022734242689344618,
+      "blocking": 0,
+      "hydratedAt": 564.3000000119209,
+      "flightReadyAt": 2383.100000023842,
+      "transferBytes": 1507059,
+      "flights": [
+        1,
+        1,
+        1
+      ],
+      "week": [
+        1,
+        1,
+        1
+      ],
+      "valid": true
+    }
+  ],
+  "after": [
+    {
+      "width": 390,
+      "fcp": 1540,
+      "lcp": 1540,
+      "cls": 0.04542796770468517,
+      "blocking": 196,
+      "hydratedAt": 4041.100000023842,
+      "flightReadyAt": 4234.699999988079,
+      "transferBytes": 1382695,
+      "flights": [
+        1,
+        1,
+        1
+      ],
+      "week": [
+        1,
+        1,
+        1
+      ],
+      "valid": true
+    },
+    {
+      "width": 1440,
+      "fcp": 268,
+      "lcp": 268,
+      "cls": 0.022734242689344618,
+      "blocking": 0,
+      "hydratedAt": 559.6000000238419,
+      "flightReadyAt": 2407.199999988079,
+      "transferBytes": 1507102,
+      "flights": [
+        1,
+        1,
+        1
+      ],
+      "week": [
+        1,
+        1,
+        1
+      ],
+      "valid": true
+    }
+  ],
+  "apiTimings": {
+    "before": [
+      {
+        "width": 390,
+        "api": {
+          "/api/live/summary": {
+            "start": 201.5,
+            "end": 2489.199999988079
+          },
+          "/api/live/flights": {
+            "start": 3226.899999976158,
+            "end": 4799
+          },
+          "/api/live/glance-week-reference": {
+            "start": 4900.299999952316,
+            "end": 5414.399999976158
+          }
+        }
+      },
+      {
+        "width": 1440,
+        "api": {
+          "/api/live/summary": {
+            "start": 50.69999998807907,
+            "end": 2333.100000023842
+          },
+          "/api/live/flights": {
+            "start": 482,
+            "end": 2055.2000000476837
+          },
+          "/api/live/glance-week-reference": {
+            "start": 2397.100000023842,
+            "end": 2913.400000035763
+          }
+        }
+      }
+    ],
+    "after": [
+      {
+        "width": 390,
+        "api": {
+          "/api/live/summary": {
+            "start": 203.80000001192093,
+            "end": 2493
+          },
+          "/api/live/flights": {
+            "start": 204.20000004768372,
+            "end": 1785.8999999761581
+          },
+          "/api/live/glance-week-reference": {
+            "start": 3241.800000011921,
+            "end": 3757.900000035763
+          }
+        }
+      },
+      {
+        "width": 1440,
+        "api": {
+          "/api/live/summary": {
+            "start": 54.5,
+            "end": 2333.300000011921
+          },
+          "/api/live/flights": {
+            "start": 54.5,
+            "end": 1632.699999988079
+          },
+          "/api/live/glance-week-reference": {
+            "start": 480.80000001192093,
+            "end": 1001
+          }
+        }
+      }
+    ]
+  },
+  "releaseBudget": {
+    "frontendLabOnly": true,
+    "liveBackendMeasured": false,
+    "sourceDate": "2026-11-06",
+    "method": "Latest main production build; gzip static bytes over local HTTP; 3 cold contexts per width; mobile4xCPU/150ms/1.6Mbps; desktop1xCPU/20ms/20Mbps; fixed latest public API payloads with each captured round-trip replayed as fixed response delay via route fulfillment (API transfer bypasses network throttling); not production speed",
+    "passed": true,
+    "rows": [
+      {
+        "width": 390,
+        "differences": {
+          "lcpMs": {
+            "before": 1560,
+            "after": 1540,
+            "delta": -20,
+            "percent": -1.2820512820512775
+          },
+          "fcpMs": {
+            "before": 1560,
+            "after": 1540,
+            "delta": -20,
+            "percent": -1.2820512820512775
+          },
+          "cls": {
+            "before": 0.0461294517061849,
+            "after": 0.04542796770468517,
+            "delta": -0.0007014840014997262,
+            "percent": -1.5206857561796516
+          },
+          "observedBlockingMs": {
+            "before": 198,
+            "after": 196,
+            "delta": -2,
+            "percent": -1.0101010101010055
+          },
+          "initialTransferBytes": {
+            "before": 1382652,
+            "after": 1382695,
+            "delta": 43,
+            "percent": 0.0031099654866251214
+          },
+          "imageTransferBytes": {
+            "before": 67558,
+            "after": 67558,
+            "delta": 0,
+            "percent": 0
+          }
+        },
+        "budgetPassed": true,
+        "failures": [],
+        "lcpElementChanged": false
+      },
+      {
+        "width": 1440,
+        "differences": {
+          "lcpMs": {
+            "before": 296,
+            "after": 268,
+            "delta": -28,
+            "percent": -9.459459459459463
+          },
+          "fcpMs": {
+            "before": 296,
+            "after": 268,
+            "delta": -28,
+            "percent": -9.459459459459463
+          },
+          "cls": {
+            "before": 0.022734242689344618,
+            "after": 0.022734242689344618,
+            "delta": 0,
+            "percent": 0
+          },
+          "observedBlockingMs": {
+            "before": 0,
+            "after": 0,
+            "delta": 0,
+            "percent": null
+          },
+          "initialTransferBytes": {
+            "before": 1507059,
+            "after": 1507102,
+            "delta": 43,
+            "percent": 0.002853239322408996
+          },
+          "imageTransferBytes": {
+            "before": 191965,
+            "after": 191965,
+            "delta": 0,
+            "percent": 0
+          }
+        },
+        "budgetPassed": true,
+        "failures": [],
+        "lcpElementChanged": false
+      }
+    ]
+  },
+  "renderedValuesEqual": true,
+  "firstViewportPixelsIdentical": {
+    "390": true,
+    "1440": true
+  },
+  "payloadContracts": [
+    {
+      "name": "preload success: one network read, twelve consumers, exact full fixture",
+      "passed": true,
+      "detail": {
+        "consumers": 12,
+        "flights": 550,
+        "payloadExact": true
+      },
+      "requests": [
+        "/api/live/flights?date=2026-11-06&_day=2026-11-03"
+      ]
+    },
+    {
+      "name": "HTTP503 preload: no confirmed empty, later explicit recovery",
+      "passed": true,
+      "detail": [
+        "FAILED",
+        "OK"
+      ],
+      "requests": [
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03",
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03"
+      ]
+    },
+    {
+      "name": "degraded200 preload: never a successful zero",
+      "passed": true,
+      "detail": [
+        "FAILED",
+        "OK"
+      ],
+      "requests": [
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03",
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03"
+      ]
+    },
+    {
+      "name": "wrong-date preload rejected and matching next reply recovered",
+      "passed": true,
+      "detail": [
+        "FAILED",
+        "OK"
+      ],
+      "requests": [
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03",
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03"
+      ]
+    },
+    {
+      "name": "interrupted preload retries within bounds",
+      "passed": true,
+      "detail": {
+        "status": "OK",
+        "readCount": 2
+      },
+      "requests": [
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03",
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03"
+      ]
+    },
+    {
+      "name": "KST year rollover",
+      "passed": true,
+      "detail": [
+        {
+          "day": "2027-01-01",
+          "basis": "OFFICIAL_DEPARTURE_SCHEDULE"
+        },
+        {
+          "day": "2027-01-01",
+          "basis": "COLLECTED_FLIGHT_RECORDS"
+        }
+      ],
+      "requests": [
+        "/api/live/flights?date=2027-01-01&_day=2026-12-31",
+        "/api/live/flights?date=2027-01-01&_day=2027-01-01"
+      ]
+    },
+    {
+      "name": "KST leap-day rollover",
+      "passed": true,
+      "detail": [
+        {
+          "day": "2028-02-29",
+          "basis": "OFFICIAL_DEPARTURE_SCHEDULE"
+        },
+        {
+          "day": "2028-02-29",
+          "basis": "COLLECTED_FLIGHT_RECORDS"
+        }
+      ],
+      "requests": [
+        "/api/live/flights?date=2028-02-29&_day=2028-02-28",
+        "/api/live/flights?date=2028-02-29&_day=2028-02-29"
+      ]
+    },
+    {
+      "name": "server/browser day mismatch does not reuse another-day preload",
+      "passed": true,
+      "detail": {
+        "status": "OK",
+        "day": "2026-11-04",
+        "unusedPreviousDayPreload": true
+      },
+      "requests": [
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03",
+        "/api/live/flights?date=2026-11-04&_day=2026-11-04"
+      ]
+    },
+    {
+      "name": "late previous day cannot replace another cached date",
+      "passed": true,
+      "detail": {
+        "selectedDay": "2026-11-03",
+        "unchangedAfterLateReply": true
+      },
+      "requests": [
+        "/api/live/flights?date=2026-11-02&_day=2026-11-03",
+        "/api/live/flights?date=2026-11-03&_day=2026-11-03"
+      ]
+    }
+  ],
+  "sourceHashes": {
+    "app/[locale]/page.tsx": "5d875c4497e5d647743725e55bdf57a7909464e34c66a80afc94a213f882cc55",
+    "app/airport-glance-preview.tsx": "ba0611c0b7769ee5cd14c09df98b90f1b55850334386bb3d06b2c9fceaaf292f"
+  },
+  "payloadHashes": [
+    {
+      "path": "/api/live/summary",
+      "status": 200,
+      "replayedDelayMs": 2261,
+      "bytes": 177100,
+      "sha256": "d476cf1427060d5da1a5cc7f7630ffbb0016de500b602e07a62bd8e77ae3fba7"
+    },
+    {
+      "path": "/api/live/summary?date=2026-11-06",
+      "status": 200,
+      "replayedDelayMs": 1236,
+      "bytes": 177100,
+      "sha256": "42eeed1402ece9a2043a8d3a1c5eb5f7f6f58a25c7e54e3c962aba893cbda077"
+    },
+    {
+      "path": "/api/live/flights?date=2026-11-06",
+      "status": 200,
+      "replayedDelayMs": 1561,
+      "bytes": 222578,
+      "sha256": "7577ccaccc34927d74262f0bc1ca5afbf38b70dc31de14832ee9d773c3e6a6be"
+    },
+    {
+      "path": "/api/live/airport-months?month=2026-11",
+      "status": 200,
+      "replayedDelayMs": 1835,
+      "bytes": 28191,
+      "sha256": "3a07bd05dae2fd7d7d458ed9ea5212768040fa029a3ae6e7691a455dcb248c87"
+    },
+    {
+      "path": "/api/live/airport-passenger-stats?month=2026-11",
+      "status": 200,
+      "replayedDelayMs": 2266,
+      "bytes": 23776,
+      "sha256": "2a994afe34f991ca523bcd3c76667de32695b64409c3f2fb809afc41959dbc09"
+    },
+    {
+      "path": "/api/live/passenger-reference?month=2026-10",
+      "status": 200,
+      "replayedDelayMs": 388,
+      "bytes": 6020,
+      "sha256": "38773917dcca6632dac16bc1e02336dc42890cd0fa67eb092f6c38f1c26ef1df"
+    },
+    {
+      "path": "/api/live/glance-week-reference?date=2026-11-06",
+      "status": 200,
+      "replayedDelayMs": 505,
+      "bytes": 367,
+      "sha256": "b22d14122c03c1e4e6fd88f70c1fd5d9c88bdb95f228c21ac0a1abc870dfab20"
+    },
+    {
+      "path": "/api/live/duty-free-exchange",
+      "status": 200,
+      "replayedDelayMs": 1150,
+      "bytes": 1150,
+      "sha256": "2f192130ad7ab682ab1e1c12c8292b33112bb4a2c13c999e5c335aedb04652d1"
+    },
+    {
+      "path": "/api/airport/calendar",
+      "status": 200,
+      "replayedDelayMs": 1035,
+      "bytes": 131571,
+      "sha256": "8cd467f1897dca81194a042f54845b1c8e885dec591242c7d8c16ee54a09f8b6"
+    },
+    {
+      "path": "/api/airport/weather",
+      "status": 200,
+      "replayedDelayMs": 475,
+      "bytes": 423,
+      "sha256": "1511da93b7c71335d327937be74b517b0b6d747116c0fba419ce96768a04d2f8"
+    }
+  ],
+  "limits": [
+    "API route fulfillment replays captured round-trip as delay and bypasses network throttling; this is not a real backend benchmark.",
+    "No production-wide speed or capacity claim. Server/device day disagreement can leave one unused preload.",
+    "First viewport pixels match; later time-dependent graph pixels differ.",
+    "Safari and Firefox are unmeasured."
+  ]
+}

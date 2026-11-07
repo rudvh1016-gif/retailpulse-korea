@@ -1,0 +1,14 @@
+[
+  [
+    "import { isValidKstDay, kstDayOf } from \"../../lib/kst\";\n",
+    ""
+  ],
+  [
+    "export default async function LocaleHome({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams?: Promise<{ date?: string | string[] }> }) {\n",
+    "export default async function LocaleHome({ params }: { params: Promise<{ locale: string }> }) {\n"
+  ],
+  [
+    "  // This overview always reads the selected flight day. Reuse the client's\n  // exact URL so its request can consume this preload before JS has hydrated.\n  const query = await searchParams;\n  const selected = Array.isArray(query?.date) ? query.date[0] : query?.date;\n  const today = kstDayOf(new Date().toISOString());\n  const day = isValidKstDay(selected) ? selected : today;\n  preload(`/api/live/flights?date=${encodeURIComponent(day)}&_day=${today}`, { as: \"fetch\", crossOrigin: \"anonymous\" });\n",
+    ""
+  ]
+]
