@@ -266,6 +266,16 @@ approvedCanonicalPatches['app/sitemap.ts']=[
  ['  ]),\n    // This static report exists only in Korean. Do not invent translations or lastmod.\n    { url: `${siteOrigin}/shopping-report/` },\n  ];','  ]);'],
  ...(approvedCanonicalPatches['app/sitemap.ts']??[]),
 ];
+// Owner-approved terminal v2: reverse only the selector extraction and the
+// terminal history-state fix exposed by its Back/Forward acceptance test.
+// All original protected hashes, source behavior and scheduler locks remain.
+const terminalRefinementPatches=JSON.parse(readFileSync('tests/fixtures/terminal-refinement-20261110-approved-patches.json','utf8'));
+assert.deepEqual(Object.keys(terminalRefinementPatches),['app/airport-view.tsx','app/retailpulse-app.tsx']);
+assert.equal(terminalRefinementPatches['app/airport-view.tsx'].length,2);
+assert.equal(terminalRefinementPatches['app/retailpulse-app.tsx'].length,5);
+for(const [file,patches] of Object.entries(terminalRefinementPatches)){
+ approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+}
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

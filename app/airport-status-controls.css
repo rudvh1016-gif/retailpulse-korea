@@ -45,6 +45,94 @@
 
 }
 
+/* 2026-11-10 owner-approved terminal refinement, scoped to this control only.
+   A light shared surface replaces the heavy filled selection in the first draft.
+   Data scope, information tabs and the separately approved day rail stay unchanged. */
+:root body .app .airport-view > #airport-terminal-label { margin-bottom:8px; }
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:stretch;
+  gap:5px;
+  width:100%;
+  max-width:480px;
+  min-height:62px;
+  margin:0;
+  padding:5px;
+  border:0;
+  border-radius:12px;
+  background:#f6f7f9;
+  overflow:visible;
+  box-shadow:none;
+}
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  width:100%;
+  min-width:0;
+  min-height:52px;
+  padding:8px 4px;
+  border:1px solid transparent;
+  border-radius:8px;
+  background:transparent;
+  color:#4b5159;
+  box-shadow:none;
+  font-size:13px;
+  font-weight:500;
+  line-height:1.35;
+  letter-spacing:0;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  touch-action:manipulation;
+}
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button::after { display:none; }
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button[aria-selected="true"] {
+  border-color:#b4c1cd;
+  background:#fff;
+  color:#193b57;
+  font-weight:650;
+}
+.terminal-choice-title { position:relative; max-width:100%; }
+.terminal-choice-rail > button[aria-selected="true"] .terminal-choice-title { max-width:calc(100% - 15px); margin-inline-end:15px; }
+.terminal-choice-check { position:absolute; inset-inline-start:calc(100% + 4px); top:50%; transform:translateY(-50%); }
+.terminal-choice-rail:lang(en) > button:last-child .terminal-choice-title { position:static; max-width:100%; margin-inline-end:0; }
+.terminal-choice-rail:lang(en) > button:last-child .terminal-choice-check { inset-inline-start:auto; inset-inline-end:3px; top:3px; width:8px; height:8px; transform:none; }
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button .terminal-choice-description {
+  max-width:100%;
+  color:#626b76;
+  font-size:11px;
+  font-weight:400;
+  line-height:1.4;
+  letter-spacing:0;
+}
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button[aria-selected="true"] .terminal-choice-description { color:#52677b; }
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button:focus-visible {
+  z-index:1;
+  outline:2px solid #193b57;
+  outline-offset:2px;
+}
+@media(hover:hover) {
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button[aria-selected="false"]:hover { background:#eceff3; color:#193b57; }
+}
+:root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button:active { background:#e9edf2; }
+@media(max-width:600px) {
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail { max-width:none; }
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button { font-size:12px; }
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button .terminal-choice-description { font-size:10px; }
+}
+@media(forced-colors:active) {
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail { background:Canvas; }
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button { color:CanvasText; }
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button[aria-selected="true"] { border-color:Highlight; color:Highlight; background:Canvas; }
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button .terminal-choice-description { color:CanvasText; }
+  :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button:focus-visible { outline-color:Highlight; }
+}
+
 /* Airport day navigation: one quiet, evenly spaced reading rail.
    This scoped rule owns the final appearance across the earlier shared date
    styles. Dates, KST clock, stored-date access and request behavior are unchanged. */

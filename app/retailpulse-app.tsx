@@ -2,7 +2,7 @@
 import {formatDisplayInteger} from "../lib/display-number";
 import './airport-history-polish.css';
 import { ShoppingDesktopEntry } from './shopping-entry';
-import {deviceAirportScope,saveAirportScope} from '../lib/airport-scope-preference';
+import {deviceAirportScope,saveAirportScope,pushAirportHistory} from '../lib/airport-scope-preference';
 import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
 import {ConciseExplainer} from './concise-explainer';
 import {ChangeRate} from './change-rate';
@@ -471,7 +471,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (!/\/(business|more)\/?$/.test(window.location.pathname) && query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
-      const airportScope=deviceAirportScope();
+      const airportScope=deviceAirportScope(window.history.state);
       setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
       setConcourse(airportScope==='CONCOURSE');
       const [, locale, slug, routeArea] = window.location.pathname.split("/");
@@ -514,7 +514,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if (nextView === 'business' || nextView === 'more') businessScopeParams(businessDestination(nextArea, nextTerminal)).forEach((value, key) => params.set(key, value));
     const paramsText = params.toString(); // not .size: older Safari/Chrome lack URLSearchParams.size
     const nextPath = (preserveHome ? `/${nextLang}` : routeFor(nextLang, nextView, nextArea)) + (paramsText ? `?${paramsText}` : '');
-    if (window.location.pathname + window.location.search !== nextPath) window.history.pushState({}, "", nextPath);
+    if (window.location.pathname + window.location.search !== nextPath) pushAirportHistory(window.history, nextPath, concourse ? 'CONCOURSE' : terminal, nextConcourse ? 'CONCOURSE' : nextTerminal);
     window.dispatchEvent(new Event("koretail:analysis-nav"));
   }
 
@@ -532,7 +532,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     setServiceDate(next);
     const url = new URL(window.location.href);
     if (next) url.searchParams.set('date', next); else url.searchParams.delete('date');
-    window.history.pushState({}, '', url.pathname + url.search + url.hash);
+    pushAirportHistory(window.history, url.pathname + url.search + url.hash, concourse ? 'CONCOURSE' : terminal);
     window.dispatchEvent(new Event('koretail:analysis-nav'));
   }
 
@@ -540,8 +540,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     setLang(next);
     if (/^\/(?:ko|en|zh|ja)(?:\/|$)/.test(window.location.pathname)) {
       const path=window.location.pathname.replace(/^\/(?:ko|en|zh|ja)(?=\/|$)/,`/${next}`);
-      window.history.pushState({}, "", path+window.location.search+window.location.hash);
-    } else if (homeVisible) window.history.pushState({}, "", `/${next}${window.location.search}`);
+      pushAirportHistory(window.history, path+window.location.search+window.location.hash, concourse ? 'CONCOURSE' : terminal);
+    } else if (homeVisible) pushAirportHistory(window.history, `/${next}${window.location.search}`, concourse ? 'CONCOURSE' : terminal);
     else updateUrl(next, view, selected);
     window.dispatchEvent(new Event("koretail:analysis-nav"));
   }
