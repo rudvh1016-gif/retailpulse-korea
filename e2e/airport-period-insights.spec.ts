@@ -85,7 +85,9 @@ for(const width of [360,1440])test(`airport navigation has clear aligned selecti
  const terminals=page.locator('#airport-data-flow');
  await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toBeVisible();
  await expect(async()=>{const tab=terminals.getByRole('tab',{name:'T2',exact:true});await tab.click();await expect(tab).toHaveAttribute('aria-selected','true',{timeout:500});}).toPass();
- await expect(terminals.getByRole('tab',{name:'T2',exact:true})).toHaveCSS('border-bottom-color',width>=1000?'rgb(17, 17, 17)':'rgb(52, 91, 123)');
+ const selected=terminals.getByRole('tab',{name:'T2',exact:true});
+ await expect(selected).toHaveCSS('border-color','rgb(180, 193, 205)');
+ await expect(selected.locator('.terminal-choice-check')).toBeVisible();
  const nav=page.locator('.airport-context-nav');await nav.getByRole('button',{name:'항공편',exact:true}).click();
  await expect(nav.getByRole('button',{name:'항공편',exact:true})).toHaveAttribute('aria-current','page');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
@@ -172,11 +174,16 @@ for(const width of [320,390,1440])test(`mobile airport controls and country head
  const days=page.locator('.airport-date-reserved .date-nav-shortcuts > button');
  await expect(terminal).toHaveCount(4);await expect(nav).toHaveCount(5);await expect(days).toHaveCount(3);
  if(width<=600){
-  for(const button of [...await terminal.all(),...await nav.all()]){
+  // The approved two-line terminal rail is centered; information navigation stays left aligned.
+  for(const button of await terminal.all()){
+   expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(52);
+   await expect(button).toHaveCSS('text-align','center');
+  }
+  for(const button of await nav.all()){
    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
    await expect(button).toHaveCSS('text-align','left');
   }
-  await expect(terminal.first()).toHaveCSS('font-size','11px');
+  await expect(terminal.first()).toHaveCSS('font-size','12px');
   await expect(nav.first()).toHaveCSS('font-size','11px');
   for(const button of await days.all()){
    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(56);

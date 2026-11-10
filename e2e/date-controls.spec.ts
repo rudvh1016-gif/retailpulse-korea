@@ -37,8 +37,8 @@ for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', '
       expect(box.width).toBeCloseTo(boxes[0].width, 1);
       expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth + 1);
      }
-     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeCloseTo(0, 1);
-     for (const button of await buttons.all()) await expect(button).toHaveCSS('text-align', 'left');
+     for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeCloseTo(index === 0 ? 5 : 0, 1);
+     for (const button of await buttons.all()) await expect(button).toHaveCSS('text-align', index === 0 ? 'center' : 'left');
     } else {
      for (let i = 1; i < boxes.length; i++) expect(boxes[i].left - boxes[i - 1].right).toBeCloseTo(0, 1);
     }

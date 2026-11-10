@@ -18,10 +18,10 @@ for(const width of [390,1280])test(`white airport ground and restrained action s
  await page.route('**/api/airport/facilities*',route=>route.fulfill({json:{mode:'airport-facilities',facilities:[],hasMore:false}}));
  await page.goto('/ko/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const tabs=page.locator('#airport-data-flow button');
- for(const tab of await tabs.all())await expect(tab).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+ for(const tab of await tabs.all())await expect(tab).toHaveCSS('background-color',await tab.getAttribute('aria-selected')==='true'?'rgb(255, 255, 255)':'rgba(0, 0, 0, 0)');
  await tabs.nth(2).click();await expect(tabs.nth(2)).toHaveAttribute('aria-selected','true');
  await page.mouse.move(0,0);
- await expect(tabs.nth(2)).toHaveCSS('background-color','rgba(0, 0, 0, 0)');await expect(tabs.nth(2)).toHaveCSS('border-bottom-width','1px');
+ await expect(tabs.nth(2)).toHaveCSS('background-color','rgb(255, 255, 255)');await expect(tabs.nth(2)).toHaveCSS('border-bottom-width','1px');
  const news=page.getByTestId('airport-customs-news-entry');
  await expect(news).toHaveCSS('background-color','rgb(255, 255, 255)');
  await expect(news).toHaveCSS('border-radius','0px');await expect(news).toHaveCSS('box-shadow','none');

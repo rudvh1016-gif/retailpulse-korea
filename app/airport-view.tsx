@@ -21,6 +21,7 @@ import { AirportTaxRefundGuide } from "./airport-tax-refund-guide";
 import { AirportNewsEntry } from "./airport-news-entry";
 import { MonthRangePicker } from "./month-range-picker";
 import { localText } from "./local-text";
+import { AirportTerminalSelector } from "./airport-terminal-selector";
 
 export type AirportSection = "now" | "arrivals" | "flights" | "stores" | "history";
 
@@ -79,11 +80,7 @@ export function AirportView({
       </div>
 
       {(concourse||section === "now")&&<AirportNewsEntry lang={lang}/>}
-      <p className="airport-menu-label" id="airport-terminal-label">{localText(lang,{ko:'터미널 선택',en:'Choose terminal',zh:'选择航站楼',ja:'ターミナルを選択'})}</p>
-      <div id="airport-data-flow" className="terminal-selector" role="tablist" aria-labelledby="airport-terminal-label">
-        {(["all", "T1", "T2"] as Terminal[]).map((item) => <button key={item} className={!concourse&&terminal === item ? "active" : ""} onClick={() => setTerminal(item)} role="tab" aria-selected={!concourse&&terminal === item}>{item === "all" ? <><span>{localText(lang, { ko: "전체", en: "ALL", zh: "全部", ja: "全体" })}</span><small>T1·T2</small></> : item}</button>)}
-        <button className={concourse?'active':''} onClick={()=>setConcourse(true)} role="tab" aria-selected={concourse}>{localText(lang,{ko:'탑승동',en:'Concourse',zh:'登机楼',ja:'搭乗棟'})}</button>
-      </div>
+      <AirportTerminalSelector lang={lang} terminal={terminal} concourse={concourse} setTerminal={setTerminal} setConcourse={setConcourse}/>
 
       {!concourse&&<p className="airport-menu-label airport-section-label">{localText(lang,{ko:'공항 정보 선택',en:'Choose airport information',zh:'选择机场信息',ja:'空港情報を選択'})}</p>}
       {!concourse&&<nav className="airport-context-nav" aria-label={localText(lang, { ko: "공항 정보 구분", en: "Airport sections", zh: "机场信息分类", ja: "空港情報の分類" })}>
