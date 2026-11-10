@@ -9,9 +9,11 @@ test('airport page ground is white without a gray gradient under arrivals, fligh
  // Chart colors and status colors are not flattened by a blanket surface override.
  assert.doesNotMatch(read('app/globals.css'),/\.airport-view\s+\*\s*\{[^}]*background/);
 });
-test('terminal tabs stay transparent and selected airport days lose the sky fill',()=>{
+test('approved terminal selection has a white outline while airport days retain their existing fill rule',()=>{
  const css=read('app/globals.css');
- assert.match(css,/\.app \.airport-view \.terminal-selector button:is\(\.active,\[aria-selected="true"\]\) \{ background:transparent; \}/);
+ const terminalCss=read('app/airport-status-controls.css');
+ assert.match(terminalCss,/#airport-data-flow\.terminal-choice-rail > button\[aria-selected="true"\] \{\s*border-color:#b4c1cd;\s*background:#fff;\s*color:#193b57;/);
+ assert.match(terminalCss,/#airport-data-flow\.terminal-choice-rail > button \{[^}]*background:transparent;/);
  assert.match(css,/\.app \.airport-view \.date-nav \.date-nav-shortcuts button:is\(\.active,\[aria-pressed="true"\]\)\s*\{\s*background:rgb\(255 255 255 \/ 72%\)/);
 });
 test('large calendar is removed from the airport screen without removing historical access or day shortcuts',()=>{

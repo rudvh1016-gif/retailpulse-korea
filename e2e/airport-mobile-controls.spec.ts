@@ -20,7 +20,7 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await page.goto('/ko/airport');
 
   const top=page.locator('.airport-view > .terminal-selector');
-  await expect(top.getByRole('tab').first()).toContainText('T1·T2');
+  await expect(top.getByRole('tab').first()).toContainText('T1 · T2');
   await expect(top.getByRole('tab').first()).toHaveAttribute('aria-selected','true');
   const overview=page.getByTestId('airport-departure-overview');
   await overview.scrollIntoViewIfNeeded();
@@ -29,11 +29,12 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await expect(overview.getByTestId('departure-map-section')).toHaveCount(0);
   await expect(map.locator(':scope > .terminal-selector')).toHaveCount(0);
   const buildingTabs=top.getByRole('tab');
-  await expect(buildingTabs.first()).toContainText('T1·T2');
-  await expect(buildingTabs.last()).toHaveText('탑승동');
-  const label=await buildingTabs.last().evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect(),button=el.getBoundingClientRect();return {lines:range.getClientRects().length,textWidth:text.width,buttonWidth:button.width};});
+  await expect(buildingTabs.first()).toContainText('T1 · T2');
+  await expect(buildingTabs.last()).toHaveAccessibleName('탑승동');
+  await expect(buildingTabs.last().locator('.terminal-choice-description')).toHaveText('Concourse');
+  const label=await buildingTabs.last().locator('.terminal-choice-title').evaluate(el=>{const range=document.createRange();range.selectNodeContents(el);const text=range.getBoundingClientRect(),button=el.closest('button')!.getBoundingClientRect();return {lines:range.getClientRects().length,textWidth:text.width,buttonWidth:button.width};});
   expect(label.lines).toBe(1);expect(label.textWidth).toBeLessThanOrEqual(label.buttonWidth);
-  expect((await buildingTabs.last().boundingBox())!.height).toBeLessThanOrEqual(44);
+  expect((await buildingTabs.last().boundingBox())!.height).toBeGreaterThanOrEqual(52);
 
   await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator','4');
   await expect(page.getByRole('link',{name:'국가별 출발 구역 보기 ↗'})).toBeVisible();
@@ -81,7 +82,7 @@ for (const width of [320,390,430]) test(`airport mobile selectors and gate text 
   await top.getByRole('tab').first().click();
   await page.locator('.airport-context-nav').getByRole('button',{name:'입국',exact:true}).click();
   await expect(top.getByRole('tab').first()).toHaveAttribute('aria-selected','true');
-  await expect(top.getByRole('tab').first()).toContainText('T1·T2');
+  await expect(top.getByRole('tab').first()).toContainText('T1 · T2');
   await expect(page.locator('.airport-arrival-brief')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

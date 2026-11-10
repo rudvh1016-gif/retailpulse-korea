@@ -287,7 +287,7 @@ test("terminal briefing shows one labelled card per terminal and names the longe
   // A single-terminal scope focuses the grid on that terminal; the cards are not repeated there.
   await page.goto("/ko/airport");
   await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-  await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
+  await page.locator(".terminal-selector").getByRole("tab", { name: "T1", exact: true }).click();
   await expect(page.getByRole("tab", { name: "T1", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator('[data-signal-key="terminal-briefing"]')).toHaveCount(0);
 });
@@ -369,7 +369,7 @@ test("departure composition is one accessible tab group with gate, airline and r
   // Wait for the hydrated all-terminal list before clicking, so the click reaches React.
   await page.getByRole("tab", { name: "항공사", exact: true }).click();
   await expect(page.locator(".airport-airline-row")).toHaveCount(3);
-  await page.locator(".terminal-selector button").filter({ hasText: /^T1$/ }).click();
+  await page.locator(".terminal-selector").getByRole("tab", { name: "T1", exact: true }).click();
   await expect(page.locator(".airport-airline-row")).toHaveCount(1);
   await expect(page.locator(".airport-airline-row").first()).toContainText("Asiana Airlines");
   await expect(composition.locator(".airport-composition-scope")).toContainText("제1터미널");

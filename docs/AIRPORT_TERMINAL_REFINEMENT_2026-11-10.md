@@ -53,3 +53,12 @@ changed-file lint has no findings. Browser inventory is complete with 2,357
 cases and no duplicate/missing shards. The health harness ran successfully via
 node --import tsx; its Production/system verdict remains UNKNOWN, not a live
 health claim. CI, PR, merge and deployment evidence belongs in the PR.
+
+The first remote Chromium run rendered the selected rail as approved. Its
+airport-period group passed 86 cases and caught four stale expectations for the
+previous underline/left-aligned terminal design. Those assertions now check the
+new outline, checkmark, centered labels and 52px touch height. A related static
+compatibility sweep updates the old menu name/hover, one-line label assumptions
+and two text-only T1 locators to stable accessible primary names. Non-terminal
+navigation, data and date assertions are retained. A fresh exact-head CI run is
+required; the first failed run is not release evidence.
