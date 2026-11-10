@@ -124,6 +124,9 @@
   :root body .app .airport-view > #airport-data-flow.terminal-choice-rail { max-width:none; }
   :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button { font-size:12px; }
   :root body .app .airport-view > #airport-data-flow.terminal-choice-rail > button .terminal-choice-description { font-size:10px; }
+  /* Preserve the English building name as one word at the narrowest phone width.
+     em keeps this label responsive to enlarged user text. */
+  .terminal-choice-rail:lang(en) > button:last-child .terminal-choice-title { font-size:.9em; }
 }
 @media(forced-colors:active) {
   :root body .app .airport-view > #airport-data-flow.terminal-choice-rail { background:Canvas; }

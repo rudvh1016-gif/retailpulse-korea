@@ -72,3 +72,9 @@ the trace shows its fixed clock was installed only after navigation, and the
 scroll target detached during the subsequent data render. Its fixture now
 sets time before navigation and waits for the real seven-flight model before
 the glyph/scroll assertions. No product code or assertion is disabled.
+
+Visual review of the actual 320px English screenshot found an awkward word
+break in Concourse. The English phone label alone uses .9em (it still scales
+with enlarged text); Korean and all rail dimensions remain unchanged. The
+normal-size localized screenshot test now also asserts that this label stays
+on one line. Enlarged-text containment checks remain unchanged.

@@ -29,6 +29,11 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) for (const width of [320, 390, 1280
       expect(await choice.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
       await expect(choice).toHaveAccessibleDescription(await choice.locator('.terminal-choice-description').innerText());
     }
+    if (lang === 'en') {
+      const title = choices.last().locator('.terminal-choice-title');
+      const label = await title.evaluate(node => { const range = document.createRange(); range.selectNodeContents(node); return { height: range.getBoundingClientRect().height, lineHeight: parseFloat(getComputedStyle(node).lineHeight) }; });
+      expect(label.height).toBeLessThanOrEqual(label.lineHeight + 1);
+    }
     const sizes = await choices.evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().width));
     for (const size of sizes) expect(size).toBeCloseTo(sizes[0], 1);
     await expect(choices.nth(2)).toHaveCSS('background-color', 'rgb(255, 255, 255)');
