@@ -266,6 +266,9 @@ approvedCanonicalPatches['app/sitemap.ts']=[
  ['  ]),\n    // This static report exists only in Korean. Do not invent translations or lastmod.\n    { url: `${siteOrigin}/shopping-report/` },\n  ];','  ]);'],
  ...(approvedCanonicalPatches['app/sitemap.ts']??[]),
 ];
+// Required glyph coverage for the next-week fix: reverse only the cache version.
+const nextWeekFontPatches=JSON.parse(readFileSync('tests/fixtures/next-week-font-cache-20261110-patches.json','utf8'));
+approvedCanonicalPatches['app/globals.css']=[...nextWeekFontPatches,...(approvedCanonicalPatches['app/globals.css']??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

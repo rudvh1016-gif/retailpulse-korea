@@ -21,7 +21,11 @@ test('current month keeps reviewed Korean holidays, full descriptions, exact sou
  for(const date of ['2026-10-25','2026-10-26','2026-10-27'])assert.ok(preparationEventsOn(october,date).some(event=>event.name==='띠딘쥣 연휴'));
  assert.ok(!preparationEventsOn(october,'2026-10-28').some(event=>event.name==='띠딘쥣 연휴'));
  const full=JSON.parse(readFileSync('data/airport-focus-preview/holidays.json','utf8'));
- for(const event of full.events)assert.equal(all.find(row=>row.id===event.id)?.description_ko,event.description_ko);
+ for(const event of full.events){
+  const visible=all.find(row=>row.id===event.id);
+  if(event.checkedAt.slice(0,10)<=asOf)assert.equal(visible?.description_ko,event.description_ko);
+  else assert.equal(visible,undefined,'later evidence must not appear in an earlier as-of snapshot');
+ }
  assert.ok(all.some(event=>event.country==='KR'&&event.start==='2026-12-25'));
  assert.equal(preparationEventsInMonth(all,'2028-02').length,0,'unknown dates are not invented');
 });

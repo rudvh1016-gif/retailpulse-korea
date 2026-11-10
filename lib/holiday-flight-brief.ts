@@ -11,6 +11,15 @@ export interface BriefHoliday {
 export interface CountryFlightChange {
  country:string;delta:number;count:number;mean:number;days:number;
 }
+/** Next calendar week (Monday–Sunday), anchored to the supplied KST civil date.
+ * No device clock or event availability may move this window. */
+export function nextPlanningWeek(asOf:string){
+ if(!isExactDate(asOf))return null;
+ const anchor=new Date(`${asOf}T00:00:00Z`),weekday=(anchor.getUTCDay()+6)%7;
+ const start=new Date(anchor);start.setUTCDate(anchor.getUTCDate()+7-weekday);
+ const end=new Date(start);end.setUTCDate(start.getUTCDate()+6);
+ return {start:start.toISOString().slice(0,10),end:end.toISOString().slice(0,10)};
+}
 export function mergeBriefHolidays(seed:readonly BriefHoliday[],events:readonly CalendarEvent[]|undefined,replacements:readonly {country:string;year:number;scope:string}[]=[]):BriefHoliday[]{
  if(!events)return [...seed];
  const kept=seed.filter(event=>!replacements.some(scope=>event.country===scope.country&&event.calendarScope===scope.scope&&Number(event.start.slice(0,4))===scope.year));

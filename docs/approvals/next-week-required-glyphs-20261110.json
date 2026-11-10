@@ -1,0 +1,36 @@
+{
+  "recordedAt": "2026-11-10",
+  "requestEvidence": {
+    "ownerRequest": "다음주 왜안뜨는거야ㅜ하네스제대로설정해",
+    "scope": "Necessary glyph coverage for the requested accurate next-week dates. This is not an explicit request for a font redesign. Preserve all existing shapes, family, weights and layout; add only 혁/쟁 needed by the verified holiday names and descriptions. No merge or deployment approval is inferred."
+  },
+  "changes": [
+    {
+      "file": "public/fonts/koretail-sans-variable.woff2",
+      "previous": "8a8517c9e1a92f9eea96eea10c8a8546b8b4f46c9ab4049afa19b2784bc8293e",
+      "current": "3710518413bb49c5fecf630551733600bc688787744337dd8967b7306640aa2f",
+      "addedCodepoints": [
+        "U+D601",
+        "U+C7C1"
+      ]
+    }
+  ],
+  "verification": {
+    "oldGlyphsPreserved": 1691,
+    "weightsChecked": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900
+    ],
+    "nameFvarStatGsubGposUnchanged": true,
+    "oldBytes": 231748,
+    "newBytes": 232560
+  },
+  "protectedPathCount": 67
+}
