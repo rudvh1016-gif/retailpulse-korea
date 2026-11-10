@@ -157,7 +157,6 @@ async function readLiveState() {
   return {measurements,incidents,attempts,usage,states,forecast,stuck,inFlight,observedSourceIds,memoryState:available?'PERSISTED_READ':'DORMANT_MIGRATION_UNAVAILABLE'};
 }
 
-const nowIso = new Date().toISOString();
 const workflows = await loadWorkflows();
 const rawYaml = new Map<string, string>(
   await Promise.all(workflows.map(async (facts) => [facts.file, await readText(`.github/workflows/${facts.file}`)] as const)),
@@ -228,6 +227,9 @@ const heartbeats: Heartbeat[] = truth.entries
 const cadence = cadenceByWorkflow(truth);
 const jobBySource = sourceToWorkflow(workflows, rawYaml);
 const live = await readLiveState();
+// Collection may finish while the asynchronous inspection is reading it.
+// Judge observed clocks against the completed read, not the audit's start.
+const nowIso = new Date().toISOString();
 const sources:SourceVerdict[] = live ? live.measurements.map(item=> {
   const job=canonicalOperationalJob(item.sourceId);
   return evaluateSource(sourceObservation(item,job,cadence.get(job)??null),nowIso);
