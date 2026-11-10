@@ -97,7 +97,10 @@ for (const lang of ['ko', 'en', 'zh', 'ja']) test(`every terminal scope fits lar
   }
   await page.emulateMedia({ forcedColors: 'active' });
   const selected = rail.locator('[aria-selected="true"]');
-  await selected.focus();
+  // Pointer focus deliberately has no focus-visible ring. Enter keyboard modality
+  // and move to the first choice before checking the forced-colors focus rule.
+  await selected.press('Home');
+  await expect(selected).toBeFocused();
   await expect(selected).toHaveCSS('outline-style', 'solid');
   await expect(selected.locator('.terminal-choice-check')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);

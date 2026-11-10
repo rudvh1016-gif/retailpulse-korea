@@ -62,3 +62,13 @@ compatibility sweep updates the old menu name/hover, one-line label assumptions
 and two text-only T1 locators to stable accessible primary names. Non-terminal
 navigation, data and date assertions are retained. A fresh exact-head CI run is
 required; the first failed run is not release evidence.
+
+The second run passed all 498 bounded browser cases and 2,352 of 2,357 full
+browser cases. Four new forced-colors assertions incorrectly expected
+`:focus-visible` after pointer/programmatic focus; they now enter keyboard
+modality with Home and require actual focused state before the same outline
+assertion. The remaining Chinese overview case raced the fixture response:
+the trace shows its fixed clock was installed only after navigation, and the
+scroll target detached during the subsequent data render. Its fixture now
+sets time before navigation and waits for the real seven-flight model before
+the glyph/scroll assertions. No product code or assertion is disabled.

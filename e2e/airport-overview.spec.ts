@@ -18,6 +18,8 @@ const FLIGHTS = [
 
 async function open(page: Page, { lang = 'ko', width = 390, suffix = '', scheduleOnly = false, flightFailure = false } = {}) {
   await page.setViewportSize({ width, height: 900 });
+  // Keep the initial client day and the fixture response on the same clock.
+  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
   // scheduleOnly: today before its first collection (no recorded flights; the held schedule stands in).
   const scheduled = FLIGHTS.map((row) => ({ physicalFlightId: row.physicalFlightId, terminal: row.terminal, gate: row.gate, scheduledTime: row.scheduledAt.slice(11, 16), status: 'scheduled' }));
   const summary = { ...SUMMARY_FIXTURE, airport: { ...SUMMARY_FIXTURE.airport, sides: scheduleOnly ? airportSides(DATE, 'TODAY', [], [], scheduled, true, false, '2026-08-30T13:00:00Z') : airportSides(DATE, 'TODAY', [], FLIGHTS, [], false, false) } };
@@ -125,6 +127,8 @@ for (const [lang, width] of [['ko', 360], ['en', 360], ['zh', 360], ['ja', 360],
   test(`fits with no missing glyph: ${lang} at ${width}px`, async ({ page }) => {
     await open(page, { lang, width });
     const overview = page.getByTestId('airport-departure-overview');
+    // Wait for the fixture's final model, not the transient overview before its read completes.
+    await expect(page.getByTestId('airport-concept-model')).toHaveAttribute('data-denominator', '7');
     await overview.scrollIntoViewIfNeeded();
     const map=page.getByTestId('departure-map');await expect(map).toBeVisible();
     expect(await tofuCharacters(map)).toEqual([]);
