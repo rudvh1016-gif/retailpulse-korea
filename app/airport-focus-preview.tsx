@@ -24,13 +24,14 @@ import {ChangeRate} from './change-rate';
 import {briefText,briefCountryName} from '../lib/brief-localization';
 import {PassengerBriefComparison} from './airport-brief-comparison';
 import {PreparationEvent} from './airport-preparation-event';
+import {PreparationWeekEmpty} from './preparation-week-empty';
 import type {EventFlightContext} from '../lib/event-country-flights';
 import type {Lang,Terminal} from './retailpulse-data';
 import type {AirportSection} from './airport-view';
 import type {IndustryId} from '../lib/industry-guidance';
 import holidays from '../data/airport-focus-preview/holidays-summary.json';
 import {AirportFocusData,useAirportFocusData,type FocusTrend} from './airport-focus-data';
-import {flightHolidayContext,planningHolidays,mergeBriefHolidays} from '../lib/holiday-flight-brief';
+import {flightHolidayContext,planningHolidays,mergeBriefHolidays,nextPlanningWeek} from '../lib/holiday-flight-brief';
 import {describeHolidayPeriod} from '../lib/holiday-period-comparison.mjs';
 import './airport-focus-preview.css';
 import './airport-mobile-country-copy.css';
@@ -93,15 +94,14 @@ function PreparationBrief({flights,lang='ko'}:{flights?:EventFlightContext;lang?
  const events=useBriefHolidays();
  const {asOf}=useAirportFocusData();
  const {reply}=useAirportPassengerStats(asOf?asOf.slice(0,7):null);
- if(!asOf)return <section className="focus-preparation-brief" aria-label={chineseText(lang,t("다음 주 준비","Next-week planning","下周准备"))} aria-busy="true">{[t("다음 주","Next week","下周")].map((label,index)=><div key={label}><h3 data-heading="subsection" className="focus-brief-band"><span className="heading-marker" aria-hidden="true"/>{chineseText(lang,label)} <small>{chineseText(lang,t('기준일 확인 중','Checking reference date','正在确认基准日期'))}</small></h3><p><span className="focus-event-row">{chineseText(lang,t('공식 일정 확인 중','Checking official dates','正在确认官方日期'))}</span><span className="focus-event-row" aria-hidden="true">&nbsp;</span></p><small>{chineseText(lang,index===0?t("행사·입고 일정과 겹치는 날짜를 대조하세요.","Compare these dates with your events and deliveries.","请对照活动及到货日期。"):t("비교할 월별 실적을 확인하고 있습니다.","Checking comparable monthly results.","正在确认可比较的月度实绩。"))}</small></div>)}</section>;
- const anchor=new Date(`${asOf}T00:00:00Z`),weekday=(anchor.getUTCDay()+6)%7;
- const weekStart=new Date(anchor);weekStart.setUTCDate(anchor.getUTCDate()+7-weekday);
- const weekEnd=new Date(weekStart);weekEnd.setUTCDate(weekStart.getUTCDate()+6);
+ const week=nextPlanningWeek(asOf);
+ if(!week)return <section className="focus-preparation-brief" aria-label={chineseText(lang,t("다음 주 준비","Next-week planning","下周准备"))} aria-busy="true">{[t("다음 주","Next week","下周")].map((label,index)=><div key={label}><h3 data-heading="subsection" className="focus-brief-band"><span className="heading-marker" aria-hidden="true"/>{chineseText(lang,label)} <small>{chineseText(lang,t('기준일 확인 중','Checking reference date','正在确认基准日期'))}</small></h3><p><span className="focus-event-row">{chineseText(lang,t('공식 일정 확인 중','Checking official dates','正在确认官方日期'))}</span><span className="focus-event-row" aria-hidden="true">&nbsp;</span></p><small>{chineseText(lang,index===0?t("행사·입고 일정과 겹치는 날짜를 대조하세요.","Compare these dates with your events and deliveries.","请对照活动及到货日期。"):t("비교할 월별 실적을 확인하고 있습니다.","Checking comparable monthly results.","正在确认可比较的月度实绩。"))}</small></div>)}</section>;
+ const weekStart=new Date(`${week.start}T00:00:00Z`),weekEnd=new Date(`${week.end}T00:00:00Z`);
  const iso=(date:Date)=>date.toISOString().slice(0,10),short=(date:Date)=>`${date.getUTCMonth()+1}/${date.getUTCDate()}`;
  const counts=new Map((reply?.current.ROUTE_COUNTRY_PASSENGERS?.rows??[]).filter(row=>!row.aggregate&&row.departures!==null).map(row=>[row.label,row.departures!]));
  const pick=(start:Date,end:Date)=>planningHolidays(events,iso(start),iso(end),asOf,counts);
  const weeks=pick(weekStart,weekEnd);
- const describe=(events:typeof weeks)=>events.length?sortCalendarEvents(events).map(event=><PreparationEvent lang={lang} key={event.id} event={event} flights={flights} planning/>):<><span className="focus-event-row">{chineseText(lang,t("확인된 대표 일정을 대조하고 있습니다.","Checking verified representative dates.","正在核对已确认的代表性日程。"))}</span><span className="focus-event-row" aria-hidden="true">&nbsp;</span></>;
+ const describe=(events:typeof weeks)=>events.length?sortCalendarEvents(events).map(event=><PreparationEvent lang={lang} key={event.id} event={event} flights={flights} planning/>):<PreparationWeekEmpty lang={lang}/>;
  return <section className="focus-preparation-brief" aria-label={chineseText(lang,t("다음 주 준비","Next-week planning","下周准备"))}><div><h3 data-heading="subsection" className="focus-brief-band"><span className="heading-marker" aria-hidden="true"/>{chineseText(lang,t("다음 주","Next week","下周"))} <small>{chineseText(lang,short(weekStart))} ~ {chineseText(lang,short(weekEnd))}</small></h3><div className="focus-preparation-events">{describe(weeks)}</div></div></section>;
 }
 function SelectedCountryChanges({context,lang='ko'}:{context:GlanceOverviewContext;lang?:Lang}){

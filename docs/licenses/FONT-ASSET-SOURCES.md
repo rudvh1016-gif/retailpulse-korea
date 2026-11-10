@@ -1,3 +1,21 @@
+# 2026-11-10 next-week holiday coverage
+
+The next-week correction requires only U+D601 (혁) and U+C7C1 (쟁). The
+existing KORETAIL Sans variable subset was extended with those two standalone
+glyphs, their hmtx entries and gvar variations from the pinned official
+Pretendard 1.3.9 TTF below. FontTools 4.66.0 and Brotli 1.2.0 were used.
+No existing glyph, codepoint, family, CSS weight or size was removed or changed.
+
+The 1,691 pre-existing glyphs retain identical drawn outlines and advance widths
+at every named weight 100–900, and all static hmtx metrics remain equal. The new
+glyphs match the pinned source at the same weights. Compiled name, fvar, STAT,
+GSUB and GPOS tables are byte-identical. Coverage changes 1,539→1,541 codepoints;
+size changes 231,748→232,560 bytes (+812), below the existing 300,000-byte budget.
+SHA-256: `3710518413bb49c5fecf630551733600bc688787744337dd8967b7306640aa2f`.
+The actual font cmap/hash regenerate the coverage fixture and the exact font
+lock. The shell stylesheet/preload content key is updated together; the original
+stylesheet protection and every unrelated protected path remain enforced.
+
 # 2026-11-01 shopping report glyph correction
 
 The static report corpus adds U+B790/U+C0C0/U+CC60 (랐/샀/챠) to the existing 1,536-codepoint subset. Using the same pinned official Pretendard 1.3.9 TTF and FontTools 4.66.0/Brotli 1.2.0, preserve the original layout features, all name/fvar records and every existing codepoint. Existing glyph outlines and advance widths match at weights 100/400/900. The file grows from 231,380 to 231,748 bytes (+368), with 1,539 codepoints. SHA-256: `8a8517c9e1a92f9eea96eea10c8a8546b8b4f46c9ab4049afa19b2784bc8293e`. Actual cmap/hash regenerate both coverage and protected-font fixtures. Report HTML/JS now belong to the tested corpus. A versioned report-only font URL refreshes the cached subset immediately.

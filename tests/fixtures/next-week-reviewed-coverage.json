@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "reviewedAsOf": "2026-11-10",
+  "scope": "Known independently reviewed omissions only; not an all-country or annual completeness claim.",
+  "windows": [
+    {
+      "start": "2026-11-16",
+      "end": "2026-11-22",
+      "expected": [
+        {
+          "id": "MX-all-2026-11-16-major",
+          "country": "MX",
+          "start": "2026-11-16",
+          "end": "2026-11-16",
+          "type": "public_holiday",
+          "calendarScope": "national",
+          "scope": "노동법상 의무 휴일",
+          "isRepresentative": true,
+          "conditional": false,
+          "sourceURL": "https://www.gob.mx/profedet/articulos/sabes-cuales-son-los-dias-de-descanso-obligatorio-para-este-2026?idiom=es",
+          "reviewedOn": "2026-11-10"
+        },
+        {
+          "id": "CZ-all-2026-11-17-major",
+          "country": "CZ",
+          "start": "2026-11-17",
+          "end": "2026-11-17",
+          "type": "public_holiday",
+          "calendarScope": "national",
+          "scope": "법정 공휴일",
+          "isRepresentative": true,
+          "conditional": false,
+          "sourceURL": "https://mzv.gov.cz/london/en/visa_and_consular_information/czech_bank_holidays_2020/index.html",
+          "reviewedOn": "2026-11-10"
+        }
+      ]
+    }
+  ],
+  "evidence": "docs/ops/2026-11-10-next-week-calendar.md"
+}

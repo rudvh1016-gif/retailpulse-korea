@@ -539,6 +539,70 @@
       "restConditions_ko": []
     },
     {
+      "id": "MX-all-2026-11-16-major",
+      "country": "MX",
+      "countryLabel": "멕시코",
+      "region": null,
+      "name": "혁명기념일 휴일",
+      "originalName": "Día de la Revolución Mexicana",
+      "start": "2026-11-16",
+      "end": "2026-11-16",
+      "endInclusive": true,
+      "dateBasis": "local_civil_date",
+      "type": "public_holiday",
+      "isCalendarWeekend": false,
+      "weekendMeaning": "토·일 여부이며 해당 국가·직장의 휴무 여부를 뜻하지 않습니다.",
+      "scope": "노동법상 의무 휴일",
+      "status": "OFFICIAL_DATE_CONFIRMED",
+      "conditional": false,
+      "sourceURL": "https://www.gob.mx/profedet/articulos/sabes-cuales-son-los-dias-de-descanso-obligatorio-para-este-2026?idiom=es",
+      "checkedAt": "2026-11-10T11:29:28Z",
+      "verificationMethod": "official_annual_search_index_and_official_gazette_date_crosscheck",
+      "notes": "연방노동법 제74조의 11월 셋째 월요일. 2026년 날짜는 노동부 관보 https://sidof.segob.gob.mx/notas/docFuente/5776858 에서 대조했습니다. 11월 20일 기념일이나 주변 주말을 의무 휴일로 확대하지 않습니다.",
+      "isRepresentative": true,
+      "calendarWeekendDates": [],
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/16(월)",
+      "description_ko": "멕시코 혁명을 기념하는 노동법상 의무 휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": [],
+      "calendarScope": "national"
+    },
+    {
+      "id": "CZ-all-2026-11-17-major",
+      "country": "CZ",
+      "countryLabel": "체코",
+      "region": null,
+      "name": "자유·민주주의의 날",
+      "originalName": "Den boje za svobodu a demokracii",
+      "start": "2026-11-17",
+      "end": "2026-11-17",
+      "endInclusive": true,
+      "dateBasis": "local_civil_date",
+      "type": "public_holiday",
+      "isCalendarWeekend": false,
+      "weekendMeaning": "토·일 여부이며 해당 국가·직장의 휴무 여부를 뜻하지 않습니다.",
+      "scope": "법정 공휴일",
+      "status": "OFFICIAL_DATE_CONFIRMED",
+      "conditional": false,
+      "sourceURL": "https://mzv.gov.cz/london/en/visa_and_consular_information/czech_bank_holidays_2020/index.html",
+      "checkedAt": "2026-11-10T11:29:28Z",
+      "verificationMethod": "official_annual_page_and_central_bank_date_crosscheck",
+      "notes": "체코 외교부의 2026년 공휴일 목록과 체코 중앙은행의 2026년 공휴일 목록을 대조했습니다. 주변 주말이나 사업장별 휴무를 합치지 않습니다.",
+      "isRepresentative": true,
+      "calendarWeekendDates": [],
+      "wholePeriodIsOfficialHoliday": true,
+      "dateLabel_ko": "11/17(화)",
+      "description_ko": "자유와 민주주의를 위한 투쟁을 기념하는 체코의 공휴일입니다.",
+      "cardSummary_ko": "",
+      "connectionNote_ko": "이 자료에 없는 날짜를 평일 또는 휴일 없음으로 판정하지 않습니다. 대체휴일·보충근무와 추가 공고를 확인해야 합니다.",
+      "connectionStatus_ko": "주변 대표일정 대조 · 실제 연속휴무 미확인",
+      "restConditions_ko": [],
+      "calendarScope": "national"
+    },
+    {
       "id": "MM-all-2026-11-23-major",
       "country": "MM",
       "countryLabel": "미얀마",
@@ -3723,7 +3787,7 @@
   "coverage": {
     "investigatedCountryRegionCount": 61,
     "verifiedDateCountryRegionCount": 60,
-    "dateRecords": 117,
+    "dateRecords": 119,
     "machineParsedSourceCount": 3,
     "remainingLabelsWithoutValidatedDates": [
       "에티오피아"
@@ -3747,7 +3811,9 @@
       "official_fixed_date_rule_search_index_crosscheck": 8,
       "official_annual_search_index_date_crosscheck": 5,
       "OFFICIAL_ICS_GET_PARSED": 3,
-      "official_search_index_date_crosscheck": 1
+      "official_search_index_date_crosscheck": 1,
+      "official_annual_search_index_and_official_gazette_date_crosscheck": 1,
+      "official_annual_page_and_central_bank_date_crosscheck": 1
     }
   },
   "guardrails": [
@@ -4030,7 +4096,7 @@
     {
       "label": "체코",
       "status": "VERIFIED_REPRESENTATIVE_DATES",
-      "validatedEventCount": 2,
+      "validatedEventCount": 3,
       "fullWindowCompletenessVerified": false,
       "sourceURL": "https://e-sbirka.gov.cz/eli/cz/sb/2000/245/2026-05-13",
       "notes": "대표 휴일만 확인; 모든 사소한 기념일을 수집하지 않음."
@@ -4078,7 +4144,7 @@
     {
       "label": "멕시코",
       "status": "VERIFIED_REPRESENTATIVE_DATES",
-      "validatedEventCount": 1,
+      "validatedEventCount": 2,
       "fullWindowCompletenessVerified": false,
       "sourceURL": "https://www.gob.mx/profedet/articulos/sabes-cuales-son-los-dias-de-descanso-obligatorio-para-este-2026?facet=app&mode=light",
       "notes": "대표 휴일만 확인; 모든 사소한 기념일을 수집하지 않음."
