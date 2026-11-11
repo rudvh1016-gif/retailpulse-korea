@@ -10,7 +10,7 @@ test('server graph gate rejects a vulnerable vendored RSC even with a patched di
   try {
     const direct = join(root, 'node_modules/react-server-dom-webpack');
     const vendor = join(root, 'node_modules/plugin/vendor/react-server-dom');
-    for (const [path, version] of [[direct, '19.2.8'], [vendor, '19.2.6']]) {
+    for (const [path, version] of [[direct, '19.2.9'], [vendor, '19.2.8']]) {
       mkdirSync(path, { recursive: true });
       writeFileSync(join(path, 'package.json'), JSON.stringify({ version }));
     }
@@ -23,9 +23,30 @@ test('server graph gate rejects a vulnerable vendored RSC even with a patched di
     });
     const patched = join(direct, 'server.edge.js');
     assert.doesNotThrow(() => hook.call(context([patched])));
-    assert.throws(() => hook.call(context([patched, join(vendor, 'server.edge.js')])), /Unsafe RSC.*19\.2\.6/);
+    assert.throws(() => hook.call(context([patched, join(vendor, 'server.edge.js')])), /Unsafe RSC.*19\.2\.8/);
     assert.throws(() => hook.call(context([])), /missing from server graph/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+for (const version of ['19.2.6', '19.2.8', '19.3.0', '19.3.1', '19.2.9-canary']) {
+  test(`server graph gate rejects vulnerable or unreviewed direct RSC ${version}`, () => {
+    const root = mkdtempSync(join(tmpdir(), 'koretail-rsc-'));
+    try {
+      const direct = join(root, 'node_modules/react-server-dom-webpack');
+      mkdirSync(direct, { recursive: true });
+      writeFileSync(join(direct, 'package.json'), JSON.stringify({ version }));
+      const hook = rscSecurity().generateBundle as (...args: unknown[]) => unknown;
+      const context = {
+        environment: { name: 'rsc' },
+        getModuleIds: () => [join(direct, 'server.edge.js')].values(),
+        error: (message: string) => { throw new Error(message); },
+        info: () => {},
+      };
+      assert.throws(() => hook.call(context), /Unsafe RSC implementation/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+}
