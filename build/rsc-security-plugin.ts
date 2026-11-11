@@ -17,8 +17,9 @@ export function rscSecurity(): Plugin {
         if (index < 0) continue;
         const packagePath = `${normalized.slice(0, index)}${marker}package.json`;
         const { version } = JSON.parse(readFileSync(packagePath, 'utf8'));
+        // GHSA-xqc2-xf4c-x3h3 fixes 19.2.x in 19.2.9.
         // Future minor updates require a deliberate compatibility review.
-        if (!/^19\.2\.\d+$/.test(version) || Number(version.split('.')[2]) < 8) {
+        if (!/^19\.2\.\d+$/.test(version) || Number(version.split('.')[2]) < 9) {
           this.error(`Unsafe RSC implementation in server graph: ${version}`);
         }
         checked++;
