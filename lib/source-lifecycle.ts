@@ -173,8 +173,13 @@ export function buildSourceEvidence(observation: SourceObservation, nowIso: stri
     });
     return evidence;
   }
-  if (ageMs === null) {
-    evidence.push({ stage: "TRIGGERED", proven: "UNPROVABLE", failure: "UNKNOWN", evidence: "run start timestamp unparseable" });
+  if (!Number.isFinite(now) || ageMs === null || ageMs < 0) {
+    evidence.push({ stage: "TRIGGERED", proven: "UNPROVABLE", failure: "UNKNOWN", evidence: "audit or run start timestamp invalid or in the future" });
+    return evidence;
+  }
+  if (observation.expectedIntervalMs !== null && (!Number.isFinite(observation.expectedIntervalMs)
+    || observation.expectedIntervalMs <= 0 || !Number.isFinite(missedRunThresholdMs(observation.expectedIntervalMs)))) {
+    evidence.push({ stage: "TRIGGERED", proven: "UNPROVABLE", failure: "UNKNOWN", evidence: "expected cadence invalid or outside the measurable range" });
     return evidence;
   }
   if (observation.expectedIntervalMs !== null && ageMs > missedRunThresholdMs(observation.expectedIntervalMs)) {
@@ -198,12 +203,17 @@ export function buildSourceEvidence(observation: SourceObservation, nowIso: stri
   });
 
   // ── RUNNING: a run that never finished is still running or was lost. ──
+  const finishedAt = run.finishedAt ? Date.parse(run.finishedAt) : NaN;
+  // writeCollectorStatus makes started_at unique by incrementing milliseconds;
+  // it is not a duration boundary and can be slightly later than finished_at.
+  const validFinish = Number.isFinite(finishedAt) && finishedAt <= now;
   evidence.push({
     stage: "RUNNING",
-    proven: run.finishedAt ? "PROVEN" : "UNPROVABLE",
+    proven: validFinish ? "PROVEN" : "UNPROVABLE",
     failure: "EXECUTION_ERROR",
-    evidence: run.finishedAt ? `run finished ${run.finishedAt}` : "run has no finish timestamp",
+    evidence: validFinish ? `run finished ${run.finishedAt}` : "run finish timestamp missing, invalid or in the future",
   });
+  if (!validFinish) return evidence;
 
   // ── COLLECTED: the provider answered. A legitimate skip counts. ──
   const skipped = isSkip(run.status, skips);
@@ -247,6 +257,10 @@ export function buildSourceEvidence(observation: SourceObservation, nowIso: stri
       failure: "STALE",
       evidence: "source_health has no last_retrieved_at to date the data by",
     });
+    return evidence;
+  }
+  if (retrievedMs > now) {
+    evidence.push({ stage: "VALIDATED", proven: "UNPROVABLE", failure: "STALE", evidence: "source retrieval timestamp is in the future" });
     return evidence;
   }
   if (observation.expectedIntervalMs !== null && now - retrievedMs > missedRunThresholdMs(observation.expectedIntervalMs)) {
@@ -332,12 +346,12 @@ export function buildSourceEvidence(observation: SourceObservation, nowIso: stri
   // of /api/live/summary means the API can be fresh while what a visitor
   // receives is not, and "the endpoint returned data" does not settle which.
   const publishedMs = observation.published.asOf ? Date.parse(observation.published.asOf) : NaN;
-  if (observation.published.asOf && !Number.isFinite(publishedMs)) {
+  if (observation.published.asOf && (!Number.isFinite(publishedMs) || publishedMs > now)) {
     evidence.push({
       stage: "PUBLISHED",
       proven: "UNPROVABLE",
       failure: "PUBLICATION_MISMATCH",
-      evidence: "the public surface timestamp could not be parsed",
+      evidence: "the public surface timestamp is invalid or in the future",
     });
     return evidence;
   }

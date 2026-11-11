@@ -78,7 +78,11 @@ export function evaluateHeartbeat(beat: Heartbeat, nowIso: string): HeartbeatVer
     return { name: beat.name, state: "UNKNOWN", coverage, ageMs: null, detail: "heartbeat timestamp unparseable", severity: "UNKNOWN" };
   }
   const ageMs = now - seen;
-  if (beat.expectedIntervalMs === null) {
+  if (ageMs < 0) {
+    return { name: beat.name, state: "UNKNOWN", coverage, ageMs: null, detail: "heartbeat timestamp is in the future", severity: "UNKNOWN" };
+  }
+  if (beat.expectedIntervalMs === null || !Number.isFinite(beat.expectedIntervalMs)
+    || beat.expectedIntervalMs <= 0 || !Number.isFinite(heartbeatSilenceThresholdMs(beat.expectedIntervalMs))) {
     // Without a cadence, an old timestamp proves nothing. Saying so is the only
     // honest answer; calling it alive would be a guess in the dangerous direction.
     return {
@@ -86,7 +90,7 @@ export function evaluateHeartbeat(beat: Heartbeat, nowIso: string): HeartbeatVer
       state: "UNKNOWN",
       coverage,
       ageMs,
-      detail: `last seen ${Math.round(ageMs / 60_000)} min ago but no expected cadence is derivable`,
+      detail: `last seen ${Math.round(ageMs / 60_000)} min ago but no valid expected cadence is derivable`,
       severity: "UNKNOWN",
     };
   }
