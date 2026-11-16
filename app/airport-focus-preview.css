@@ -330,8 +330,10 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 .airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change):has(>.glance-count-change[data-direction=down]){color:#a12d3f}
 /* Long translated units may wrap after the signed value inside their own column. */
 .airport-focus-shell .focus-report .focus-core-metric .glance-count-change{white-space:normal}
+/* The live mobile parent has a 20px gutter. Extend 12px per side to keep
+   the existing 8px edge; parent-relative sizing also reflows under root zoom. */
 @media(max-width:700px){
- .airport-focus-shell.airport-focus-operating .focus-report{box-sizing:border-box;width:calc(100vw - 16px);margin-inline:calc(50% - 50vw + 8px);padding-inline:12px}
+ .airport-focus-shell.airport-focus-operating .focus-report{box-sizing:border-box;width:calc(100% + 24px);margin-inline:-12px;padding-inline:12px}
  .airport-focus-shell .focus-report .focus-report-lines{column-gap:28px}
 }
 

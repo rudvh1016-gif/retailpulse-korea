@@ -28,3 +28,13 @@ Local lint:0 errors,25 existing warnings. Typecheck passed. Existing airport-bri
 No UI hash, test expectation, security threshold, CI workflow or deploy guard was loosened. Publish a review branch/PR; merge only after the exact revision passes required CI, then wait for normal main CI/deployment and verify live `/api/build` plus the card DOM. Until that last check succeeds, this is not a completed production release.
 
 Clean-install local validation completed: standard `npm test` passed the unchanged security-gated build,2876 unit tests and54 rendered-HTML tests. Typecheck and new-spec ESLint passed. Dependency audit:14 moderate,0 high,0 critical. No browser success is inferred from these results.
+
+## Owner-approved mobile 125% follow-up
+
+After the strict root-CSS-zoom check failed in run43865860186, the owner explicitly extended the scope to the mobile `.focus-report` containing the holiday cards and authorized verified production reflection. No test/guard change is authorized or made.
+
+The mobile report used `width:calc(100vw - 16px)` with viewport-based centring in both the base and Korean approved-card styles. At390px, the retained trace measured holiday heading/date boxes at x21..369 before zoom and x-22.75..412.75 after root zoom1.25; both cards moved together, with zero country/title baseline difference and no card-internal overflow. The same viewport rule exists on baseline main, but no paired browser measurement on main is claimed.
+
+Replace only these two mobile report width/margin declarations with `width:calc(100% + 24px);margin-inline:-12px`. The existing live parent inset is20px (page18+insight2, or page14+insight6 at<=365px), so the normal report retains its8px outer edge. At zoom, percentage width follows the available parent instead of enlarging the viewport-unit width. Existing padding, typography, colours, desktop CSS, data and login remain unchanged. No overflow clipping or hidden content is introduced.
+
+Keep the exact previously failing `e2e/holiday-card-baseline.spec.ts`, including strict page no-overflow at root zoom1.25, byte-for-byte unchanged. Existing compact mobile tests additionally require the normal report edge at8px. All exact-head CI and normal deployment gates must pass before merge/release; record actual results in PR599.
