@@ -1,3 +1,5 @@
+import { capacitySignal } from "./storage-recovery";
+
 type D1Query = { sql: string; params?: unknown[] };
 // `changes` is SQLite changes(): logical rows the statement altered.
 // `rows_written` is D1's storage counter and includes index writes.
@@ -128,6 +130,11 @@ export class CloudflareD1RestDatabase {
   private observedRowsRead = 0;
   private observedRowsWritten = 0;
   private unmeasuredStatements = 0;
+  // Process-local, database-instance scoped. Never blocks another DB or read.
+  // A new process requires a new observation; this is not a cross-run lock.
+  private capacityBlocked = false;
+
+  storageWriteBlocked() { return this.capacityBlocked; }
 
   /** Returned query metadata only; a lower bound, never account-wide daily usage. */
   usageSnapshot() {
@@ -154,6 +161,8 @@ export class CloudflareD1RestDatabase {
   async execute(batch: D1Query[]): Promise<D1QueryResult[]> {
     if (!batch.length) return [];
     if (batch.length > 50) throw new Error("d1_batch_too_large");
+    if (this.capacityBlocked && batch.some(query => !/^\s*(?:SELECT|EXPLAIN)\b/i.test(query.sql)))
+      throw new Error("d1_storage_capacity_blocked");
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const response = await this.fetchImpl(this.endpoint, {
@@ -164,15 +173,22 @@ export class CloudflareD1RestDatabase {
         },
         body: JSON.stringify({ batch }),
       });
+      const suffix = response.ok ? "" : await d1ErrorSuffix(response.clone());
+      if (capacitySignal(`d1_http_${response.status}${suffix}`) === "CAPACITY_EXHAUSTED") {
+        this.capacityBlocked = true;
+        throw new Error(`d1_http_${response.status}${suffix}`);
+      }
       if ((response.status === 429 || response.status >= 500) && attempt < 2) {
         await new Promise((resolve) => setTimeout(resolve, 250 * (2 ** attempt)));
         continue;
       }
-      if (!response.ok) throw new Error(`d1_http_${response.status}${await d1ErrorSuffix(response)}`);
+      if (!response.ok) throw new Error(`d1_http_${response.status}${suffix}`);
       const payload = await response.json() as D1ApiResponse;
       if (!payload.success || !Array.isArray(payload.result)) {
         const code = payload.errors?.[0]?.code ?? "unknown";
-        throw new Error(`d1_query_failed_${code}`);
+        const detail = `d1_query_failed_${code}${safeD1Message(payload.errors?.[0]?.message)}`;
+        if (capacitySignal(detail) === "CAPACITY_EXHAUSTED") this.capacityBlocked = true;
+        throw new Error(detail);
       }
       if (payload.result.some((result) => result.success === false)) throw new Error("d1_batch_statement_failed");
       for (const result of payload.result) {

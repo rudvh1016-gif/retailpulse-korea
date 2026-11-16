@@ -21,6 +21,11 @@ on:
           - airport_months
           - usage
         default: all
+      metadata_only:
+        description: Storage scope only - two metadata GETs, zero SQL or provider calls
+        required: false
+        type: boolean
+        default: false
       ceiling:
         description: Maximum rows this diagnostic may read before it stops early
         required: false
@@ -52,6 +57,7 @@ jobs:
         if: inputs.scope == 'storage'
         run: npx tsx scripts/measure-production-storage.ts
         env:
+          RPK_STORAGE_METADATA_ONLY: ${{ inputs.metadata_only }}
           RPK_READ_BUDGET_CEILING: ${{ inputs.ceiling }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
       - name: Read official per-database and per-statement D1 usage (read-only)
