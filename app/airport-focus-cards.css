@@ -39,7 +39,7 @@
 .airport-focus-shell .focus-report[data-brief-cards=approved] summary:focus-visible{outline:2px solid #17477e;outline-offset:3px}
 @media(max-width:700px){
  .airport-focus-shell .focus-report[data-brief-cards=approved]{padding:18px 14px;border-radius:14px;width:auto;margin-inline:0}
- .airport-focus-shell.airport-focus-operating .focus-report[data-brief-cards=approved]{width:calc(100vw - 16px);margin-inline:calc(50% - 50vw + 8px);padding-inline:12px}
+ .airport-focus-shell.airport-focus-operating .focus-report[data-brief-cards=approved]{width:calc(100% + 24px);margin-inline:-12px;padding-inline:12px}
  .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-brief-emblem{flex-basis:42px;width:42px;height:42px;border-radius:10px}
  .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-brief-emblem svg{width:25px;height:25px}
  .airport-focus-shell .focus-report[data-brief-cards=approved] .focus-report-title{gap:10px}

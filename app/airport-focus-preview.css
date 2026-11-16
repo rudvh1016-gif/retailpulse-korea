@@ -330,8 +330,10 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
 .airport-focus-shell .focus-report :is(.focus-comparison-change,.daily-comparison-change):has(>.glance-count-change[data-direction=down]){color:#a12d3f}
 /* Long translated units may wrap after the signed value inside their own column. */
 .airport-focus-shell .focus-report .focus-core-metric .glance-count-change{white-space:normal}
+/* The live mobile parent has a 20px gutter. Extend 12px per side to keep
+   the existing 8px edge; parent-relative sizing also reflows under root zoom. */
 @media(max-width:700px){
- .airport-focus-shell.airport-focus-operating .focus-report{box-sizing:border-box;width:calc(100vw - 16px);margin-inline:calc(50% - 50vw + 8px);padding-inline:12px}
+ .airport-focus-shell.airport-focus-operating .focus-report{box-sizing:border-box;width:calc(100% + 24px);margin-inline:-12px;padding-inline:12px}
  .airport-focus-shell .focus-report .focus-report-lines{column-gap:28px}
 }
 
@@ -440,3 +442,9 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report :is(.event-flight-change>.glance-count-change,.event-flight-change>.staff-route-rate,.event-flight-period){font-weight:700}
  .airport-focus-shell .focus-report .focus-event-details .event-flight-basis{font-size:11px;line-height:1.6;color:#53616e}
 }
+
+/* Next-week holiday cards: keep country and title on the same text baseline.
+   The flag remains 24px; only its inline box is centred, not the country text. */
+.airport-focus-shell .focus-report .focus-preparation-brief .focus-preparation-event h4 .focus-event-country{display:inline;vertical-align:baseline}
+.airport-focus-shell .focus-report .focus-preparation-brief .focus-preparation-event h4 .focus-event-country img{display:inline-block;vertical-align:middle;margin-inline-end:5px}
+.airport-focus-shell .focus-report .focus-preparation-brief .focus-event-date .focus-event-weekday{margin-inline-start:.2em;line-height:inherit}
