@@ -440,3 +440,9 @@ html:has(.focus-calendar-context details[open],.focus-calendar-context details:f
  .airport-focus-shell .focus-report :is(.event-flight-change>.glance-count-change,.event-flight-change>.staff-route-rate,.event-flight-period){font-weight:700}
  .airport-focus-shell .focus-report .focus-event-details .event-flight-basis{font-size:11px;line-height:1.6;color:#53616e}
 }
+
+/* Next-week holiday cards: keep country and title on the same text baseline.
+   The flag remains 24px; only its inline box is centred, not the country text. */
+.airport-focus-shell .focus-report .focus-preparation-brief .focus-preparation-event h4 .focus-event-country{display:inline;vertical-align:baseline}
+.airport-focus-shell .focus-report .focus-preparation-brief .focus-preparation-event h4 .focus-event-country img{display:inline-block;vertical-align:middle;margin-inline-end:5px}
+.airport-focus-shell .focus-report .focus-preparation-brief .focus-event-date .focus-event-weekday{margin-inline-start:.2em;line-height:inherit}
