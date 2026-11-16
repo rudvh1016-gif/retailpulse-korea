@@ -133,12 +133,14 @@ export class CloudflareD1RestDatabase {
   // Process-local, database-instance scoped. Never blocks another DB or read.
   // A new process requires a new observation; this is not a cross-run lock.
   private capacityBlocked = false;
+  private observedSizeBytes: number | null = null;
+  private observedSizeAt: string | null = null;
 
   storageWriteBlocked() { return this.capacityBlocked; }
 
   /** Returned query metadata only; a lower bound, never account-wide daily usage. */
   usageSnapshot() {
-    return { rowsRead: this.observedRowsRead, rowsWritten: this.observedRowsWritten, unmeasuredStatements: this.unmeasuredStatements };
+    return { rowsRead: this.observedRowsRead, rowsWritten: this.observedRowsWritten, unmeasuredStatements: this.unmeasuredStatements, sizeBytes: this.observedSizeBytes, sizeObservedAt: this.observedSizeAt };
   }
 
   constructor(
@@ -192,6 +194,8 @@ export class CloudflareD1RestDatabase {
       }
       if (payload.result.some((result) => result.success === false)) throw new Error("d1_batch_statement_failed");
       for (const result of payload.result) {
+        const size=result.meta?.size_after;
+        if(typeof size==='number'&&Number.isSafeInteger(size)&&size>=0){this.observedSizeBytes=size;this.observedSizeAt=new Date().toISOString();}
         const read = result.meta?.rows_read, written = result.meta?.rows_written;
         const readMeasured = typeof read === 'number' && Number.isSafeInteger(read) && read >= 0;
         const writeMeasured = typeof written === 'number' && Number.isSafeInteger(written) && written >= 0;

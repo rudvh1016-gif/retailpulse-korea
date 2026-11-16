@@ -41,6 +41,16 @@ export function validateCloudflareEnvironment(config, stage) {
       `${stage} D1 is not created. Replace only its placeholder database_id after Cloudflare authentication.`,
     );
   }
+  const recovery = selected.d1_databases?.find(entry => entry.binding === 'RECOVERY_DB');
+  if (recovery && [stagingDb.database_id,productionDb.database_id].includes(recovery.database_id)) {
+    throw new Error('Recovery D1 must not alias staging or archived production DB.');
+  }
+  if (selected.vars?.RPK_RECOVERY_READS === 'true') {
+    if (!recovery || selected.vars.RPK_RECOVERY_DATABASE_ID !== recovery.database_id
+      || selected.vars.RPK_RECOVERY_ARCHIVE_DATABASE_ID !== selectedDb.database_id) {
+      throw new Error('Recovery binding and explicit active/archive identities must match.');
+    }
+  }
   return { workerName: selected.name, databaseName: selectedDb.database_name };
 }
 

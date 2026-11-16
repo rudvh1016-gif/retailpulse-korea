@@ -1,3 +1,4 @@
+import {applyRecoverySummary,projectRealtimeSourceStatus} from '../../../../lib/recovery-runtime';
 import {projectDepartureCongestion} from '../../../../lib/airport-congestion-observation';
 import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
@@ -8,7 +9,7 @@ import { AIRPORT_HALL_SIDES_PUBLIC, airportSides } from "../../../../lib/airport
 import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
 import { compareComposition } from "../../../../lib/airport-composition-history";
 import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
-import { getDb } from "../../../../db";
+import { getDb, getRecoveryDb } from "../../../../db";
 import { rangeChange, withAreaBaselines } from "../../../../lib/period-comparison";
 import {
   SEOUL_FOREIGN_MAPPING_VERSION,
@@ -233,9 +234,16 @@ export async function GET(request: Request) {
 
   try {
     const client = await getDb().then((db) => db.$client);
+    let recovery:D1Database|undefined;
+    try {recovery=await getRecoveryDb();}catch {
+      // A broken optional recovery binding must preserve the archived last-good response.
+      const fallback=await summarizeLiveSummary(client,{generatedAt,now,kstNowIso,kstToday,kstHourStart,serviceDate,dayRelation,dayStartAt,availabilityMonth});
+      const body=await fallback.json();body.recovery={mode:'UNAVAILABLE',applied:[]};
+      return Response.json(body,{headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+    }
     return await summarizeLiveSummary(client, {
       generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt, availabilityMonth,
-    });
+    }, recovery);
   } catch {
     return degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation, availabilityMonth });
   }
@@ -261,7 +269,11 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
  * Builds the summary from prepared D1 statements. Exported so a test can hand
  * in a counting double and assert the read path stays one round trip.
  */
-export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
+export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock, recovery?:D1Database): Promise<Response> {
+ const response=await summarizeArchiveSummary(client,clock);
+ return recovery?applyRecoverySummary(response,client as unknown as D1Database,recovery,clock.now):response;
+}
+async function summarizeArchiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
   const selectedDayEndAt = kstDayBounds(serviceDate).endAt;
   const observedStartAt = dayRelation === "PAST" ? dayStartAt
@@ -836,7 +848,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         .map(([key, sourceId]) => [key, sources.find(source => source.sourceId === sourceId)?.retrievedAt ?? null])),
     },
     holidays: holidayRows.flatMap(row=>{ try { return [{month:row.month,days:JSON.parse(String(row.payload)),retrievedAt:row.retrievedAt}]; } catch { return []; } }),
-    sources,
+    sources: projectRealtimeSourceStatus(sources,now),
     areas,
     airport: {
       transferForecast: transferRows,

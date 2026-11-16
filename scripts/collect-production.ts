@@ -1,3 +1,8 @@
+import {storageTrend} from '../lib/storage-recovery';
+import {D1_FREE_PLANNING_LIMITS} from '../lib/storage-inventory';
+import {collectRecoverySource} from '../lib/recovery-collector';
+import {recoverySource,recoveryRoute,storageTransition} from '../lib/recovery-runtime';
+import {loadRecoveryState,saveRecoveryState} from './recovery-state';
 import { safeSourceFailureDetail } from "../lib/source-adapters";
 import { collectHolidays, holidayHealthUpdate } from "../lib/holidays";
 import { collectAirportComposition } from "../lib/airport-composition-history";
@@ -89,19 +94,53 @@ const env = {
       : undefined,
 };
 
+const recoveryEnabled=process.env.RPK_RECOVERY_WRITES==='true';
+const activeId=process.env.RPK_RECOVERY_DATABASE_ID??'';
+const recoveryConfigured=activeId.length>0;
+if(recoveryEnabled&&(!/^[0-9a-f-]{36}$/i.test(activeId)||activeId===databaseId))throw Error('recovery_database_not_isolated');
+const activeDatabase=recoveryEnabled?new CloudflareD1RestDatabase(accountId,activeId,apiToken):undefined;
+const admissionPath=process.env.RPK_RECOVERY_STATE_PATH??'.wrangler/recovery-admission.json';
 const results = [];
 const collectionNow = new Date();
 for (const source of requested) {
-  const startedAt = new Date().toISOString(), before = database.usageSnapshot();
-  const [result] = await runSelectedProductionSources(env, [source], collectionNow);
+  const startedAt = new Date().toISOString();
+  const route=recoveryRoute(source,recoveryEnabled,recoveryConfigured);
+  const routed=route==='ACTIVE';
+  const sourceDatabase=routed?activeDatabase!:database;
+  const before=sourceDatabase.usageSnapshot();
+  const sourceEnv=routed?{...env,DB:activeDatabase as unknown as D1Database}:env;
+  let result;
+  let admitted=false;
+  if(route==='PAUSED')result={source,status:'SKIPPED_RECOVERY_PAUSED',records:0,providerRequests:0,detail:'recovery routing disabled; archive writes remain prohibited'};
+  else if(routed&&recoverySource(source)) {
+   try {
+    const state=loadRecoveryState(admissionPath,process.env.RPK_RECOVERY_BOOTSTRAP==='true');
+    admitted=true;
+    result=await collectRecoverySource(sourceEnv,source,activeId,state,collectionNow);
+    if(storageTransition(state,activeId,source,state.blocked[activeId]?'CAPACITY_EXHAUSTED':result.status))annotate(result.status==='SUCCESS'?'warning':'error','Recovery storage transition',`${source}: ${result.status}; database scope=ACTIVE`);
+    const sizeUsage=sourceDatabase.usageSnapshot(),bytes=sizeUsage.sizeBytes;
+    if(bytes!==null&&sizeUsage.sizeObservedAt&&sizeUsage.sizeObservedAt>=startedAt) {
+      const point={at:sizeUsage.sizeObservedAt,bytes};
+      const observation=storageTrend([...(state.sizes?.[activeId]?[state.sizes[activeId]]:[]),point],D1_FREE_PLANNING_LIMITS.perDatabaseBytes);
+      console.log(JSON.stringify({resource:'recovery_active_storage',basis:'OFFICIAL_QUERY_META',bytes,level:observation.level,bytesPerDay:observation.bytesPerDay,trendBasis:observation.trendBasis}));
+      if(storageTransition(state,activeId,'storage',observation.level)&&observation.level!=='NORMAL')annotate(observation.level==='EMERGENCY'?'error':'warning','Recovery storage guardrail',`ACTIVE storage ${observation.level}; official bytes=${bytes}; growth=${observation.trendBasis}; no automatic deletion or paid fallback`);
+      state.sizes={...state.sizes,[activeId]:point};
+    }
+    saveRecoveryState(admissionPath,state);
+   } catch {result=admitted?{source,...result,records:result?.records??0,status:'ERROR',executionUncertain:true,detail:'recovery_state_persistence_failed; manual review required'}:{source,status:'ERROR',records:0,providerRequests:0,detail:'recovery_admission_state_unavailable; no retry authorized'};}
+  } else [result]=await runSelectedProductionSources(env,[source],collectionNow);
   results.push(result);
-  const completedAt = new Date().toISOString(), after = database.usageSnapshot();
+  const completedAt = new Date().toISOString(), after = sourceDatabase.usageSnapshot();
+  if(route==='PAUSED'||(routed&&/D1_STORAGE_CAPACITY_BLOCKED|recovery_admission_state_unavailable/.test(result.detail??''))) {
+    console.log(JSON.stringify({operationalMemory:'UNKNOWN',source,reason:'database-scoped admission blocked; no bookkeeping write attempted'}));
+    continue;
+  }
   // Bookkeeping is outside the collector result. Failure never causes an extra provider retry.
   try {
     const attempt = Math.max(1, Number(process.env.RPK_OPERATIONAL_ATTEMPT) || 1);
     const runId = `${process.env.GITHUB_RUN_ID ?? crypto.randomUUID()}-${process.env.GITHUB_RUN_ATTEMPT ?? '1'}-${attempt}:${source}`;
     const measured = after.unmeasuredStatements === before.unmeasuredStatements;
-    const memory = await recordExistingCompletion(env.DB, result, {runId, startedAt, completedAt, attempt,
+    const memory = await recordExistingCompletion(sourceEnv.DB, result, {runId, startedAt, completedAt, attempt,
       rowsRead: measured ? after.rowsRead-before.rowsRead : null,
       rowsWritten: measured ? after.rowsWritten-before.rowsWritten : null});
     console.log(JSON.stringify({operationalMemory: memory.state, source, sourceCount: memory.sourceCount}));
@@ -140,7 +179,7 @@ for (const notice of attentionNotices(results)) annotate(notice.level, notice.ti
 // RPK_RETAIN_FLIGHT_CHANGE_HISTORY=true) and old collector_runs metadata —
 // it never touches airport_flights, so accumulated A1 history is preserved.
 const now = new Date();
-if ((now.getUTCHours() + 9) % 24 === 3) {
+if (!recoveryConfigured && (now.getUTCHours() + 9) % 24 === 3) {
   const prunedRows = await pruneOperationalHistory(database as unknown as D1Database, now);
   console.log(JSON.stringify({ maintenance: "retention", prunedRows }));
 }
@@ -178,7 +217,7 @@ if (requested.includes("airport_recent")) {
     process.exitCode=1;
   }
 }
-if (requested.includes("seoul_realtime")) {
+if (!recoveryConfigured && requested.includes("seoul_realtime")) {
   try { console.log(JSON.stringify({context:"population_predictions",...await runPopulationPredictions(env.DB)})); }
   catch { console.error(JSON.stringify({context:"population_predictions",status:"ERROR",lastGoodPreserved:true})); process.exitCode=1; }
 }

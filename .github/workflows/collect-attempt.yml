@@ -132,6 +132,15 @@ jobs:
       - name: Space the weekly Seoul retries
         if: ${{ inputs.attempt > 1 && (contains(inputs.sources, 'seoul_sales') || contains(inputs.sources, 'store_dynamics')) }}
         run: sleep ${{ inputs.attempt == 2 && 60 || 300 }}
+      - name: Restore database-scoped recovery admission
+        id: recovery_state
+        if: vars.RPK_RECOVERY_WRITES == 'true' && contains(inputs.sources, 'airport_congestion')
+        uses: actions/cache/restore@v4
+        with:
+          path: .wrangler/recovery-admission.json
+          key: rpk-recovery-v1-${{ vars.RPK_RECOVERY_DATABASE_ID }}-${{ vars.RPK_RECOVERY_STATE_EPOCH }}-${{ github.run_id }}-${{ github.run_attempt }}-attempt-${{ inputs.attempt }}
+          restore-keys: rpk-recovery-v1-${{ vars.RPK_RECOVERY_DATABASE_ID }}-${{ vars.RPK_RECOVERY_STATE_EPOCH }}-
+          fail-on-cache-miss: ${{ vars.RPK_RECOVERY_BOOTSTRAP != 'true' }}
       - name: Collect ${{ inputs.sources }} (attempt ${{ inputs.attempt }})
         id: collect
         shell: bash
@@ -143,6 +152,9 @@ jobs:
             npm run collect:production 2>&1 | tee "$RUNNER_TEMP/collector.log"
           fi
         env:
+          RPK_RECOVERY_WRITES: ${{ contains(inputs.sources, 'airport_congestion') && vars.RPK_RECOVERY_WRITES || 'false' }}
+          RPK_RECOVERY_DATABASE_ID: ${{ vars.RPK_RECOVERY_DATABASE_ID }}
+          RPK_RECOVERY_BOOTSTRAP: ${{ vars.RPK_RECOVERY_BOOTSTRAP }}
           ENABLE_PRODUCTION_COLLECTOR: "true"
           RPK_PRODUCTION_SOURCES: ${{ inputs.sources }}
           RPK_OPERATIONAL_ATTEMPT: ${{ inputs.attempt }}
@@ -160,6 +172,12 @@ jobs:
           RPK_CENTRAL_RECOVERY_OWNER_APPROVED: ${{ vars.RPK_CENTRAL_RECOVERY_OWNER_APPROVED }}
           RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED: ${{ vars.RPK_CENTRAL_RECOVERY_RUNTIME_ENABLED }}
           RPK_A4_MAX_ATTEMPTS_PER_REQUEST: ${{ inputs.a4_max_attempts_per_request }}
+      - name: Preserve database-scoped admission and notification state
+        if: always() && vars.RPK_RECOVERY_WRITES == 'true' && contains(inputs.sources, 'airport_congestion')
+        uses: actions/cache/save@v4
+        with:
+          path: .wrangler/recovery-admission.json
+          key: ${{ steps.recovery_state.outputs.cache-primary-key }}
       - name: Classify this A1 attempt before spending a fresh runner
         id: airport_retry_decision
         if: ${{ always() && inputs.a1_midnight_recovery != true && startsWith(inputs.sources, 'airport_recent') }}
