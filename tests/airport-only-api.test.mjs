@@ -7,9 +7,15 @@ test('production-scoped summary executes no Seoul-only query and preserves airpo
  db.raw.prepare("INSERT INTO weather_forecast(id,source_id,area,issued_at,target_at,retrieved_at,temperature_tenth_c,schema_version,quality_status,source_hash) VALUES('weather','KMA_VILAGE_FCST','myeongdong',?,?,?,100,'v1','VALID','h')").run(clock.kstNowIso,clock.kstNowIso,at);
  db.raw.prepare("INSERT INTO source_health(source_id,status,last_retrieved_at,schema_version) VALUES('SEOUL_CITYDATA_PPLTN','LIVE',?,'v1')").run(at);db.raw.prepare("INSERT INTO source_health(source_id,status,last_retrieved_at,schema_version) VALUES('KMA_VILAGE_FCST','LIVE',?,'v1')").run(at);
  db.raw.prepare("INSERT INTO seoul_subway_ridership VALUES('subway','SEOUL_SUBWAY_RIDERSHIP','OA-22723','OFFICIAL_DAILY','myeongdong','2026-11-16','0424','424','명동','4호선',100,200,'oa-22723-area-stations-2026-09-02-v1',?,'v1','VALID','s')").run(at);
+ const airportInsert=db.raw.prepare("INSERT INTO airport_congestion(id,source_id,record_origin,terminal,zone,wait_time_minutes,waiting_count,observed_at,retrieved_at,freshness,schema_version,quality_status,source_hash) VALUES(?,?,'LIVE',?,?,?,100,?,?,'LIVE','v1','VALID',?)");
+ airportInsert.run('t1','INCHEON_DEPARTURE_CONGESTION','T1','DG2_E',15,at,at,'h1');
+ airportInsert.run('t2','INCHEON_DEPARTURE_CONGESTION_T2','T2','DG1_A',60,at,at,'h2');
  const before=JSON.stringify(db.raw.prepare("SELECT name,sql FROM sqlite_master WHERE type IN ('table','trigger') ORDER BY name").all());
  const legacy=await (await summarizeLiveSummary(db,clock)).json();db.calls=[];
  const scoped=await (await summarizeLiveSummary(db,clock,{includeSeoul:false})).json();
+ assert.equal(scoped.airport.congestion.length,2);
+ assert.equal(scoped.airport.congestion.find(row=>row.terminal==='T1').waitTimeMinutes,15);
+ assert.equal(scoped.airport.congestion.find(row=>row.terminal==='T2').waitTimeMinutes,60);
  assert.deepEqual(scoped.airport,legacy.airport);assert.deepEqual(scoped.areas.myeongdong.weather,legacy.areas.myeongdong.weather);assert.deepEqual(scoped.areas.myeongdong.subwayRidership,legacy.areas.myeongdong.subwayRidership);assert.ok(scoped.areas.myeongdong.weather.length);assert.ok(scoped.areas.myeongdong.subwayRidership);
  assert.ok(!scoped.sources.some(s=>s.sourceId==='SEOUL_CITYDATA_PPLTN'));for(const area of Object.values(scoped.areas)){assert.equal(area.realtime,null);assert.equal(area.commercial,null);assert.equal(area.sales,null);assert.equal(area.foreignPresence,null);assert.deepEqual(area.realtimeForecast,[]);assert.deepEqual(area.events,[]);}
  assert.ok(!db.calls.some(sql=>/FROM\s+(seoul_(?!subway)|tourism_events)/i.test(sql)),db.calls.join('\n'));assert.ok(db.calls.some(sql=>sql.includes('weather_forecast')));assert.ok(db.calls.some(sql=>sql.includes('seoul_subway_ridership')));assert.deepEqual(scoped.dateAvailability.seoulObserved,[]);assert.equal(scoped.readStatus.status,'COMPLETE');assert.equal(JSON.stringify(db.raw.prepare("SELECT name,sql FROM sqlite_master WHERE type IN ('table','trigger') ORDER BY name").all()),before);
