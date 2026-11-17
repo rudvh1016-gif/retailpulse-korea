@@ -1,10 +1,11 @@
+import { archivedSeoulContract } from "./helpers/archived-seoul-contract.mjs";
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync,readdirSync } from 'node:fs';
 import { normalizeSeoulContext } from '../lib/seoul-context';
 import { normalizeHolidays } from '../lib/holidays';
-import { buildPopulationHours,runPopulationPredictions,POPULATION_ROWS_SQL } from '../lib/population-predictions';
+const { buildPopulationHours,runPopulationPredictions,POPULATION_ROWS_SQL } = await archivedSeoulContract("population-predictions");
 import { compareComposition } from '../lib/airport-composition-history';
 import { summarizeAirlineRanking } from '../lib/airline-ranking';
 const sample=(day:string,value:number,overrides={})=>({observedAt:`${day}T10:05:00+09:00`,retrievedAt:`${day}T01:10:00Z`,populationMin:value,populationMax:value+200,sourceHash:day,qualityStatus:'VALID',recordOrigin:'LIVE',schemaVersion:'v1',...overrides});

@@ -9,5 +9,5 @@ import { seoLocales, type SeoLocale } from "../../seo-config";
 export default async function TourismDeskRedirect({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
-  permanentRedirect(`/${locale}/tourism-desk/myeongdong`);
+  permanentRedirect(`/${locale}`);
 }

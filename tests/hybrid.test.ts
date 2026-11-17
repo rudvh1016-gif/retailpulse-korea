@@ -1,3 +1,4 @@
+import { isSeoulOnlySource } from "../lib/product-scope";
 import { readdirSync, readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -232,7 +233,7 @@ function declaredSources(workflow: string): string[] {
  * native GitHub `schedule:`.
  */
 test("every cadence-group collector workflow is gated behind the same owner-approved switch and actually scheduled", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
   const cloudflareScheduled = new Set(["collect-realtime.yml", "collect-forecast.yml", "collect-weather.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"]);
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
@@ -285,7 +286,7 @@ test("a retry attempt repeats the workflow's own source and only after an outrig
 });
 
 test("A1 (airport_recent) is scheduled by exactly one collector workflow group", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
   const owners: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
@@ -294,24 +295,24 @@ test("A1 (airport_recent) is scheduled by exactly one collector workflow group",
   assert.deepEqual(owners, ["collect-production.yml"], "there must not be two competing scheduled A1 collectors");
 });
 
-test("Store Dynamics is owned only by the existing weekly slow workflow", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
+test("retired Store Dynamics has no active cadence-group owner", async () => {
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
   const owners: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
     if (declaredSources(workflow).includes("store_dynamics")) owners.push(file);
   }
-  assert.deepEqual(owners, ["collect-sales.yml"]);
+  assert.deepEqual(owners, []);
 });
 
 test("every production source is scheduled by exactly one cadence-group workflow", async () => {
-  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-sales.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
+  const groupFiles = ["collect-production.yml", "collect-realtime.yml", "collect-weather.yml", "collect-forecast.yml", "collect-forecast-recovery.yml", "collect-weather-recovery.yml"];
   const scheduledSources: string[] = [];
   for (const file of groupFiles) {
     const workflow = await readFile(new URL(`../.github/workflows/${file}`, import.meta.url), "utf8");
     scheduledSources.push(...declaredSources(workflow));
   }
-  assert.deepEqual([...scheduledSources].sort(), [...PRODUCTION_SOURCE_NAMES].sort(), "every known source should be scheduled exactly once, with none forgotten or duplicated");
+  assert.deepEqual([...scheduledSources].sort(), [...PRODUCTION_SOURCE_NAMES].filter(name => !isSeoulOnlySource(name)).sort(), "every known source should be scheduled exactly once, with none forgotten or duplicated");
   assert.equal(new Set(scheduledSources).size, scheduledSources.length, "no source may be scheduled by two workflow groups at once");
 });
 
@@ -404,8 +405,8 @@ test("Cloudflare is the single authoritative REALTIME scheduler and GitHub stays
   assert.doesNotMatch(realtime, /^\s*schedule:/m, "the GitHub realtime schedule must stay off while the Worker Cron is live");
   assert.doesNotMatch(realtime, /- cron:/, "no GitHub cron expression may remain in the realtime workflow");
   assert.match(realtime, /^\s*workflow_dispatch:/m, "the Cloudflare trigger dispatches this workflow, so it must stay dispatchable");
-  // Collection semantics are untouched by activation: same three sources.
-  assert.match(expandRealtimeCadence(realtime), /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime/);
+  // Seoul has been retired; both airport terminals retain the same dispatcher.
+  assert.match(expandRealtimeCadence(realtime), /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2/);
 });
 
 test("Cloudflare is the single authoritative FORECAST scheduler and GitHub stays dispatchable", () => {
@@ -435,16 +436,12 @@ test("production smoke requires A5 picker dates whenever A5 reports LIVE", () =>
   );
 });
 
-test("production smoke verifies Store Dynamics coverage, health, and one isolated cache key", () => {
+test("production smoke verifies Seoul retirement, shared source monitoring, and one isolated cache key", () => {
   const smoke = readFileSync(".github/workflows/site-smoke.yml", "utf8");
-  assert.match(smoke, /Store Dynamics covers all four exact areas/);
-  assert.match(smoke, /row\.datasetId === "OA-15577"/);
-  assert.match(smoke, /row\.mappingVersion === "oa-15577-standard-area-2026-09-03-v1"/);
-  assert.match(smoke, /row\.tradeAreaCode === expected\.code/);
-  assert.match(smoke, /row\.tradeAreaTypeCode === expected\.type/);
-  assert.match(smoke, /storeDynamicsQuarters\.size === 1/);
-  assert.match(smoke, /SEOUL_STORE_DYNAMICS/);
-  assert.match(smoke, /OFFICIAL_HISTORICAL/);
+  assert.match(smoke, /retired Seoul projections and sources are absent/);
+  assert.match(smoke, /airport weather and shared subway remain monitored/);
+  assert.match(smoke, /date picker excludes retired Seoul observation days/);
+  assert.match(smoke, /source presence does not claim freshness/);
   assert.match(smoke, /cacheProbe=\$\{cacheProbeKey\}/);
   assert.match(smoke, /summary Edge Cache moves from cold to HIT/);
   assert.match(smoke, /cfCacheStatus === "HIT"/);
@@ -585,4 +582,10 @@ test("the realtime retry can never schedule a source its own cadence group does 
   for (const source of RETRYABLE_A4_SOURCES) {
     assert.ok(primary.includes(source), `${source} may be retried but is not collected by the realtime group`);
   }
+});
+
+ test('retired weekly Seoul workflow cannot run or create a schedule',()=>{
+ const workflow=readFileSync('.github/workflows/collect-sales.yml','utf8');
+ assert.doesNotMatch(workflow,/^\s*schedule:/m);
+ assert.match(workflow,/if: \$\{\{ false \}\}/);
 });

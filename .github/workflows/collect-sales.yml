@@ -22,8 +22,6 @@ name: Collect Estimated Sales
 # main branch, inside this run's concurrency group; the run badge stays red
 # when a retry succeeds (see collect-attempt.yml).
 on:
-  schedule:
-    - cron: "7 22 * * 6"
   workflow_dispatch:
 
 permissions:
@@ -35,7 +33,7 @@ concurrency:
 
 jobs:
   collect:
-    if: vars.ENABLE_PRODUCTION_COLLECTOR == 'true'
+    if: ${{ false }} # Seoul-only collection retired; retained for reversible history.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production

@@ -1,11 +1,10 @@
-/* eslint-disable @next/next/no-html-link-for-pages -- A full navigation initializes the site's custom route shell. */
 import { passengerCopy } from "../lib/passenger-copy";
 import type { Lang } from "./retailpulse-data";
 
 const copy = {
   ko: {
     title: "누가, 어떻게 쓰면 좋을까요?",
-    intro: "인천공항에서 일하며 오늘의 상황과 평소와 달라진 흐름을 확인하는 곳입니다. 먼저 한눈에에서 오늘을 보고, 변화가 궁금할 때 기간을 비교하세요. 서울 지역 자료는 더보기에서 계속 이용할 수 있습니다.",
+    intro: "인천공항에서 일하며 오늘의 상황과 평소와 달라진 흐름을 확인하는 곳입니다. 먼저 한눈에에서 오늘을 보고, 변화가 궁금할 때 기간을 비교하세요.",
     uses: [
       ["판매사원·식음료 매장 근무자", "한눈에에서 근무 터미널과 날짜를 고르세요. 오늘의 출발편·예상 인원·대기를 확인하고, 앞으로 1·3·6시간에 어느 구역과 목적지의 출발편이 많은지 살펴보세요."],
       ["영업관리자·현장 관리자", "한눈에의 비교 탭에서 기준 시작·끝과 비교 시작·끝을 정하세요. 시간대·주말·터미널의 차이를 일평균으로 확인하고, 국가별 흐름에서는 여객 월 실적과 항공편 변화를 따로 확인하세요."],
@@ -19,21 +18,21 @@ const copy = {
   },
   en: {
     title: "Who is this for, and how do I use it?",
-    intro: "KORETAIL focuses on Incheon Airport flights, passenger trends and travel preparation. Seoul-area reference data remains available on separate screens.",
+    intro: "KORETAIL focuses on Incheon Airport flights, passenger trends and travel preparation.",
     uses: [
       ["Airport and duty-free staff", "Select a terminal and read expected departures, peak hours, departing flights and departure-hall waits together when preparing shifts and breaks."],
-      ["Seoul store operators", "Read local population, domestic-card activity, weather and events together, then prepare opening with the store checklist for your business type."],
-      ["Visitors and tourism-information staff", "Check current crowding, official forecasts and weather for your area. The guide desk brings area-specific information together."],
+
+
     ],
     methodTitle: "How to read the numbers",
     method: "We organize provider-published data by area, date and terminal. Current observations, official forecasts and historical actuals are different measures. Expected passengers are not queue counts; domestic-card activity is neither foreign spending nor total sales. Changes are calculated only when comparable periods and scopes are available.",
     updateTitle: "When is data updated?",
-    updates: "We attempt collection of Seoul population/card activity and airport queues about every 15 minutes, airport passenger forecasts hourly, and flights/events on their source-specific schedules. Monthly and quarterly records follow provider publication. Provider refresh and KORETAIL collection are different: check both the observation and collection time.",
+    updates: "We attempt collection of airport queues about every 15 minutes, airport passenger forecasts hourly, and flights/events on their source-specific schedules. Monthly and quarterly records follow provider publication. Provider refresh and KORETAIL collection are different: check both the observation and collection time.",
     limit: "Provider delays or outages can postpone an update. Last-known values keep their timestamps; missing data is marked unavailable. A number alone does not establish sales or actual workload.",
   },
   zh: {
     title: "适合谁用，怎么用？",
-    intro: "为仁川机场工作人员提供今日状况与近期变化。先在机场一览查看今天，需要了解变化时再比较时段。首尔地区资料仍可从更多页面查看。",
+    intro: "为仁川机场工作人员提供今日状况与近期变化。先在机场一览查看今天，需要了解变化时再比较时段。",
     uses: [
       ["销售与餐饮门店员工", "在机场一览选择工作航站楼和日期。查看当天的出发航班、预计人数与等候情况，了解未来1、3、6小时哪些区域和目的地的出发航班较多。"],
       ["营业与现场管理人员", "在机场一览的比较标签中设置基准期和比较期的起止日期。按日均值查看时段、周末与航站楼差异，在各国趋势中分别查看月度旅客实绩和航班变化。"],
@@ -47,10 +46,10 @@ const copy = {
   },
   ja: {
     title: "誰が、どう使うと便利ですか？",
-    intro: "KORETAILは仁川空港のフライト・旅客動向・旅行準備を中心に案内します。ソウル地域の参考資料は別画面で確認できます。",
-    uses: [["空港・免税店のスタッフ", "ターミナルを選び、予想出国者・ピーク時間・出発便・出国場の待ちを併せて確認し、勤務や休憩を準備します。"], ["ソウルの店舗運営者", "現在人口・国内カード決済・天気・イベントを併せて読み、店舗画面の業種別チェックリストで開店を準備します。"], ["訪問者・観光案内スタッフ", "訪問先の現在の混雑・公式予測・天気を確認します。観光案内画面では地域別の案内資料をまとめて見られます。"]],
+    intro: "KORETAILは仁川空港のフライト・旅客動向・旅行準備を中心に案内します。",
+    uses: [["空港・免税店のスタッフ", "ターミナルを選び、予想出国者・ピーク時間・出発便・出国場の待ちを併せて確認し、勤務や休憩を準備します。"], ],
     methodTitle: "数字の読み方", method: "機関の公表資料を地域・日付・ターミナル別に整理します。現在観測、公式予測、過去実績は別の指標です。予想旅客数は待機人数ではなく、国内カード決済は外国人消費や全売上ではありません。対象・期間が比較可能な場合のみ増減を計算します。",
-    updateTitle: "いつ更新されますか？", updates: "ソウル人口・カード決済と空港の待ちは約15分ごと、空港の予想旅客は毎時、フライト・イベント等は資料別の定期収集を試みます。月次・四半期資料は機関の公表後に更新します。提供元の更新とKORETAILの収集は別なので、観測と取得の時刻を確認してください。",
+    updateTitle: "いつ更新されますか？", updates: "空港の待ちは約15分ごと、空港の予想旅客は毎時、フライト・イベント等は資料別の定期収集を試みます。月次・四半期資料は機関の公表後に更新します。提供元の更新とKORETAILの収集は別なので、観測と取得の時刻を確認してください。",
     limit: "提供元の遅延や障害で更新が遅れることがあります。最後に確認した値には時刻を残し、資料がない場合は確認不可と表示します。数字だけで売上や現場の業務量を断定しないでください。",
   },
 };

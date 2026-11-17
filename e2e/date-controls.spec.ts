@@ -93,7 +93,7 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
    dates.push(date);
    await route.fulfill({json:{...SUMMARY_FIXTURE,serviceDateKst:date,airport:{...SUMMARY_FIXTURE.airport,serviceDateKst:date}}});
   });
-  await page.goto(`/${lang}/myeongdong`);
+  await page.goto(`/${lang}/airport`);
   const buttons=page.locator('.date-nav-shortcuts button');
   await expect(buttons).toHaveCount(3);
   await expect(buttons.nth(1)).toHaveAttribute('aria-pressed','true');
@@ -118,7 +118,6 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   await expect(buttons.nth(0)).toHaveAttribute('aria-pressed','true');
   expect(dates).toContain('2026-09-01');
   expect(dates).toContain('2026-08-30');
-  await expect(page.locator('.period-outlook-link')).toHaveAttribute('href',new RegExp(`/${lang}/forecast\\?area=myeongdong#prediction-score$`));
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   if(lang==='ko')await page.screenshot({path:info.outputPath(`date-public-${width}.png`)});
   await page.evaluate(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',terminal:'T2',interests:['weather'],day:'today',selectedDays:['today','yesterday','tomorrow'],analytics:false})),PREFERENCE_KEY);
@@ -148,7 +147,7 @@ test('typing a year in the free picker requests only the finished date and adds 
     dates.push(date);
     await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
   });
-  await page.goto('/ko/myeongdong');
+  await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const input = page.locator('.date-nav-picker input[type=date]');
   await expect(input).toHaveValue(SUMMARY_FIXTURE.todayKst);
@@ -176,7 +175,7 @@ test('typing a two-digit day or month requests only the finished date, once each
     dates.push(date);
     await route.fulfill({ json: { ...SUMMARY_FIXTURE, serviceDateKst: date, airport: { ...SUMMARY_FIXTURE.airport, serviceDateKst: date } } });
   });
-  await page.goto('/ko/myeongdong');
+  await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const input = page.locator('.date-nav-picker input[type=date]');
   const [year, month] = SUMMARY_FIXTURE.todayKst.split('-');

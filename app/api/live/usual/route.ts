@@ -1,3 +1,4 @@
+import {SEOUL_ENABLED} from '../../../../lib/product-scope';
 import { getDb } from '../../../../db';
 import { CONTENT_API_ROBOTS_TAG } from '../../../../lib/crawl-policy';
 import { kstDayOf } from '../../../../lib/kst';
@@ -21,6 +22,7 @@ const AREAS = ['myeongdong', 'hongdae', 'seongsu', 'itaewon'];
  * slots plus the holiday months): a few dozen rows, never the history.
  */
 export async function GET(request: Request) {
+  if(!SEOUL_ENABLED)return Response.json({status:'RETIRED',reason:'seoul_product_removed'},{status:410,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
   const area = new URL(request.url).searchParams.get('area') ?? '';
   const headers = { 'x-robots-tag': CONTENT_API_ROBOTS_TAG };
   if (!AREAS.includes(area)) return Response.json({ error: 'invalid_area' }, { status: 400, headers: { ...headers, 'cache-control': 'no-store' } });

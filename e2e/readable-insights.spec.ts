@@ -26,19 +26,14 @@ test("the flight list starts compact and can reveal records beyond the old 80-ro
   await expect(page.locator(".flight-summary")).toContainText("항공사 등록 국가 순위");
 });
 
-test("tourism events beyond the first page stay reachable and preserve the preview", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  const events = Array.from({ length: 45 }, (_, i) => ({ ...(SUMMARY_FIXTURE.areas.myeongdong.events[0] as Record<string, unknown>), contentId: `event-${i}`, title: `행사 ${i + 1}`, status: "IN_OFFICIAL_PERIOD" }));
-  await page.route("**/api/live/events*", async route => {
-    const offset = Number(new URL(route.request().url()).searchParams.get("offset"));
-    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ events: events.slice(offset, offset + 40), nextOffset: offset === 0 ? 40 : null }) });
-  });
-  await page.goto("/ko/tourism-desk/myeongdong");
-  await expect(page.locator(".tourism-events > *")).toHaveCount(3);
-  await page.getByRole("button", { name: "수집된 행사 전체 보기" }).click();
-  await expect(page.locator(".tourism-events > *")).toHaveCount(40);
-  await page.getByRole("button", { name: "행사 더 보기", exact: true }).click();
-  await expect(page.locator(".tourism-events > *")).toHaveCount(45);
-  await page.getByRole("button", { name: "대표 3개만 보기" }).click();
-  await expect(page.locator(".tourism-events > *")).toHaveCount(3);
+test("retired Seoul entry: tourism events beyond the first page stay reachable and preserve the preview", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });

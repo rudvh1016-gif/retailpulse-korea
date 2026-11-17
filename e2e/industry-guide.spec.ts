@@ -10,7 +10,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
     page.on('pageerror', error => errors.push(error.message));
     await page.setViewportSize({ width, height: 900 });
     await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-    await page.goto(`/${lang}/business?place=area&area=myeongdong`);
+    await page.goto(`/${lang}/business?place=airport&terminal=T1`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     const guide = page.getByTestId('industry-guide');
     for (const id of ['beauty', 'fashion', 'food', 'convenience', 'popup', 'tourism', 'liquor', 'luxury'] as const) {
@@ -59,7 +59,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
 
 test('general preparation remains identifiable when current data is missing', async ({ page }) => {
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {} }));
-  await page.goto('/ko/business?place=area&area=myeongdong');
+  await page.goto('/ko/business?place=airport&terminal=T1');
   const guide = page.getByTestId('industry-guide');
   await expect(guide.getByTestId('industry-unselected')).toBeVisible();
   await guide.getByRole('button', { name: industryProfiles.beauty.label.ko, exact: true }).click();
@@ -75,7 +75,7 @@ for (const width of [320, 390, 430]) test(`store scenes and keyboard disclosures
   await page.setViewportSize({ width, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-  await page.goto('/ko/business?place=area&area=myeongdong');
+  await page.goto('/ko/business?place=airport&terminal=T1');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const guide = page.getByTestId('industry-guide');
   for (const id of ['beauty', 'convenience'] as const) {

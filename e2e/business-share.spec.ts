@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { shareCopy } from '../lib/prep-share';
 
-async function open(page: Page, lang = 'ko', width = 390, area = 'myeongdong') {
+async function open(page: Page, lang = 'ko', width = 390, area = 'airport') {
   await page.setViewportSize({ width, height: 900 });
   let summaryRequests = 0;
   await page.route('**/api/live/summary*', async (route) => { summaryRequests += 1; await routeSummary(SUMMARY_FIXTURE)(route); });
@@ -23,9 +23,9 @@ test('copying puts the same dated text on the clipboard without a new data reque
   await expect(share.getByTestId('share-status')).toHaveText(shareCopy.copied.ko);
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied).toContain('[KORETAIL]');
-  expect(copied).toContain('2026-08-31 (월) · 명동');
+  expect(copied).toContain('2026-08-31 (월) · 인천공항 T1');
   expect(copied).toContain('/ko/business?date=2026-08-31');
-  expect(copied).toContain('17:00 ~ 18:00');
+  expect(copied).toContain('15:00 ~ 16:00');
   expect(copied).toContain('지금 핵심');expect(copied.replace('지금 핵심','')).not.toContain('지금');await share.locator('summary').click();expect(copied.replaceAll('\r\n','\n')).toBe(await share.getByTestId('share-preview').innerText());
   expect(requests()).toBe(before);
 });
@@ -47,7 +47,7 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
     const download = page.waitForEvent('download');
     await share.getByRole('button', { name: shareCopy.image[lang] }).click();
     const file = await download;
-    expect(file.suggestedFilename()).toBe('koretail-2026-08-31-myeongdong.png');
+    expect(file.suggestedFilename()).toBe('koretail-2026-08-31-airport-T1.png');
     await file.saveAs(test.info().outputPath(`share-${lang}.png`));
     const bytes = await readFile(await file.path());
     expect([...bytes.subarray(0, 8)]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -87,7 +87,7 @@ test('the share block fits a 360px phone', async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
 
-for(const [place,label,terminal,width] of [['myeongdong','명동','T1',390],['hongdae','홍대','T1',390],['seongsu','성수','T1',390],['itaewon','이태원','T1',390],['airport','인천공항 T1','T1',390],['airport','인천공항 T2','T2',1440]] as const)test(`all export paths share one brief ${place} ${terminal}`,async({page})=>{
+for(const [place,label,terminal,width] of [['myeongdong','인천공항 T1','T1',390],['hongdae','인천공항 T1','T1',390],['seongsu','인천공항 T1','T1',390],['itaewon','인천공항 T1','T1',390],['airport','인천공항 T1','T1',390],['airport','인천공항 T2','T2',1440]] as const)test(`all export paths share one brief ${place} ${terminal}`,async({page})=>{
  await page.addInitScript(({place,terminal})=>{
   localStorage.setItem('koretail-business-v1',JSON.stringify({version:1,place:place==='airport'?'airport':'area',terminal,side:null,hours:null}));
   localStorage.setItem('retailpulse-preferences',JSON.stringify({lang:'ko',area:place==='airport'?'myeongdong':place,terminal,industry:'beauty'}));
@@ -108,12 +108,14 @@ for(const [place,label,terminal,width] of [['myeongdong','명동','T1',390],['ho
 });
 
 
-for(const [area,label] of [['myeongdong','명동'],['hongdae','홍대'],['seongsu','성수'],['itaewon','이태원'],['T1','T1'],['T2','T2']])test(`shared link opens exact place on another device ${area}`,async({page})=>{
+for(const [area,label] of [['myeongdong','인천공항 T1'],['hongdae','인천공항 T1'],['seongsu','인천공항 T1'],['itaewon','인천공항 T1'],['T1','T1'],['T2','T2']])test(`shared link opens exact place on another device ${area}`,async({page})=>{
  await page.addInitScript(()=>localStorage.setItem('koretail-business-v1',JSON.stringify({version:1,place:'airport',terminal:'T1',side:'WEST',hours:null})));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  const params=new URLSearchParams({date:'2026-08-31',place:area.startsWith('T')?'airport':'area',...(area.startsWith('T')?{terminal:area,side:'EAST'}:{area})});
  await page.goto(`/ko/business?${params}`);await expect(page.getByTestId('prep-place')).toContainText(label);
- const share=page.getByTestId('prep-share');await share.locator('summary').click();await expect(share.getByTestId('share-preview')).toContainText(`/ko/business?${params}`);
+ const share=page.getByTestId('prep-share');await share.locator('summary').click();await expect(share.getByTestId('share-preview')).toContainText('/ko/business?date=2026-08-31&place=airport');
+ if(area.startsWith('T')) await expect(share.getByTestId('share-preview')).toContainText(`terminal=${area}`);
+ else await expect(share.getByTestId('share-preview')).not.toContainText('place=area');
  expect(JSON.parse(await page.evaluate(()=>localStorage.getItem('koretail-business-v1'))??'{}').side).toBe('WEST');
  if(area==='T2'){await page.locator('.prep-change').click();await page.getByRole('radio',{name:'T1',exact:true}).check();await page.locator('.prep-form button[type=submit]').click();await expect(page.getByTestId('prep-place')).toContainText('T1');}
 });

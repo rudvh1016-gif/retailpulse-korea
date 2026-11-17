@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED } from "./product-scope";
 import { predictionReadiness } from './prediction-progress';
 import { publicAreaIds } from './areas';
 import { kstDayOf, shiftKstDay } from './kst';
@@ -39,6 +40,7 @@ export const POPULATION_ROWS_SQL = `SELECT observed_at AS observedAt,retrieved_a
 
 /** Runs in existing Actions, once per area/target day from 18:00 KST. Never on a page request. */
 export async function runPopulationPredictions(db:D1Database,now=new Date()) {
+  if (!SEOUL_ENABLED) return {status:'SKIPPED_PRODUCT_DISABLED',predictions:0};
   const today=kstDayOf(now.toISOString()), targetDate=shiftKstDay(today,1), cutoff=now.toISOString();
   await updatePopulationCoverage(db,now);
   const hour=(now.getUTCHours()+9)%24;
@@ -97,6 +99,7 @@ export async function runPopulationPredictions(db:D1Database,now=new Date()) {
   return {status:'SUCCESS',predictions:count};
 }
 export async function matchPopulationOutcomes(db:D1Database,now=new Date()) {
+  if (!SEOUL_ENABLED) return;
   const rows=(await db.prepare(`SELECT p.prediction_id AS id,p.area,p.target_at AS targetAt,p.created_at AS createdAt,p.source_versions AS sourceVersions
     FROM predictions p LEFT JOIN outcomes o ON o.prediction_id=p.prediction_id
     WHERE p.model_version=? AND p.target_at>=? AND p.target_at<? AND o.id IS NULL LIMIT 600`)
@@ -115,6 +118,7 @@ export async function matchPopulationOutcomes(db:D1Database,now=new Date()) {
 
 /** Hourly bounded history accounting in Actions, never on a visitor request. */
 export async function updatePopulationCoverage(db:D1Database,now=new Date()) {
+  if (!SEOUL_ENABLED) return;
  const today=kstDayOf(now.toISOString()),tomorrow=shiftKstDay(today,1);
  for(const area of publicAreaIds) {
   const cached=await db.prepare('SELECT calculated_at,payload FROM area_data_coverage WHERE area=?').bind(area).first<{calculated_at:string;payload:string}>();

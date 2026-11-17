@@ -1,3 +1,4 @@
+import { airportOnlyDestination } from "../../airport-only-routes";
 import type { Metadata } from "next";
 import { preload } from "react-dom";
 import { notFound,permanentRedirect } from "next/navigation";
@@ -33,13 +34,16 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
   if (!seoLocales.includes(locale as SeoLocale) || !standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) return {};
+  const destination = airportOnlyDestination(locale, slug);
+  if (destination) return buildMetadata(locale as SeoLocale, slug === "business" ? "airport-prepare" : undefined);
   return buildMetadata(locale as SeoLocale, slug as SeoSlug);
 }
 
 export default async function LocalePage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
-  if(slug==='predictions')permanentRedirect(`/${locale}/where-to`);
+  const retiredDestination = airportOnlyDestination(locale, slug);
+  if (retiredDestination) permanentRedirect(retiredDestination);
   if (!standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) notFound();
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);
   const view = isArea ? "today" : slug as "airport-countries" | "airport-prepare" | "airport-glance" | "where-to" | "consumption" | "forecast" | "airport" | "business" | "about" | "more";

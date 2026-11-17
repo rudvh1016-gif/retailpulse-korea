@@ -20,7 +20,7 @@ async function open(page: Page, lang = 'ko', width = 390) {
       if (!localStorage.getItem('retailpulse-preferences')) localStorage.setItem('retailpulse-preferences', JSON.stringify({ industry: 'beauty' }));
     } catch { /* The blocked-storage case still opens with an unset industry. */ }
   });
-  await page.goto(`/${lang}/business?place=area&area=myeongdong`);
+  await page.goto(`/${lang}/business?place=airport&terminal=T1`);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const prep = page.getByTestId('business-prep');
   await expect(prep.getByTestId('prep-facts')).toBeVisible();
@@ -35,23 +35,21 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
     await expect(prep.getByTestId('prep-hours')).toHaveText(prepCopy.wholeDay[lang]);
     await expect(prep.getByTestId('prep-industry')).toHaveText(industryProfiles.beauty.label[lang]);
     const actions = prep.getByTestId('prep-actions').locator('> li');
-    await expect(actions).toHaveCount(3);
-    await expect(actions.nth(0)).toHaveAttribute('data-rule', 'CROWD');
-    await expect(actions.nth(1)).toHaveAttribute('data-rule', 'RAIN');
-    await expect(actions.nth(2)).toHaveAttribute('data-rule', 'EVENT');
+    await expect(actions).toHaveCount(1);
+    await expect(actions.nth(0)).toHaveAttribute('data-rule', 'AIRPORT_PEAK');
     // The forecast covers one hour of the day; the rest is said out loud.
-    await expect(prep.locator('.prep-coverage').first()).toContainText('17:00 ~ 18:00');
+    await expect(prep.locator('.prep-coverage').first()).toContainText('15:00 ~ 16:00');
     await expect(prep.getByTestId('prep-status')).toHaveCount(0);
-    await expect(actions.nth(0)).toContainText('17:00 ~ 18:00');
+    await expect(actions.nth(0)).toContainText('15:00 ~ 16:00');
     // Every action can be checked by hand.
     await actions.nth(0).locator('summary').click();
     await expect(actions.nth(0).locator('dl')).toContainText(prepCopy.limit[lang]);
     // The screen order a reader about to open needs: prep, then graphs, then the standing guide.
-    const order = await page.evaluate(() => ['business-prep', 'area-demand-card', 'industry-guide']
+    const order = await page.evaluate(() => ['business-prep', 'industry-guide']
       .map((id) => (document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? -1e9) + scrollY));
     expect(order[0]).toBeGreaterThan(0);
     expect(order[0]).toBeLessThan(order[1]);
-    expect(order[1]).toBeLessThan(order[2]);
+    await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
     expect(await tofuCharacters(prep)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await prep.scrollIntoViewIfNeeded();
@@ -82,13 +80,13 @@ test('saved hours narrow the briefing and survive a reload', async ({ page }) =>
   // the hours themselves are reported as not judgeable, never "no change".
   const actions = prep.getByTestId('prep-actions').locator('> li');
   await expect(actions).toHaveCount(1);
-  await expect(actions.first()).toHaveAttribute('data-rule', 'EVENT');
-  await expect(prep.getByTestId('prep-status')).toHaveText(statusLine('INSUFFICIENT', 'ko'));
+  await expect(actions.first()).toHaveAttribute('data-rule', 'AIRPORT_PEAK');
+  await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1');
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.getByTestId('business-prep').getByTestId('prep-hours')).toHaveText('10:00 ~ 16:00');
   const stored = await page.evaluate(() => localStorage.getItem('koretail-business-v1'));
-  expect(JSON.parse(stored ?? 'null')).toEqual({ version: 1, place: 'area', terminal: 'T1', side: null, hours: { open: '10:00', close: '16:00' } });
+  expect(JSON.parse(stored ?? 'null')).toEqual({ version: 1, place: 'airport', terminal: 'T1', side: null, hours: { open: '10:00', close: '16:00' } });
 });
 
 test('hours past midnight are labelled and a first visit saves nothing', async ({ page }) => {
@@ -106,7 +104,7 @@ test('an unreadable or foreign saved value falls back to the whole day', async (
   await page.addInitScript(() => localStorage.setItem('koretail-business-v1', '{"version":1,"place":"moon","terminal":"T9","hours":{"open":"25:00"}}'));
   const prep = await open(page);
   await expect(prep.getByTestId('prep-hours')).toHaveText(prepCopy.wholeDay.ko);
-  await expect(prep.getByTestId('prep-actions').locator('> li')).toHaveCount(3);
+  await expect(prep.getByTestId('prep-actions').locator('> li')).toHaveCount(1);
 });
 
 test('blocked storage keeps the chosen hours for the visit and says so', async ({ page }) => {
@@ -141,10 +139,8 @@ test('the airport tab briefs a terminal and keeps the area tabs and guide consis
   await prep.getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
   await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T2');
   await expect(prep.getByTestId('prep-actions').locator('> li').first()).toContainText('16:00 ~ 17:00');
-  // Back to an area: the area graph returns and the airport choice is not left behind.
-  await page.locator('.business-view .area-tabs').getByRole('tab', { name: '홍대' }).click();
-  await expect(prep.getByTestId('prep-place')).toHaveText('홍대');
-  await expect(page.getByTestId('area-demand-card')).toBeVisible();
+  await expect(page.locator('.business-view .area-tabs [role=tab]')).toHaveCount(1);
+  await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
 });
 
 test('the business type is one choice shared by the briefing and the guide', async ({ page }) => {
@@ -158,7 +154,7 @@ test('the business type is one choice shared by the briefing and the guide', asy
 
 test('a past date gets a plain note instead of a briefing', async ({ page }) => {
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, serviceDateKst: '2026-08-30', dayRelation: 'PAST' }));
-  await page.goto('/ko/business?date=2026-08-30&place=area&area=myeongdong');
+  await page.goto('/ko/business?date=2026-08-30&place=airport&terminal=T1');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.getByTestId('business-prep').getByTestId('prep-status')).toHaveText(statusLine('PAST', 'ko'));
 });
@@ -168,43 +164,23 @@ test('a tourist personal setting leaves the business briefing intact', async ({ 
     version: 1, role: 'tourist', location: 'myeongdong', terminal: 'all', interests: ['crowding'], day: 'today', analytics: false,
   })));
   const prep = await open(page);
-  await expect(prep.getByTestId('prep-actions').locator('> li')).toHaveCount(3);
+  await expect(prep.getByTestId('prep-actions').locator('> li')).toHaveCount(1);
 });
 
 for (const width of [320, 390, 430]) {
-  test(`Seoul preparation models keep data in HTML and keyboard details at ${width}px`, async ({ page }) => {
+  test(`airport preparation excludes Seoul models and keeps keyboard evidence at ${width}px`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     const prep = await open(page, 'ko', width);
-    await expect(prep).toHaveAttribute('data-place', 'area');
-    await expect(prep.locator('[data-fact="CROWD_MAX"] .prep-fact-value')).toContainText('17:00 ~ 18:00');
-    await expect(prep.locator('[data-fact="RAIN_MAX"] .prep-fact-value')).toContainText('60%');
-    await expect(prep.locator('[data-fact="EVENTS"] .prep-fact-value')).toHaveText('2건');
-    const imageCount = await prep.locator('.signal-scene img').count();
-    expect(imageCount).toBeGreaterThanOrEqual(3);
-    for (const image of await prep.locator('.signal-scene img').all()) {
-      await image.scrollIntoViewIfNeeded();
-      await image.evaluate((element) => (element as HTMLImageElement).decode());
-      await expect(image).toHaveAttribute('loading', 'lazy');
-      await expect(image).toHaveAttribute('alt', '');
-      // With width-descriptor srcset, naturalWidth is density-corrected.
-      expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
-    }
-    const fact = prep.locator('[data-fact="RAIN_MAX"]');
-    await expect(fact.locator('details')).not.toHaveAttribute('open', '');
-    await fact.locator('summary').focus();
-    await page.keyboard.press('Enter');
-    await expect(fact.locator('details')).toHaveAttribute('open', '');
-    await expect(fact.locator('details')).toContainText('기상청 단기예보');
-    await page.keyboard.press('Enter');
-    await expect(fact.locator('details')).not.toHaveAttribute('open', '');
+    await expect(prep).toHaveAttribute('data-place', 'airport');
+    await expect(prep.getByTestId('airport-sides')).toBeVisible();
+    await expect(prep.locator('[data-fact="CROWD_MAX"], [data-fact="RAIN_MAX"], [data-fact="EVENTS"]')).toHaveCount(0);
     const action = prep.locator('.prep-actions > li').first();
-    await expect(action.locator('.prep-action-detail')).not.toHaveAttribute('open', '');
     await action.locator('summary').focus();
     await page.keyboard.press('Enter');
     await expect(action.locator('dl')).toBeVisible();
-    await expect(action.locator('.prep-industry-hint')).toBeVisible();
-    expect(await prep.locator('.prep-fact-title').first().evaluate((element) => getComputedStyle(element).color)).toBe('rgb(0, 0, 0)');
+    await page.keyboard.press('Enter');
+    await expect(action.locator('details')).not.toHaveAttribute('open', '');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     expect(await tofuCharacters(prep)).toEqual([]);
     expect(errors).toEqual([]);
@@ -216,9 +192,10 @@ test('zero rain stays zero and absent weather creates no weather models', async 
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
     ...SUMMARY_FIXTURE.areas, myeongdong: { ...SUMMARY_FIXTURE.areas.myeongdong, weather },
   } }));
-  await page.goto('/ko/business?place=area&area=myeongdong');
+  await page.goto('/ko/business?place=airport&terminal=T1');
   const prep = page.getByTestId('business-prep');
-  await expect(prep.locator('[data-fact="RAIN_MAX"] .prep-fact-value')).toContainText('0%');
+  await expect(prep.locator('[data-fact="RAIN_MAX"]')).toHaveCount(0);
+  await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1');
   await expect(prep.locator('.prep-actions > li[data-rule="RAIN"]')).toHaveCount(0);
   await page.unroute('**/api/live/summary*');
   await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
@@ -227,6 +204,6 @@ test('zero rain stays zero and absent weather creates no weather models', async 
   await page.reload();
   await expect(prep.locator('[data-fact="RAIN_MAX"], [data-fact="TEMPERATURE_RANGE"]')).toHaveCount(0);
   await expect(prep.locator('img[src*="/rain-"], img[src*="/temperature-"]')).toHaveCount(0);
-  await expect(prep.locator('.prep-coverage').filter({ hasText: '기상청 단기예보' })).toBeVisible();
+  await expect(prep.getByTestId('airport-sides')).toBeVisible();
   await expect(prep.locator('.prep-actions > li[data-rule="RAIN"]')).toHaveCount(0);
 });

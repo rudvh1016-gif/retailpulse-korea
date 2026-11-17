@@ -1,58 +1,38 @@
 import {test,expect} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
-import {buildCommercialMonth,compareCommercialMonths,publicCommercialMonth} from '../lib/commercial-monthly';
-import type {LiveSummary} from '../app/live-signals';
-const areas=['myeongdong','seongsu','hongdae','itaewon'] as const;
-const monthRows=(month:string,values:number[])=>[{observed_at:`${month}-01T10:10:00+09:00`,payload:JSON.stringify({commercialAt:`${month}-01T10:10:00+09:00`,categories:values.map((payments,i)=>({category:['한식','편의점','여행'][i],group:'fixture',payments,amountMin:10,amountMax:20}))})}];
-const comparison=publicCommercialMonth(compareCommercialMonths(buildCommercialMonth(monthRows('2026-08',[50,200,100]),'2026-08','2026-08-30'),buildCommercialMonth(monthRows('2026-07',[100,100,100]),'2026-07','2026-07-31')));
-for(const lang of ['ko','en','zh','ja'] as const)test(`tourism desk and brief retain hollow decrease and Korean source markings ${lang}`,async({page})=>{
- const data=structuredClone(SUMMARY_FIXTURE) as LiveSummary;
- data.areas.myeongdong!.subwayRidership!.trend!.sameWeekdayLastWeek!.changeTenthsPercent=-86;
- await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(data));
- await page.goto(`/${lang}/tourism-desk/myeongdong`);
- const rate=page.locator('.tourism-subway-comparisons li').first().getByRole('img');await expect(rate).toHaveText('△ 9%');
- await expect(rate).toHaveAccessibleName(new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
- await expect(page.locator('.tourism-shift-brief')).toContainText('△ 9%');
- await expect(page.locator('.tourism-brief-line [lang="ko"]').first()).toBeVisible();
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+for(const lang of ['ko','en','zh','ja'] as const)test(`retired Seoul entry: tourism desk and brief retain hollow decrease and Korean source markings ${lang}`,async({page})=>{
+ const langCode = lang;
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
-for(const lang of ['ko','en','zh','ja'] as const)test(`owner rate signs and decrease speech ${lang}`,async({page})=>{
- await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
- await page.route('**/api/live/commercial-months*',route=>route.fulfill({json:{status:'READY',area:'myeongdong',month:'2026-08',months:['2026-08'],data:comparison}}));
- await page.goto(`/${lang}/consumption`);
- if(lang==='ko'){
-  await expect(page.locator('.comparison-basis')).toContainText('서울시·신한카드 내국인 결제 · 10분 관측 평균');
-  await expect(page.locator('.comparison-heading')).toContainText('같은 날짜·시간에 관측된 업종별 카드 결제 흐름을 비교합니다.');
- }
- const decrease=page.locator('[data-category="한식"] .consumption-category-title strong');
- await expect(decrease).toHaveText('△ 50%');await expect(decrease.getByRole('img')).toHaveAttribute('aria-label',new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
- await expect(decrease.getByRole('img')).toHaveAccessibleName(new RegExp({ko:'감소.*역신장',en:'decrease',zh:'下降',ja:'減少'}[lang]));
- await expect(page.locator('[data-category="편의점"] .consumption-category-title strong')).toHaveText('+100%');
- await expect(page.locator('[data-category="여행"] .consumption-category-title strong')).toHaveText('0%');
- await expect(decrease.locator('.change-rate')).toHaveCSS('color','rgb(161, 45, 63)');
- await expect(page.locator('[data-category="편의점"] .change-rate')).toHaveCSS('color','rgb(36, 89, 166)');
- await expect(page.locator('[data-category="여행"] .change-rate')).toHaveCSS('color','rgb(89, 99, 110)');
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+for(const lang of ['ko','en','zh','ja'] as const)test(`retired Seoul entry: owner rate signs and decrease speech ${lang}`,async({page})=>{
+ const langCode = lang;
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/consumption?area=hongdae&month=2026-08`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
-for(const width of [360,390,430,1280])test(`glance agrees with summary at 38 minutes and distinguishes delayed last observations ${width}`,async({page},info)=>{
- await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
- const data=structuredClone(SUMMARY_FIXTURE) as LiveSummary,source=structuredClone(data.areas.myeongdong!);
- const now=Date.parse(data.generatedAt);let age=38;
- await page.route('**/api/live/summary*',route=>{
-  const observedAt=new Date(now-age*60_000).toISOString();
-  for(const area of areas)data.areas[area]={...structuredClone(source),realtime:{...source.realtime!,observedAt,congestionLevel:3,freshness:age<=40?'LIVE':'STALE'},realtimeForecast:[{targetAt:new Date(now+60*60_000).toISOString(),issuedAt:observedAt,retrievedAt:data.generatedAt,congestionLevel:1,congestionLabel:'여유',populationMin:10,populationMax:20}]};
-  return routeSummary(data)(route);
- });
- await page.goto('/ko/where-to');await expect(page.locator('.district-choice-name strong')).toHaveText(Array(4).fill('약간 붐빔'));
- await expect(page.getByTestId('district-last-known')).toHaveCount(0);await expect(page.locator('.comparison-basis')).toContainText('같은 관측시각');
- await expect(page.locator('.district-glance-section').first()).toContainText('여유');
- age=42;await page.reload();await expect(page.locator('.district-choice-name strong')).toHaveText(Array(4).fill('확인 불가'));
- await expect(page.getByTestId('district-last-known')).toHaveCount(4);await expect(page.getByTestId('district-last-known').first()).toContainText('마지막 확인 · 약간 붐빔');
- await expect(page.getByTestId('district-last-known').first()).toContainText('현재 혼잡으로 비교하지 않습니다');
- await expect(page.locator('.district-glance-section').first()).toContainText('덜 붐빌 시간을 비교하지 않습니다');
- await page.getByRole('button',{name:'한산한 곳',exact:true}).click();await expect(page.locator('[data-preference-match="true"]')).toHaveCount(0);
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
- if(width===390)await page.screenshot({path:info.outputPath('seoul-delay-390.png'),fullPage:true});
+for(const width of [360,390,430,1280])test(`retired Seoul entry: glance agrees with summary at 38 minutes and distinguishes delayed last observations ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/where-to`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
 

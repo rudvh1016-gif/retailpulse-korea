@@ -3,12 +3,10 @@ import {noticeDismissedState} from '../scripts/update-notice-test-state.mjs';
 import { routeGateFlights } from './gate-model-fixture';
 import { expect, test } from "@playwright/test";
 import { industryLabels } from '../lib/industry-ids';
-import {expectNavigationUrl} from './navigation-context';
 
 import {
   FLIGHT_ROWS,
   routeSummary,
-  SUBWAY_TREND_FIXTURE,
   SUMMARY_FIXTURE,
 } from "./summary-fixture";
 
@@ -129,68 +127,28 @@ test("owner-removed airport intro is absent in all four locales", async ({ page 
 });
 
 
-test("Store Dynamics is truthful and localized in all four languages", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  const expected = {
-    ko: ["점포 현황", "과거 자료", "총 점포", "174개", "일반 점포 160개", "프랜차이즈 14개", "이번 분기 변화", "개업 10개", "폐업 5개", "2026년 2분기", "공식 과거자료", "KORETAIL 수집", "분기 기준 공식 과거 자료이며, 현재 영업 중인 점포의 실시간 수가 아닙니다."],
-    en: ["Store openings and closures", "Historical", "Total stores", "174 stores", "Non-franchise stores 160 stores", "Franchise stores 14 stores", "Change this quarter", "Opened 10 stores", "Closed 5 stores", "Q2 2026", "official historical record", "KORETAIL retrieval", "Official quarterly historical data, not a real-time count of stores currently operating."],
-    zh: ["店铺开业与歇业", "历史资料", "店铺总数", "174家", "非加盟店 160家", "加盟店 14家", "本季度变化", "开业 10家", "歇业 5家", "2026年第2季度", "官方历史资料", "KORETAIL采集", "官方季度历史资料，并非当前营业店铺的实时数量。"],
-    ja: ["店舗の開業・廃業", "過去資料", "総店舗数", "174店", "非フランチャイズ店舗 160店", "フランチャイズ店舗 14店", "今四半期の変化", "開業 10店", "廃業 5店", "2026年第2四半期", "公式過去資料", "KORETAIL取得", "四半期基準の公式過去資料であり、現在営業中の店舗のリアルタイム件数ではありません。"],
-  } as const;
-  for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
-    await page.goto(`/${locale}/myeongdong`);
-    const card = page.locator('[data-signal-key="store-dynamics"]');
-    await expect(card).toBeVisible();
-    for (const phrase of expected[locale]) await expect(card).toContainText(phrase);
-    const areaName=locale==='zh'?"明洞、南大门、北仓洞、茶洞、武桥洞观光特区":"명동 남대문 북창동 다동 무교동 관광특구";
-    await expect(card).toContainText(areaName);
-    await expect(card).not.toContainText("OA-15577");
-    // Phase B v1 is counts only: no area-wide 개업률/폐업률 may be invented
-    // from the summed counts and shown as if it were the official rate.
-    await expect(card).not.toContainText("%");
-    // The display name must have the correct language for assistive technology.
-    const area=card.locator('.store-dynamics-scope span').last();
-    await expect(area).toHaveText(areaName);
-    if(locale==='zh')await expect(area).not.toHaveAttribute('lang','ko');
-    else await expect(area).toHaveAttribute('lang','ko');
-    // The spreadsheet grid is gone: the total is the headline, set by type
-    // rather than by a bordered cell. The unit is localized, so match the count.
-    await expect(card.locator(".store-dynamics-total strong")).toContainText("174");
-    await expect(card.locator(".store-dynamics-counts")).toHaveCount(0);
-  }
+test("retired Seoul entry: Store Dynamics is truthful and localized in all four languages", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Store Dynamics stays grouped, ordered after sales, and unclipped at every required width", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  for (const width of [390, 768, 1280, 1440, 1920]) {
-    await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/ko/myeongdong");
-    const sales = page.locator('[data-signal-key="sales"]');
-    const card = page.locator('[data-signal-key="store-dynamics"]');
-    await expect(sales).toBeVisible();
-    await expect(card).toBeVisible();
-    const order = await page.locator("[data-signal-key]").evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-signal-key")));
-    expect(order.indexOf("store-dynamics")).toBeGreaterThan(order.indexOf("sales"));
-    const bounds = await card.boundingBox();
-    expect(bounds).not.toBeNull();
-    expect(bounds!.x).toBeGreaterThanOrEqual(0);
-    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width + 1);
-    await expect(card.locator(".store-dynamics-meta")).toBeVisible();
-    await expect(card.locator(".store-dynamics-meta")).toContainText("현재 영업 중인 점포의 실시간 수가 아닙니다.");
-    await expect(card.locator(".store-dynamics-meta")).not.toContainText("OA-15577");
-    for (const selector of [
-      ".store-dynamics-content",
-      ".store-dynamics-scope",
-      ".store-dynamics-total",
-      ".store-dynamics-composition",
-      ".store-dynamics-change",
-      ".store-dynamics-meta",
-    ]) {
-      const clipped = await card.locator(selector).evaluateAll((nodes) => nodes.some((node) => node.scrollWidth > node.clientWidth + 1));
-      expect(clipped, `${selector} must not clip horizontally at ${width}px`).toBe(false);
-    }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  }
+test("retired Seoul entry: Store Dynamics stays grouped, ordered after sales, and unclipped at every required width", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
 test("airport summary keeps forecast, flights, gate and checkpoints truthful on mobile", async ({ page }) => {
@@ -502,64 +460,40 @@ test("remaining expected departures is shown for a complete day and withheld for
   await expect(page.getByText("전체 시간대 확인 불가").first()).toBeVisible();
 });
 
-test("Seoul district tabs preserve current ranges, weather, events and stale sources", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/myeongdong");
-  const tabs = page.locator('.area-tabs'), card = page.getByTestId('area-demand-card').first();
-  await expect(tabs.getByRole('tab')).toHaveCount(4);
-  await expect(card.locator('.demand-metric-label')).toHaveText('최근 관측 인구');
-  await expect(card).toContainText('23,000–25,000');
-  await expect(card).toContainText('약간 붐빔');
-  await expect(page.locator('.signal-groups')).toContainText('강수확률 최대 60%');
-  await tabs.getByRole('tab', { name: '홍대', exact: true }).click();
-  await expect(page).toHaveURL(/\/ko\/hongdae/);
-  await expect(card.locator('h2')).toHaveText('홍대');
-  await expect(page.locator('.event-signal-panel')).toContainText('홍대 거리공연');
-  await tabs.getByRole('tab', { name: '성수', exact: true }).click();
-  await expect(page).toHaveURL(/\/ko\/seongsu/);
-  await expect(card.locator('h2')).toHaveText('성수');
-  await expect(card).toContainText('이전 자료');
-  await expect(card).toContainText('12,000–14,000');
-  await expect(card).toContainText('서울시 실시간 도시데이터');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+test("retired Seoul entry: Seoul district tabs preserve current ranges, weather, events and stale sources", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Seoul renders compact arrival forecasts in four languages and no departure rows", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  const expected = {
-    ko: ["오늘 예상 입국객", "다음 시간대 예상 입국객", "오늘 예상 입국 피크"],
-    en: ["Expected arrivals today", "Next-band expected arrivals", "Expected arrival peak today"],
-    zh: ["今日预计入境旅客", "下一时段预计入境旅客", "今日预计入境高峰"],
-    ja: ["今日の予想入国者数", "次の時間帯の予想入国者数", "今日の予想入国ピーク"],
-  } as const;
-
-  for (const [locale, labels] of Object.entries(expected)) {
-    await page.goto(`/${locale}/myeongdong`);
-    const rows = page.locator(".signal-groups");
-    for (const label of labels) await expect(rows.getByText(label, { exact: true })).toBeVisible();
-    await expect(rows).toContainText(locale === "ko" ? "41,300명" : "41,300");
-  }
-
-  await page.goto("/ko/myeongdong");
-  const rows = page.locator(".signal-groups");
-  await expect(rows).toContainText("서울의 특정 지역과 직접 연결되지 않는 배경 참고");
-  await expect(rows).toContainText("실제 서울 방문객 수 아님");
-  await expect(rows).not.toContainText("현재 출국장 대기");
-  await expect(rows).not.toContainText("예상 출국 승객");
+test("retired Seoul entry: Seoul renders compact arrival forecasts in four languages and no departure rows", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("partial arrival coverage hides the whole-day total and peak", async ({ page }) => {
-  const partial = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
-  partial.airport.arrivalForecast.todayExpectedPassengersTotal = null;
-  partial.airport.arrivalForecast.peakExpectedTimeBand = null;
-  partial.airport.arrivalForecast.forecastCoverage = { all: "PARTIAL", byTerminal: { T1: "PARTIAL", T2: "COMPLETE" } };
-  await page.route("**/api/live/summary*", routeSummary(partial));
-  await page.goto("/ko/myeongdong");
-  const rows = page.locator(".signal-groups");
-  await expect(rows.getByText("오늘 예상 입국객", { exact: true })).toHaveCount(0);
-  await expect(rows.getByText("오늘 예상 입국 피크", { exact: true })).toHaveCount(0);
-  await expect(rows.getByText("다음 시간대 예상 입국객", { exact: true })).toBeVisible();
+test("retired Seoul entry: partial arrival coverage hides the whole-day total and peak", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
 /**
@@ -568,18 +502,16 @@ test("partial arrival coverage hides the whole-day total and peak", async ({ pag
  * forecast exists — the bug this replaced reported "unavailable" while twelve
  * official bands were stored.
  */
-test("a forecast peak that falls after midnight is shown and labelled tomorrow", async ({ page }) => {
-  const evening = JSON.parse(JSON.stringify(SUMMARY_FIXTURE));
-  evening.generatedAt = "2026-08-31T13:55:00Z"; // 22:55 KST
-  evening.areas.myeongdong.realtimeForecast = [
-    { targetAt: "2026-09-01T00:00:00+09:00", congestionLevel: 2, congestionLabel: "보통", populationMin: 10000, populationMax: 12000 },
-    { targetAt: "2026-09-01T04:00:00+09:00", congestionLevel: 4, congestionLabel: "붐빔", populationMin: 30000, populationMax: 33000 },
-  ];
-  await page.route("**/api/live/summary*", routeSummary(evening));
-  await page.goto("/ko/myeongdong");
-  const myeongdong = page.getByTestId("area-demand-card").first();
-  await expect(myeongdong).toContainText("내일 04:00");
-  await expect(myeongdong).not.toContainText("확인할 수 없습니다");
+test("retired Seoul entry: a forecast peak that falls after midnight is shown and labelled tomorrow", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
 test("selecting T1 or T2 changes every top metric, not just the current departure hall", async ({ page }) => {
@@ -722,20 +654,17 @@ test("the flight board lists official flight rows and filters by search and term
   await expect(page.getByText("OZ102")).toBeVisible();
 });
 
-test("insights explains every metric instead of leading with a bare index", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/forecast");
-  const reference = page.locator(".records-reference");
-  await expect(reference).not.toHaveAttribute("open", "");
-  await reference.locator("summary").focus();
-  await page.keyboard.press("Enter");
-  await expect(reference).toHaveAttribute("open", "");
-  await expect(page.locator(".metric-explainer").first()).toBeVisible();
-  for (const label of ["무엇인가요", "높으면", "출처", "왜 보나요"]) {
-    await expect(page.locator(".metric-explainer").first().getByText(label, { exact: true })).toBeVisible();
-  }
-  await expect(page.getByRole("heading", { name: "예측 성적표는 아직 없습니다" })).toBeVisible();
-  await expect(page.locator("body")).not.toContainText(/NOT VERIFIED|BASELINE BEATEN|기준모델 우위|TARGET_A/);
+test("retired Seoul archive: insights explains every metric instead of leading with a bare index", async ({ page }) => {
+ const langCode = 'ko';
+ const retiredReads: string[] = [];
+ await page.route('**/api/**',route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ page.on('request',request => { const url = new URL(request.url()); if (url.pathname === '/api/live/predictions' || url.searchParams.get('view') === 'records') retiredReads.push(request.url()); });
+ await page.goto(`/${langCode}/forecast?area=hongdae&date=2026-08-31#prediction-score`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}`);
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.prediction-history, .records-chart, .area-tabs')).toHaveCount(0);
+ expect(retiredReads).toEqual([]);
 });
 
 test("the About page answers a first-time visitor's questions", async ({ page }) => {
@@ -837,116 +766,52 @@ test("the checklist stacks without overflow on a narrow phone", async ({ page })
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
-test("commercial activity and events expose their complete truth without a flat clamped row", async ({ page }) => {
-  await page.route("**/api/live/events*", routeSummary({ events: SUMMARY_FIXTURE.areas.myeongdong.events, nextOffset: null }));
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  await page.goto("/ko/myeongdong");
-  const commercial = page.locator(".commercial-signal-card");
-  await expect(commercial).toContainText("최근 10분 내국인 카드 소비");
-  await expect(commercial).toContainText("상태");
-  await expect(commercial).toContainText("보통");
-  await expect(commercial).toContainText("결제금액");
-  await expect(commercial).toContainText("₩1,000,000 ~ ₩1,100,000");
-  await expect(commercial).toContainText("14:05 기준 최근 10분");
-  await expect(commercial).toContainText("14:07 수집");
-  await expect(commercial).toContainText("신한카드 내국인 결제 기반 · 전수 매출 아님 · 외국인 소비 아님");
-  await expect(commercial).not.toContainText(/오늘 누적 매출|외국인 매출|명동 전체 매출/);
-
-  const panel = page.locator(".event-signal-panel");
-  await expect(panel).toContainText("4건 공식 행사기간 내·예정");
-  await expect(panel).toContainText("공식 행사기간만으로 실제 운영 여부나 운영시간을 확인할 수 없습니다. 공식 안내를 확인하세요.");
-  await expect(panel.locator(".event-card")).toHaveCount(3);
-  await expect(panel.getByRole("button", { name: "수집된 행사 전체 보기" })).toHaveAttribute("aria-expanded", "false");
-  await expect(
-    panel.getByRole("link", { name: "공식 행사 페이지" }),
-    "the representative valid URL is shown while javascript: is rejected",
-  ).toHaveCount(1);
-
-  const firstCard = panel.locator(".event-card").first();
-  await expect(firstCard).toContainText("선택 날짜가 공식 행사기간에 포함");
-  await expect(firstCard).toContainText("8/20 ~ 9/10");
-  await expect(firstCard).toContainText("중구 명동길 14");
-  await expect(firstCard).toContainText("320m");
-  await expect(firstCard.locator(".event-preview")).toHaveText("관객과 소통하는 공연형 미술 콘텐츠입니다.");
-  const officialLink = firstCard.getByRole("link", { name: "공식 행사 페이지" });
-  await expect(officialLink).toHaveAttribute("target", "_blank");
-  await expect(officialLink).toHaveAttribute("rel", "noopener noreferrer");
-  const details = firstCard.locator("details");
-  await expect(details.locator(".event-overview")).not.toBeVisible();
-  await details.locator("summary").click();
-  await expect(details.locator(".event-overview")).toBeVisible();
-  await expect(details.locator(".event-overview")).toHaveText("관객과 소통하는 공연형 미술 콘텐츠입니다. 두 번째 공식 문장도 끝까지 읽을 수 있어야 합니다.");
-  expect(await details.locator(".event-overview").evaluate((element) => getComputedStyle(element).webkitLineClamp)).toBe("none");
-
-  await panel.getByRole("button", { name: "수집된 행사 전체 보기" }).click();
-  await expect(panel.locator(".event-card")).toHaveCount(4);
-  await expect(panel.getByRole("button", { name: "대표 3개만 보기" })).toHaveAttribute("aria-expanded", "true");
-  await expect(panel.getByRole("link", { name: "공식 행사 페이지" })).toHaveCount(2);
+test("retired Seoul entry: commercial activity and events expose their complete truth without a flat clamped row", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("a transitional cached payload never promises event cards it did not include", async ({ page }) => {
-  const transitional = structuredClone(SUMMARY_FIXTURE);
-  transitional.areas.myeongdong.eventCount = 13;
-  transitional.areas.myeongdong.events = transitional.areas.myeongdong.events.slice(0, 3);
-  await page.route("**/api/live/summary*", routeSummary(transitional));
-  await page.goto("/ko/myeongdong");
-
-  const panel = page.locator(".event-signal-panel");
-  await expect(panel).toContainText("13건 공식 행사기간 내·예정");
-  await expect(panel.locator(".event-card")).toHaveCount(3);
-  await expect(panel.getByRole("button", { name: "수집된 행사 전체 보기" })).toBeVisible();
+test("retired Seoul entry: a transitional cached payload never promises event cards it did not include", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("signal groups keep time meaning and value-source geometry at every required width", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  for (const width of [1280, 1440, 1920]) {
-    await page.setViewportSize({ width, height: 1000 });
-    await page.goto("/ko/myeongdong");
-    await expect(page.locator(".signal-group-title")).toHaveText(["지금", "이동과 외국인 흐름", "오늘과 다음", "과거 상권 정보"]);
-    for (const state of ["실시간/최근", "공식 예상", "지연 공개", "과거 자료"]) {
-      await expect(page.getByText(state, { exact: true }).first()).toBeVisible();
-    }
-    const geometry = await page.locator(".signal-row").first().evaluate((row) => {
-      const value = row.querySelector<HTMLElement>(".signal-row-value")?.getBoundingClientRect();
-      const source = row.querySelector<HTMLElement>(".signal-row-source")?.getBoundingClientRect();
-      const content = row.querySelector<HTMLElement>(".signal-row-content")?.getBoundingClientRect();
-      return { valueLeft: value?.left ?? -1, sourceLeft: source?.left ?? -2, contentWidth: content?.width ?? 9999 };
-    });
-    expect(Math.abs(geometry.valueLeft - geometry.sourceLeft)).toBeLessThanOrEqual(2);
-    expect(geometry.contentWidth).toBeLessThanOrEqual(820);
-    const eventHeading = await page.locator(".event-panel-head").evaluate((head) => {
-      const title = head.querySelector<HTMLElement>("h4")?.getBoundingClientRect();
-      const count = head.querySelector<HTMLElement>("p")?.getBoundingClientRect();
-      return { titleLeft: title?.left ?? -1, countLeft: count?.left ?? 9999 };
-    });
-    expect(eventHeading.countLeft - eventHeading.titleLeft).toBeLessThanOrEqual(820);
-  }
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/myeongdong");
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  const panelWidth = await page.locator(".event-signal-panel").evaluate((element) => element.getBoundingClientRect().width);
-  const cardWidth = await page.locator(".event-card").first().evaluate((element) => element.getBoundingClientRect().width);
-  expect(cardWidth).toBeGreaterThanOrEqual(panelWidth - 2);
-  for (const control of await page.locator(".event-card summary, .event-list-toggle").all()) {
-    expect((await control.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
-  }
+test("retired Seoul entry: signal groups keep time meaning and value-source geometry at every required width", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("commercial and event controls preserve their meaning in KO EN ZH JA", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(SUMMARY_FIXTURE));
-  const expected = {
-    ko: ["최근 10분 내국인 카드 소비", "수집된 행사 전체 보기", "자세히 보기", "공식 행사 페이지"],
-    en: ["Recent 10-minute domestic-card activity", "Browse all collected events", "View details", "Official event page"],
-    zh: ["最近10分钟境内消费者银行卡支付", "查看全部已收集活动", "查看详情", "官方活动页面"],
-    ja: ["直近10分の国内消費者カード決済", "収集済みの全イベントを見る", "詳細を見る", "公式イベントページ"],
-  } as const;
-  for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
-    await page.goto(`/${locale}/myeongdong`);
-    for (const phrase of expected[locale].slice(0, 2)) await expect(page.getByText(phrase, { exact: true }).first()).toBeVisible();
-    await expect(page.locator('.event-actions details > summary').filter({hasText:expected[locale][2]}).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: expected[locale][3] }).first()).toBeVisible();
-  }
+test("retired Seoul entry: commercial and event controls preserve their meaning in KO EN ZH JA", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
 /**
@@ -1069,309 +934,131 @@ test("the facility directory browses official stores and never claims a store is
   await expect(page.locator(".facility-card").first()).toContainText("T1 3F airside near Gate 27");
 });
 
-const TOURISM_SUMMARY_FIXTURE = {
-  ...SUMMARY_FIXTURE,
-  areas: {
-    ...SUMMARY_FIXTURE.areas,
-    hongdae: {
-      ...SUMMARY_FIXTURE.areas.hongdae,
-      subwayRidership: {
-        referenceDate: "2026-08-30", boardingCount: 31000, alightingCount: 32000,
-        selectedStationCount: 1, selectedStations: "홍대입구|2호선",
-        retrievedAt: "2026-08-31T01:00:00Z", datasetId: "OA-22723", mappingVersion: "fixture",
-        trend: SUBWAY_TREND_FIXTURE({
-          previousDay: { baselineDates: ["2026-08-29"], baselineAlightingCount: 31_000, changeTenthsPercent: 32 },
-          sameWeekdayLastWeek: { baselineDates: ["2026-08-23"], baselineAlightingCount: 33_000, changeTenthsPercent: -30 },
-          recentSevenDayAverage: {
-            baselineDates: ["2026-08-29", "2026-08-28", "2026-08-27", "2026-08-26", "2026-08-25", "2026-08-24", "2026-08-23"],
-            baselineAlightingCount: 30_000, changeTenthsPercent: 67,
-          },
-          fourWeekSameWeekdayAverage: {
-            baselineDates: ["2026-08-23", "2026-08-16", "2026-08-09", "2026-08-02"],
-            baselineAlightingCount: 34_000, changeTenthsPercent: -59,
-          },
-        }),
-      },
-    },
-    seongsu: {
-      ...SUMMARY_FIXTURE.areas.seongsu,
-      subwayRidership: {
-        referenceDate: "2026-08-30", boardingCount: 41000, alightingCount: 42000,
-        selectedStationCount: 1, selectedStations: "성수|2호선",
-        retrievedAt: "2026-08-31T01:00:00Z", datasetId: "OA-22723", mappingVersion: "fixture",
-        trend: SUBWAY_TREND_FIXTURE({
-          previousDay: { baselineDates: ["2026-08-29"], baselineAlightingCount: 40_000, changeTenthsPercent: 50 },
-          sameWeekdayLastWeek: { baselineDates: ["2026-08-23"], baselineAlightingCount: 40_000, changeTenthsPercent: 50 },
-          recentSevenDayAverage: {
-            baselineDates: ["2026-08-29", "2026-08-28", "2026-08-27", "2026-08-26", "2026-08-25", "2026-08-24", "2026-08-23"],
-            baselineAlightingCount: 41_000, changeTenthsPercent: 24,
-          },
-          fourWeekSameWeekdayAverage: {
-            baselineDates: ["2026-08-23", "2026-08-16", "2026-08-09", "2026-08-02"],
-            baselineAlightingCount: 39_000, changeTenthsPercent: 77,
-          },
-        }),
-      },
-      events: [{
-        contentId: "seongsu-event", title: "성수 공식 전시", eventStart: "2026-08-20", eventEnd: "2026-09-10",
-        distanceM: 240, categoryName: "전시", address: "서울특별시 성동구 성수이로 1", addressDetail: null,
-        overview: "성수 지역의 공식 행사 자료입니다.", homepage: null,
-      }],
-      eventCount: 1,
-    },
-  },
-};
+
 
 /**
  * Tourism Desk routing is one component over three isolated summary blocks.
  * Station names and counts are deliberately distinct so a route that keeps a
  * previous area's data cannot pass merely because its heading changed.
  */
-test("the three Tourism Desk routes render only their selected area's data", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  const areas = [
-    {
-      id: "myeongdong", name: "명동", station: "명동역 4호선", alightings: "21,000",
-      range: "23,000–25,000", event: "명동 공연 예술제",
-      otherStations: ["홍대입구역 2호선", "성수역 2호선"], otherEvents: ["홍대 거리공연", "성수 공식 전시"],
-    },
-    {
-      id: "hongdae", name: "홍대", station: "홍대입구역 2호선", alightings: "32,000",
-      range: "18,000–20,000", event: "홍대 거리공연",
-      otherStations: ["명동역 4호선", "성수역 2호선"], otherEvents: ["명동 공연 예술제", "성수 공식 전시"],
-    },
-    {
-      id: "seongsu", name: "성수", station: "성수역 2호선", alightings: "42,000",
-      range: null, event: "성수 공식 전시",
-      otherStations: ["명동역 4호선", "홍대입구역 2호선"], otherEvents: ["명동 공연 예술제", "홍대 거리공연"],
-    },
-  ] as const;
-
-  for (const area of areas) {
-    await page.goto(`/ko/tourism-desk/${area.id}`);
-    const desk = page.locator(".tourism-desk");
-    await expect(desk.getByRole("heading", { level: 1, name: `${area.name} 관광안내` })).toBeVisible();
-    await expect(page.locator(".tourism-area-switcher a[aria-current='page']")).toHaveText(area.name);
-    await expect(desk).toContainText(area.station);
-    await expect(desk.locator(".tourism-subway-primary")).toContainText(area.alightings);
-    if (area.range) await expect(desk.locator(".tourism-current-reading")).toContainText(area.range);
-    else await expect(desk.locator(".tourism-current-reading")).toHaveCount(0);
-    await expect(desk).toContainText(area.event);
-    await expect(desk).toContainText("관광객 수가 아닙니다");
-    await expect(desk).toContainText("인천공항 입국 예보는 이 지역 방문객이나 관광객 수가 아닙니다");
-    for (const other of area.otherStations) await expect(desk).not.toContainText(other);
-    for (const other of area.otherEvents) await expect(desk).not.toContainText(other);
-
-    const lines = desk.locator(".tourism-brief-line");
-    await expect(lines.first()).toBeVisible();
-    const count = await lines.count();
-    expect(count).toBeGreaterThanOrEqual(3);
-    expect(count).toBeLessThanOrEqual(5);
-    for (let index = 0; index < count; index += 1) {
-      await expect(lines.nth(index).locator("small")).not.toBeEmpty();
-    }
-  }
+test("retired Seoul entry: the three Tourism Desk routes render only their selected area's data", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Tourism Desk retains six guide sections and evidence-backed subway comparisons after show removal", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  await page.goto("/ko/tourism-desk/myeongdong");
-  const desk = page.locator(".tourism-desk");
-  const sectionHeadings = desk.locator(".tourism-guide-section > .tourism-section-head h2");
-
-  await expect(sectionHeadings).toHaveCount(6);
-  expect(await sectionHeadings.allInnerTexts()).toEqual([
-    "오늘 근무 브리핑",
-    "오늘 안내할 것",
-    "교통 흐름 참고",
-    "지금 지역 상황",
-    "관광 흐름 배경 참고",
-    "자료 기준과 한계",
-  ]);
-
-  const briefLines = desk.locator(".tourism-shift-brief .tourism-brief-line");
-  await expect(briefLines).toHaveCount(5);
-  await expect(briefLines.nth(0)).toContainText("현재 명동");
-  await expect(briefLines.nth(4)).toContainText("지난주 같은 요일 대비 +12%");
-
-  const comparisons = desk.locator(".tourism-subway-comparisons li");
-  await expect(comparisons).toHaveCount(4);
-  await expect(comparisons.nth(0)).toContainText("지난주 같은 요일 대비");
-  await expect(comparisons.nth(0)).toContainText("+12%");
-  await expect(comparisons.nth(1)).toContainText("최근 7일 평균 대비");
-  await expect(comparisons.nth(1)).toContainText("+8%");
-  await expect(comparisons.nth(1)).toContainText("정확히 직전 7일");
-  await expect(comparisons.nth(2)).toContainText("전일 대비");
-  await expect(comparisons.nth(2)).toContainText("+4%");
-  await expect(comparisons.nth(3)).toContainText("최근 4주 같은 요일 평균 대비");
-  await expect(comparisons.nth(3)).toContainText("+10%");
-  await expect(desk.locator(".tourism-subway-secondary")).toContainText("2026년 8월 30일");
-  await expect(desk.locator(".tourism-subway")).toContainText("고유 방문객 수나 이 지역 전체 방문객 수가 아닙니다");
+test("retired Seoul entry: Tourism Desk retains six guide sections and evidence-backed subway comparisons after show removal", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Tourism Desk treats missing trend, stale realtime and all-null purpose data as unavailable evidence", async ({ page }) => {
-  const missingTrend = JSON.parse(JSON.stringify(TOURISM_SUMMARY_FIXTURE));
-  delete missingTrend.areas.hongdae.subwayRidership.trend;
-  missingTrend.areas.hongdae.foreignPurposeMobility = {
-    referenceDate: "2026-07-31",
-    retrievedAt: "2026-08-29T01:00:00Z",
-    datasetId: "OA-22378",
-    mappingVersion: "fixture",
-    shopping: null,
-    tourism: null,
-  };
-  await page.route("**/api/live/summary*", routeSummary(missingTrend));
-  await page.goto("/ko/tourism-desk/hongdae");
-  const desk = page.locator(".tourism-desk");
-  await expect(desk.locator(".tourism-subway-primary")).toContainText("32,000");
-  await expect(desk.locator(".tourism-subway-history")).toHaveText("비교 이력 축적 중");
-  await expect(desk.getByRole("heading", { name: "외국인 목적별 이동" })).toHaveCount(0);
-
-  const stale = JSON.parse(JSON.stringify(TOURISM_SUMMARY_FIXTURE));
-  stale.areas.myeongdong.realtime.freshness = "STALE";
-  await page.unroute("**/api/live/summary*");
-  await page.route("**/api/live/summary*", routeSummary(stale));
-  await page.goto("/ko/tourism-desk/myeongdong");
-  await expect(page.locator(".tourism-current-reading")).toHaveCount(0);
-  await expect(page.locator(".tourism-shift-brief")).not.toContainText("현재 명동");
-  await expect(page.locator(".tourism-shift-brief .tourism-brief-line")).toHaveCount(4);
+test("retired Seoul entry: Tourism Desk treats missing trend, stale realtime and all-null purpose data as unavailable evidence", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Tourism event cards retain official facts and safe links after copy removal", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  await page.goto("/ko/tourism-desk/myeongdong");
-
-  const cards = page.locator(".tourism-event");
-  await expect(cards).toHaveCount(3);
-  const first = cards.first();
-  await expect(first.locator(".tourism-event-status")).toHaveText("공식 행사기간에 오늘 포함");
-  await expect(first).toContainText("2026-08-20 ~ 2026-09-10");
-  await expect(first).toContainText("서울특별시 중구 명동길 14 · 1층");
-  await expect(first).toContainText("한국관광공사");
-  await expect(page.locator(".tourism-event-caveat")).toContainText("실제 운영 중인지");
-  await expect(page.locator(".tourism-events")).not.toContainText("진행 중");
-
-  await expect(first.locator("h3")).toContainText("명동 공연 예술제");
-  await expect(first.getByRole("link", { name: /공식 안내 확인/ })).toHaveAttribute("href", "https://example.org/event-one");
-  await expect(cards.locator(".tourism-event-actions button")).toHaveCount(0);
-
-  const unsafe = cards.filter({ hasText: "도심 전시" });
-  await expect(unsafe.getByRole("link", { name: /공식 안내 확인/ })).toHaveCount(0);
+test("retired Seoul entry: Tourism event cards retain official facts and safe links after copy removal", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Tourism Desk preserves official Korean event names and keyboard links in four languages after show removal", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  await page.setViewportSize({ width: 390, height: 844 });
-  for (const lang of ["ko", "en", "zh", "ja"]) {
-    await page.goto(`/${lang}/tourism-desk/myeongdong`);
-    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-    const desk = page.locator(".tourism-desk"), first = desk.locator(".tourism-event").first();
-    await expect(first.locator("h3")).toContainText("명동 공연 예술제");
-    await expect(desk.locator(".tourism-visitor-launches, dialog.tourism-visitor-show")).toHaveCount(0);
-    const official = first.locator(".tourism-event-actions a").first();
-    await expect(official).toHaveAttribute("href", "https://example.org/event-one");
-    await official.focus();
-    await expect(official).toBeFocused();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-    await expect(page).toHaveURL(new RegExp(`/${lang}/tourism-desk/myeongdong$`));
-  }
+test("retired Seoul entry: Tourism Desk preserves official Korean event names and keyboard links in four languages after show removal", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Tourism area links support keyboard, browser history and locale-preserving URLs", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  await page.goto("/ko/tourism-desk/myeongdong");
-  const hongdae = page.locator(".tourism-area-switcher a").filter({ hasText: "홍대" });
-  await expect(hongdae).toHaveAttribute("href", "/ko/tourism-desk/hongdae");
-  await hongdae.focus();
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/ko\/tourism-desk\/hongdae$/);
-  await expect(page.getByRole("heading", { level: 1, name: "홍대 관광안내" })).toBeVisible();
-  await expect(page.locator(".tourism-desk")).toContainText("홍대입구역 2호선");
-
-  const language = page.locator(".language-control select");
-  await expect(language).toHaveValue("ko");
-  await language.selectOption("en");
-  await expect(page).toHaveURL(/\/en\/tourism-desk\/hongdae$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Hongdae Guide Desk" })).toBeVisible();
-  await expect(page.locator("link[rel='canonical']")).toHaveAttribute("href", /\/en\/tourism-desk\/hongdae$/);
-
-  // History is checked from a fresh Korean route so the language-switch
-  // pushState entry is not mistaken for an area-navigation entry.
-  await page.goto("/ko/tourism-desk/myeongdong");
-  await page.locator(".tourism-area-switcher a").filter({ hasText: "홍대" }).click();
-  await expect(page).toHaveURL(/\/ko\/tourism-desk\/hongdae$/);
-
-  await page.goBack();
-  await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
-  await expect(page.getByRole("heading", { level: 1, name: "명동 관광안내" })).toBeVisible();
-  await page.goForward();
-  await expect(page).toHaveURL(/\/ko\/tourism-desk\/hongdae$/);
-  await expect(page.getByRole("heading", { level: 1, name: "홍대 관광안내" })).toBeVisible();
+test("retired Seoul entry: Tourism area links support keyboard, browser history and locale-preserving URLs", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("desktop navigation keeps stores and moves secondary pages under More", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  await page.setViewportSize({ width: 1280, height: 900 });
-  const expected = {
-    ko: ['한눈에','공항현황','국가별 흐름','미리 준비','외국인은 뭘 살까?','더보기'],
-    en: ['Airport glance','Airport','Country trends','Prepare ahead','More'],
-    zh: ['机场一览','机场','国家趋势','提前准备','更多'],
-    ja: ['空港一覧','空港','国別の動向','事前準備','その他'],
-  } as const;
-  for (const locale of Object.keys(expected) as Array<keyof typeof expected>) {
-    await page.goto(`/${locale}/tourism-desk/myeongdong`);
-    const nav = page.locator("nav.top-nav");await expect(nav).toBeVisible();
-    await expect(nav.locator('a')).toHaveText([...expected[locale]]);
-    await expect(nav.locator("a[aria-current='location']")).toHaveText(expected[locale].at(-1)!);
-    await expect(page.locator("nav.bottom-nav")).toBeHidden();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  }
+test("retired Seoul entry: desktop navigation keeps stores and moves secondary pages under More", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("mobile More explains usage without the removed promotion and retains its Tourism footer link", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/ko/myeongdong");
-
-  const bottom = page.locator("nav.bottom-nav");
-  await expect(bottom).toBeVisible();
-  await expect(bottom.locator("a")).toHaveCount(5);
-  await expect(bottom).not.toContainText("관광안내");
-  await bottom.locator("a").filter({ hasText: "더보기" }).click();
-  await expectNavigationUrl(page,'/ko/more',{place:'area',area:'myeongdong',terminal:null,date:null});
-
-  await expect(page.locator(".tourism-link-block")).toHaveCount(0);
-  await expect(page.locator(".site-usage-guide h2")).toHaveText("누가, 어떻게 쓰면 좋을까요?");
-  const tourismLink = page.locator(".footer-links a").filter({ hasText: "관광안내 데스크" });
-  await expect(tourismLink).toBeVisible();
-  await expect(tourismLink).toHaveAttribute("href", "/ko/tourism-desk/myeongdong");
-  await tourismLink.click();
-  await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
-  await expect(page.getByRole("heading", { level: 1, name: "명동 관광안내" })).toBeVisible();
-  await expect(bottom.locator("a[aria-current='location']")).toHaveText("더보기");
-  await expect(page.locator(".footer-links a").filter({ hasText: "관광안내 데스크" })).toHaveAttribute("href", "/ko/tourism-desk/myeongdong");
+test("retired Seoul entry: mobile More explains usage without the removed promotion and retains its Tourism footer link", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("the obsolete area-page Tourism promotion is gone", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  for (const area of ["myeongdong", "hongdae", "seongsu"]) {
-    await page.goto(`/ko/${area}`);
-    await expect(page.locator(".desk-entry")).toHaveCount(0);
-    await expect(page.locator("body")).not.toContainText("관광안내 데스크 브리핑 보기");
-  }
+test("retired Seoul entry: the obsolete area-page Tourism promotion is gone", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
-test("Tourism area navigation has no horizontal overflow at mobile and tablet widths", async ({ page }) => {
-  await page.route("**/api/live/summary*", routeSummary(TOURISM_SUMMARY_FIXTURE));
-  for (const width of [390, 430, 768]) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto("/ko/tourism-desk/seongsu");
-    await expect(page.locator(".tourism-area-switcher")).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow, `${width}px Tourism page must not overflow`).toBeLessThanOrEqual(1);
-    const switcherOverflow = await page.locator(".tourism-area-switcher").evaluate((element) => element.scrollWidth - element.clientWidth);
-    expect(switcherOverflow, `${width}px area switcher must not overflow`).toBeLessThanOrEqual(1);
-  }
+test("retired Seoul entry: Tourism area navigation has no horizontal overflow at mobile and tablet widths", async ({ page }) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });
 
 

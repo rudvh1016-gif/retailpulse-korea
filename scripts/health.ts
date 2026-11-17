@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, isSeoulOnlySourceId } from "../lib/product-scope";
 /**
  * `npm run health` — the single operational entry point.
  *
@@ -137,8 +138,8 @@ async function readLiveState() {
   // What Production ACTUALLY has, before any table of ours is consulted. This
   // is the census's observation, and it is the only list that can reveal a
   // source the harness has never heard of.
-  const observedSourceIds=health.results.map(row=>row.source_id);
-  const ids=[...new Set([...Object.values(DIAGNOSTIC_SOURCE_IDS),'SEOUL_CITYDATA_CMRCL',...observedSourceIds])];
+  const observedSourceIds=health.results.map(row=>row.source_id).filter(id => SEOUL_ENABLED || !isSeoulOnlySourceId(id));
+  const ids=[...new Set([...Object.values(DIAGNOSTIC_SOURCE_IDS),'SEOUL_CITYDATA_CMRCL',...observedSourceIds])].filter(id => SEOUL_ENABLED || !isSeoulOnlySourceId(id));
   const measurements:SourceMeasurement[]=[];
   for(const id of ids)measurements.push(await measureSource(db,id,new Date().toISOString()));
   if(process.argv.includes('--production')) {
@@ -146,14 +147,14 @@ async function readLiveState() {
     catch { /* unavailable public measurement remains null; never a false pass */ }
   }
   const memory=new OperationalMemory(db), available=await memory.available();
-  const incidents=available?await memory.incidents():[];
+  const incidents=available?(await memory.incidents()).filter(row => SEOUL_ENABLED || !isSeoulOnlySourceId(row.sourceId)):[];
   const attempts=available?(await Promise.all(ids.map(id=>memory.attempts(id,new Date(Date.now()-30*86400000).toISOString().slice(0,10))))).flat():[];
   const usage=available?(await database.prepare('SELECT * FROM operational_usage_daily WHERE day=? ORDER BY source_id').bind(new Date().toISOString().slice(0,10)).all()).results:[];
   const states=available?(await database.prepare('SELECT source_id,logical_job,checked_at,last_good_at,execution_platform,trigger_evidence FROM operational_source_state ORDER BY source_id LIMIT 100').all()).results:[];
-  const stuck=available?await memory.stuckControlledAttempts(new Date().toISOString()):[];
-  const inFlight=available?await memory.inFlightControlled():[];
+  const stuck=available?(await memory.stuckControlledAttempts(new Date().toISOString())).filter(row=>SEOUL_ENABLED||!isSeoulOnlySourceId(row.sourceId)):[];
+  const inFlight=available?(await memory.inFlightControlled()).filter(row=>SEOUL_ENABLED||!isSeoulOnlySourceId(row.sourceId)):[];
   let forecast: Awaited<ReturnType<typeof readForecastEvidence>>=[];
-  try {forecast=await readForecastEvidence(db,new Date().toISOString());}catch {forecast=[{targetDate:new Date().toISOString().slice(0,10),state:'UNKNOWN',performanceClaimAllowed:false,detail:'forecast evidence query unavailable'}];}
+  try {if(SEOUL_ENABLED)forecast=await readForecastEvidence(db,new Date().toISOString());}catch {forecast=[{targetDate:new Date().toISOString().slice(0,10),state:'UNKNOWN',performanceClaimAllowed:false,detail:'forecast evidence query unavailable'}];}
   return {measurements,incidents,attempts,usage,states,forecast,stuck,inFlight,observedSourceIds,memoryState:available?'PERSISTED_READ':'DORMANT_MIGRATION_UNAVAILABLE'};
 }
 
@@ -362,7 +363,7 @@ const activation = centralRecoveryActivation(nowIso);
 // what withholds readiness, so it must be able to see one.
 const observedSourceIds = [...new Set([...PRODUCTION_SOURCE_IDS,
   ...(live?.incidents ?? []).map((incident) => incident.sourceId),
-  ...(live?.measurements ?? []).map((measured) => measured.sourceId)])].sort();
+  ...(live?.measurements ?? []).map((measured) => measured.sourceId)])].filter(id => SEOUL_ENABLED || !isSeoulOnlySourceId(id)).sort();
 const unclassified = observedSourceIds.filter((id) => capabilityFor(id).logicalJob === 'UNKNOWN');
 const stuckAttempts = live?.stuck ?? [];
 const centralRecoveryReadiness = {

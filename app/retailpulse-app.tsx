@@ -1,4 +1,6 @@
 "use client";
+import {isSeoulOnlySourceId} from "../lib/product-scope";
+import { airportOnlyDestination } from "./airport-only-routes";
 import {formatDisplayInteger} from "../lib/display-number";
 import './airport-history-polish.css';
 import { ShoppingDesktopEntry } from './shopping-entry';
@@ -7,7 +9,6 @@ import {UPDATE_NOTICE_OPEN_EVENT} from '../lib/update-notice-preference';
 import {ConciseExplainer} from './concise-explainer';
 import {ChangeRate} from './change-rate';
 import './facility-guide.css';
-import { passengerCopy } from "../lib/passenger-copy";
 import dynamic from 'next/dynamic';
 // SSR remains enabled. These inactive screens do not belong to the airport's
 // first download; their initial content is still rendered on their own routes.
@@ -72,7 +73,7 @@ const loadBusinessPrep=()=>import('./business-prep').then(module=>(businessPrepM
 const loadIndustryGuide=()=>import('./industry-guide').then(module=>(industryGuideModule=module));
 const LazyBusinessPrep=dynamic(()=>loadBusinessPrep().then(module=>module.BusinessPrep));
 const LazyIndustryGuide=dynamic(()=>loadIndustryGuide().then(module=>module.IndustryGuide));
-const prepareBusinessView=()=>{loadBusinessPrep().catch(()=>{});loadIndustryGuide().catch(()=>{});prepareTodaySignals();};
+const prepareBusinessView=()=>{loadBusinessPrep().catch(()=>{});loadIndustryGuide().catch(()=>{});};
 /** Like OnDemandAirportView, for in-app navigation. The business route's server
  * page passes both components in instead (see RetailPulseProps), so hydration
  * there keeps the server HTML; elsewhere the server never renders them, and the
@@ -149,7 +150,7 @@ import './compact-disclosure.module.css';
 import './departure-guide-entry.module.css';
 import { AirportDutyFreeExchange } from './airport-duty-free-exchange';
 import './airport-tax-refund-guide.css';
-import { saveBusinessPreferences, useBusinessContext } from "./business-preferences";
+import { useBusinessContext } from "./business-preferences";
 import { businessScopeParams, sharedBusinessPlace } from "../lib/business-preferences";
 import type { PrepPlace } from "../lib/business-prep";
 import { areaAnswerText, type TodayAnswer, type TodayAnswerArea } from "../lib/today-answer-text";
@@ -353,18 +354,20 @@ const htmlLang: Record<Lang, string> = { ko: "ko", en: "en", zh: "zh-CN", ja: "j
 
 function routeFor(lang: Lang, view: View, area: AreaId) {
   const base = `/${lang}`;
+  const retired = airportOnlyDestination(lang, view);
+  if (retired) return retired;
   if (view === "airport-glance") return base;
   if (view === "today") return `${base}/${area}`;
   if (view === "tourism-desk") return `${base}/tourism-desk/${area}`;
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "today", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief, WhereToView = OnDemandWhereToView, ConsumptionView = OnDemandConsumptionView }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "airport-glance", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief, WhereToView = OnDemandWhereToView, ConsumptionView = OnDemandConsumptionView }: RetailPulseProps = {}) {
   const bottomNavigationRef = useBottomNavigationViewport();
   // Airport routes already carry the airport code; only the on-demand copy needs preparing.
   const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;
   const [lang, setLang] = useState<Lang>(initialLang);
-  const [view, setView] = useState<View>(initialView);
+  const [view, setView] = useState<View>(airportOnlyDestination(initialLang, initialView) ? (initialView === "business" ? "airport-prepare" : "airport-glance") : initialView);
   const [homeVisible, setHomeVisible] = useState(initialScope === "airport-home" || (initialScope === "home" && initialView === "today"));
   const [selected, setSelected] = useState<AreaId>(initialArea);
   const [terminal, setTerminal] = useState<Terminal>("all");
@@ -422,18 +425,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     }
   }, [lang, selected, terminal, industry, preferencesReady]);
 
-  // The industry guide left the shell's first download (lib/industry-ids.ts
-  // carries the names), but the airport and business screens still need it.
-  // Seoul views prepare their adjacent screens while idle. Airport visits do
-  // not download inactive Seoul/store code; intent and More still prepare it.
-  useEffect(() => {
-    if (!preferencesReady || ["airport-glance","airport","airport-countries","airport-prepare"].includes(view)) return;
-    let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
-    const start = () => { if (!live) return; if ("requestIdleCallback" in window) idle = requestIdleCallback(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); prepareSeoulComparison(); }, { timeout: 4000 }); else timer = setTimeout(() => { loadIndustryGuide().catch(() => {}); prepareTodaySignals(); prepareSeoulComparison(); }, 1500); };
-    if (document.readyState === "complete") start(); else window.addEventListener("load", start, { once: true });
-    return () => { live = false; window.removeEventListener("load", start); if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
-  }, [preferencesReady,view]);
-
   useEffect(() => {
     const [, , pathSlug, pathArea] = window.location.pathname.split("/");
     const slug = seoSlugs.includes(pathSlug as SeoSlug) ? pathSlug as SeoSlug : undefined;
@@ -468,20 +459,23 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 
   useEffect(() => {
     const onPopState = () => {
+      const [, locale, legacySlug] = window.location.pathname.split("/");
+      const retired = airportOnlyDestination(locale, legacySlug);
+      if (retired) { window.location.replace(retired); return; }
       const query = new URLSearchParams(window.location.search);
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (!/\/(business|more)\/?$/.test(window.location.pathname) && query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
       const airportScope=deviceAirportScope(window.history.state);
       setTerminal(airportScope==='CONCOURSE'?'T1':airportScope);
       setConcourse(airportScope==='CONCOURSE');
-      const [, locale, slug, routeArea] = window.location.pathname.split("/");
+      const [, routeLocale, slug, routeArea] = window.location.pathname.split("/");
       const linkedBusiness = sharedBusinessPlace(query);
       if ((slug === 'business' || slug === 'more') && linkedBusiness) setBusinessEntry(linkedBusiness.kind);
       else if (!slug || ['airport', 'airport-glance', 'airport-countries', 'airport-prepare'].includes(slug)) setBusinessEntry('airport');
       else if (Object.hasOwn(areaInfo, slug) || ['today', 'where-to', 'consumption', 'tourism-desk'].includes(slug)) setBusinessEntry('area');
       setHomeVisible(!slug);
       if (!slug) { setView("airport-glance"); setAirportSection("now"); }
-      if (["ko", "en", "zh", "ja"].includes(locale)) setLang(locale as Lang);
+      if (["ko", "en", "zh", "ja"].includes(routeLocale)) setLang(routeLocale as Lang);
       if (slug && Object.hasOwn(areaInfo, slug)) { setSelected(slug as AreaId); setView("today"); }
       else if (slug === "tourism-desk" && routeArea && Object.hasOwn(areaInfo, routeArea)) {
         setSelected(routeArea as AreaId);
@@ -554,6 +548,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
   }
 
   function navigate(next: View, nextTerminal: Terminal = terminal, nextConcourse=concourse) {
+    if (airportOnlyDestination(lang, next)) next = next === "business" ? "airport-prepare" : "airport-glance";
     setHomeVisible(false);
     setView(next);
     if (['airport-glance', 'airport', 'airport-countries', 'airport-prepare'].includes(next)) setBusinessEntry('airport');
@@ -573,12 +568,6 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
     if(window.location.pathname+window.location.search!==homePath)window.history.pushState({},'',homePath);
     window.dispatchEvent(new Event('koretail:analysis-nav'));
     window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
-  }
-
-  function openAirport(section: AirportSection, preferredTerminal?: Terminal) {
-    if (preferredTerminal) setTerminal(preferredTerminal);
-    setAirportSection(section);
-    navigate("airport", preferredTerminal ?? terminal,false);
   }
 
   return (
@@ -653,12 +642,12 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
         {view === 'consumption' && <ConsumptionView lang={lang} area={selected} onArea={selectArea}/>}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} />}
         {view === "tourism-desk" && <TourismDeskView lang={lang} area={selected} onAreaChange={selectArea} />}
-        {view === "about" && <AboutView lang={lang} onAirport={() => openAirport("now")} onSeoul={() => navigate("today")} />}
+        {view === "about" && <SiteUsageGuide lang={lang} />}
         {view === "more" && <MoreView
           lang={lang}
           setLang={changeLanguage}
           selected={selected}
-          businessPlace={currentBusinessPlace}
+          businessPlace={currentBusinessPlace.kind === "airport" ? currentBusinessPlace : { kind: "airport", terminal: "T1", side: null }}
           industry={industry}
           businessHref={navigationHref('business')}
           onAbout={() => navigate("about")}
@@ -669,13 +658,8 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
           <p>{t.truth}</p><p>{t.kst}</p>
           <nav className="footer-links" aria-label="KORETAIL sections">
             <a href={`/${lang}`}>HOME</a>
-            {(Object.keys(areaInfo) as AreaId[]).map((id) => <a key={id} href={routeFor(lang, "today", id)}>{areaLocalName(id, lang)}</a>)}
             <a href={routeFor(lang, "airport", selected)}>{t.airport}</a>
             <a href={navigationHref("business")}>{t.business}</a>
-            <a href={routeFor(lang, "where-to", selected)}>{t['where-to']}</a>
-            <a href={routeFor(lang, "consumption", selected)}>{t.consumption}</a>
-            <a href={routeFor(lang, "forecast", selected)}>{t.forecast}</a>
-            <a href={routeFor(lang, "tourism-desk", selected)}>{localText(lang, { ko: "관광안내 데스크", en: "Tourism desk", zh: "旅游咨询台", ja: "観光案内デスク" })}</a>
             <a href={routeFor(lang, "about", selected)}>{t.about}</a>
           </nav>
           <span>{lang === "ko" ? "코리테일 KORETAIL" : "KORETAIL"} · RETAIL DEMAND SIGNALS FOR KOREA</span>
@@ -706,7 +690,7 @@ export default function Home({ initialLang = "ko", initialView = "today", initia
 }
 
 function BusinessView({
-  lang, selected, setSelected, industry, setIndustry, date, setDate, IndustryGuide, BusinessPrep, DateNavigator, AreaCurrentBrief,
+  lang, selected, industry, setIndustry, date, setDate, IndustryGuide, BusinessPrep, DateNavigator,
 }: {
   lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void;
   industry: IndustryId | null; setIndustry: (id: IndustryId) => void;
@@ -716,17 +700,7 @@ function BusinessView({
   DateNavigator: ComponentType<ComponentProps<typeof DateNavigatorComponent>>;
   AreaCurrentBrief: ComponentType<ComponentProps<typeof AreaCurrentBriefComponent>>;
 }) {
-  const [mode, setMode] = useState<"briefing" | "history">("briefing");
-  // The airport is a place for the briefing only; the area tab keeps its own
-  // choice so the history tab and the area pages are unaffected.
-  const { preferences: business, place, scope } = useBusinessContext(selected);
-  const currentArea = place.kind === 'area' ? place.area : selected;
-  const atAirport = business.place === "airport";
-  const chooseArea = (id: AreaId) => {
-    if (atAirport || scope) saveBusinessPreferences({ ...business, place: "area" });
-    setSelected(id);
-  };
-
+  const { preferences: business } = useBusinessContext(selected);
   return (
     <section className="view-section business-view">
       <div className="view-intro">
@@ -734,42 +708,24 @@ function BusinessView({
           <p className="eyebrow">KORETAIL FOR BUSINESS</p>
           <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "지금 무엇을\n준비하면 좋을까요?", en: "What should you\nprepare right now?", zh: "现在应该\n准备什么？", ja: "いま何を\n準備すればいい？" })}</h1>
           <p>{localText(lang, {
-            ko: "인천공항 흐름과 업종별 점검 목록을 확인합니다. 서울 지역 참고자료도 함께 제공합니다. 일반 운영 안내이며 매출이나 방문객 수를 예측하지 않습니다.",
-            en: "Review Incheon Airport flows and industry checklists, with additional Seoul-area reference data. General operating guidance, not a sales or visitor forecast.",
-            zh: "查看仁川机场客流与各业态检查清单，并参考首尔地区资料。此为一般运营指南，不预测销售额或访客人数。",
-            ja: "仁川空港の動向と業種別チェックリストを確認できます。ソウル地域の参考資料も提供します。一般的な運営案内であり、売上や来訪者数の予測ではありません。",
+            ko: "인천공항 흐름과 업종별 점검 목록을 확인합니다. 일반 운영 안내이며 매출이나 방문객 수를 예측하지 않습니다.",
+            en: "Review Incheon Airport flows and industry checklists. General operating guidance, not a sales or visitor forecast.",
+            zh: "查看仁川机场客流与各业态检查清单。此为一般运营指南，不预测销售额或访客人数。",
+            ja: "仁川空港の動向と業種別チェックリストを確認できます。一般的な運営案内であり、売上や来訪者数の予測ではありません。",
           })}</p>
         </div>
       </div>
 
-      <div className="business-mode" role="tablist">
-        <button className={mode === "briefing" ? "active" : ""} onClick={() => setMode("briefing")} role="tab" aria-selected={mode === "briefing"}>{localText(lang, { ko: "지금 브리핑", en: "CURRENT BRIEFING", zh: "当前简报", ja: "現在のブリーフ" })}</button>
-        <button className={mode === "history" ? "active" : ""} onClick={() => setMode("history")} role="tab" aria-selected={mode === "history"}>{localText(lang, { ko: "공식 과거 흐름", en: "OFFICIAL HISTORY", zh: "官方历史趋势", ja: "公式の過去推移" })}</button>
+      <div className="area-tabs" role="tablist">
+        <button className="active" role="tab" aria-selected={true}>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</button>
       </div>
-
-      {mode === "history" ? <BusinessHistoryView lang={lang} selected={selected} setSelected={setSelected} /> : <>
-        <div className="area-tabs" role="tablist">
-          {(Object.keys(areaInfo) as AreaId[]).map((id) => <button key={id} className={!atAirport && currentArea === id ? "active" : ""} onClick={() => chooseArea(id)} role="tab" aria-selected={!atAirport && currentArea === id}>{areaLocalName(id, lang)}</button>)}
-          <button className={atAirport ? "active" : ""} onClick={() => { if (!atAirport || scope) saveBusinessPreferences({ ...business, place: "airport" }); }} role="tab" aria-selected={atAirport}>{localText(lang, { ko: "인천공항", en: "Incheon Airport", zh: "仁川机场", ja: "仁川空港" })}</button>
-        </div>
         <DateNavigator lang={lang} date={date} onChange={setDate} />
         {/* Order for a reader about to open: conditions, the facts inside
             their hours, at most three actions, then the graphs and the
             standing guide. */}
-        <BusinessPrep lang={lang} area={currentArea} industry={industry} onIndustryChange={setIndustry} date={date} onPlaceSaved={savedPlace => { if (savedPlace.kind === 'area') setSelected(savedPlace.area); }} />
-        {atAirport
-          ? <a className="current-brief-link business-airport-link" href={routeFor(lang, "airport", selected)}>{localText(lang, { ko: "공항 전체 신호 보기", en: "All airport signals", zh: "查看机场全部信号", ja: "空港の全シグナルを見る" })} →</a>
-          : <AreaCurrentBrief
-            lang={lang}
-            area={currentArea}
-            date={date}
-            linkHref={routeFor(lang, "today", currentArea)}
-            linkLabel={localText(lang, { ko: `${areaLocalName(currentArea, lang)} 전체 신호 보기`, en: `All ${areaLocalName(currentArea, lang)} signals`, zh: `查看${areaLocalName(currentArea, lang)}全部信号`, ja: `${areaLocalName(currentArea, lang)}の全シグナルを見る` })}
-          />}
-
-        <IndustryGuide lang={lang} industry={industry} onIndustryChange={setIndustry} airport={atAirport ? { terminal: business.terminal, direction: "departure" } : undefined} />
-
-      </>}
+        <BusinessPrep lang={lang} area={selected} industry={industry} onIndustryChange={setIndustry} date={date} />
+        <a className="current-brief-link business-airport-link" href={routeFor(lang, "airport", selected)}>{localText(lang, { ko: "공항 전체 신호 보기", en: "All airport signals", zh: "查看机场全部信号", ja: "空港の全シグナルを見る" })} →</a>
+        <IndustryGuide lang={lang} industry={industry} onIndustryChange={setIndustry} airport={{ terminal: business.terminal, direction: "departure" }} />
     </section>
   );
 }
@@ -795,6 +751,8 @@ function ForeignHistoryPending({ lang, id }: { lang: Lang; id: AreaId }) {
   })}</p>;
 }
 
+// Historical renderer retained for stored-evidence regression coverage.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function BusinessHistoryView({ lang, selected, setSelected }: { lang: Lang; selected: AreaId; setSelected: (id: AreaId) => void }) {
   if (hasForeignHistory(selected)) return <BusinessHistoryBody lang={lang} selected={selected} setSelected={setSelected} />;
   return <section className="business-history">
@@ -986,155 +944,15 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
   );
 }
 
-/**
- * About — written for a first-time visitor, not for an engineer.
- */
-function AboutView({ lang, onAirport, onSeoul }: { lang: Lang; onAirport: () => void; onSeoul: () => void }) {
-  const sections = [
-    {
-      eyebrow: "01 · WHAT",
-      title: localText(lang, { ko: "KORETAIL은 무엇인가요?", en: "What is KORETAIL?", zh: "KORETAIL 是什么？", ja: "KORETAIL とは？" }),
-      body: localText(lang, {
-        ko: "서울의 대표 쇼핑 지역과 인천공항에 관한 공개 공식 자료와 출처가 표시된 참조자료를 한 화면에 모읍니다. 원자료와 KORETAIL이 계산한 비교값을 구분해 표시하며, 과거 예상·실제 관측 비교는 기록 화면에서 확인할 수 있습니다.",
-        en: "KORETAIL brings public official data and clearly labelled reference data about Seoul’s main shopping areas and Incheon Airport into one view. Source values and KORETAIL-calculated comparisons are identified separately; historical-baseline estimates are separately labelled.",
-        zh: "KORETAIL 将首尔主要购物区与仁川机场的公开官方数据及明确标注来源的参考资料汇总到一个页面。来源数值与 KORETAIL 计算的比较值会分开标示，历史基线参考预测另行标注。",
-        ja: "KORETAILは、ソウルの主要ショッピングエリアと仁川空港について、公開された公式データと出典を明記した参照データを一画面にまとめます。出典の数値とKORETAILが算出した比較値を区別し、過去記録に基づく参考予測は別に表示します。",
-      }),
-    },
-    {
-      eyebrow: "02 · WHO",
-      title: localText(lang, { ko: "누구를 위한 서비스인가요?", en: "Who is it for?", zh: "面向哪些人？", ja: "誰のためのサービス？" }),
-      body: localText(lang, {
-        ko: "서울을 방문해 어디를 언제 갈지 정하려는 분, 인천공항 출국 흐름을 미리 확인하려는 분, 그리고 명동·홍대·성수·이태원에서 매장을 운영하며 오늘의 준비를 결정해야 하는 분을 위해 만들었습니다.",
-        en: "For visitors deciding where and when to go in Seoul, for travellers checking Incheon's departure flow before they leave, and for people running a shop in Myeongdong, Hongdae, Seongsu or Itaewon who need to decide today's preparation.",
-        zh: "适合正在决定首尔行程的访客、出发前想确认仁川出境情况的旅客，以及在明洞、弘大、圣水、梨泰院经营门店、需要决定当日准备的经营者。",
-        ja: "ソウルでどこへいつ行くか決めたい方、出発前に仁川の出国状況を確認したい方、そして明洞・弘大・聖水・梨泰院で店舗を運営し当日の準備を決める方のために作りました。",
-      }),
-    },
-    {
-      eyebrow: "03 · SEOUL",
-      title: localText(lang, { ko: "서울에서는 무엇을 보나요?", en: "What do you see for Seoul?", zh: "在首尔能看到什么？", ja: "ソウルでは何が見られる？" }),
-      body: localText(lang, {
-        ko: "명동·홍대·성수·이태원 각각의 현재 혼잡 상태와 현재 추정 인구 범위, 서울시 공식 예측 기준 앞으로 가장 붐빌 시간, 날씨에 따른 준비사항을 봅니다. 인근 행사는 공식 행사기간에 오늘이 포함되거나 앞으로 시작할 때 표시합니다.",
-        en: "For Myeongdong, Hongdae, Seongsu and Itaewon, see current crowd conditions and the official estimated population range, the busiest hour ahead in Seoul’s official forecast, and weather implications. Nearby events are shown when their official dates include today or start later.",
-        zh: "针对明洞、弘大、圣水、梨泰院，可查看当前拥挤状况与官方推定人口区间、首尔市官方预测中接下来最拥挤的时段，以及天气带来的准备事项。附近活动仅在官方活动日期包含今日或之后开始时显示。",
-        ja: "明洞・弘大・聖水・梨泰院それぞれの現在の混雑状況と公式の推定人口レンジ、ソウル市公式予測で今後最も混雑する時間帯、天気に応じた準備を確認できます。周辺イベントは、公式開催期間に本日が含まれるもの、または今後開始予定のものを表示します。",
-      }),
-    },
-    {
-      eyebrow: "04 · AIRPORT",
-      title: localText(lang, { ko: "공항에서는 무엇을 보나요?", en: "What do you see for the airport?", zh: "在机场能看到什么？", ja: "空港では何が見られる？" }),
-      body: localText(lang, {
-        ko: "인천공항의 출국장 공식 예상 승객과 피크 시간, 실제 출발 운항 편수와 게이트 집중 순위, 그리고 현재 출국장별 대기시간과 대기인원을 봅니다. 전체·T1·T2를 따로 볼 수 있습니다.",
-        en: "Incheon's official departure-hall passenger forecast and peak hour, the number of physical departing flights with the busiest gates, and the current wait time and queue size at each departure checkpoint. All terminals, T1 and T2 can be viewed separately.",
-        zh: "仁川机场的出境大厅官方预计人数与高峰时段、实际出发航班数与登机口集中排名，以及各出境检查点当前的等候时间与等候人数。可分别查看全部、T1 与 T2。",
-        ja: "仁川空港の出国場公式予想旅客数とピーク時間、実際の出発便数とゲート集中ランキング、各出国場の現在の待ち時間と待機人数を表示します。全体・T1・T2 を分けて確認できます。",
-      }) + " " + passengerCopy.scope[lang] + ". " + passengerCopy.limitation[lang] + " " + passengerCopy.noSum[lang],
-    },
-    {
-      eyebrow: "05 · DATA",
-      title: localText(lang, { ko: "어떤 데이터를 쓰나요?", en: "Which data do you use?", zh: "使用哪些数据？", ja: "どのデータを使う？" }),
-      body: localText(lang, {
-        ko: "서울시 실시간 도시데이터, 서울시 단기체류 외국인 생활인구, 서울시 상권분석 추정매출, 기상청 단기예보, 한국관광공사, 인천국제공항공사의 운항·출국장 혼잡도·승객 예고 자료를 사용합니다. 모두 공개된 공식 자료입니다.",
-        en: "Seoul real-time city data, Seoul's short-stay foreign living population, Seoul's commercial-district sales estimates, KMA short-term weather forecasts, KTO events, and Incheon Airport's flight, departure-hall congestion and passenger forecast datasets. All are public official sources.",
-        zh: "首尔实时城市数据、首尔短期停留外国人生活人口、首尔商圈分析推算销售额、气象厅短期预报、韩国观光公社 活动，以及仁川机场的航班、出境区拥挤度与旅客预告数据。全部为公开的官方资料。",
-        ja: "ソウルリアルタイム都市データ、ソウル短期滞在外国人生活人口、ソウル商圏分析の推定売上、気象庁短期予報、韓国観光公社、仁川空港の運航・出国場混雑度・旅客予告データを使用します。すべて公開された公式資料です。",
-      }),
-    },
-    {
-      eyebrow: "06 · KINDS",
-      title: localText(lang, { ko: "실시간·예상·과거는 어떻게 다른가요?", en: "How do live, forecast and past differ?", zh: "实时、预测与历史有何不同？", ja: "リアルタイム・予測・過去の違いは？" }),
-      body: localText(lang, {
-        ko: "'실시간'은 방금 관측된 값이고, '공식 예상'은 서울시나 인천공항이 앞날에 대해 발표한 예측이며, '과거 기록'은 이미 확정되어 바뀌지 않는 값입니다. 이 세 가지를 절대 하나의 숫자로 합치지 않습니다.",
-        en: "\"Live\" is something just observed, \"official forecast\" is what Seoul or Incheon Airport published about the future, and \"past record\" is settled and will not change. These three are never merged into one number.",
-        zh: "「实时」是刚刚观测到的值，「官方预测」是首尔市或仁川机场就未来发布的预测，「历史记录」则是已确定且不会改变的值。这三者绝不会被合并为一个数字。",
-        ja: "「リアルタイム」は直前に観測された値、「公式予測」はソウル市や仁川空港が将来について発表した予測、「過去の記録」はすでに確定して変わらない値です。この3つを1つの数値にまとめることはありません。",
-      }),
-    },
-    {
-      eyebrow: "07 · TIME",
-      title: localText(lang, { ko: "'○시 기준'은 무슨 뜻인가요?", en: "What does \"as of\" mean?", zh: "「截至○时」是什么意思？", ja: "「○時時点」とは？" }),
-      body: localText(lang, {
-        ko: "그 값이 실제로 관측되거나 발표된 시각입니다. 데이터마다 갱신 주기가 달라서 화면의 모든 숫자가 같은 시각의 값은 아니며, 그래서 항목마다 기준시각을 따로 적어 둡니다. 모든 시각은 한국 표준시입니다.",
-        en: "It is the moment that value was actually observed or published. Different datasets update on different cycles, so not every number on screen shares one timestamp — which is why each item carries its own. All times are Korea Standard Time.",
-        zh: "指该数值实际被观测或发布的时刻。不同数据的更新周期不同，因此页面上的数字并非同一时刻的值，故每一项都单独标注基准时间。所有时间均为韩国标准时间。",
-        ja: "その値が実際に観測または発表された時刻です。データごとに更新周期が異なるため、画面上のすべての数値が同じ時刻のものではなく、項目ごとに基準時刻を記載しています。時刻はすべて韓国標準時です。",
-      }),
-    },
-    {
-      eyebrow: "08 · LIMITS",
-      title: localText(lang, { ko: "무엇을 주의해야 하나요?", en: "What should you keep in mind?", zh: "需要注意什么？", ja: "注意点は？" }),
-      body: localText(lang, {
-        ko: "여기 숫자는 매출이나 방문자 수가 아닙니다. 공항 출국장 이용 예상은 외국인 수가 아니고, 게이트에 편수가 몰린다고 출국장이 붐빈다는 뜻도 아닙니다. 원본 기관의 발표가 늦어지면 저희 화면도 함께 늦어지며, 그때는 값을 지어내는 대신 '확인 불가'로 표시합니다.",
-        en: "These numbers are not sales or visitor counts. The departure-hall forecast is not a count of foreign visitors, and flights concentrating at a gate does not mean the departure hall is crowded. When a source publishes late, this screen is late too — and in that case we show \"unavailable\" instead of inventing a value.",
-        zh: "这些数字并非销售额或访客数。出境区预计旅客数不等于外国人数，航班集中于某登机口也不代表出境区拥挤。若来源机构发布延迟，本页面也会延迟，此时我们会显示「暂无法确认」而不是编造数值。",
-        ja: "ここの数値は売上や来訪者数ではありません。出国場の予想旅客数は外国人数ではなく、ゲートに便が集中しても出国場が混雑しているという意味ではありません。提供元の発表が遅れれば本画面も遅れ、その際は値を作らず「確認不可」と表示します。",
-      }),
-    },
-  ];
-
-  const visibleSections = lang === 'ko' ? [
-    {eyebrow:'01 · KORETAIL',title:'누구를 위한 서비스인가요?',body:'인천공항 판매·식음료 직원과 영업·현장 관리자가 공항의 오늘과 달라진 흐름을 살펴보는 서비스입니다. 서울 지역 자료도 이용할 수 있습니다.'},
-    {eyebrow:'02 · AIRPORT',title:'어떤 정보를 볼 수 있나요?',body:'한눈에에서 예상 인원과 출발편을 확인하고 시간대·요일·터미널·연휴 전후를 비교합니다. 공항현황은 대기와 출발편, 국가별 흐름은 목적지별 여객과 항공편, 미리 준비는 휴일과 반입 안내를 제공합니다.'},
-    {eyebrow:'03 · READING',title:'숫자와 색은 어떻게 읽나요?',body:'파란색 +는 신장, 빨간색 △는 역신장입니다. 비교 기간·단위·포함 날짜를 함께 확인하세요. 표시 숫자는 반올림하며 계산은 원래 값으로 합니다.'},
-    {eyebrow:'04 · LIMITS',title:'자료를 볼 때 주의할 점',body:'예상은 실제 인원이나 매출이 아닙니다. 목적지 국가는 승객 국적이 아닙니다. '+passengerCopy.limitation.ko+' '+passengerCopy.noSum.ko+' 자료가 없을 때는 확인 불가로 표시합니다.'},
-  ] : lang === 'en' ? [
-    {eyebrow:'01 · KORETAIL',title:'Who is KORETAIL for?',body:'Airport retail and food-service staff, sales managers and on-site teams can check today’s Incheon Airport conditions and changing trends. Seoul-area reference data remains available.'},
-    {eyebrow:'02 · AIRPORT',title:'What can I check?',body:'At a glance shows forecast people and departures, with comparisons by hour, weekday, terminal and holiday period. Airport status covers waits and departures; route-country trends covers destination passengers and flights; Prepare ahead provides holidays and arrival guidance.'},
-    {eyebrow:'03 · READING',title:'How should I read the numbers and colors?',body:'A blue + means an increase; a red △ means a decrease. Check the period, unit and included dates together. Displays are rounded, while calculations use original values.'},
-    {eyebrow:'04 · LIMITS',title:'What are the limits?',body:'Forecasts are not actual people counts or sales. Destination countries are not passenger nationalities. '+passengerCopy.limitation.en+' '+passengerCopy.noSum.en+' Missing data is shown as unavailable.'},
-  ] : lang === 'zh' ? [
-    {eyebrow:'01 · KORETAIL',title:'面向哪些人？',body:'帮助仁川机场销售、餐饮员工及营业、现场管理人员了解机场今天的状况和近期变化。也可继续查看首尔地区资料。'},
-    {eyebrow:'02 · AIRPORT',title:'可以查看哪些信息？',body:'机场一览提供预计人数与出发航班，并比较时段、星期、航站楼和节假日前后变化。机场现状提供等候与出发航班，各国趋势提供按目的地分类的旅客及航班资料，提前准备提供节假日与入境携带物品指南。'},
-    {eyebrow:'03 · READING',title:'如何理解数字和颜色？',body:'蓝色+表示增加，红色△表示减少。请同时查看比较时段、单位和计入日期。显示数字采用四舍五入，计算使用原始值。'},
-    {eyebrow:'04 · LIMITS',title:'查看资料时需要注意什么？',body:'预计值不是实际人数或销售额。目的地国家不代表乘客国籍。'+passengerCopy.limitation.zh+' '+passengerCopy.noSum.zh+' 资料缺失时显示无法确认。'},
-  ] : sections;
-
-  return (
-    <section className="view-section about-view">
-      <div className="view-intro">
-        <div>
-          <p className="eyebrow">ABOUT KORETAIL</p>
-          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "인천공항의 흐름을\n한눈에", en: "Incheon Airport trends\nat a glance", zh: "仁川机场趋势\n一览", ja: "公式データだけを、\nありのままに" })}</h1>
-          <p>{localText(lang, { ko: "인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.", en: "KORETAIL combines Korea and Retail, focusing on Incheon Airport flights, passenger trends and travel preparation, with source dates and references.", zh: "KORETAIL 由 Korea 与 Retail 组合而成，以仁川机场航班、旅客趋势与出行准备为中心，并标明资料日期和来源。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。仁川空港のフライト・旅客動向・旅行準備を中心に、資料の日付と出典を案内します。" })}</p>
-        </div>
-      </div>
-
-      <div className="about-sections">
-        {visibleSections.map((section) => <section key={section.eyebrow} className="about-section">
-          <p className="eyebrow">{section.eyebrow}</p>
-          <h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{section.title}</h2>
-          <p>{section.body}</p>
-        </section>)}
-      </div>
-
-      <div className="about-actions">
-        <button onClick={onSeoul}>{localText(lang, { ko: "서울 화면 보기", en: "Open Seoul", zh: "查看首尔页面", ja: "ソウル画面を見る" })} ↗</button>
-        <button onClick={onAirport}>{localText(lang, { ko: "공항 화면 보기", en: "Open Airport", zh: "查看机场页面", ja: "空港画面を見る" })} ↗</button>
-      </div>
-    </section>
-  );
-}
-
 function MoreView({
-  lang, setLang, selected, businessPlace, industry, businessHref, onAbout, onNavigate,
+  lang, setLang, selected, businessPlace, industry, onAbout, onNavigate,
 }: {
   lang: Lang; setLang: (value: Lang) => void; selected: AreaId; businessPlace: PrepPlace; industry: IndustryId | null; businessHref: string;
   onAbout: () => void;
   onNavigate: (view: View) => void;
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
-  // On a phone this screen is the way to 매장, so its code loads once the
-  // screen's own fonts have arrived and the screen is idle.
-  useEffect(() => {
-    let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
-    void document.fonts.ready.then(() => {
-      if (!live) return;
-      if ("requestIdleCallback" in window) idle = requestIdleCallback(prepareBusinessView, { timeout: 1000 });
-      else timer = setTimeout(prepareBusinessView, 200);
-    });
-    return () => { live = false; if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
-  }, []);
+  const airportSources = activeSourceCatalog.filter(row => !isSeoulOnlySourceId(row.id));
   return (
     <section className="view-section more-view">
       <SiteShare key={lang} lang={lang} />
@@ -1150,7 +968,7 @@ function MoreView({
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         <button type="button" className="update-notice-trigger" aria-haspopup="dialog" onClick={()=>window.dispatchEvent(new Event(UPDATE_NOTICE_OPEN_EVENT))}>{localText(lang,{ko:'공지사항 보기',en:'View update notice',zh:'查看更新公告',ja:'更新のお知らせ'})}</button>
         {(lang === "ko" || lang === "zh") && <button type="button" className="update-notice-trigger" onClick={() => { const guide = document.getElementById("airport-usage-guide"); if (guide instanceof HTMLDetailsElement) { guide.open = true; guide.scrollIntoView({ behavior: "smooth", block: "start" }); } }}>{lang==='zh'?'仁川机场使用指南':'인천공항 이용 방법'}</button>}
-        {(['where-to','today','consumption','business','tourism-desk','forecast','about'] as const).map(item=><a key={item} href={item === 'business' ? businessHref : routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
+        {(['airport-glance','airport','airport-countries','airport-prepare','business','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />
@@ -1180,7 +998,7 @@ function MoreView({
           <button className="source-toggle" onClick={() => setSourcesOpen((open) => !open)} aria-expanded={sourcesOpen}>{sourcesOpen ? localText(lang, { ko: "접기", en: "COLLAPSE", zh: "收起", ja: "閉じる" }) : localText(lang, { ko: "전체 보기", en: "SHOW ALL", zh: "查看全部", ja: "すべて見る" })}</button>
         </div>
         <ol className="source-rows">
-          {(sourcesOpen ? activeSourceCatalog : activeSourceCatalog.slice(0, 6)).map((row, index) => <li key={row.id}>
+          {(sourcesOpen ? airportSources : airportSources.slice(0, 6)).map((row, index) => <li key={row.id}>
             <span>{String(index + 1).padStart(2, "0")}</span>
             <div><strong>{sourceName(row.id,lang)}</strong></div>
             <p>{sourceUse(row,lang)}</p>

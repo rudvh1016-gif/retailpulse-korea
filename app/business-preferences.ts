@@ -1,6 +1,6 @@
 'use client';
 import { useSyncExternalStore } from 'react';
-import { BUSINESS_KEY, DEFAULT_BUSINESS_PREFERENCES, parseBusinessPreferences, resolveBusinessContext, serializeBusinessPreferences, sharedBusinessPlace, type BusinessPreferences } from '../lib/business-preferences';
+import { BUSINESS_KEY, DEFAULT_BUSINESS_PREFERENCES, parseBusinessPreferences, resolveAirportBusinessContext, serializeBusinessPreferences, sharedBusinessPlace, type BusinessPreferences } from '../lib/business-preferences';
 import type { PrepArea } from '../lib/business-prep';
 
 // Same shape as app/personal-preferences.ts: device-only, and when storage is
@@ -35,12 +35,14 @@ function subscribeVisit(listener: () => void) {
 }
 
 /** Shared by the tabs, briefing and guide so a linked scope cannot split the screen. */
-export function useBusinessContext(area: PrepArea) {
+export function useBusinessContext(_area: PrepArea) {
+  void _area; // Kept in the call signature for shared historical components.
   const stored = useBusinessPreferences();
   const address = useSyncExternalStore(subscribeVisit, () => window.location.pathname + window.location.search, () => '');
   const [pathname, query = ''] = address.split('?');
   const scope = /^\/(ko|en|zh|ja)\/(business|more)\/?$/.test(pathname) ? sharedBusinessPlace(new URLSearchParams(query)) : null;
-  return { ...stored, savedPreferences: stored.preferences, ...resolveBusinessContext(stored.preferences, area, scope), scope };
+  const resolved = resolveAirportBusinessContext(stored.preferences, scope);
+  return { ...stored, savedPreferences: resolveAirportBusinessContext(stored.preferences, null).preferences, ...resolved, scope: scope ? resolved.place : null };
 }
 
 function clearSavedVisitScope() {

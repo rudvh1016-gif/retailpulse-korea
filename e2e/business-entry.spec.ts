@@ -47,30 +47,21 @@ test('an airport visit uses one scope throughout and leaves the saved Seoul stor
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('koretail-business-v1') ?? '{}').place)).toBe('area');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('retailpulse-preferences') ?? '{}').area)).toBe('hongdae');
   await page.goto('/ko/business');
-  await expect(page.getByTestId('prep-place')).toHaveText('홍대');
+  await expect(page.getByTestId('prep-place')).toHaveText('인천공항 T1');
   await expect(page.getByTestId('prep-industry')).toHaveText('식음료·카페');
-  await expect(page.locator('.business-view .area-tabs [aria-selected=true]')).toHaveText('홍대');
+  await expect(page.locator('.business-view .area-tabs [aria-selected=true]')).toHaveText('인천공항');
 });
 
-test('a shared Seoul scope does not replace the saved area until the reader saves', async ({ page }) => {
+test('a shared retired Seoul scope cannot replace the airport scope or saved history', async ({ page }) => {
   await prepare(page);
   await seedSeoul(page);
   await page.goto('/ko/business?place=area&area=seongsu');
-  await expect(page.getByTestId('prep-place')).toHaveText('성수');
-  await expect(page.locator('.business-view .area-tabs [aria-selected=true]')).toHaveText('성수');
+  await expect(page.getByTestId('prep-place')).toHaveText('인천공항 T1');
+  await expect(page.locator('.business-view .area-tabs [role=tab]')).toHaveCount(1);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('retailpulse-preferences') ?? '{}').area)).toBe('hongdae');
-  await page.locator('.bottom-nav a').last().click();
-  const businessLink = page.locator('.more-section-links a[href*="/business"]');
-  await expect(businessLink).toHaveAttribute('href', /area=seongsu/);
-  await businessLink.click();
-  await expect(page.getByTestId('prep-place')).toHaveText('성수');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('retailpulse-preferences') ?? '{}').area)).toBe('hongdae');
-  await page.getByTestId('business-prep').getByRole('button', { name: prepCopy.change.ko }).click();
-  await page.locator('.prep-form').getByRole('button', { name: prepCopy.save.ko, exact: true }).click();
-  await expect(page).not.toHaveURL(/place=/);
   await page.reload();
-  await expect(page.getByTestId('prep-place')).toHaveText('성수');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('retailpulse-preferences') ?? '{}').area)).toBe('seongsu');
+  await expect(page.getByTestId('prep-place')).toHaveText('인천공항 T1');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('koretail-business-v1') ?? '{}').place)).toBe('area');
 });
 
 test('a terminal saved in store conditions survives More independently of the airport header', async ({ page }) => {

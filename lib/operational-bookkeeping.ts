@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, isSeoulOnlySource } from "./product-scope";
 /** Observer only: cannot dispatch, suppress, retry or modify a collector's result. */
 import { OperationalMemory, safeOperationalEvidence } from './operational-memory';
 import { recheckCongestionPublication } from './operational-congestion-recheck';
@@ -65,6 +66,7 @@ export async function saveMeasurement(memory:OperationalMemory,measurement:Sourc
 
 export async function recordExistingCompletion(db:D1Database,result:ProductionSourceResult,context:{runId:string;startedAt:string;completedAt:string;attempt:number;
   rowsRead?:number|null;rowsWritten?:number|null},options:{fetchImpl?:typeof fetch}={}):Promise<{state:string;sourceCount:number}> {
+  if(!SEOUL_ENABLED && isSeoulOnlySource(result.source))return {state:'SKIPPED_PRODUCT_DISABLED',sourceCount:0};
   const memory=new OperationalMemory(db);
   if(!await memory.available())return {state:'DORMANT_MIGRATION_UNAVAILABLE',sourceCount:0};
   const ids=sourceIdsForRun(result.source);

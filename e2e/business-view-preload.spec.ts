@@ -14,11 +14,11 @@ test('More prepares the business screen, which then opens without a gap',async({
  page.on('request',request=>{const code=request.resourceType()==='script'&&businessCode(request.url());if(code)requested.add(code);});
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
- await page.goto('/ko/myeongdong');
+ await page.goto('/ko');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.waitForTimeout(1000);
  // The shell may fetch the industry guide once idle (the airport screen needs it too); the briefing itself stays with 매장.
- expect([...requested].filter(code=>code!=='industry-guide'),'a Seoul page does not load the business briefing').toEqual([]);
+ expect([...requested].filter(code=>code!=='industry-guide'),'airport home does not load the business briefing').toEqual([]);
  await page.locator('.bottom-nav a[href^="/ko/more"]').click();
  await expect(page).toHaveURL(/\/ko\/more(?:\?|$)/);
  await expect.poll(()=>[...requested].sort(),{message:'More starts loading the business screen'}).toEqual(['business-prep','industry-guide']);

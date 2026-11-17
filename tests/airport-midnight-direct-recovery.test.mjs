@@ -301,7 +301,7 @@ test('production entry stops before credential configuration with runtime off or
 test('reusable graph preserves the entire realtime cycle lock and keeps A1 outside it with read permissions', () => {
   const root = readFileSync('.github/workflows/collect-realtime.yml', 'utf8');
   const expanded = expandRealtimeCadence(root);
-  assert.match(expanded, /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime/);
+  assert.match(expanded, /RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2/);
   assert.match(expanded, /needs\.collect\.outputs\.retry_sources != ''/);
   assert.match(expanded, /a4_max_attempts_per_request: "1"/);
   assert.match(root, /group: duty-free-exchange-production/);

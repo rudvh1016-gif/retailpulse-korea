@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { airportSides } from '../lib/airport-sides-summary';
-import { compareCopy } from '../lib/compare-copy';
 
 test.use({hasTouch:true});
 
@@ -11,35 +10,18 @@ const known=['208','252','279'].map((gate,i)=>({...base,gate,physicalFlightId:`k
 const unknown=Array.from({length:3},(_,i)=>({...base,gate:null,physicalFlightId:`unknown-${i}`,flightNumber:`UNKNOWN${i}`}));
 
 for(const width of [320,390,430,1280]) {
- test(`compact comparison and device notes ${width}`,async({page})=>{
-  await page.setViewportSize({width,height:900});
-  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
-  await page.route('**/api/live/usual*',route=>route.fulfill({status:503,json:{error:'usual_comparison_unavailable'}}));
-  await page.goto('/ko/business?place=area&area=myeongdong');
-  const comparison=page.getByTestId('usual-comparison'),last=page.getByTestId('last-check');
-  await expect(comparison.locator('summary')).toContainText(compareCopy.loadFailed.ko);
-  await expect(comparison.getByText(compareCopy.unavailable.ko,{exact:true})).not.toBeVisible();
-  await expect(last.getByText(compareCopy.deviceOnly.ko,{exact:true})).not.toBeVisible();
-  const trigger=comparison.locator(':scope > summary');
-  await expect(trigger.locator('[aria-hidden]')).toHaveCSS('margin-left','8px');
-  expect(await trigger.locator('[aria-hidden]').evaluate(el=>getComputedStyle(el,'::after').content)).toBe('"+"');
-  await trigger.focus();await page.keyboard.press('Enter');
-  await expect(trigger).toHaveCSS('outline-style','solid');
-  expect(await trigger.locator('[aria-hidden]').evaluate(el=>getComputedStyle(el,'::after').content)).toBe('"−"');
-  await expect(comparison.getByText(compareCopy.unavailable.ko,{exact:true})).toBeVisible();
-  await page.keyboard.press('Space');await expect(comparison).not.toHaveAttribute('open','');
-  await expect(trigger).toBeFocused();
-  expect((await trigger.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  await page.reload();
-  await expect(last.getByTestId('last-check-headline')).toContainText('달라진 공식 값은 없습니다');
-  await expect(last.getByTestId('last-check-headline')).not.toBeVisible();
-  await last.locator('summary').tap();
-  await expect(last.getByText(compareCopy.deviceOnly.ko,{exact:true})).toBeVisible();
-  await last.locator('summary').click();
-  await last.scrollIntoViewIfNeeded();
-  await page.screenshot({path:`../ui-headings-evidence-20261006/status-closed-${width}.png`});
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- });
+ test(`retired Seoul entry: compact comparison and device notes ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
+});
 
  test(`zone headings and real unverified records ${width}`,async({page})=>{
   await page.setViewportSize({width,height:900});
@@ -102,37 +84,16 @@ for(const width of [320,390,430,1280]) {
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  });
 
- test(`forecast plot size and exact source bounds ${width}`,async({page})=>{
-  await page.setViewportSize({width,height:900});
-  await page.clock.install({time:new Date('2026-08-31T05:10:00Z')});
-  const observation=(time:string,min=23_000,max=25_000)=>({observedAt:`${date}T${time}:00+09:00`,populationMin:min,populationMax:max,congestionLevel:3});
-  const series=['12:10','12:25','13:07','13:22','13:37','13:52'].map(time=>observation(time));
-  const forecasts=[17,18,19].map((hour,i)=>({targetAt:`${date}T${hour}:00:00+09:00`,issuedAt:`${date}T14:00:00+09:00`,populationMin:27_000+i*2_000,populationMax:29_000+i*2_000,congestionLevel:3}));
-  const area={...SUMMARY_FIXTURE.areas.myeongdong,observedSeries:series,realtime:{...observation('14:07'),freshness:'LIVE'},realtimeForecast:forecasts};
-  const summary={...SUMMARY_FIXTURE,areas:{...SUMMARY_FIXTURE.areas,myeongdong:area,itaewon:area}};
-  await page.route('**/api/live/summary*',routeSummary(summary));
-  await page.route('**/api/live/predictions*',route=>route.fulfill({json:{targetDate:date,run:null,coverage:{days:0,firstAt:null,latestAt:null,missingDays:[],dailyHours:[]},records:[]}}));
-  await page.goto('/ko/itaewon');
-  const outlook=page.getByTestId('population-outlook'),plot=outlook.locator('svg');
-  await outlook.scrollIntoViewIfNeeded();
-  await expect(outlook).toBeVisible();
-  // The revised preview is exactly220px; retain the separate history chart's larger contract below.
-  await expect.poll(()=>plot.evaluate(el=>el.getBoundingClientRect().height)).toBeCloseTo(220,0);
-  const geometry=await plot.evaluate(el=>{
-   const svg=el as SVGSVGElement,line=el.querySelector('[data-selected-range]')!;
-   return {width:svg.viewBox.baseVal.width,height:svg.viewBox.baseVal.height,renderedWidth:el.getBoundingClientRect().width,ceiling:Number(el.getAttribute('data-ceiling')),y1:Number(line.getAttribute('y1')),y2:Number(line.getAttribute('y2'))};
-  });
-  expect(geometry.height).toBe(220);expect(Math.abs(geometry.width-geometry.renderedWidth)).toBeLessThan(2);
-  expect(geometry.y1).toBeCloseTo(184-29_000/geometry.ceiling*152,3);
-  expect(geometry.y2).toBeCloseTo(184-27_000/geometry.ceiling*152,3);
-  await outlook.getByRole('button').nth(1).click();await expect(outlook.locator('.outlook-selection')).toContainText('29,000–31,000');
-  await outlook.screenshot({path:`../ui-headings-evidence-20261006/outlook-compact-${width}.png`});
-  await page.locator('.population-history-disclosure > summary').click();
-  const history=page.locator('.population-history-disclosure .population-chart');
-  await expect.poll(()=>history.evaluate(el=>el.getBoundingClientRect().height)).toBeGreaterThan(280);
-  const fullWidth=await history.evaluate(el=>el.getBoundingClientRect().width);
-  expect(Math.abs(fullWidth-geometry.renderedWidth)).toBeLessThan(35);
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
- });
+ test(`retired Seoul entry: forecast plot size and exact source bounds ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:900});
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
+});
 }

@@ -282,11 +282,12 @@ test("the shared attempt policy is unchanged for every other caller", async () =
 
 const sales = await readFile(new URL("../.github/workflows/collect-sales.yml", import.meta.url), "utf8");
 
-test("the weekly Seoul collection publishes its decision and keeps its own failure visible", () => {
+test("retired weekly Seoul collection keeps rollback metadata but cannot schedule", () => {
   assert.match(sales, /set -o pipefail\n\s+npm run collect:production 2>&1 \| tee "\$RUNNER_TEMP\/collector\.log"/);
   assert.match(sales, /scripts\/decide-congestion-retry\.ts "\$RUNNER_TEMP\/collector\.log" --weekly-seoul/);
   assert.match(sales, /retry_weekly_seoul: \$\{\{ steps\.retry_decision\.outputs\.retry_weekly_seoul \}\}/);
-  assert.match(sales, /cron: "7 22 \* \* 6"/, "the weekly slot itself is unchanged");
+  assert.doesNotMatch(sales, /^\s*schedule:/m);
+  assert.match(sales, /if: \$\{\{ false \}\}/);
   assert.match(sales, /group: production-collector-sales\n\s+cancel-in-progress: false/,
     "retries stay inside the run, so the weekly concurrency group still serializes them");
 });

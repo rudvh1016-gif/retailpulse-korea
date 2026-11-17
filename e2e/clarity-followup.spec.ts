@@ -17,8 +17,14 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
  });
 }
 
-test('tourism desk removes show/copy actions and keeps the official event details',async({page})=>{
- await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto('/ko/tourism-desk/myeongdong');
- await expect(page.locator('.tourism-desk')).toBeVisible();await expect(page.locator('#tourism-visitor-title')).toHaveCount(0);
- await expect(page.locator('.tourism-event-actions button')).toHaveCount(0);await expect(page.locator('.tourism-event-facts')).not.toHaveCount(0);
+test('retired Seoul entry: tourism desk removes show/copy actions and keeps the official event details',async({page})=>{
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/tourism-desk/myeongdong`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });

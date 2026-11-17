@@ -43,11 +43,11 @@ test('browser no-store cannot defeat existing shared forecast TTL; original requ
  for(const name of ['authorization','cache-control','pragma'])assert.equal(forwarded.headers.has(name),false);
  assert.equal(forwarded.headers.get('accept-language'),'ko');assert.equal(request.headers.get('cache-control'),'no-store');
 });
-test('invalid areas retain exact 400 body and no-store through real handler',async()=>{
+test('retired areas retain exact 410 body and no-store through real handler',async()=>{
  for(const area of ['','wrong','hongdae%20']){
   const request=new Request(origin+path+'?area='+area+'&area=hongdae');
   const a=await GET(request),b=await GET(canonicalSummaryRequest(request,new URL(request.url)));
-  assert.equal(a.status,400);assert.equal(b.status,400);assert.equal(b.headers.get('cache-control'),'no-store');
+  assert.equal(a.status,410);assert.equal(b.status,410);assert.equal(b.headers.get('cache-control'),'no-store');
   assert.deepEqual(await a.json(),await b.json());
  }
  const source=readFileSync('app/api/live/predictions/route.ts','utf8');

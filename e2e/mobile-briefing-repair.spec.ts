@@ -42,7 +42,7 @@ test('airport-glance-first home shows public information with briefing setup hid
     const moreLink = page.locator('.top-nav a[href^="/ko/more?"]');
     await expect(moreLink).toBeVisible();
     await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
-    await expect(page.locator('.footer-links a[href="/ko/myeongdong"]')).toHaveCount(1);
+    await expect(page.locator('.footer-links a[href="/ko/myeongdong"]')).toHaveCount(0);
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);
 });
@@ -57,7 +57,7 @@ test('saved Myeongdong weather preferences survive hidden briefing entry', async
     await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(preferences));
     await page.goto('/ko/myeongdong');
-    await expect(page.locator('.area-current-brief')).toBeVisible();
+    await expect(page).toHaveURL(/\/ko$/);await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await page.reload();
     expect(await page.evaluate(key => localStorage.getItem(key), PREFERENCE_KEY)).toBe(JSON.stringify(preferences));
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
@@ -113,63 +113,16 @@ function chartFixture() {
   return data;
 }
 for (const width of [360, 390]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
-  test(`mobile date, chart and safe-area geometry ${lang} ${width}`, async ({ page }, info) => {
+  test(`retired area redirect, airport date and safe-area geometry ${lang} ${width}`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 844 });
     await fixture(page, chartFixture());
     await page.goto(`/${lang}/hongdae`);
-    await expect(page.getByTestId('population-outlook')).toBeVisible();
-    await page.locator('.population-history-disclosure>summary').click();
-    await expect(page.locator('.population-chart')).toBeVisible();
-    await page.evaluate(() => document.fonts.ready);
-    // Apply insets before focus/drag can trigger browser scroll anchoring.
-    // This is layout emulation, not a physical iPhone test.
-    await page.addStyleTag({ content: ':root { --safe-area-top: 59px; --safe-area-bottom: 34px; }' });
-    await expect(page.locator('.site-header')).toHaveCSS('padding-top', '59px');
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-    await expect.poll(() => page.locator('.topbar').evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(59);
-    const header = await page.locator('.topbar').boundingBox(), title = await page.locator('h1').boundingBox();
-    expect(title!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
-    const padding = await page.locator('.page-shell').evaluate(el => parseFloat(getComputedStyle(el).paddingBottom));
-    expect(padding).toBeGreaterThanOrEqual(146);
-    const ticks = page.locator('.flow-tick');
-    await expect(ticks).toHaveCount(3);
-    const rects = await ticks.evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(); return { x: r.x, right: r.right }; }));
-    rects.forEach((r, i) => { expect(r.x).toBeGreaterThanOrEqual(0); expect(r.right).toBeLessThanOrEqual(width); if (i) expect(r.x - rects[i - 1].right).toBeGreaterThan(8); });
-    await expect(page.locator('.flow-tick-date')).toHaveCount(1);
-    await expect(page.locator('.flow-tick-date')).toHaveText('9/1');
-    await expect(page.locator('.flow-observed circle')).toHaveCount(1);
-    await expect(page.locator('.flow-observed').first()).toHaveCSS('stroke', 'rgb(100, 148, 179)');
-    await expect(page.locator('.demand-number strong')).toHaveCSS('font-size', '29px');
-    await expect(page.locator('.flow-now rect')).toHaveCount(0);
-    const buttons = await page.locator('.date-nav-shortcuts button').evaluateAll(els => els.map(el => { const r = el.getBoundingClientRect(), s = getComputedStyle(el); return { x: r.x, right: r.right, y: r.y, bottom: r.bottom, height: r.height, border: s.borderTopWidth }; }));
-    expect(buttons).toHaveLength(3);
-    buttons.forEach((r, i) => { expect(r.height).toBeGreaterThanOrEqual(48); expect(r.border).toBe('0px'); if (i) expect(r.x).toBeGreaterThanOrEqual(buttons[i - 1].right); });
-    const tools = await page.locator('.date-nav-tools').boundingBox();
-    expect(tools!.y).toBeGreaterThanOrEqual(buttons[0].bottom);
-    const select = page.locator('.flow-time-control select');
-    await select.press('Home');
-    await expect(page.locator('.flow-readout')).toHaveAttribute('aria-label', /96,000–98,000/);
-    await select.press('End');
-    await expect(page.locator('.flow-readout')).toHaveAttribute('aria-label', /09-01 03:00/);
-    await expect(page.locator('.flow-forecast .flow-bound').first()).toHaveCSS('stroke-dasharray', '3px, 2px');
-    // Each contiguous segment retains both exact minimum and maximum boundaries.
-    expect(await page.locator('.flow-forecast path.flow-bound').count()).toBe(2 * await page.locator('.flow-forecast path.flow-range').count());
-    const chart = await page.locator('.population-chart').boundingBox();
-    await page.locator('.population-chart').click({ position: { x: 46, y: 100 } });
-    await expect(select).toHaveValue('observed:2026-08-31T00:10:00.000Z');
-    // Native time selection and pointer selection share source timestamps;
-    // no control maps irregularly spaced observations to equal-width indices.
-    const selectionBox = await page.locator('.flow-selection line').boundingBox();
-    expect(Math.abs(selectionBox!.x-chart!.x-46)).toBeLessThanOrEqual(2);
-    expect(chart!.width).toBeLessThan(width);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    if (lang === 'ko') await page.screenshot({ path: info.outputPath(`hongdae-safe-area-${width}.png`), fullPage: true });
-    await page.locator('.date-nav-shortcuts button').first().click();
-    await expectDateSelection(page, '2026-08-30');
-    await page.locator('.date-nav-shortcuts button').last().click();
-    await expectDateSelection(page, '2026-09-01');
-    await page.locator('.date-nav-shortcuts button').nth(1).click();
-    await expectDateSelection(page, '2026-08-31');
+    await expect(page).toHaveURL(new RegExp(`/${lang}$`));
+    await expect(page.getByTestId('population-outlook')).toHaveCount(0);
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+    await page.addStyleTag({content:':root { --safe-area-top: 59px; --safe-area-bottom: 34px; }'});
+    await expect(page.locator('.site-header')).toHaveCSS('padding-top','59px');
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.evaluate(({ key, p }) => localStorage.setItem(key, JSON.stringify(p)), { key: PREFERENCE_KEY, p: allDayPreferences });
     await page.goto(`/${lang}`);
     await enterAirportDetail(page);
@@ -205,7 +158,7 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
   await page.setViewportSize({ width, height: 844 });
   const saved: PersonalPreferences = { ...allDayPreferences, location: 'airport', selectedLocations: ['airport', 'hongdae'], selectedTerminals: ['T2', 'T1'], interests: ['passengers', 'crowding'] };
   await seed(page, saved); await fixture(page, chartFixture());
-  for (const route of ['', '/hongdae', '/airport', '/predictions', '/forecast', '/more']) {
+  for (const route of ['', '/airport', '/airport-countries', '/airport-prepare', '/more']) {
     await page.goto(`/ko${route}`);
     await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
     await page.addStyleTag({ content: ':root { --safe-area-top: 59px; --safe-area-bottom: 34px; } html { scroll-behavior: auto; }' });
@@ -235,7 +188,7 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       expect(await page.locator('.airport-metric-value').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(34);
     }
     // Reference controls are inside a closed disclosure; inspect them expanded.
-    if (route === '/forecast') await page.locator('.records-reference>summary').click();
+
     // The approved terminal rail has a white outlined selection and transparent inactive choices.
     // All other controls retain their white fill, hairline, and touch-target locks.
     if (route === '/airport') await expect(page.locator('.airport-view .terminal-selector button')).toHaveCount(4);
@@ -258,13 +211,10 @@ for (const width of [360, 390]) test(`owner UI lock across main screens ${width}
       expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(route === '/airport' ? 56 : 48);
       if (route === '/airport') expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(56);
     }
-    if (!route || route === '/airport' || route === '/hongdae') {
+    if (!route || route === '/airport') {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.screenshot({ path: info.outputPath(`owner-${route.slice(1) || 'personal'}-${width}.png`) });
     }
-    if (route === '/hongdae') {
-      await page.locator('.flow-time-control').scrollIntoViewIfNeeded();
-      await page.screenshot({ path: info.outputPath(`owner-chart-${width}.png`) });
-    }
+
   }
 });

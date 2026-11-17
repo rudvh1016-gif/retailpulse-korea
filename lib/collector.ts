@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, SEOUL_DISABLED_RESULT } from "./product-scope";
 import {dedupePhysicalFlights} from './airport-flight-dedupe';
 import {reserveAirportRequestBudget} from './airport-request-budget';
 import { normalizeSeoulContext, seoulContextObservedAt } from "./seoul-context";
@@ -432,7 +433,7 @@ export async function collectScheduledAirportFlights(env: CollectorEnv): Promise
 const runBatches = runD1Batches;
 
 export interface CollectorResult {
-  status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA" | "SKIPPED_NO_NEW_PUBLICATION";
+  status: "SUCCESS" | "PARTIAL" | "ERROR" | "NEEDS_KEY" | "NO_DATA" | "SKIPPED_NO_NEW_PUBLICATION" | "SKIPPED_PRODUCT_DISABLED";
   records: number;
   /** Secret-free operational detail safe for collector_runs and Actions logs. */
   detail?: string;
@@ -524,6 +525,7 @@ function integratedPopulationRecord(citydata: Record<string, unknown>): Record<s
 // OA-21285 integrated city data: one bounded call per target area fans out to
 // independently healthy population and domestic-card commercial records.
 export async function collectSeoulRealtime(env: CollectorEnv): Promise<CollectorResult> {
+  if (!SEOUL_ENABLED) return { ...SEOUL_DISABLED_RESULT };
   const populationSourceId = "SEOUL_CITYDATA_PPLTN";
   const commercialSourceId = "SEOUL_CITYDATA_CMRCL";
   const collectionRequestedAt = nowIso();
@@ -761,6 +763,7 @@ async function persistSeoulForeignPresence(
 // configured representative dong for one period. This is bounded to 62 * N
 // targeted calls and never sweeps or trusts the ordering of the full dataset.
 export async function collectSeoulForeignPresence(env: CollectorEnv, now: Date = new Date()): Promise<CollectorResult> {
+  if (!SEOUL_ENABLED) return { ...SEOUL_DISABLED_RESULT };
   const sourceId = SEOUL_FOREIGN_SOURCE_ID;
   if (!env.SEOUL_OPEN_DATA_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
@@ -847,6 +850,7 @@ export async function collectForeignPurposeMobility(
   env: CollectorEnv,
   now: Date = new Date(),
 ): Promise<CollectorResult> {
+  if (!SEOUL_ENABLED) return { ...SEOUL_DISABLED_RESULT };
   const sourceId = FOREIGN_PURPOSE_SOURCE_ID;
   if (!env.FOREIGN_PURPOSE_SOURCE) {
     const detail = "foreign_purpose_source_adapter_not_configured";
@@ -1196,6 +1200,7 @@ const SALES_PAGE_SIZE = 1_000;
 const SALES_MAX_PAGES = 25;
 
 export async function collectEstimatedSales(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
+  if (!SEOUL_ENABLED) return { ...SEOUL_DISABLED_RESULT };
   const sourceId = "SEOUL_ESTIMATED_SALES";
   if (!env.SEOUL_OPEN_DATA_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
@@ -1338,6 +1343,7 @@ export async function collectStoreDynamics(
   env: CollectorEnv,
   now: Date = new Date(),
 ): Promise<CollectorResult> {
+  if (!SEOUL_ENABLED) return { ...SEOUL_DISABLED_RESULT };
   const sourceId = STORE_DYNAMICS_SOURCE_ID;
   if (!env.SEOUL_OPEN_DATA_KEY) {
     const detail = "SEOUL_OPEN_DATA_KEY is not configured";
@@ -1768,6 +1774,7 @@ async function enrichTourismEventsFromOfficialDetail(
 
 // T1 — one bounded Seoul festival query, mapped to areas by verified distance.
 export async function collectTourismEvents(env: CollectorEnv, now = new Date()): Promise<CollectorResult> {
+  if (!SEOUL_ENABLED) return { ...SEOUL_DISABLED_RESULT };
   const sourceId = "KTO_TOURAPI_EVENT";
   if (!env.DATA_GO_KR_SERVICE_KEY) {
     await writeCollectorStatus(env.DB, sourceId, "NEEDS_KEY", "DATA_GO_KR_SERVICE_KEY is not configured");
@@ -2376,7 +2383,7 @@ export async function collectAirportPassengerForecast(
 
 export async function runScheduledCollectors(env: CollectorEnv): Promise<void> {
   await collectAirportFlights(env);
-  if (!env.SEOUL_OPEN_DATA_KEY) await writeCollectorStatus(env.DB, "SEOUL_OPEN_DATA", "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
+  if (SEOUL_ENABLED && !env.SEOUL_OPEN_DATA_KEY) await writeCollectorStatus(env.DB, "SEOUL_OPEN_DATA", "NEEDS_KEY", "SEOUL_OPEN_DATA_KEY is not configured");
   if (!env.KMA_SERVICE_KEY) await writeCollectorStatus(env.DB, "KMA_WEATHER", "NEEDS_KEY", "KMA_SERVICE_KEY is not configured");
 }
 

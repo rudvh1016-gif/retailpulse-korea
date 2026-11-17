@@ -87,3 +87,10 @@ export function serializeBusinessPreferences(value: BusinessPreferences): string
 /** Half-hour steps for the hour pickers, "00:00" … "23:30". */
 export const HOUR_CHOICES: readonly string[] = Array.from({ length: 48 }, (_, index) =>
   `${String(Math.floor(index / 2)).padStart(2, "0")}:${index % 2 ? "30" : "00"}`);
+
+/** Product scope for live clients; historic parsers remain available for audit fixtures. */
+export function resolveAirportBusinessContext(preferences: BusinessPreferences, scope: PrepPlace | null) {
+  const base: BusinessPreferences = preferences.place === "airport" ? preferences : DEFAULT_BUSINESS_PREFERENCES;
+  const visit = scope?.kind === "airport" ? scope : scope?.kind === "area" ? { kind: "airport" as const, terminal: "T1" as const, side: null } : null;
+  return resolveBusinessContext(base, "myeongdong", visit);
+}

@@ -276,6 +276,11 @@ assert.equal(terminalRefinementPatches['app/retailpulse-app.tsx'].length,5);
 for(const [file,patches] of Object.entries(terminalRefinementPatches)){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }
+// Owner-authorized Seoul retirement: reverse only exact reviewed changes, retain all hashes.
+const airportOnlyPatches=JSON.parse(readFileSync('tests/fixtures/airport-only-20261117-approved-patches.json','utf8'));
+const airportOnlyFiles=["app/[locale]/[slug]/page.tsx", "app/[locale]/tourism-desk/[area]/page.tsx", "app/[locale]/tourism-desk/page.tsx", "app/api/health/route.ts", "app/api/live/events/route.ts", "app/api/live/predictions/route.ts", "app/api/live/summary/route.ts", "app/not-found.tsx", "app/retailpulse-app.tsx", "app/seo-config.ts", "app/site-usage-guide.tsx", "app/sitemap.ts"];
+assert.deepEqual(Object.keys(airportOnlyPatches),airportOnlyFiles);
+for(const [file,patches] of Object.entries(airportOnlyPatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');
@@ -289,7 +294,8 @@ test('no new recurring schedule and protected UI remains byte-identical outside 
   const locks=JSON.parse(readFileSync('tests/fixtures/phase2-locks.json','utf8'));
   for(const file of readdirSync('.github/workflows')){
     const current=readWorkflowFacts(file,readFileSync('.github/workflows/'+file,'utf8'));
-    assert.deepEqual(current.crons,locks.crons[file]??[],file);
+    if(file==='collect-sales.yml'){assert.deepEqual(locks.crons[file],['7 22 * * 6']);assert.deepEqual(current.crons,[],'owner retired the Seoul-only weekly schedule');}
+    else assert.deepEqual(current.crons,locks.crons[file]??[],file);
   }
   for(const [file,expected] of Object.entries(locks.protectedFiles))assert.equal(createHash('sha256').update(protectedUiBytes(file)).digest('hex'),expected,file);
   const workflow=readWorkflowFacts('operational-memory.yml',readFileSync('.github/workflows/operational-memory.yml','utf8'));assert.deepEqual(workflow.triggers,['workflow_dispatch']);

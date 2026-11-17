@@ -26,7 +26,7 @@ test('only a problem with a sub-hourly source shortens the re-check', () => {
     for (const status of ['ERROR', 'DEGRADED', 'MISSING']) assert.equal(shortensSummaryRecheck({ sourceId, status }), true, `${sourceId} ${status}`);
     for (const status of ['LIVE', 'STALE', 'OFFICIAL_HISTORICAL']) assert.equal(shortensSummaryRecheck({ sourceId, status }), false, `${sourceId} ${status}`);
   }
-  for (const sourceId of ['KASI_PUBLIC_HOLIDAYS', 'SEOUL_ESTIMATED_SALES', 'INCHEON_FLIGHT_DETAIL', 'INCHEON_TRANSFER_FORECAST', 'SEOUL_STORE_DYNAMICS']) {
+  for (const sourceId of ['KASI_PUBLIC_HOLIDAYS', 'SEOUL_ESTIMATED_SALES', 'INCHEON_FLIGHT_DETAIL', 'INCHEON_TRANSFER_FORECAST', 'SEOUL_STORE_DYNAMICS', 'SEOUL_CITYDATA_PPLTN', 'SEOUL_CITYDATA_CMRCL']) {
     assert.equal(shortensSummaryRecheck({ sourceId, status: 'ERROR' }), false, sourceId);
   }
   assert.equal(shortensSummaryRecheck({ sourceId: 'NOT_A_SOURCE', status: 'ERROR' }), false);
@@ -46,7 +46,7 @@ test('the 2026-10-14 public summary no longer forces the 2-minute re-check by it
   ].map(([sourceId, status]) => ({ sourceId, status }));
   assert.equal(production.some((source) => ['ERROR', 'DEGRADED', 'MISSING'].includes(source.status)), true, 'the previous rule shortened it');
   assert.equal(production.some(shortensSummaryRecheck), false);
-  const realtimeDown = production.map((source) => source.sourceId === 'SEOUL_CITYDATA_PPLTN' ? { ...source, status: 'ERROR' } : source);
+  const realtimeDown = production.map((source) => source.sourceId === 'INCHEON_DEPARTURE_CONGESTION' ? { ...source, status: 'ERROR' } : source);
   assert.equal(realtimeDown.some(shortensSummaryRecheck), true, 'a realtime source in error still shortens it');
 });
 

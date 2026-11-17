@@ -372,8 +372,8 @@ test("the date-picker probes use one bounded VALUES table per source, sent as a 
   // (lib/d1-read-batch.ts) rather than a batch of their own; either way they
   // are never sent one statement at a time.
   assert.ok(
-    /readGroups\(client, \{ \.\.\.statementGroups, \.\.\.probeGroups \}, \{ maxStatements: 50 \}\)/.test(source),
-    "the per-day probes must be read through the route's one batched read, not one statement at a time",
+    /readGroups\(client, groups, \{ maxStatements: 50 \}\)/.test(source),
+    "the active per-day probes must be read through the route's one batched read, not one statement at a time",
   );
   assert.equal(
     /SELECT DISTINCT target_date AS day FROM airport_passenger_forecast/.test(source),

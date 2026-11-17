@@ -13,7 +13,7 @@ import {
   tourismDeskAreas,
 } from "../app/seo-config.ts";
 
-test("Tourism Desk has exactly four area routes and no flat indexable slug", () => {
+test("legacy Tourism Desk parser retains four historical area identifiers", () => {
   assert.deepEqual(tourismDeskAreas, ["myeongdong", "hongdae", "seongsu", "itaewon"]);
   assert.equal(standaloneSeoSlugs.includes("tourism-desk"), false);
   assert.deepEqual(
@@ -22,7 +22,7 @@ test("Tourism Desk has exactly four area routes and no flat indexable slug", () 
   );
 });
 
-test("each Tourism Desk area has unique localized metadata with area-preserving alternates", () => {
+test("legacy Tourism Desk metadata helper retains unique localized historical labels", () => {
   for (const locale of seoLocales) {
     const titles = tourismDeskAreas.map((area) => pageTitle(locale, "tourism-desk", area));
     const descriptions = tourismDeskAreas.map((area) => pageDescription(locale, "tourism-desk", area));
@@ -49,17 +49,17 @@ test("each Tourism Desk area has unique localized metadata with area-preserving 
   }
 });
 
-test("the former flat route redirects and only nested Tourism Desk URLs enter the sitemap", async () => {
+test("all former Tourism Desk routes redirect to airport and never enter the sitemap", async () => {
   const [redirectPage, areaPage, sitemap] = await Promise.all([
     readFile(new URL("../app/[locale]/tourism-desk/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/[locale]/tourism-desk/[area]/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/sitemap.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(redirectPage, /permanentRedirect\(`\/\$\{locale\}\/tourism-desk\/myeongdong`\)/);
-  assert.match(areaPage, /tourismDeskAreas\.map/);
-  assert.match(areaPage, /initialView="tourism-desk"/);
+  assert.match(redirectPage, /permanentRedirect\(`\/\$\{locale\}`\)/);
+  assert.match(areaPage, /permanentRedirect\(`\/\$\{locale\}`\)/);
+  assert.doesNotMatch(areaPage, /RetailPulseApp|preload|initialView/);
   assert.match(sitemap, /standaloneSeoSlugs(\.filter\([^\n]*?\))?\.map/);
-  assert.match(sitemap, /tourismDeskAreas\.map/);
+  assert.doesNotMatch(sitemap, /tourismDeskAreas\.map/);
 
   // Asserting that the SOURCE TEXT contains `tourism-desk/${area}` only proved
   // one spelling of one template literal: it broke the moment the same URLs
@@ -77,17 +77,15 @@ test("the former flat route redirects and only nested Tourism Desk URLs enter th
   ], { env: { ...process.env, RPK_DEPLOYMENT_STAGE: "production" }, encoding: "utf8" }).trim().split("\n").at(-1));
   assert.ok(urls.length > 0, "an empty sitemap would make every assertion below vacuous");
   const deskUrls = urls.filter((url) => url.includes("/tourism-desk"));
-  assert.equal(deskUrls.length, seoLocales.length * tourismDeskAreas.length);
+  assert.equal(deskUrls.length, 0);
   for (const url of deskUrls) {
     assert.match(url, /\/tourism-desk\/(myeongdong|hongdae|seongsu|itaewon)$/,
       "the flat /tourism-desk URL is a permanent redirect, so it must never be offered for indexing");
   }
 });
 
-test("explicit Tourism Desk destinations do not inherit a saved home location", async () => {
-  const areaPage = await readFile(new URL("../app/[locale]/tourism-desk/[area]/page.tsx", import.meta.url), "utf8");
-  assert.match(areaPage, /initialArea=\{area as TourismDeskArea\}/);
-  assert.match(areaPage, /initialScope="area"/,
-    "home scope restores personal.location during hydration, replacing the URL's explicit destination");
-  assert.match(areaPage, /\binitialRoute\b/);
+test("retired Tourism Desk destinations cannot inherit a saved Seoul location or retrieve data", async () => {
+ const areaPage = await readFile(new URL("../app/[locale]/tourism-desk/[area]/page.tsx", import.meta.url), "utf8");
+ assert.match(areaPage,/permanentRedirect\(`\/\$\{locale\}`\)/);
+ assert.doesNotMatch(areaPage,/initialArea|initialScope|initialRoute|preload|RetailPulseApp/);
 });

@@ -36,7 +36,7 @@ export function WeekAheadBlock({ lang, summary, place }: { lang: Lang; summary: 
       {week.koreanHolidays === 'UNAVAILABLE' && <p className="prep-note" data-testid="week-korean-unavailable">{weekCopy.koreanUnavailable[lang]}</p>}
       {week.unpublished.flatMap((country) => years.filter((year) => !isPublished(country, `${year}-01-01`)).map((year) => <p key={`${country}${year}`} className="prep-note" data-testid="week-unpublished">{unpublishedLine(country, year, lang)}</p>))}
       {!week.weather && <p className="prep-note">{weekCopy.airport[lang]}</p>}
-      <p className="prep-note">{weekCopy.population[lang]}</p>
+      {place.kind === 'area' && <p className="prep-note">{weekCopy.population[lang]}</p>}
       <p className="prep-note">{weekCopy.pastPattern[lang]}</p>
       <p className="prep-note">{weekCopy.sources[lang]}</p>
     </div>

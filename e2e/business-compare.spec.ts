@@ -3,7 +3,7 @@ import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 import { compareCopy } from '../lib/compare-copy';
 import { tofuCharacters } from './font-glyphs';
 
-// SUMMARY_FIXTURE is 2026-08-31 14:10 KST; myeongdong has a "busy" band at 17:00.
+// Historical Seoul responses must no longer affect the retained airport briefing.
 const usual = (area: string, overrides: Record<string, unknown> = {}) => ({
   area, basis: 'USUAL', verdict: 'HIGHER',
   current: { observedAt: '2026-08-31T14:05:00+09:00', min: 30000, max: 32000, level: 3 },
@@ -12,10 +12,12 @@ const usual = (area: string, overrides: Record<string, unknown> = {}) => ({
   validDays: 4, holidayCheck: 'UNAVAILABLE', todayIsHoliday: null, generatedAt: '2026-08-31T05:10:00Z', ...overrides,
 });
 
+const usualReads=new WeakMap<Page,{count:number}>();
 async function open(page: Page, usualBody: unknown, status = 200) {
+  const reads={count:0};usualReads.set(page,reads);
   await page.setViewportSize({ width: 390, height: 900 });
   await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-  await page.route('**/api/live/usual*', (route) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(usualBody) }));
+  await page.route('**/api/live/usual*', (route) => {reads.count++;return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(usualBody) });});
   await page.goto('/ko/business?place=area&area=myeongdong');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   return page.getByTestId('business-prep');
@@ -23,41 +25,38 @@ async function open(page: Page, usualBody: unknown, status = 200) {
 
 test('a usual comparison states the verdict in range terms and shows its basis', async ({ page }) => {
   const prep = await open(page, usual('myeongdong'));
-  const block = prep.getByTestId('usual-comparison');
-  await expect(block.getByTestId('usual-headline')).toHaveText('서울시 체류인구 추정(오늘 14:05 KST) 30,000~32,000명은 최근 8주 같은 요일·시각(±10분) 4일의 비교 범위 20,100~24,000명보다 최소 6,000명 많습니다.');
-  await expect(block.getByTestId('usual-headline').locator('strong')).toHaveText(['30,000~32,000명','20,100~24,000명','6,000명']);
-  await block.locator('summary').click();
-  await expect(block).toContainText('비교 범위 20,100~24,000명');
-  await expect(block).toContainText(compareCopy.holidayUnchecked.ko);
-  await expect(block).not.toContainText('%');
-  expect(await tofuCharacters(block)).toEqual([]);
+  await expect(prep).toHaveAttribute('data-place','airport');
+  await expect(prep.getByTestId('usual-comparison')).toHaveCount(0);
+  expect(usualReads.get(page)?.count).toBe(0);
+  expect(await tofuCharacters(prep)).toEqual([]);
 });
 
 test('a new area says it is still collecting instead of borrowing another area', async ({ page }) => {
   const prep = await open(page, usual('itaewon', { basis: 'COLLECTING', verdict: null, range: null, validDays: 0, weeks: [] }));
-  await page.locator('.business-view .area-tabs').getByRole('tab', { name: '이태원' }).click();
-  await prep.getByTestId('usual-comparison').locator(':scope > summary').click();
-  await expect(prep.getByTestId('usual-headline')).toHaveText(compareCopy.collecting.ko);
+  await expect(prep).toHaveAttribute('data-place','airport');
+  await expect(page.locator('.business-view .area-tabs')).toHaveCount(0);
+  await expect(prep.getByTestId('usual-comparison')).toHaveCount(0);
+  expect(usualReads.get(page)?.count).toBe(0);
 });
 
 test('only last week available is labelled as last week', async ({ page }) => {
   const prep = await open(page, usual('myeongdong', { basis: 'LAST_WEEK', verdict: 'OVERLAPS', validDays: 1, current: {observedAt:'2026-08-31T14:05:00+09:00',min:23000,max:25000,level:3},weeks:[{weekOffset:1,date:'2026-08-24',status:'VALID',observedAt:'2026-08-24T14:00:00+09:00',min:20100,max:24000}] }));
-  await expect(prep.getByTestId('usual-headline')).toHaveText('서울시 체류인구 추정(오늘 14:05 KST) 23,000~25,000명은 지난주 08/24 14:00 20,100~24,000명과 겹칩니다.');
-  await expect(prep.getByTestId('usual-headline')).not.toContainText('최소');
+  await expect(prep).toHaveAttribute('data-place','airport');
+  await expect(prep.getByTestId('usual-headline')).toHaveCount(0);
+  expect(usualReads.get(page)?.count).toBe(0);
 });
 
 test('a failed comparison request is reported, not guessed', async ({ page }) => {
   const prep = await open(page, { error: 'usual_comparison_unavailable' }, 503);
-  await expect(prep.getByTestId('usual-comparison').locator('summary')).toContainText(compareCopy.loadFailed.ko);
-  await expect(prep.getByTestId('usual-comparison')).not.toHaveAttribute('open', '');
-  await prep.getByTestId('usual-comparison').locator('summary').click();
-  await expect(prep.getByTestId('usual-comparison')).toContainText(compareCopy.unavailable.ko);
+  await expect(prep.getByTestId('usual-comparison')).toHaveCount(0);
+  await expect(prep).not.toContainText(compareCopy.loadFailed.ko);
   await expect(prep.getByTestId('prep-actions')).toBeVisible();
+  expect(usualReads.get(page)?.count).toBe(0);
 });
 
 test('the airport is never compared with usual', async ({ page }) => {
   const prep = await open(page, usual('myeongdong'));
-  await page.locator('.business-view .area-tabs').getByRole('tab', { name: '인천공항' }).click();
+  await expect(prep).toHaveAttribute('data-place','airport');
   await expect(prep.getByTestId('usual-comparison')).toHaveCount(0);
 });
 
@@ -66,21 +65,22 @@ test('the first look says so, and a later look shows only real value changes', a
   await expect(prep.getByTestId('last-check-first')).not.toBeVisible();
   await prep.getByTestId('last-check').locator('summary').click();
   await expect(prep.getByTestId('last-check-first')).toBeVisible();
-  // Pretend the previous look saw 17:00 as "moderate" and no crowd action.
+  // The last-look regression still detects a real airport passenger change.
   await expect.poll(() => page.evaluate(() => localStorage.getItem('koretail-last-check-v1'))).not.toBeNull();
   await page.evaluate(() => {
     const ledger = JSON.parse(localStorage.getItem('koretail-last-check-v1') ?? '[]');
     ledger[0].checkedAt = '2026-08-31T04:30:00.000Z';
-    ledger[0].signature.crowd['2026-08-31T17:00:00+09:00'] = 2;
-    ledger[0].signature.actions = ledger[0].signature.actions.filter((rule: string) => rule !== 'CROWD');
+    const at=Object.keys(ledger[0].signature.airport)[0];
+    if(!at)throw Error('airport fixture must have an official band');
+    ledger[0].signature.airport[at]=Math.max(1,Math.floor(ledger[0].signature.airport[at]/2));
     localStorage.setItem('koretail-last-check-v1', JSON.stringify(ledger));
   });
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   const block = page.getByTestId('last-check');
   await expect(block.getByTestId('last-check-headline')).toHaveText('지난 확인(13:30) 이후 달라진 점');
-  await expect(block.getByTestId('last-check-changes')).toContainText('새 준비할 일: 혼잡 예측 시간 전에 준비');
-  await expect(block.getByTestId('last-check-changes')).toContainText('17:00 혼잡 예측 보통 → 붐빔');
+  await expect(block.getByTestId('last-check-changes')).not.toContainText('혼잡 예측 보통');
+  await expect(block.getByTestId('last-check-changes')).toContainText('출국 예상 약');
   // A reload with nothing new reports no change rather than repeating the old one.
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
@@ -105,16 +105,18 @@ test('switching place and back keeps the earlier visit as the comparison', async
   await page.evaluate(() => {
     const ledger = JSON.parse(localStorage.getItem('koretail-last-check-v1') ?? '[]');
     ledger[0].checkedAt = '2026-08-31T04:30:00.000Z';
-    ledger[0].signature.crowd['2026-08-31T17:00:00+09:00'] = 2;
+    const at=Object.keys(ledger[0].signature.airport)[0];
+    if(!at)throw Error('airport fixture must have an official band');
+    ledger[0].signature.airport[at]=Math.max(1,Math.floor(ledger[0].signature.airport[at]/2));
     localStorage.setItem('koretail-last-check-v1', JSON.stringify(ledger));
   });
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.getByTestId('last-check-headline')).toHaveText('지난 확인(13:30) 이후 달라진 점');
-  const tabs = page.locator('.business-view .area-tabs');
-  await tabs.getByRole('tab', { name: '홍대' }).click();
-  await expect(tabs.getByRole('tab', { name: '홍대' })).toHaveAttribute('aria-selected', 'true');
-  await tabs.getByRole('tab', { name: '명동' }).click();
+  await page.goto('/ko/business?place=airport&terminal=T2');
+  await expect(page.getByTestId('business-prep')).toHaveAttribute('data-place','airport');
+  await page.goto('/ko/business?place=airport&terminal=T1');
   await expect(page.getByTestId('last-check-headline')).toHaveText('지난 확인(13:30) 이후 달라진 점');
-  await expect(page.getByTestId('last-check-changes')).toContainText('17:00 혼잡 예측 보통 → 붐빔');
+  await expect(page.getByTestId('last-check-changes')).toContainText('출국 예상 약');
+  expect(usualReads.get(page)?.count).toBe(0);
 });

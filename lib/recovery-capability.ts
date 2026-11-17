@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, isSeoulOnlySourceId } from "./product-scope";
 /**
  * Which SOURCE may be recovered automatically — separately from which FAILURE may be.
  *
@@ -113,7 +114,7 @@ const CONTROLLED: readonly RecoveryAction[] = ["REQUEST_ONLY_MISSING_COVERAGE"];
  * so a new production source cannot be added without being classified — and an
  * unclassified source resolves to HUMAN_REVIEW_ONLY rather than to nothing.
  */
-export const SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] = [
+const ALL_SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] = [
   {
     sourceId: "INCHEON_PASSENGER_FORECAST",
     logicalJob: "collect-forecast.yml",
@@ -356,6 +357,8 @@ export const SOURCE_RECOVERY_CAPABILITIES: readonly SourceRecoveryCapability[] =
   },
 ];
 
+export const SOURCE_RECOVERY_CAPABILITIES = ALL_SOURCE_RECOVERY_CAPABILITIES.filter(entry => SEOUL_ENABLED || !isSeoulOnlySourceId(entry.sourceId));
+
 /** The source ids this harness knows about, companion included. */
 export const CLASSIFIED_SOURCE_IDS: readonly string[] = SOURCE_RECOVERY_CAPABILITIES.map((entry) => entry.sourceId);
 
@@ -387,7 +390,7 @@ export const PRODUCTION_SOURCE_IDS: readonly string[] = [
   "SEOUL_CITYDATA_CMRCL",
   "INCHEON_TIME_BAND_PASSENGERS",
   ...ADDITIONAL_LIVE_SOURCE_IDS,
-];
+].filter(id => SEOUL_ENABLED || !isSeoulOnlySourceId(id));
 
 /**
  * The capability for one source.

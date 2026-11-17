@@ -29,13 +29,13 @@ test('a first visit answers with the information, not a questionnaire',async({pa
     const moreLink = page.locator('.top-nav a[href^="/ko/more?"]');
     await expect(moreLink).toHaveCount(1);
     await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
-    await expect(page.locator('.footer-links a[href="/ko/myeongdong"]')).toHaveCount(1);
+    await expect(page.locator('.footer-links a[href="/ko/myeongdong"]')).toHaveCount(0);
     await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
     await expect(page.getByRole('button', { name: pc('startSetup', 'ko'), exact: true })).toHaveCount(0);
 });
 
 test('a deep link is never diverted to the home or the setup screen',async({page})=>{
-  for(const path of ['/ko/myeongdong','/ko/airport','/ko/tourism-desk/myeongdong']) {
+  for(const path of ['/ko/airport']) {
     await fixture(page);await page.goto(path);
     await expect(page).toHaveURL(new RegExp(`${path}$`));
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
@@ -124,7 +124,8 @@ test('multiple locations, terminals and all three days persist and switch to the
         expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     }
     await page.goto('/ko/hongdae');
-    await expect(page.locator('.area-current-brief')).toBeVisible();
+    await expect(page).toHaveURL(/\/ko$/);
+    await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
     await page.reload();
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -169,7 +170,7 @@ test('settings survive closing and relaunching a persistent browser',async({},te
     expect(await page.evaluate(key => localStorage.getItem(key), 'koretail-personal-v1')).toBe(stored);
     await context.close();
 });
-test('brand returns to airport-glance root while Seoul navigation retains the area route',async({page})=>{
+test('brand returns to airport-glance root and More excludes retired Seoul navigation',async({page})=>{
     // Owner removed the public briefing entry; retain browser state/date/public-data coverage.
     await fixture(page);
     await page.goto('/ko');
@@ -188,9 +189,7 @@ test('brand returns to airport-glance root while Seoul navigation retains the ar
     const moreLink = page.locator('.top-nav a[href^="/ko/more?"]');
     await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
     await moreLink.click();
-    await page.locator('.more-section-links a[href="/ko/myeongdong"]').click();
-    await expect(page).toHaveURL(new RegExp("/ko/myeongdong$"));
-    await expect(page.locator('.area-current-brief')).toBeVisible();
+    await expect(page.locator('.more-section-links a[href="/ko/myeongdong"]')).toHaveCount(0);
 });
 
 test('mobile back navigation returns to airport-glance root with one active item',async({page})=>{
@@ -209,11 +208,10 @@ test('mobile back navigation returns to airport-glance root with one active item
     await expectNavigationHref(page, moreLink, '/ko/more', { place: 'airport', terminal: 'T1', area: null, date: null });
     await moreLink.click();
     const more=page.locator('.more-section-links');
-    await expect(more.locator('a[href="/ko/where-to"]')).toHaveCount(1);
-    await expect(more.locator('a[href="/ko/consumption"]')).toHaveCount(1);
-    await more.locator('a[href="/ko/myeongdong"]').click();
-    await expect(page.locator('.area-current-brief')).toBeVisible();
-    await page.goBack();await page.goBack();
+    await expect(more.locator('a[href="/ko/where-to"]')).toHaveCount(0);
+    await expect(more.locator('a[href="/ko/consumption"]')).toHaveCount(0);
+    await expect(more.locator('a[href="/ko/myeongdong"]')).toHaveCount(0);
+    await page.goBack();
     await expect(page.getByTestId('personal-onboarding')).toHaveCount(0);
     await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
     await expect(page.getByTestId('airport-glance-preview')).toBeVisible();

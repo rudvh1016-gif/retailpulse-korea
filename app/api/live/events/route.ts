@@ -1,3 +1,5 @@
+import {CONTENT_API_ROBOTS_TAG} from '../../../../lib/crawl-policy';
+import {SEOUL_ENABLED} from '../../../../lib/product-scope';
 import { getDb } from "../../../../db";
 import { isValidKstDay, kstDayOf } from "../../../../lib/kst";
 import { prepareEventsForPresentation, type EventPresentationInput } from "../../../../lib/event-presentation";
@@ -5,6 +7,7 @@ import { prepareEventsForPresentation, type EventPresentationInput } from "../..
 export const dynamic = "force-dynamic";
 /** Explicitly requested pages only; the normal summary stays small. */
 export async function GET(request: Request) {
+  if(!SEOUL_ENABLED)return Response.json({status:'RETIRED',reason:'seoul_product_removed'},{status:410,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
   const params = new URL(request.url).searchParams;
   const area = params.get("area");
   const offset = Number(params.get("offset") ?? 0);

@@ -19,6 +19,8 @@ test("usual API preserves eight weeks under real D1 query limits", async (t) => 
     },
     bundle: true, write: false, format: "esm", platform: "browser",
     external: ["cloudflare:workers"],
+    // Preserve the retired SQL contract offline; public GET410 is tested separately.
+    plugins:[{name:'archived-usual-contract-only',setup(builder){builder.onLoad({filter:/[/\\]product-scope\.ts$/},args=>{const source=readFileSync(args.path,'utf8'),declaration='export const SEOUL_ENABLED = false;';assert.equal(source.split(declaration).length,2);return {contents:source.replace(declaration,'export const SEOUL_ENABLED = true;'),loader:'ts'};});}}],
   });
   const mf = new Miniflare({
     modules: true, script: outputFiles[0].text,

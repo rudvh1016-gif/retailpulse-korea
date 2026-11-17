@@ -1,7 +1,8 @@
+import { archivedSeoulContract } from "./helpers/archived-seoul-contract.mjs";
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SqliteD1} from './helpers/operational-sqlite.mjs';
-import {refreshCommercialMonths} from '../lib/commercial-monthly-store.ts';
+const {refreshCommercialMonths} = await archivedSeoulContract("commercial-monthly-store");
 import {buildCommercialMonth,compareCommercialMonths,publicCommercialMonth} from '../lib/commercial-monthly.ts';
 import {readCommercialMonths} from '../app/api/live/commercial-months/route.ts';
 test('one daily indexed rebuild; same-day invocation reads no raw rows or provider',async()=>{

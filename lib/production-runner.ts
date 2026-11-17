@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, isSeoulOnlySource, SEOUL_DISABLED_RESULT } from "./product-scope";
 /**
  * Safe, explicitly selectable Production collection runner.
  *
@@ -287,6 +288,10 @@ export async function runSelectedProductionSources(
 ): Promise<ProductionSourceResult[]> {
   const results: ProductionSourceResult[] = [];
   for (const source of sourceNames) {
+    if (!SEOUL_ENABLED && isSeoulOnlySource(source)) {
+      results.push({ source, ...SEOUL_DISABLED_RESULT });
+      continue;
+    }
     if (!isProductionSourceName(source) || !runners[source]) {
       results.push({ source, status: "ERROR", records: 0, detail: "unknown_source" });
       continue;

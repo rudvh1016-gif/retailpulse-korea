@@ -151,7 +151,7 @@ for(const width of [360,390,430,1440])test(`airport focus approval rendering ${w
  await page.screenshot({path:testInfo.outputPath(`preparation-${width}.png`),fullPage:false});
  await captureMobileViewports(page,testInfo,'preparation',width);
  await page.getByRole(width<=820?'link':'button',{name:'더보기',exact:true}).click();
- await expect(page.getByRole('link',{name:'소비 흐름 ↗'})).toHaveAttribute('href','/ko/consumption');
+ await expect(page.getByRole('link',{name:'소비 흐름 ↗'})).toHaveCount(0);
  if([360,390,430,1440].includes(width)){
   await page.getByRole(width<=820?'link':'button',{name:'공항 현황',exact:true}).click();
  await expect(page.locator('.focus-staff-calendar')).toHaveCount(1);

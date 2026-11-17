@@ -1,3 +1,4 @@
+import {isSeoulOnlySourceId} from '../../../lib/product-scope';
 import { getDb } from "../../../db";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ export async function GET() {
     return Response.json({
       app: "ok",
       database: result?.ok === 1 ? "ok" : "degraded",
-      sources: sources.results ?? [],
+      sources: (sources.results ?? []).filter(row=>!isSeoulOnlySourceId(row.sourceId)),
       checkedAt,
     }, { headers: { "cache-control": "no-store" } });
   } catch {

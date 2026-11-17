@@ -1,3 +1,4 @@
+import { airportOnlyDestination } from "./airport-only-routes";
 import type { MetadataRoute } from "next";
 import { canonicalSlug, isStagingDeployment, seoLocales, seoPath, siteOrigin, standaloneSeoSlugs, tourismDeskAreas, type SeoSlug } from "./seo-config";
 
@@ -33,18 +34,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: { languages: localeAlternates() },
     },
     // Only canonical URLs: a slug that serves the home (canonicalSlug) is not listed again.
-    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug).map((slug) => ({
+    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug && !airportOnlyDestination(locale, slug)).map((slug) => ({
       url: `${siteOrigin}${seoPath(locale, slug)}`,
       changeFrequency: slug === "more" ? "weekly" as const : "daily" as const,
       priority: slug === "more" ? 0.5 : slug === "forecast" || slug === "business" ? 0.8 : 0.9,
       alternates: { languages: localeAlternates(slug) },
     })),
-    ...tourismDeskAreas.map((area) => ({
-      url: `${siteOrigin}${seoPath(locale, "tourism-desk", area)}`,
-      changeFrequency: "daily" as const,
-      priority: 0.9,
-      alternates: { languages: localeAlternates("tourism-desk", area) },
-    })),
+
   ]),
     // This static report exists only in Korean. Do not invent translations or lastmod.
     { url: `${siteOrigin}/shopping-report/` },

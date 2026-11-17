@@ -149,15 +149,15 @@ test("selectable runner isolates a throwing source and reports unknown sources w
   const calls = [];
   const results = await runSelectedProductionSources(
     { DB: undefined },
-    ["airport_congestion", "not_a_real_source", "seoul_realtime"],
+    ["airport_congestion", "not_a_real_source", "airport_congestion_t2"],
     new Date("2026-08-30T03:00:00.000Z"),
     {
       airport_congestion: async () => { calls.push("airport_congestion"); throw new Error("boom"); },
-      seoul_realtime: async () => { calls.push("seoul_realtime"); return { status: "SUCCESS", records: 3 }; },
+      airport_congestion_t2: async () => { calls.push("airport_congestion_t2"); return { status: "SUCCESS", records: 3 }; },
     },
   );
-  assert.deepEqual(calls, ["airport_congestion", "seoul_realtime"]);
-  assert.deepEqual(results.map((result) => result.source), ["airport_congestion", "not_a_real_source", "seoul_realtime"]);
+  assert.deepEqual(calls, ["airport_congestion", "airport_congestion_t2"]);
+  assert.deepEqual(results.map((result) => result.source), ["airport_congestion", "not_a_real_source", "airport_congestion_t2"]);
   assert.deepEqual(results.map((result) => result.status), ["ERROR", "ERROR", "SUCCESS"]);
   assert.equal(results[0].detail, "failureClass=VALIDATION causeCode=BOOM attempts=1 elapsedMs=0 retryExhausted=false");
   assert.equal(results[1].detail, "unknown_source");
@@ -193,7 +193,7 @@ test("runner keeps sources sequential, never concurrent, so provider calls stay 
   const order = [];
   await runSelectedProductionSources(
     { DB: undefined },
-    ["weather", "events"],
+    ["weather", "airport_scheduled"],
     new Date("2026-08-30T03:00:00.000Z"),
     {
       weather: async () => {
@@ -202,14 +202,14 @@ test("runner keeps sources sequential, never concurrent, so provider calls stay 
         order.push("weather:end");
         return { status: "SUCCESS", records: 1 };
       },
-      events: async () => {
-        order.push("events:start");
-        order.push("events:end");
+      airport_scheduled: async () => {
+        order.push("airport_scheduled:start");
+        order.push("airport_scheduled:end");
         return { status: "SUCCESS", records: 1 };
       },
     },
   );
-  assert.deepEqual(order, ["weather:start", "weather:end", "events:start", "events:end"]);
+  assert.deepEqual(order, ["weather:start", "weather:end", "airport_scheduled:start", "airport_scheduled:end"]);
 });
 
 /**

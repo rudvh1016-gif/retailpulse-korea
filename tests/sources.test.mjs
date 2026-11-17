@@ -1,3 +1,4 @@
+import { archivedSeoulContract } from "./helpers/archived-seoul-contract.mjs";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -25,14 +26,14 @@ import {
   normalizeTourismEvent,
   normalizeWeatherForecast,
 } from "../lib/source-adapters.ts";
-import {
+const {
   collectEstimatedSales,
   collectSeoulRealtime,
   collectStoreDynamics,
   collectTourismEvents,
   collectWeatherForecasts,
   latestKmaIssuance,
-} from "../lib/collector.ts";
+} = await archivedSeoulContract("collector");
 
 class LocalD1Statement {
   values = [];

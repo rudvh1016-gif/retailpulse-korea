@@ -188,61 +188,29 @@ test("renders the KORETAIL production shell", async () => {
   assert.match(html, /KORETAIL/);
 });
 
-test("the former flat Tourism Desk route permanently redirects to Myeongdong", async () => {
-  const response = await renderPath("/ko/tourism-desk");
-  assert.equal(response.status, 308);
-  const location = response.headers.get("location");
-  assert.ok(location, "the permanent redirect must include a Location header");
-  assert.equal(new URL(location, "http://localhost").pathname, "/ko/tourism-desk/myeongdong");
+test("retired Seoul routes redirect before data in all four locales", async () => {
+ for(const locale of ["ko","en","zh","ja"])for(const slug of ["myeongdong","hongdae","seongsu","itaewon","today","where-to","consumption","forecast","predictions","tourism-desk",...["myeongdong","hongdae","seongsu","itaewon"].map(area=>`tourism-desk/${area}`)]){
+  const path=`/${locale}/${slug}`,response=await renderPath(`${path}?area=hongdae&date=2026-10-01`,locale);
+  assert.equal(response.status,308,path);
+  const location=new URL(response.headers.get("location"),"http://localhost");
+  assert.equal(location.pathname,`/${locale}`,path);
+  assert.equal(location.search,"",path);
+  assert.doesNotMatch(await response.text(),/class="tourism-background-values"|class="demand-card"|class="commercial-miniature-card"/);
+ }
 });
 
-test("the three Tourism Desk pages render unique area SEO and headings", async () => {
-  const expected = {
-    myeongdong: { name: "명동", title: "명동 관광안내 근무 브리핑 (시험 운영) | KORETAIL" },
-    hongdae: { name: "홍대", title: "홍대 관광안내 근무 브리핑 (시험 운영) | KORETAIL" },
-    seongsu: { name: "성수", title: "성수 관광안내 근무 브리핑 (시험 운영) | KORETAIL" },
-  };
-  for (const [area, copy] of Object.entries(expected)) {
-    const path = `/ko/tourism-desk/${area}`;
-    const response = await renderPath(path);
-    const html = await response.text();
-    assert.equal(response.status, 200, path);
-    assert.match(html, new RegExp(`<title>${copy.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}<\\/title>`));
-    assert.match(html, new RegExp(`<h1[^>]*><span class="heading-marker" aria-hidden="true"><\\/span>${copy.name} 관광안내<\\/h1>`));
-    assert.match(html, new RegExp(`<link rel="canonical" href="[^"]*${path}"`));
-    assert.match(html, new RegExp(`/en/tourism-desk/${area}`), "x-default/English alternate must preserve the area");
-    assert.match(html, new RegExp(`/zh/tourism-desk/${area}`), "Chinese alternate must preserve the area");
-    assert.match(html, /"@type":"WebPage"/);
-    assert.match(html, /"@type":"BreadcrumbList"/);
-  }
-});
-
-test("Tourism Desk methodology renders in every locale and area without a live summary", async () => {
-  const locales = {
-    ko: { heading: "자료 기준과 한계", first: "생활인구는 현재 지역에 머무는 인구의 공식 추정 범위이며 관광객 수가 아닙니다.", names: ["명동", "홍대", "성수", "이태원"] },
-    en: { heading: "Sources and limits", first: "Living population is an official estimate of people present in the area now, not a tourist count.", names: ["Myeongdong", "Hongdae", "Seongsu", "Itaewon"] },
-    zh: { heading: "资料依据与限制", first: "生活人口是当前停留在该地区的人口官方估算区间，并非游客人数。", names: ["明洞", "弘大", "圣水", "梨泰院"] },
-    ja: { heading: "データの基準と限界", first: "生活人口は現在エリアに滞在する人口の公式推定レンジであり、観光客数ではありません。", names: ["明洞", "弘大", "聖水", "梨泰院"] },
-  };
-  const areas = ["myeongdong", "hongdae", "seongsu", "itaewon"];
-  for (const [locale, copy] of Object.entries(locales)) {
-    for (const [index, area] of areas.entries()) {
-      const path = `/${locale}/tourism-desk/${area}`;
-      // renderPath has no D1 binding and no browser effects: these are the
-      // real initial HTML bytes, not a fulfilled client summary fixture.
-      const response = await renderPath(path, locale === "zh" ? "zh-CN" : locale);
-      assert.equal(response.status, 200, path);
-      const html = await response.text();
-      assert.ok(html.includes(`<h2 data-heading="section" id="tourism-limits-title"><span class="heading-marker" aria-hidden="true"></span>${copy.heading}</h2>`), path);
-      const limits = html.match(/<ul class="tourism-limits">([\s\S]*?)<\/ul>/)?.[1];
-      assert.ok(limits, `${path}: methodology must not wait for live data`);
-      assert.equal((limits.match(/<li>/g) ?? []).length, 7, path);
-      assert.ok(limits.includes(copy.first), path);
-      assert.ok(limits.includes(copy.names[index]), `${path}: area-specific caveat`);
-      assert.doesNotMatch(html, /class="tourism-guide-section tourism-shift-brief"/,
-        `${path}: do not invent a live briefing when the summary is absent`);
-    }
-  }
+test("business remains an airport-only server-rendered shared surface", async () => {
+ for(const locale of ["ko","en","zh","ja"])for(const query of ["","?place=area&area=hongdae","?place=airport&terminal=T2&side=EAST"]){
+  const path=`/${locale}/business${query}`,response=await renderPath(path,locale);
+  assert.equal(response.status,200,path);
+  const html=await response.text(),body=html.slice(html.indexOf("<body")).replace(/<(script|style|template)\b[^>]*>[\s\S]*?<\/\1>/gi,"");
+  assert.match(body,/class="view-section business-view"/,path);
+  assert.match(body,/data-testid="business-prep" data-place="airport"/,path);
+  assert.match(body,/data-testid="prep-place"/,path);
+  assert.match(body,/data-testid="industry-guide"/,path);
+  assert.doesNotMatch(body,/명동|홍대|성수|이태원|Myeongdong|Hongdae|Seongsu|Itaewon|明洞|弘大|圣水|梨泰院|聖水/,path);
+  assert.doesNotMatch(body,/class="business-history"|class="area-current-brief"/,path);
+ }
 });
 
 /**
@@ -415,7 +383,7 @@ test("ships every product surface in four languages without a runtime LLM depend
   const product = `${shell}\n${data}\n${guidance}`;
   for (const required of [
     "InsightsView", "AirportView", "BusinessView", "BusinessHistoryView",
-    "AboutView", "MoreView", "BusinessPrep", "IndustryGuide", "MetricExplainer",
+    "SiteUsageGuide", "MoreView", "BusinessPrep", "IndustryGuide", "MetricExplainer",
     "AirportTodaySummary", "HomeTodayBrief", "FlightBoard", "DateNavigator",
     "简体中文", "日本語",
   ]) assert.match(shell, new RegExp(required));
@@ -484,7 +452,8 @@ test("ships localized indexable routes and technical SEO files", async () => {
   assert.match(robots, /sitemap:/);
   assert.match(sitemap, /seoLocales\.flatMap/);
   assert.match(sitemap, /standaloneSeoSlugs(\.filter\([^\n]*?\))?\.map/);
-  assert.match(sitemap, /tourismDeskAreas\.map/);
+  assert.match(sitemap, /!airportOnlyDestination\(locale, slug\)/);
+  assert.doesNotMatch(sitemap, /tourismDeskAreas\.map/);
   assert.match(page, /document\.title = title/);
   assert.match(page, /link\[rel="canonical"\]/);
   assert.match(page, /hreflang="x-default"/);
@@ -956,20 +925,12 @@ test("keeps the source catalog visible and honest about what each source is", as
 });
 
 /** The About page is for a customer, so it must not read like engineering notes. */
-test("the About page explains the product without developer jargon", async () => {
-  const page = await read("../app/retailpulse-app.tsx");
-  assert.match(page, /function AboutView/);
-  for (const question of [
-    "KORETAIL은 무엇인가요", "누구를 위한 서비스인가요",
-    "서울에서는 무엇을 보나요", "공항에서는 무엇을 보나요",
-    "어떤 데이터를 쓰나요", "실시간·예상·과거는 어떻게 다른가요",
-    "무엇을 주의해야 하나요",
-  ]) assert.match(page, new RegExp(question));
-  const about = page.match(/function AboutView[\s\S]*?\r?\n\}\r?\n/)?.[0] ?? "";
-  assert.ok(about.length > 1000);
-  for (const jargon of ["modelVersion", "featureVersion", "predictionHash", "recordOrigin", "dataCutoff", "isAggregate"]) {
-    assert.doesNotMatch(about, new RegExp(jargon), `About must not expose "${jargon}"`);
-  }
+test("the About page explains the airport product without developer jargon", async () => {
+ const page=await read("../app/retailpulse-app.tsx"),about=await read("../app/site-usage-guide.tsx");
+ assert.match(page,/view === "about" && <SiteUsageGuide/);
+ assert.ok(about.includes("누가, 어떻게 쓰면 좋을까요"));
+ for(const jargon of ["modelVersion","featureVersion","predictionHash","recordOrigin","dataCutoff","isAggregate"])assert.doesNotMatch(about,new RegExp(jargon));
+ for(const locale of ["ko","en","zh","ja"]){const response=await renderPath(`/${locale}/about`,locale);assert.equal(response.status,200);assert.match(await response.text(),/site-usage-guide/);}
 });
 
 /**
@@ -1153,9 +1114,9 @@ test("server HTML never claims missing data or zero events before data loads", a
   assert.doesNotMatch(comparison, /비교 불가/, "no 'comparison unavailable' before the data is known");
   const en = await body("/en", "en");
   assert.doesNotMatch(en.match(/data-testid="glance-key-wait"[\s\S]*?<\/a>/)?.[0] ?? "", /No verified data/);
-  const seoul = await body("/ko/where-to");
-  assert.doesNotMatch(seoul, /확인 불가|비교 자료 부족/);
-  assert.doesNotMatch(seoul, /<strong>0<\/strong>\s*개 · 공식 등록/, "no false zero for official events");
+  const retired=await renderPath("/ko/where-to");
+  assert.equal(retired.status,308);
+  assert.equal(new URL(retired.headers.get("location"),"http://localhost").pathname,"/ko");
 });
 
 test("the airport glance URL names the home as its canonical", async () => {
@@ -1184,14 +1145,14 @@ test("only the glance routes put the glance assets in the head", async () => {
     assert.ok(links.some((link) => /rel="stylesheet"/.test(link) && /\.css"/.test(link)), `${path} links the glance stylesheet`);
     assert.ok(links.some((link) => /rel="modulepreload"/.test(link) && /\.js"/.test(link)), `${path} preloads the glance script`);
   }
-  for (const path of ["/ko/myeongdong", "/ko/hongdae"]) assert.deepEqual(await glanceAssets(path), [], path);
+  for (const path of ["/ko/more", "/ko/about"]) assert.deepEqual(await glanceAssets(path), [], path);
 });
 
 // Every script and stylesheet the head asks for must exist in the build. A CSS-only module
 // imported from two places once became an empty chunk that the bundler never wrote to
 // dist/ while every page still modulepreloaded it: one failed request on each visit.
 test("every asset the rendered head links exists in the client build", async () => {
-  for (const path of ["/ko", "/en", "/ko/airport", "/ko/airport-glance", "/ko/myeongdong", "/ko/business", "/ko/where-to", "/ko/consumption", "/ko/more", "/ko/about", "/ko/forecast", "/ko/travel-records", "/ko/airport-news"]) {
+  for (const path of ["/ko", "/en", "/ko/airport", "/ko/airport-glance", "/ko/airport-countries", "/ko/airport-prepare", "/ko/business", "/ko/more", "/ko/about", "/ko/travel-records", "/ko/airport-news"]) {
     const response = await renderPath(path);
     assert.equal(response.status, 200, path);
     const head = (await response.text()).split("</head>")[0];

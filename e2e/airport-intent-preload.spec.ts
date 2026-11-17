@@ -1,8 +1,7 @@
 import {test,expect} from '@playwright/test';
-import {expectNavigationHref} from './navigation-context';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 
-// A Seoul visit never loads the airport screen on its own. Pointing at, or
+// More never loads the airport screen on its own. Pointing at, or
 // focusing, a way to the airport starts that load before the click, and the
 // airport screen then opens as usual.
 const isAirportView=(url:string)=>/\/airport-view[-.]/.test(new URL(url).pathname);
@@ -12,7 +11,7 @@ for(const [label,width,nav,reach] of [['mobile hover',390,'.bottom-nav','hover']
  page.on('request',request=>{if(isAirportView(request.url()))requested.push(request.url());});
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
- await page.goto('/ko/myeongdong');
+ await page.goto('/ko/more');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.waitForTimeout(1000);
  expect(requested).toEqual([]);
@@ -26,7 +25,7 @@ for(const [label,width,nav,reach] of [['mobile hover',390,'.bottom-nav','hover']
 });
 
 // The airport glance tab works the same way.
-// Only the screen's script counts: a dev server may already link its stylesheet on Seoul pages.
+// Only the screen's script counts: a dev server may already link its stylesheet on other pages.
 const isAirportGlance=(url:string)=>/\/airport-glance-preview[-.]/.test(new URL(url).pathname);
 for(const [label,width,nav] of [['mobile',390,'.bottom-nav'],['desktop',1280,'.top-nav']] as const)test(`the airport glance loads only when reached for (${label})`,async({page})=>{
  await page.setViewportSize({width,height:900});
@@ -36,7 +35,7 @@ for(const [label,width,nav] of [['mobile',390,'.bottom-nav'],['desktop',1280,'.t
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:SUMMARY_FIXTURE.serviceDateKst,flights:[],truncated:false}}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{status:'MISSING',month:null,months:[],calculatedAt:null,data:null}}));
- await page.goto('/ko/myeongdong');
+ await page.goto('/ko/more');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.waitForTimeout(1000);
  expect(requested).toEqual([]);
@@ -57,7 +56,7 @@ test('the logo prepares the airport glance home it opens',async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',serviceDateKst:SUMMARY_FIXTURE.serviceDateKst,flights:[],truncated:false}}));
  await page.route('**/api/live/airport-months*',route=>route.fulfill({json:{status:'MISSING',month:null,months:[],calculatedAt:null,data:null}}));
- await page.goto('/ko/myeongdong');
+ await page.goto('/ko/more');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.waitForTimeout(1000);
  expect(glance).toEqual([]);
@@ -70,20 +69,14 @@ test('the logo prepares the airport glance home it opens',async({page})=>{
  await expect(page).toHaveURL(/\/ko(\?|$)/);
 });
 
-test('the other tabs never load the airport screens',async({page})=>{
- await page.setViewportSize({width:390,height:900});
- const requested:string[]=[];
- page.on('request',request=>{if(request.resourceType()==='script'&&(isAirportView(request.url())||isAirportGlance(request.url())))requested.push(request.url());});
+for(const lang of ['ko','en','zh','ja'])test(`retired tabs cannot restore Seoul navigation ${lang}`,async({page})=>{
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
- await page.goto('/ko/myeongdong');
+ await page.goto(`/${lang}/more`);
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- for(const [pathname,query] of [['/ko/where-to',''],['/ko/consumption','?area=myeongdong']]){
-  const moreLink=page.locator('.bottom-nav a[href^="/ko/more?"]');
-  await expectNavigationHref(page,moreLink,'/ko/more',{place:'area',area:'myeongdong',terminal:null,date:null});
-  await moreLink.click();
-  const tab=page.locator(`.more-section-links a[href="${pathname}"]`);
-  await tab.hover();await tab.click();await expect(page).toHaveURL(url=>url.pathname===pathname&&url.search===query);
- }
- await page.waitForTimeout(500);
- expect(requested).toEqual([]);
+ await expect(page.locator('.more-section-links a[href*="where-to"], .more-section-links a[href*="consumption"], .more-section-links a[href*="myeongdong"]')).toHaveCount(0);
+ await page.goto(`/${lang}/consumption?date=2026-08-31`);
+ await expect(page).toHaveURL(new RegExp(`/${lang}\\?date=2026-08-31$`));
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.getByTestId('commercial-composition')).toHaveCount(0);
+ await page.goBack();await expect(page).toHaveURL(new RegExp(`/${lang}/more$`));
 });

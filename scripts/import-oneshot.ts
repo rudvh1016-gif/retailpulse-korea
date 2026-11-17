@@ -173,7 +173,7 @@ const collectors: Record<string, () => Promise<OneShotResult>> = {
   }),
 };
 
-const requested = (process.env.RPK_ONESHOT_SOURCES ?? "seoul_realtime,seoul_sales")
+const requested = (process.env.RPK_ONESHOT_SOURCES ?? "airport_congestion,airport_congestion_t2")
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
