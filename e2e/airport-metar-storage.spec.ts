@@ -58,9 +58,10 @@ test('wrong device time does not restore cancelled airport weather',async({page}
  await expect(page.locator('.airport-checkpoints')).toBeVisible();await expect(page.getByTestId('airport-weather')).toHaveCount(0);
  await page.clock.fastForward(73*60000);await expect(page.getByTestId('airport-weather')).toHaveCount(0);expect(reads).toBe(0);
 });
-for(const [area,lang,width]of [['myeongdong','ko',390],['hongdae','en',360],['seongsu','zh',430],['itaewon','ja',1280]] as const)test(`approved Seoul model mount ${area}/${lang}/${width}`,async({page})=>{
+for(const [area,lang,width]of [['myeongdong','ko',390],['hongdae','en',360],['seongsu','zh',430],['itaewon','ja',1280]] as const)test(`retired Seoul model stays absent ${area}/${lang}/${width}`,async({page})=>{
  await page.setViewportSize({width,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto(`/${lang}/${area}`);
- const models=page.getByTestId('seoul-flow-models');await expect(models).toHaveAttribute('data-area',area);await expect(models.locator('img')).toHaveCount(3);
- for(const image of await models.locator('img').all()){await image.scrollIntoViewIfNeeded();await image.evaluate(el=>(el as HTMLImageElement).decode());await expect(image).toHaveAttribute('loading','lazy');await expect(image).toHaveAttribute('alt','');}
- expect(await tofuCharacters(models)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await expect(page).toHaveURL(new RegExp(`/${lang}$`));
+ await expect(page.getByTestId('seoul-flow-models')).toHaveCount(0);
+ const airport=page.getByTestId('airport-glance-preview');await expect(airport).toBeVisible();
+ expect(await tofuCharacters(airport)).toEqual([]);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
