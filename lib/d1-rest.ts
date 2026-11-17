@@ -145,9 +145,10 @@ export class CloudflareD1RestDatabase {
 
   constructor(
     accountId: string,
-    databaseId: string,
+    private readonly databaseId: string,
     private readonly apiToken: string,
     private readonly fetchImpl: typeof fetch = fetch,
+    private readonly canaryWriteGate?: (sql:string)=>boolean,
   ) {
     this.endpoint = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/d1/database/${encodeURIComponent(databaseId)}/query`;
   }
@@ -162,6 +163,8 @@ export class CloudflareD1RestDatabase {
 
   async execute(batch: D1Query[]): Promise<D1QueryResult[]> {
     if (!batch.length) return [];
+    const protectedIds=[process.env.RPK_RECOVERY_DATABASE_ID,process.env.RPK_A5_RECOVERY_DATABASE_ID,process.env.RPK_WEATHER_RECOVERY_DATABASE_ID].filter(Boolean);
+    for(const query of batch)if(!/^\s*(?:SELECT|EXPLAIN)\b/i.test(query.sql)&&(this.canaryWriteGate||protectedIds.includes(this.databaseId))&&!this.canaryWriteGate?.(query.sql))throw Error('canary_write_not_admitted');
     if (batch.length > 50) throw new Error("d1_batch_too_large");
     if (this.capacityBlocked && batch.some(query => !/^\s*(?:SELECT|EXPLAIN)\b/i.test(query.sql)))
       throw new Error("d1_storage_capacity_blocked");

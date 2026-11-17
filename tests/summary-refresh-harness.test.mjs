@@ -170,3 +170,15 @@ test('an older nonfuture snapshot preserves last-good clocks until a newer respo
   assert.equal(h.summaryCache.get('today').failures, 0);
   assert.equal(h.calls.length, 3);
 });
+
+test('source-local forecast fallback accepts other new evidence, preserves old clocks and dedups without failure backoff',async()=>{
+ let missing=false;
+ const oldForecast=START-86400000;
+ const h=harness(()=>({...good(h.now()),forecastRecovery:{failed:missing?['A5']:[],applied:['WEATHER'],fallback:'ARCHIVE_STALE'},readStatus:{status:missing?'DEGRADED':'COMPLETE'},
+  sources:[{sourceId:'INCHEON_PASSENGER_FORECAST',status:missing?'STALE':'LIVE',retrievedAt:new Date(missing?oldForecast:START).toISOString()}],
+  airport:{...good(h.now()).airport,todayExpectedPassengersTotal:missing?17:42,passengerForecastRetrievedAt:new Date(missing?oldForecast:START).toISOString()},
+  areas:{myeongdong:{weather:[{targetAt:'2026-11-04T12:00:00+09:00',issuedAt:new Date(START-3600000).toISOString(),temperatureTenthC:missing?110:100}]}}}));
+ const first=await h.load();assert.equal(first.airport.todayExpectedPassengersTotal,42);missing=true;h.due();const [a,b,c]=await Promise.all([h.load(),h.load(),h.load()]);assert.equal(a,b);assert.equal(b,c);assert.equal(h.calls.length,2);assert.equal(a.airport.todayExpectedPassengersTotal,17);assert.equal(a.airport.passengerForecastRetrievedAt,new Date(oldForecast).toISOString());assert.equal(a.areas.myeongdong.weather[0].temperatureTenthC,110);assert.equal(a.sources[0].status,'STALE');assert.equal(a.clientRefresh,undefined);assert.equal(h.summaryCache.get('today').failures,0);assert.equal(h.summaryCache.get('today').recheckAt-h.now(),300000);assert.equal(h.calls[1].init.cache,'no-cache');
+ // Wrong service date cannot replace the accepted source-local fallback.
+ const bad=harness(()=>({...a,generatedAt:new Date(START).toISOString(),serviceDateKst:'2026-11-03'}));assert.equal(await bad.load(),null);
+});

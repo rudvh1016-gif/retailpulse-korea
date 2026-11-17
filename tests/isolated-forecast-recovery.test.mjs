@@ -63,13 +63,13 @@ for(const [family,source,key] of [['A5','airport_passenger_forecast','a5'],['WEA
  const failed=await collectForecastPublication(env,source,'active',state,new Date());assert.equal(failed.status,'ERROR');assert.equal(active.raw.prepare('SELECT payload FROM recovery_forecast_publications WHERE family=?').get(family).payload,lastGood);
  active.raw.exec('DROP TRIGGER reject_forecast_publication');
  const corrupt=JSON.parse(lastGood);corrupt.rows.pop();active.raw.prepare('UPDATE recovery_forecast_publications SET payload=? WHERE family=?').run(JSON.stringify(corrupt),family);
- const corrupted=await (await summarizeLiveSummary(archive,clock(),undefined,{[key]:active})).json();assert.equal(corrupted.mode,'degraded');assert.ok(corrupted.forecastRecovery.failed.includes(family));
+ const corrupted=await (await summarizeLiveSummary(archive,clock(),undefined,{[key]:active})).json();assert.equal(corrupted.mode,'live-summary');assert.ok(corrupted.forecastRecovery.failed.includes(family));
  const unhealthy=await forecastRecoveryHealth([{sourceId:family==='A5'?'INCHEON_PASSENGER_FORECAST':'KMA_VILAGE_FCST',status:'LIVE'}],{[key]:active},Date.now());assert.equal(unhealthy.sources[0].status,'STALE');
  active.raw.prepare('UPDATE recovery_forecast_publications SET payload=? WHERE family=?').run(lastGood,family);
 
 
  for(const day of [shiftKstDay(today,-7),shiftKstDay(today,-28),shiftKstDay(today,1),shiftKstDay(today,7)]){
-  const c=clock(day);const oldWorker=await (await legacy.summarizeLiveSummary(archive,c)).json();const original=await (await summarizeLiveSummary(archive,c)).json();const routed=await (await summarizeLiveSummary(archive,c,undefined,{[key]:active})).json();assert.deepEqual(routed,original,'past/future remains exact archive response');assert.deepEqual(original,oldWorker,'actual previous Worker summary matches archive');
+  const c=clock(day);const oldWorker=await (await legacy.summarizeLiveSummary(archive,c)).json();const originalResponse=await summarizeLiveSummary(archive,c),routedResponse=await summarizeLiveSummary(archive,c,undefined,{[key]:active});assert.equal(routedResponse.headers.get('cache-control'),originalResponse.headers.get('cache-control'),'historical/future cache policy preserved');const original=await originalResponse.json();const routed=await routedResponse.json();assert.deepEqual(routed,original,'past/future remains exact archive response');assert.deepEqual(original,oldWorker,'actual previous Worker summary matches archive');
  }
  const c=clock(),disabled=await (await summarizeLiveSummary(archive,c)).json();assert.equal(disabled.forecastRecovery,undefined);assert.deepEqual(disabled,await (await legacy.summarizeLiveSummary(archive,c)).json());assert.equal(dump(),originalBytes);
  assert.equal(archive.raw.prepare('SELECT count(*) n FROM airport_forecast_versions').get().n,family==='A5'?576:0);

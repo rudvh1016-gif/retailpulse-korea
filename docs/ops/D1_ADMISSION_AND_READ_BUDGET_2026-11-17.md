@@ -1,3 +1,5 @@
+> Follow-up: [local canary closure and compatible source-local fallback](D1_CANARY_LOCAL_CLOSURE_2026-11-17.md) supersedes the missing-publication defect, unwired authority and old missing-publication budget below. Production HOLD remains.
+
 # Independent pre-operation gates: authority and read budget
 
 Draft #600 follow-up. This document supersedes any suggestion that Actions cache is production admission authority. Base/main remains `4ade5edf6d7c60637024096ead516b85e159b2c3`; preceding draft head `34f5d855aacb46a5b0d03b8c7294519a04f444e8` CI43987789460 completed SUCCESS. No operational activation is authorized by this report. Both gates remain HOLD pending real environment evidence.

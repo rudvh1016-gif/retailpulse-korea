@@ -1,11 +1,13 @@
+import {runCanaryCollector} from './canary-collector';
 import {storageTrend} from '../lib/storage-recovery';
 import {D1_FREE_PLANNING_LIMITS} from '../lib/storage-inventory';
 import type {CollectorEnv} from '../lib/collector';
-import {CloudflareD1RestDatabase} from '../lib/d1-rest';
+import type {CloudflareD1RestDatabase} from '../lib/d1-rest';
 import {forecastFamily,type ForecastFamily} from '../lib/forecast-recovery';
 import {collectForecastPublication} from '../lib/forecast-recovery-collector';
 import {storageTransition} from '../lib/recovery-runtime';
 import {bootstrapAllowed,loadRecoveryState,saveRecoveryState} from './recovery-state';
+import {emptyAdmission} from '../lib/recovery-runtime';
 import type {ProductionSourceResult} from '../lib/production-runner';
 export interface ForecastRecoveryConfig {family:ForecastFamily;enabled:boolean;databaseId:string;bootstrap:boolean;statePath:string}
 export function forecastRecoveryConfig(source:string,values:Record<string,string|undefined>):ForecastRecoveryConfig|null {
@@ -17,10 +19,11 @@ export function forecastRecoveryConfig(source:string,values:Record<string,string
 export async function runForecastRecovery(config:ForecastRecoveryConfig,source:string,env:CollectorEnv,connection:{accountId:string;databaseId:string;apiToken:string},now=new Date()):Promise<ProductionSourceResult> {
  if(!config.enabled)return {source,status:'SKIPPED_RECOVERY_PAUSED',records:0,providerRequests:0,detail:`${config.family} active identity retained; no archive fallback`};
  if(!/^[a-f0-9-]{36}$/i.test(config.databaseId)||config.databaseId===connection.databaseId)throw Error('forecast_recovery_database_not_isolated');
- let state;try{state=loadRecoveryState(config.statePath,config.bootstrap);}catch{return {source,status:'ERROR',records:0,providerRequests:0,detail:'forecast_admission_state_unavailable; no request authorized'};}
- const db=new CloudflareD1RestDatabase(connection.accountId,config.databaseId,connection.apiToken);
+ let state;try{state=loadRecoveryState(config.statePath);}catch{state=emptyAdmission();} // advisory only
+ let measured:CloudflareD1RestDatabase|undefined;
  const startedAt=new Date().toISOString();
- const result=await collectForecastPublication({...env,DB:db as unknown as D1Database},source,config.databaseId,state,now);
+ const result=await runCanaryCollector({source,databaseId:config.databaseId,accountId:connection.accountId,apiToken:connection.apiToken,values:process.env},async db=>{measured=db;return collectForecastPublication({...env,DB:db as unknown as D1Database},source,config.databaseId,state,now);});
+ const db=measured;if(!db)return result;
  const usage=db.usageSnapshot();
  if(usage.sizeBytes!==null&&usage.sizeObservedAt&&usage.sizeObservedAt>=startedAt){
    const point={at:usage.sizeObservedAt,bytes:usage.sizeBytes};

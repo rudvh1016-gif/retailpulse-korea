@@ -587,7 +587,7 @@ async function summarizeArchiveSummary(client: SummaryClient, clock: SummaryCloc
   // uncached summary (see lib/d1-read-batch.ts). History reads are bounded above.
   const readResult = await readGroups(client, { ...statementGroups, ...probeGroups }, { maxStatements: 50 });
   const blocks = readResult.rows;
-  const forecastRecovery={scope:'TODAY_ONLY',applied:[] as string[],failed:dayRelation==='TODAY'?[...(forecasts.unavailable??[])]:[],dailyComparisons:'ARCHIVE_ONLY',monthlyComparisons:'ARCHIVE_ONLY'};
+  const forecastRecovery={scope:'TODAY_ONLY',applied:[] as string[],failed:dayRelation==='TODAY'?[...(forecasts.unavailable??[])]:[],fallback:'ARCHIVE_STALE',dailyComparisons:'ARCHIVE_ONLY',monthlyComparisons:'ARCHIVE_ONLY'};
   if(dayRelation==='TODAY')for(const [family,db] of [['A5',forecasts.a5],['WEATHER',forecasts.weather]] as const){
     if(!db)continue;
     try {
@@ -603,9 +603,9 @@ async function summarizeArchiveSummary(client: SummaryClient, clock: SummaryCloc
     }catch{forecastRecovery.failed.push(family);}
   }
   if(forecastRecovery.failed.length){
-    readResult.failedGroups.push('sources');
     const ids:string[]=forecastRecovery.failed.map(family=>family==='A5'?'INCHEON_PASSENGER_FORECAST':'KMA_VILAGE_FCST');
     blocks.sources=blocks.sources.map(row=>ids.includes(String(row.sourceId))?{...row,storedStatus:row.status,status:'STALE',recoveryStatus:'UNAVAILABLE'}:row);
+    for(const sourceId of ids)if(!blocks.sources.some(row=>row.sourceId===sourceId))blocks.sources.push({sourceId,status:'STALE',storedStatus:'MISSING',retrievedAt:null,eventAt:null,recoveryStatus:'UNAVAILABLE'});
   }
 
   const readDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
@@ -856,7 +856,7 @@ async function summarizeArchiveSummary(client: SummaryClient, clock: SummaryCloc
   return Response.json({
     mode: readDegraded ? "degraded" : "live-summary",
     ...(dayRelation==='TODAY'&&(forecasts.a5||forecasts.weather||forecasts.unavailable?.length)?{forecastRecovery}:{}),
-    readStatus: { status: readDegraded ? 'DEGRADED' : 'COMPLETE', failedGroups: readResult.failedGroups, skippedGroups: readResult.skippedGroups, statementsAttempted: readResult.statementsAttempted },
+    readStatus: { status: readDegraded || forecastRecovery.failed.length ? 'DEGRADED' : 'COMPLETE', failedGroups: readResult.failedGroups, skippedGroups: readResult.skippedGroups, statementsAttempted: readResult.statementsAttempted },
     generatedAt,
     todayKst: kstToday,
     serviceDateKst: serviceDate,
@@ -938,7 +938,7 @@ async function summarizeArchiveSummary(client: SummaryClient, clock: SummaryCloc
     // Decided by the payload, not the status code: a 200 that carries no
     // sources or no area data is an outage in disguise and must never be
     // admitted to the shared edge cache.
-    headers: { "cache-control": readDegraded||forecasts.a5||forecasts.weather ? SUMMARY_NO_STORE : serviceDayCacheControl(summaryCacheControl({ sources, areas }),generatedAt), "x-robots-tag": CONTENT_API_ROBOTS_TAG },
+    headers: { "cache-control": readDegraded||(dayRelation==='TODAY'&&(forecasts.a5||forecasts.weather||forecasts.unavailable?.length)) ? SUMMARY_NO_STORE : serviceDayCacheControl(summaryCacheControl({ sources, areas }),generatedAt), "x-robots-tag": CONTENT_API_ROBOTS_TAG },
   });
 }
 

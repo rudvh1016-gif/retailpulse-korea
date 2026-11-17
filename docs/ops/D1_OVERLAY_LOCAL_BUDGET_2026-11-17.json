@@ -258,11 +258,11 @@
     {
       "scenario": "family-publication-MISSING",
       "cacheControl": "no-store",
-      "baseDelayMs": null,
-      "policy": "INVALID_MODE_BACKOFF_1_2_4_5_MINUTES; no initial valid payload",
+      "baseDelayMs": 300000,
+      "policy": "SOURCE_LOCAL_ARCHIVE_STALE; valid live-summary",
       "clients": 3,
       "windowMinutes": 30,
-      "requests": 24,
+      "requests": 18,
       "perRequest": [
         {
           "database": "ORIGINAL",
@@ -293,7 +293,7 @@
           "rowsWritten": 0
         }
       ],
-      "allMissLocalRows": 20904,
+      "allMissLocalRows": 15678,
       "localRowsPerRequest": 871
     }
   ]

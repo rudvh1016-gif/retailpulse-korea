@@ -1,9 +1,10 @@
+import {runCanaryCollector} from './canary-collector';
 import {forecastRecoveryConfig,runForecastRecovery} from './forecast-recovery-runner';
 import {storageTrend} from '../lib/storage-recovery';
 import {D1_FREE_PLANNING_LIMITS} from '../lib/storage-inventory';
 import {collectRecoverySource} from '../lib/recovery-collector';
-import {recoverySource,recoveryRoute,storageTransition} from '../lib/recovery-runtime';
-import {bootstrapAllowed,loadRecoveryState,saveRecoveryState} from './recovery-state';
+import {emptyAdmission,recoverySource,recoveryRoute,storageTransition} from '../lib/recovery-runtime';
+import {loadRecoveryState,saveRecoveryState} from './recovery-state';
 import { safeSourceFailureDetail } from "../lib/source-adapters";
 import { collectHolidays, holidayHealthUpdate } from "../lib/holidays";
 import { collectAirportComposition } from "../lib/airport-composition-history";
@@ -116,7 +117,7 @@ for (const source of requested) {
   const startedAt = new Date().toISOString();
   const route=recoveryRoute(source,recoveryEnabled,recoveryConfigured);
   const routed=route==='ACTIVE';
-  const sourceDatabase=routed?activeDatabase!:database;
+  let sourceDatabase=routed?activeDatabase!:database;
   const before=sourceDatabase.usageSnapshot();
   const sourceEnv=routed?{...env,DB:activeDatabase as unknown as D1Database}:env;
   let result;
@@ -124,9 +125,9 @@ for (const source of requested) {
   if(route==='PAUSED')result={source,status:'SKIPPED_RECOVERY_PAUSED',records:0,providerRequests:0,detail:'recovery routing disabled; archive writes remain prohibited'};
   else if(routed&&recoverySource(source)) {
    try {
-    const state=loadRecoveryState(admissionPath,bootstrapAllowed(process.env.RPK_RECOVERY_BOOTSTRAP,process.env.RPK_RECOVERY_BOOTSTRAP_UNTIL,process.env.RPK_RECOVERY_BOOTSTRAP_COMMIT,process.env.GITHUB_SHA));
+    let state;try{state=loadRecoveryState(admissionPath);}catch{state=emptyAdmission();} // advisory only; authority is always checked
     admitted=true;
-    result=await collectRecoverySource(sourceEnv,source,activeId,state,collectionNow);
+    result=await runCanaryCollector({source,databaseId:activeId,accountId,apiToken,values:process.env},db=>{sourceDatabase=db;return collectRecoverySource({...sourceEnv,DB:db as unknown as D1Database},source,activeId,state,collectionNow);});
     if(storageTransition(state,activeId,source,state.blocked[activeId]?'CAPACITY_EXHAUSTED':result.status))annotate(result.status==='SUCCESS'?'warning':'error','Recovery storage transition',`${source}: ${result.status}; database scope=ACTIVE`);
     const sizeUsage=sourceDatabase.usageSnapshot(),bytes=sizeUsage.sizeBytes;
     if(bytes!==null&&sizeUsage.sizeObservedAt&&sizeUsage.sizeObservedAt>=startedAt) {
@@ -141,8 +142,8 @@ for (const source of requested) {
   } else [result]=await runSelectedProductionSources(env,[source],collectionNow);
   results.push(result);
   const completedAt = new Date().toISOString(), after = sourceDatabase.usageSnapshot();
-  if(route==='PAUSED'||(routed&&/D1_STORAGE_CAPACITY_BLOCKED|recovery_admission_state_unavailable/.test(result.detail??''))) {
-    console.log(JSON.stringify({operationalMemory:'UNKNOWN',source,reason:'database-scoped admission blocked; no bookkeeping write attempted'}));
+  if(route==='PAUSED'||routed) {
+    console.log(JSON.stringify({operationalMemory:'UNKNOWN',source,reason:'canary bookkeeping excluded; no write outside granted collector'}));
     continue;
   }
   // Bookkeeping is outside the collector result. Failure never causes an extra provider retry.
