@@ -141,6 +141,24 @@ jobs:
           key: rpk-recovery-v1-${{ vars.RPK_RECOVERY_DATABASE_ID }}-${{ vars.RPK_RECOVERY_STATE_EPOCH }}-${{ github.run_id }}-${{ github.run_attempt }}-attempt-${{ inputs.attempt }}
           restore-keys: rpk-recovery-v1-${{ vars.RPK_RECOVERY_DATABASE_ID }}-${{ vars.RPK_RECOVERY_STATE_EPOCH }}-
           fail-on-cache-miss: ${{ vars.RPK_RECOVERY_BOOTSTRAP != 'true' }}
+      - name: Restore isolated A5 admission
+        id: recovery_a5_state
+        if: vars.RPK_A5_RECOVERY_WRITES == 'true' && contains(inputs.sources, 'airport_passenger_forecast')
+        uses: actions/cache/restore@v4
+        with:
+          path: .wrangler/recovery-a5-admission.json
+          key: rpk-a5-recovery-v1-${{ vars.RPK_A5_RECOVERY_DATABASE_ID }}-${{ vars.RPK_A5_RECOVERY_STATE_EPOCH }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.attempt }}
+          restore-keys: rpk-a5-recovery-v1-${{ vars.RPK_A5_RECOVERY_DATABASE_ID }}-${{ vars.RPK_A5_RECOVERY_STATE_EPOCH }}-
+          fail-on-cache-miss: ${{ vars.RPK_A5_RECOVERY_BOOTSTRAP != 'true' }}
+      - name: Restore isolated WEATHER admission
+        id: recovery_weather_state
+        if: vars.RPK_WEATHER_RECOVERY_WRITES == 'true' && startsWith(inputs.sources, 'weather')
+        uses: actions/cache/restore@v4
+        with:
+          path: .wrangler/recovery-weather-admission.json
+          key: rpk-weather-recovery-v1-${{ vars.RPK_WEATHER_RECOVERY_DATABASE_ID }}-${{ vars.RPK_WEATHER_RECOVERY_STATE_EPOCH }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.attempt }}
+          restore-keys: rpk-weather-recovery-v1-${{ vars.RPK_WEATHER_RECOVERY_DATABASE_ID }}-${{ vars.RPK_WEATHER_RECOVERY_STATE_EPOCH }}-
+          fail-on-cache-miss: ${{ vars.RPK_WEATHER_RECOVERY_BOOTSTRAP != 'true' }}
       - name: Collect ${{ inputs.sources }} (attempt ${{ inputs.attempt }})
         id: collect
         shell: bash
@@ -155,6 +173,18 @@ jobs:
           RPK_RECOVERY_WRITES: ${{ contains(inputs.sources, 'airport_congestion') && vars.RPK_RECOVERY_WRITES || 'false' }}
           RPK_RECOVERY_DATABASE_ID: ${{ vars.RPK_RECOVERY_DATABASE_ID }}
           RPK_RECOVERY_BOOTSTRAP: ${{ vars.RPK_RECOVERY_BOOTSTRAP }}
+          RPK_RECOVERY_BOOTSTRAP_UNTIL: ${{ vars.RPK_RECOVERY_BOOTSTRAP_UNTIL }}
+          RPK_RECOVERY_BOOTSTRAP_COMMIT: ${{ vars.RPK_RECOVERY_BOOTSTRAP_COMMIT }}
+          RPK_A5_RECOVERY_WRITES: ${{ vars.RPK_A5_RECOVERY_WRITES }}
+          RPK_A5_RECOVERY_DATABASE_ID: ${{ vars.RPK_A5_RECOVERY_DATABASE_ID }}
+          RPK_A5_RECOVERY_BOOTSTRAP: ${{ vars.RPK_A5_RECOVERY_BOOTSTRAP }}
+          RPK_A5_RECOVERY_BOOTSTRAP_UNTIL: ${{ vars.RPK_A5_RECOVERY_BOOTSTRAP_UNTIL }}
+          RPK_A5_RECOVERY_BOOTSTRAP_COMMIT: ${{ vars.RPK_A5_RECOVERY_BOOTSTRAP_COMMIT }}
+          RPK_WEATHER_RECOVERY_WRITES: ${{ vars.RPK_WEATHER_RECOVERY_WRITES }}
+          RPK_WEATHER_RECOVERY_DATABASE_ID: ${{ vars.RPK_WEATHER_RECOVERY_DATABASE_ID }}
+          RPK_WEATHER_RECOVERY_BOOTSTRAP: ${{ vars.RPK_WEATHER_RECOVERY_BOOTSTRAP }}
+          RPK_WEATHER_RECOVERY_BOOTSTRAP_UNTIL: ${{ vars.RPK_WEATHER_RECOVERY_BOOTSTRAP_UNTIL }}
+          RPK_WEATHER_RECOVERY_BOOTSTRAP_COMMIT: ${{ vars.RPK_WEATHER_RECOVERY_BOOTSTRAP_COMMIT }}
           ENABLE_PRODUCTION_COLLECTOR: "true"
           RPK_PRODUCTION_SOURCES: ${{ inputs.sources }}
           RPK_OPERATIONAL_ATTEMPT: ${{ inputs.attempt }}
@@ -178,6 +208,18 @@ jobs:
         with:
           path: .wrangler/recovery-admission.json
           key: ${{ steps.recovery_state.outputs.cache-primary-key }}
+      - name: Save isolated A5 admission
+        if: always() && vars.RPK_A5_RECOVERY_WRITES == 'true' && contains(inputs.sources, 'airport_passenger_forecast')
+        uses: actions/cache/save@v4
+        with:
+          path: .wrangler/recovery-a5-admission.json
+          key: ${{ steps.recovery_a5_state.outputs.cache-primary-key }}
+      - name: Save isolated WEATHER admission
+        if: always() && vars.RPK_WEATHER_RECOVERY_WRITES == 'true' && startsWith(inputs.sources, 'weather')
+        uses: actions/cache/save@v4
+        with:
+          path: .wrangler/recovery-weather-admission.json
+          key: ${{ steps.recovery_weather_state.outputs.cache-primary-key }}
       - name: Classify this A1 attempt before spending a fresh runner
         id: airport_retry_decision
         if: ${{ always() && inputs.a1_midnight_recovery != true && startsWith(inputs.sources, 'airport_recent') }}

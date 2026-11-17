@@ -98,7 +98,7 @@ test('workflow integration is opt-in, inherits existing lock, uses existing noti
 test('A5, weather, recovery variants and remaining writers are explicitly outside the minimum routing allowlist',()=>{
  for(const source of ['airport_passenger_forecast','airport_passenger_forecast_recovery','weather','weather_recovery','airport_recent','seoul_sales','subway_ridership'])assert.equal(recoverySource(source),false);
  for(const source of ['airport_congestion','airport_congestion_t2','seoul_realtime'])assert.equal(recoverySource(source),true);
- const script=readFileSync('scripts/collect-production.ts','utf8');assert.match(script,/!recoveryConfigured && requested.includes\("seoul_realtime"\)/);assert.match(script,/!recoveryConfigured && \(now.getUTCHours/);
+ const script=readFileSync('scripts/collect-production.ts','utf8');assert.match(script,/!recoveryConfigured && !forecastConfigured && requested.includes\("seoul_realtime"\)/);assert.match(script,/!recoveryConfigured && !forecastConfigured && \(now.getUTCHours/);
 });
 
 test('deployment review gate rejects recovery aliases, missing binding and mismatched active/archive identities',async()=>{

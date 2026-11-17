@@ -1,3 +1,5 @@
+> Follow-up: [A5/KMA review and critical admission HOLD](D1_FORECAST_RECOVERY_REVIEW_2026-11-17.md) supersedes forecast exclusions and cache/bootstrap activation guidance below.
+
 # D1 용량 복구 2단계: 실제 수집·API 통합과 비활성 전환 명세
 
 이 문서는 같은 draft PR #600의 [1단계 조사](D1_CAPACITY_RECOVERY_2026-11-17.md)를 이어받는다.

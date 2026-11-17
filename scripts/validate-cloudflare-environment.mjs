@@ -51,6 +51,12 @@ export function validateCloudflareEnvironment(config, stage) {
       throw new Error('Recovery binding and explicit active/archive identities must match.');
     }
   }
+  const recoveryIds=[stagingDb.database_id,productionDb.database_id,...(recovery?[recovery.database_id]:[])];
+  for(const family of ['A5','WEATHER']) {
+    const binding=selected.d1_databases?.find(entry=>entry.binding===`${family}_RECOVERY_DB`);
+    if(binding){if(recoveryIds.includes(binding.database_id))throw new Error('Forecast recovery DB alias is forbidden.');recoveryIds.push(binding.database_id);}
+    if(selected.vars?.[`RPK_${family}_RECOVERY_READS`]==='true'&&(!binding||selected.vars[`RPK_${family}_RECOVERY_DATABASE_ID`]!==binding.database_id||selected.vars.RPK_RECOVERY_ARCHIVE_DATABASE_ID!==selectedDb.database_id))throw new Error('Forecast recovery identities must match isolated bindings.');
+  }
   return { workerName: selected.name, databaseName: selectedDb.database_name };
 }
 

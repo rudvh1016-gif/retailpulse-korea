@@ -13,3 +13,9 @@ export function loadRecoveryState(path:string,bootstrap=false):AdmissionState {
 export function saveRecoveryState(path:string,state:AdmissionState) {
  mkdirSync(dirname(path),{recursive:true});writeFileSync(path+'.tmp',JSON.stringify(state),{mode:0o600});renameSync(path+'.tmp',path);
 }
+
+/** Cold-cache admission is an explicitly scoped, short-lived operation, not a standing bypass. */
+export function bootstrapAllowed(flag:string|undefined,until:string|undefined,approvedCommit:string|undefined,currentCommit:string|undefined,now=Date.now()):boolean {
+ const end=Date.parse(until??'');return flag==='true'&&Number.isFinite(end)&&end>now&&end-now<=15*60000
+  &&!!approvedCommit&&approvedCommit===currentCommit&&/^[a-f0-9]{40}$/i.test(approvedCommit);
+}

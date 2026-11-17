@@ -1,5 +1,6 @@
+import {forecastRecoveryHealth} from '../../../lib/forecast-recovery';
 import {projectRealtimeSourceStatus,recoveryHealthSources} from '../../../lib/recovery-runtime';
-import { getDb,getRecoveryDb } from "../../../db";
+import { getDb,getRecoveryDb,getForecastRecoveryDbs } from "../../../db";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +14,15 @@ export async function GET() {
     let recoveryStatus='DISABLED';
     try {const active=await getRecoveryDb();if(active){publicSources=await recoveryHealthSources(publicSources,active,Date.parse(checkedAt));recoveryStatus='ACTIVE_SNAPSHOTS';}}
     catch {recoveryStatus='UNAVAILABLE';}
+    const forecastClients=await getForecastRecoveryDbs();
+    const forecastHealth=await forecastRecoveryHealth(publicSources,forecastClients,Date.parse(checkedAt));
+    publicSources=forecastHealth.sources;
     return Response.json({
       app: "ok",
       database: result?.ok === 1 ? "ok" : "degraded",
       sources: publicSources,
       recoveryStatus,
+      ...((forecastClients.a5||forecastClients.weather||forecastClients.unavailable?.length)?{forecastRecovery:{applied:forecastHealth.applied,failed:forecastHealth.failed}}:{}),
       checkedAt,
     }, { headers: { "cache-control": "no-store" } });
   } catch {
