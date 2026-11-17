@@ -1,8 +1,24 @@
 import {expectDateSelection} from './date-selection';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { SUMMARY_FIXTURE } from './summary-fixture';
 import { PREFERENCE_KEY } from '../lib/personal-briefing';
 import {holdPendingAirportStream} from './helpers/airport-stream-fixture';
+
+// Airport's compact navigator mounts its unbounded date input only after the
+// stored-date disclosure opens; it is not the retired always-visible area picker.
+async function openAirportDateInput(page: Page) {
+ const picker = page.locator('.airport-view .stored-date-picker');
+ await expect(picker).toBeVisible();
+ await expect(picker.locator('input[type=date]')).toHaveCount(0);
+ const toggle = picker.locator(':scope > summary');
+ expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+ await toggle.focus();
+ await toggle.press('Enter');
+ await expect(picker).toHaveAttribute('open', '');
+ const input = picker.locator('.date-nav-picker input[type=date]');
+ await expect(input).toBeVisible();
+ return input;
+}
 
 for (const width of [320, 360, 390, 430, 600, 1440]) for (const lang of ['ko', 'en', 'zh', 'ja'] as const) {
  test(`airport selector equal slots and date spacing ${lang} ${width}`, async ({ page }, info) => {
@@ -104,8 +120,13 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   }
   const selectedColor=await buttons.nth(1).evaluate(el=>getComputedStyle(el).backgroundColor);
   expect(selectedColor).not.toBe('rgb(255, 255, 255)');
-  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('border-top-width','1px');
-  await expect(page.locator('.date-nav-shortcuts')).toHaveCSS('background-color','rgb(255, 255, 255)');
+  // Airport uses a transparent text rail with a bottom hairline and a selected
+  // underline, rather than the former area's bordered white date tile.
+  const rail = page.locator('.airport-date-reserved .date-nav-shortcuts');
+  await expect(rail).toHaveCSS('border-top-width','0px');
+  await expect(rail).toHaveCSS('border-bottom-width','1px');
+  await expect(rail).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+  expect(await buttons.nth(1).evaluate(el => getComputedStyle(el, '::after').height)).toBe('2px');
   await expect(buttons.nth(0)).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
   await buttons.nth(2).focus();
   expect(await buttons.nth(2).evaluate(el=>getComputedStyle(el).outlineStyle)).not.toBe('none');
@@ -114,7 +135,9 @@ for (const width of [375,390,430,1280]) for (const lang of ['ko','en','zh','ja']
   await expect(buttons.nth(2)).toHaveAttribute('aria-pressed','true');
   await buttons.nth(1).click();
   await expectDateSelection(page, '2026-08-31');
-  await page.locator('.date-nav-picker input').fill('2026-08-30');
+  const input = await openAirportDateInput(page);
+  await input.fill('2026-08-30');
+  await expectDateSelection(page, '2026-08-30');
   await expect(buttons.nth(0)).toHaveAttribute('aria-pressed','true');
   expect(dates).toContain('2026-09-01');
   expect(dates).toContain('2026-08-30');
@@ -149,7 +172,7 @@ test('typing a year in the free picker requests only the finished date and adds 
   });
   await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  const input = page.locator('.date-nav-picker input[type=date]');
+  const input = await openAirportDateInput(page);
   await expect(input).toHaveValue(SUMMARY_FIXTURE.todayKst);
   // The picker stays unbounded: older stored dates are never blocked.
   await expect(input).not.toHaveAttribute('min');
@@ -177,7 +200,7 @@ test('typing a two-digit day or month requests only the finished date, once each
   });
   await page.goto('/ko/airport');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  const input = page.locator('.date-nav-picker input[type=date]');
+  const input = await openAirportDateInput(page);
   const [year, month] = SUMMARY_FIXTURE.todayKst.split('-');
   const history = await page.evaluate(() => window.history.length);
   // Chromium commits the 2nd on the way to the 25th.
