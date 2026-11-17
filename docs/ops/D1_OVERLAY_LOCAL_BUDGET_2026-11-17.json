@@ -1,0 +1,300 @@
+{
+  "basis": "LOCAL_WORKERD_META_ROWS_READ; REQUEST_PROJECTION_ALL_MISS",
+  "fixture": {
+    "referenceCommit": "34f5d855aacb46a5b0d03b8c7294519a04f444e8",
+    "originalA5Rows": 384,
+    "seoulContextRows": 248,
+    "clients": 3,
+    "windowMinutes": 30,
+    "subscriberCountPerClient": 3
+  },
+  "limits": [
+    "No edge sharing/CPU/production claims",
+    "Fresh collector clocks assumed for cadence isolation; checkpoints aging independently can shorten cadence",
+    "Returned source STALE alone is not the fast status condition",
+    "Includes initial request; half-open 30min window; client/date cache only; no browser HTTP cache model"
+  ],
+  "scenarios": [
+    {
+      "scenario": "disabled",
+      "cacheControl": "public, max-age=60, stale-while-revalidate=300",
+      "baseDelayMs": 300000,
+      "clients": 3,
+      "windowMinutes": 30,
+      "requests": 18,
+      "perRequest": [
+        {
+          "database": "ORIGINAL",
+          "requests": 1,
+          "statements": 30,
+          "rowsRead": 852,
+          "rowsWritten": 0
+        },
+        {
+          "database": "REALTIME",
+          "requests": 0,
+          "statements": 0,
+          "rowsRead": 0,
+          "rowsWritten": 0
+        },
+        {
+          "database": "A5",
+          "requests": 0,
+          "statements": 0,
+          "rowsRead": 0,
+          "rowsWritten": 0
+        },
+        {
+          "database": "WEATHER",
+          "requests": 0,
+          "statements": 0,
+          "rowsRead": 0,
+          "rowsWritten": 0
+        }
+      ],
+      "allMissLocalRows": 15336,
+      "localRowsPerRequest": 852
+    },
+    {
+      "scenario": "normal",
+      "cacheControl": "no-store",
+      "baseDelayMs": 300000,
+      "clients": 3,
+      "windowMinutes": 30,
+      "requests": 18,
+      "perRequest": [
+        {
+          "database": "ORIGINAL",
+          "requests": 2,
+          "statements": 46,
+          "rowsRead": 868,
+          "rowsWritten": 0
+        },
+        {
+          "database": "REALTIME",
+          "requests": 3,
+          "statements": 3,
+          "rowsRead": 2,
+          "rowsWritten": 0
+        },
+        {
+          "database": "A5",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        },
+        {
+          "database": "WEATHER",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        }
+      ],
+      "allMissLocalRows": 15696,
+      "localRowsPerRequest": 872
+    },
+    {
+      "scenario": "ERROR",
+      "cacheControl": "no-store",
+      "baseDelayMs": 120000,
+      "clients": 3,
+      "windowMinutes": 30,
+      "requests": 45,
+      "perRequest": [
+        {
+          "database": "ORIGINAL",
+          "requests": 2,
+          "statements": 46,
+          "rowsRead": 868,
+          "rowsWritten": 0
+        },
+        {
+          "database": "REALTIME",
+          "requests": 3,
+          "statements": 3,
+          "rowsRead": 2,
+          "rowsWritten": 0
+        },
+        {
+          "database": "A5",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        },
+        {
+          "database": "WEATHER",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        }
+      ],
+      "allMissLocalRows": 39240,
+      "localRowsPerRequest": 872
+    },
+    {
+      "scenario": "DEGRADED",
+      "cacheControl": "no-store",
+      "baseDelayMs": 120000,
+      "clients": 3,
+      "windowMinutes": 30,
+      "requests": 45,
+      "perRequest": [
+        {
+          "database": "ORIGINAL",
+          "requests": 2,
+          "statements": 46,
+          "rowsRead": 868,
+          "rowsWritten": 0
+        },
+        {
+          "database": "REALTIME",
+          "requests": 3,
+          "statements": 3,
+          "rowsRead": 2,
+          "rowsWritten": 0
+        },
+        {
+          "database": "A5",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        },
+        {
+          "database": "WEATHER",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        }
+      ],
+      "allMissLocalRows": 39240,
+      "localRowsPerRequest": 872
+    },
+    {
+      "scenario": "MISSING",
+      "cacheControl": "no-store",
+      "baseDelayMs": 120000,
+      "clients": 3,
+      "windowMinutes": 30,
+      "requests": 45,
+      "perRequest": [
+        {
+          "database": "ORIGINAL",
+          "requests": 2,
+          "statements": 46,
+          "rowsRead": 868,
+          "rowsWritten": 0
+        },
+        {
+          "database": "REALTIME",
+          "requests": 3,
+          "statements": 3,
+          "rowsRead": 2,
+          "rowsWritten": 0
+        },
+        {
+          "database": "A5",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        },
+        {
+          "database": "WEATHER",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        }
+      ],
+      "allMissLocalRows": 39240,
+      "localRowsPerRequest": 872
+    },
+    {
+      "scenario": "STALE",
+      "cacheControl": "no-store",
+      "baseDelayMs": 300000,
+      "clients": 3,
+      "windowMinutes": 30,
+      "requests": 18,
+      "perRequest": [
+        {
+          "database": "ORIGINAL",
+          "requests": 2,
+          "statements": 46,
+          "rowsRead": 868,
+          "rowsWritten": 0
+        },
+        {
+          "database": "REALTIME",
+          "requests": 3,
+          "statements": 3,
+          "rowsRead": 2,
+          "rowsWritten": 0
+        },
+        {
+          "database": "A5",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        },
+        {
+          "database": "WEATHER",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        }
+      ],
+      "allMissLocalRows": 15696,
+      "localRowsPerRequest": 872
+    },
+    {
+      "scenario": "family-publication-MISSING",
+      "cacheControl": "no-store",
+      "baseDelayMs": 300000,
+      "policy": "SOURCE_LOCAL_ARCHIVE_STALE; valid live-summary",
+      "clients": 3,
+      "windowMinutes": 30,
+      "requests": 18,
+      "perRequest": [
+        {
+          "database": "ORIGINAL",
+          "requests": 2,
+          "statements": 46,
+          "rowsRead": 868,
+          "rowsWritten": 0
+        },
+        {
+          "database": "REALTIME",
+          "requests": 3,
+          "statements": 3,
+          "rowsRead": 2,
+          "rowsWritten": 0
+        },
+        {
+          "database": "A5",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 0,
+          "rowsWritten": 0
+        },
+        {
+          "database": "WEATHER",
+          "requests": 1,
+          "statements": 1,
+          "rowsRead": 1,
+          "rowsWritten": 0
+        }
+      ],
+      "allMissLocalRows": 15678,
+      "localRowsPerRequest": 871
+    }
+  ]
+}

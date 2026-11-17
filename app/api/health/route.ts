@@ -1,4 +1,6 @@
-import { getDb } from "../../../db";
+import {forecastRecoveryHealth} from '../../../lib/forecast-recovery';
+import {projectRealtimeSourceStatus,recoveryHealthSources} from '../../../lib/recovery-runtime';
+import { getDb,getRecoveryDb,getForecastRecoveryDbs } from "../../../db";
 
 export const dynamic = "force-dynamic";
 
@@ -7,11 +9,20 @@ export async function GET() {
   try {
     const db = await getDb();
     const result = await db.$client.prepare("SELECT 1 AS ok").first<{ ok: number }>();
-    const sources = await db.$client.prepare("SELECT source_id AS sourceId, status, last_retrieved_at AS lastRetrievedAt FROM source_health ORDER BY source_id").all<{ sourceId: string; status: string; lastRetrievedAt: string | null }>();
+    const sources = await db.$client.prepare("SELECT source_id AS sourceId, status, last_event_at AS eventAt, last_retrieved_at AS lastRetrievedAt FROM source_health ORDER BY source_id").all<{ sourceId: string; status: string; lastRetrievedAt: string | null }>();
+    let publicSources:Record<string,unknown>[]=projectRealtimeSourceStatus(sources.results ?? [],Date.parse(checkedAt));
+    let recoveryStatus='DISABLED';
+    try {const active=await getRecoveryDb();if(active){publicSources=await recoveryHealthSources(publicSources,active,Date.parse(checkedAt));recoveryStatus='ACTIVE_SNAPSHOTS';}}
+    catch {recoveryStatus='UNAVAILABLE';}
+    const forecastClients=await getForecastRecoveryDbs();
+    const forecastHealth=await forecastRecoveryHealth(publicSources,forecastClients,Date.parse(checkedAt));
+    publicSources=forecastHealth.sources;
     return Response.json({
       app: "ok",
       database: result?.ok === 1 ? "ok" : "degraded",
-      sources: sources.results ?? [],
+      sources: publicSources,
+      recoveryStatus,
+      ...((forecastClients.a5||forecastClients.weather||forecastClients.unavailable?.length)?{forecastRecovery:{applied:forecastHealth.applied,failed:forecastHealth.failed}}:{}),
       checkedAt,
     }, { headers: { "cache-control": "no-store" } });
   } catch {

@@ -276,6 +276,11 @@ assert.equal(terminalRefinementPatches['app/retailpulse-app.tsx'].length,5);
 for(const [file,patches] of Object.entries(terminalRefinementPatches)){
  approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 }
+// Owner-requested recovery integration and truthful stale API projection (2026-11-17).
+// Reverse only these exact API changes; preserve every original UI hash and scheduler lock.
+const recoveryApiPatches=JSON.parse(readFileSync('tests/fixtures/recovery-api-20261117-approved-patches.json','utf8'));
+assert.deepEqual(Object.keys(recoveryApiPatches),['app/api/health/route.ts','app/api/live/summary/route.ts']);
+for(const [file,patches] of Object.entries(recoveryApiPatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

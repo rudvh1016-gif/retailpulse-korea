@@ -1,3 +1,5 @@
+import {readForecastPublication,type ForecastReadClients} from '../../../../lib/forecast-recovery';
+import {applyRecoverySummary,projectRealtimeSourceStatus} from '../../../../lib/recovery-runtime';
 import {projectDepartureCongestion} from '../../../../lib/airport-congestion-observation';
 import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
@@ -8,7 +10,7 @@ import { AIRPORT_HALL_SIDES_PUBLIC, airportSides } from "../../../../lib/airport
 import { summarizeScheduledBriefing, type ScheduledBriefingRow } from "../../../../lib/scheduled-briefing";
 import { compareComposition } from "../../../../lib/airport-composition-history";
 import type { AirlineRankingSummary } from "../../../../lib/airline-ranking";
-import { getDb } from "../../../../db";
+import { getDb, getRecoveryDb, getForecastRecoveryDbs } from "../../../../db";
 import { rangeChange, withAreaBaselines } from "../../../../lib/period-comparison";
 import {
   SEOUL_FOREIGN_MAPPING_VERSION,
@@ -233,9 +235,16 @@ export async function GET(request: Request) {
 
   try {
     const client = await getDb().then((db) => db.$client);
+    let recovery:D1Database|undefined;
+    try {recovery=await getRecoveryDb();}catch {
+      // A broken optional recovery binding must preserve the archived last-good response.
+      const fallback=await summarizeLiveSummary(client,{generatedAt,now,kstNowIso,kstToday,kstHourStart,serviceDate,dayRelation,dayStartAt,availabilityMonth});
+      const body=await fallback.json();body.recovery={mode:'UNAVAILABLE',applied:[]};
+      return Response.json(body,{headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
+    }
     return await summarizeLiveSummary(client, {
       generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt, availabilityMonth,
-    });
+    }, recovery, await getForecastRecoveryDbs());
   } catch {
     return degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation, availabilityMonth });
   }
@@ -261,7 +270,11 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
  * Builds the summary from prepared D1 statements. Exported so a test can hand
  * in a counting double and assert the read path stays one round trip.
  */
-export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
+export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock, recovery?:D1Database,forecasts:ForecastReadClients={}): Promise<Response> {
+ const response=await summarizeArchiveSummary(client,clock,forecasts);
+ return recovery?applyRecoverySummary(response,client as unknown as D1Database,recovery,clock.now):response;
+}
+async function summarizeArchiveSummary(client: SummaryClient, clock: SummaryClock,forecasts:ForecastReadClients={}): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
   const selectedDayEndAt = kstDayBounds(serviceDate).endAt;
   const observedStartAt = dayRelation === "PAST" ? dayStartAt
@@ -574,6 +587,27 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // uncached summary (see lib/d1-read-batch.ts). History reads are bounded above.
   const readResult = await readGroups(client, { ...statementGroups, ...probeGroups }, { maxStatements: 50 });
   const blocks = readResult.rows;
+  const forecastRecovery={scope:'TODAY_ONLY',applied:[] as string[],failed:dayRelation==='TODAY'?[...(forecasts.unavailable??[])]:[],fallback:'ARCHIVE_STALE',dailyComparisons:'ARCHIVE_ONLY',monthlyComparisons:'ARCHIVE_ONLY'};
+  if(dayRelation==='TODAY')for(const [family,db] of [['A5',forecasts.a5],['WEATHER',forecasts.weather]] as const){
+    if(!db)continue;
+    try {
+      const publication=await readForecastPublication(db,family,now);if(!publication)throw Error('missing_forecast_publication');
+      if(family==='A5'){
+        blocks.passengerForecastRows=blocks.passengerForecastRows.filter(row=>row.targetDate!==serviceDate).concat(publication.rows.filter(row=>row.targetDate===serviceDate));
+        if(serviceDate>=period.startDate&&serviceDate<=period.endDate&&!blocks.forecastDateRows.some(row=>row.day===serviceDate))blocks.forecastDateRows.push({day:serviceDate});
+        forecastRecovery.dailyComparisons='ACTIVE_CURRENT_ARCHIVE_BASELINES';
+      }
+      else blocks.weatherRows=publication.rows;
+      blocks.sources=blocks.sources.filter(row=>row.sourceId!==(family==='A5'?'INCHEON_PASSENGER_FORECAST':'KMA_VILAGE_FCST')).concat([{sourceId:family==='A5'?'INCHEON_PASSENGER_FORECAST':'KMA_VILAGE_FCST',status:'LIVE',retrievedAt:publication.checkedAt,eventAt:publication.issuance,detail:'validated isolated publication'}]);
+      forecastRecovery.applied.push(family);
+    }catch{forecastRecovery.failed.push(family);}
+  }
+  if(forecastRecovery.failed.length){
+    const ids:string[]=forecastRecovery.failed.map(family=>family==='A5'?'INCHEON_PASSENGER_FORECAST':'KMA_VILAGE_FCST');
+    blocks.sources=blocks.sources.map(row=>ids.includes(String(row.sourceId))?{...row,storedStatus:row.status,status:'STALE',recoveryStatus:'UNAVAILABLE'}:row);
+    for(const sourceId of ids)if(!blocks.sources.some(row=>row.sourceId===sourceId))blocks.sources.push({sourceId,status:'STALE',storedStatus:'MISSING',retrievedAt:null,eventAt:null,recoveryStatus:'UNAVAILABLE'});
+  }
+
   const readDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
   const {
     sources, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
@@ -821,7 +855,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
 
   return Response.json({
     mode: readDegraded ? "degraded" : "live-summary",
-    readStatus: { status: readDegraded ? 'DEGRADED' : 'COMPLETE', failedGroups: readResult.failedGroups, skippedGroups: readResult.skippedGroups, statementsAttempted: readResult.statementsAttempted },
+    ...(dayRelation==='TODAY'&&(forecasts.a5||forecasts.weather||forecasts.unavailable?.length)?{forecastRecovery}:{}),
+    readStatus: { status: readDegraded || forecastRecovery.failed.length ? 'DEGRADED' : 'COMPLETE', failedGroups: readResult.failedGroups, skippedGroups: readResult.skippedGroups, statementsAttempted: readResult.statementsAttempted },
     generatedAt,
     todayKst: kstToday,
     serviceDateKst: serviceDate,
@@ -836,7 +871,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
         .map(([key, sourceId]) => [key, sources.find(source => source.sourceId === sourceId)?.retrievedAt ?? null])),
     },
     holidays: holidayRows.flatMap(row=>{ try { return [{month:row.month,days:JSON.parse(String(row.payload)),retrievedAt:row.retrievedAt}]; } catch { return []; } }),
-    sources,
+    sources: projectRealtimeSourceStatus(sources,now),
     areas,
     airport: {
       transferForecast: transferRows,
@@ -903,7 +938,7 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     // Decided by the payload, not the status code: a 200 that carries no
     // sources or no area data is an outage in disguise and must never be
     // admitted to the shared edge cache.
-    headers: { "cache-control": readDegraded ? SUMMARY_NO_STORE : serviceDayCacheControl(summaryCacheControl({ sources, areas }),generatedAt), "x-robots-tag": CONTENT_API_ROBOTS_TAG },
+    headers: { "cache-control": readDegraded||(dayRelation==='TODAY'&&(forecasts.a5||forecasts.weather||forecasts.unavailable?.length)) ? SUMMARY_NO_STORE : serviceDayCacheControl(summaryCacheControl({ sources, areas }),generatedAt), "x-robots-tag": CONTENT_API_ROBOTS_TAG },
   });
 }
 

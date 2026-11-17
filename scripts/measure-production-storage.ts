@@ -191,6 +191,18 @@ const accountDatabases: Official<{ databases: number; totalFileSizeBytes: number
   };
 })();
 
+function printReport(report: unknown) { console.log(JSON.stringify(report, null, 2)); }
+
+// Emergency first look: exactly two metadata GETs, zero SQL/provider requests.
+// Account sizes unavailable from listing stay UNKNOWN, never inferred as zero.
+if (process.env.RPK_STORAGE_METADATA_ONLY === "true") {
+  printReport({ diagnostic: "production-storage-metadata", generatedAt,
+    officialDatabase, accountDatabases, rowsRead: 0, sqlRequests: 0,
+    growth: { basis: "UNAVAILABLE", reason: "metadata_only_single_observation" },
+    planningLimits: D1_FREE_PLANNING_LIMITS });
+  process.exit(0);
+}
+
 const sizeProbe = await database.prepare("SELECT 1 AS ok").all().catch((error: unknown) => {
   errors.push({ step: "size_after", error: safeError(error) });
   return null;
@@ -534,7 +546,7 @@ const retention = reports.flatMap((report) => {
 const complete = !stoppedAtCeiling && errors.length === 0 && scanRefusals.length === 0 && reports.length === presentTables.length;
 const ratio = (value: number | null, limit: number) => value === null ? null : Number((value / limit).toFixed(4));
 
-console.log(JSON.stringify({
+printReport({
   diagnostic: "production-storage",
   generatedAt,
   todayKst,
@@ -575,6 +587,6 @@ console.log(JSON.stringify({
   budget: { diagnosticCeiling: CEILING, diagnosticRowsRead: rowsRead, stoppedAtCeiling },
   errors,
   complete,
-}, null, 2));
+});
 
 if (!complete) process.exitCode = 1;

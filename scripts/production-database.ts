@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 
 interface WranglerConfig {
   account_id: string;
-  env: Record<string, { d1_databases: Array<{ database_id: string }> }>;
+  env: Record<string, { d1_databases: Array<{ binding?: string; database_id: string }> }>;
 }
 
 export interface ProductionDatabaseConfig {
@@ -32,7 +32,7 @@ export function resolveProductionDatabaseConfig(stage?: string): ProductionDatab
   const wranglerConfig = JSON.parse(
     readFileSync(new URL("../wrangler.production.jsonc", import.meta.url), "utf8"),
   ) as WranglerConfig;
-  const databaseId = wranglerConfig.env[resolvedStage]?.d1_databases?.[0]?.database_id;
+  const databaseId = wranglerConfig.env[resolvedStage]?.d1_databases?.find(entry => entry.binding === 'DB')?.database_id;
   if (!databaseId || databaseId.startsWith("00000000")) throw new Error(`oneshot_stage_unavailable_${resolvedStage}`);
 
   // Prefer the least-privilege dedicated write token when configured; the
