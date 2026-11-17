@@ -669,10 +669,12 @@ test("retired Seoul archive: insights explains every metric instead of leading w
 
 test("the About page answers a first-time visitor's questions", async ({ page }) => {
   await page.goto("/ko/about");
-  for (const question of ["누구를 위한 서비스인가요?", "어떤 정보를 볼 수 있나요?", "숫자와 색은 어떻게 읽나요?", "자료를 볼 때 주의할 점"]) {
-    await expect(page.getByRole("heading", { name: question })).toBeVisible();
-  }
-  await expect(page.locator("body")).toContainText("파란색 +는 신장, 빨간색 △는 역신장");
+  const guide=page.locator('.site-usage-guide');
+  await expect(guide.getByRole('heading',{name:'누가, 어떻게 쓰면 좋을까요?'})).toBeVisible();
+  await expect(guide.getByRole('heading',{name:'숫자는 이렇게 읽어주세요'})).toBeVisible();
+  for (const detail of await guide.locator(':scope > details').all()) await detail.locator('summary').click();
+  await expect(guide).toContainText('인천공항에서 일하며');
+  await expect(guide).toContainText('+는 신장, △는 역신장');
   await expect(page.locator("body")).toContainText("목적지 국가는 승객 국적이 아닙니다");
   await expect(page.locator("body")).not.toContainText(/modelVersion|predictionHash|recordOrigin|dataCutoff/);
   await page.setViewportSize({ width: 320, height: 844 });
