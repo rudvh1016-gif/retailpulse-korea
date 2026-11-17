@@ -927,10 +927,10 @@ test("keeps the source catalog visible and honest about what each source is", as
 /** The About page is for a customer, so it must not read like engineering notes. */
 test("the About page explains the airport product without developer jargon", async () => {
  const page=await read("../app/retailpulse-app.tsx"),about=await read("../app/site-usage-guide.tsx");
- assert.match(page,/view === "about" && <SiteUsageGuide/);
+ assert.match(page,/view === "about" && <AirportAboutView/);
  assert.ok(about.includes("누가, 어떻게 쓰면 좋을까요"));
  for(const jargon of ["modelVersion","featureVersion","predictionHash","recordOrigin","dataCutoff","isAggregate"])assert.doesNotMatch(about,new RegExp(jargon));
- for(const locale of ["ko","en","zh","ja"]){const response=await renderPath(`/${locale}/about`,locale);assert.equal(response.status,200);assert.match(await response.text(),/site-usage-guide/);}
+ for(const locale of ["ko","en","zh","ja"]){const response=await renderPath(`/${locale}/about`,locale);assert.equal(response.status,200);const html=await response.text();assert.match(html,/site-usage-guide/);assert.match(html,/<h1[^>]*data-heading="page"/);assert.match(html,/ABOUT KORETAIL/);}
 });
 
 /**

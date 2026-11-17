@@ -1,6 +1,6 @@
 # 서울 제품·수집 제외 — 비파괴 배포와 별도 용량 회수
 
-사용자 지시: 서울 관련 기능을 앞으로 제외하고 반영하되, 무료 유지·공항과 공유 자료 보존. 이 변경은 main `4ade5edf6d7c60637024096ead516b85e159b2c3`에서 분리했으며 혼합 복구 draft #600을 병합하지 않는다. 실제 운영 SQL DELETE/DROP/압축/VACUUM/Time Travel/내보내기·데이터 이동은 승인 범위가 아니다. 새 DB 생성도 보류다.
+사용자 지시: 서울 관련 기능을 앞으로 제외하고 반영하되, 무료 유지·공항과 공유 자료 보존. 이 변경은 main `4ade5edf6d7c60637024096ead516b85e159b2c3`에서 분리했으며 혼합 복구 draft #600을 병합하지 않는다. 실제 운영 SQL DELETE/DROP/압축/VACUUM/Time Travel/내보내기·데이터 이동은 승인 범위가 아니다. 새 공항용 DB는 이후 사용자 지시로 기존 계정 Free plan·빈 슬롯·합계 용량을 공식 확인한 경우에만 조건부 허용되었으며, 이 서울 제외 PR에는 포함하지 않는다.
 
 ## 반영 범위
 
@@ -34,7 +34,7 @@
 
 ## 별도 삭제 단계 전의 재현 가능한 보존·회수 게이트
 
-1. 기존 인증이 열리면 공식 메타데이터 GET2종부터 읽는다: `/accounts/{account}/d1/database/{production-id}`의file_size와 `/accounts/{account}/d1/database?per_page=100`의완결된DB수/합계. 선택 계정·Free plan·공유 DB/binding·측정 시각을 확인한다. size 누락/페이지 미완결은 UNKNOWN. 이 GET은 query/export가 아니다.
+1. 기존 인증이 열리면 공식 메타데이터 GET2종부터 읽는다: `/accounts/{account}/d1/database/{production-id}`의file_size와 `/accounts/{account}/d1/database?per_page=100`의완결된DB수/합계. 선택 계정·Free plan·공유 DB/binding·측정 시각을 확인한다. 목록의 file_size는 보장되지 않으므로 누락 시 각 DB 상세 GET을 한 번씩 읽어 합산한다. total_count 또는 완결 페이지로 슬롯을 확인하며 size 누락/페이지 미완결은 UNKNOWN. 새 DB 분리는 계정 공통 일일 read/write 한도를 늘리지 않는다. 이 GET은 query/export가 아니다.
 2. 후보별 actual oldest/newest를 기존 인덱스 seek로 읽고 source/area/기간·보존 등급을 manifest에 적는다. 전수 COUNT/rowid 범위로 정확한 바이트를 주장하지 않는다. 정확한 테이블/인덱스 크기 접근이 없으면 샘플 기반 추정을 별도 표기한다.
 3. 실제 삭제에 앞서 독립 백업을 별도 승인받는다. 현재 export는 금지라 실행하지 않는다. schema·index·trigger·migration SHA와 후보의 key/기간/행 수/내용 해시·관계 manifest를 함께 보존해야 한다. Time Travel은 독립 백업이 아니다. 무료 오프라인 저장 공간과 복구 여유도 실제 확인한다.
 4. 오프라인/승인된 격리 환경에 복원해 키·내용 해시·기간·관계·trigger,7/28일 및62일 context·월 비교의 재현을 확인한다. 서울 실시간 피드는 빠진 과거를 되살리지 않는다. 비공개 원본/불변 예측·실적/공유 자료는 이번 삭제 후보에서 제외한다.

@@ -642,7 +642,7 @@ export default function Home({ initialLang = "ko", initialView = "airport-glance
         {view === 'consumption' && <ConsumptionView lang={lang} area={selected} onArea={selectArea}/>}
         {view === "forecast" && <InsightsView lang={lang} selected={selected} setSelected={selectArea} />}
         {view === "tourism-desk" && <TourismDeskView lang={lang} area={selected} onAreaChange={selectArea} />}
-        {view === "about" && <SiteUsageGuide lang={lang} />}
+        {view === "about" && <AirportAboutView lang={lang} />}
         {view === "more" && <MoreView
           lang={lang}
           setLang={changeLanguage}
@@ -940,6 +940,22 @@ function InsightsView({ lang, selected, setSelected }: { lang: Lang; selected: A
         })}</p>
       </section>
       </details>
+    </section>
+  );
+}
+
+function AirportAboutView({lang}:{lang:Lang}) {
+  return (
+    <section className="view-section about-view">
+      <div className="view-intro">
+        <div>
+          <p className="eyebrow">ABOUT KORETAIL</p>
+          <h1 data-heading="page"><span className="heading-marker" aria-hidden="true"/>{localText(lang, { ko: "인천공항의 흐름을\n한눈에", en: "Incheon Airport trends\nat a glance", zh: "仁川机场趋势\n一览", ja: "公式データだけを、\nありのままに" })}</h1>
+          <p>{localText(lang, { ko: "인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.", en: "KORETAIL combines Korea and Retail, focusing on Incheon Airport flights, passenger trends and travel preparation, with source dates and references.", zh: "KORETAIL 由 Korea 与 Retail 组合而成，以仁川机场航班、旅客趋势与出行准备为中心，并标明资料日期和来源。", ja: "KORETAIL は Korea と Retail を組み合わせた名前です。仁川空港のフライト・旅客動向・旅行準備を中心に、資料の日付と出典を案内します。" })}</p>
+        </div>
+      </div>
+
+      <SiteUsageGuide lang={lang} />
     </section>
   );
 }

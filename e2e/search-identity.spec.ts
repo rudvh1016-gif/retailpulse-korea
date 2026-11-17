@@ -42,6 +42,8 @@ for (const width of [390, 1440]) {
     await expect(page.locator('.site-usage-guide')).toBeVisible();
     await expect(page).toHaveTitle('코리테일 소개 | 인천공항 중심 데이터 서비스 KORETAIL');
     await expect(page.locator('.site-usage-guide')).toContainText('인천공항에서 일하며');
+    await expect(page.locator('.about-view .view-intro')).toContainText('KORETAIL은 Korea와 Retail을 합친 이름');
+    await expect(page.locator('.about-view h1')).toBeVisible();
     await expect(page.locator('.site-footer')).toContainText('코리테일 KORETAIL');
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', aboutDescription);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/ko\/about$/);
