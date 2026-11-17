@@ -39,10 +39,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildMetadata(locale as SeoLocale, slug as SeoSlug);
 }
 
-export default async function LocalePage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+export default async function LocalePage({ params, searchParams }: { params: Promise<{ locale: string; slug: string }>; searchParams?: Promise<{ date?: string | string[] }> }) {
   const { locale, slug } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
-  const retiredDestination = airportOnlyDestination(locale, slug);
+  const retiredDestination = airportOnlyDestination(locale, slug)
+    ? airportOnlyDestination(locale, slug, (await searchParams)?.date)
+    : null;
   if (retiredDestination) permanentRedirect(retiredDestination);
   if (!standaloneSeoSlugs.includes(slug as typeof standaloneSeoSlugs[number])) notFound();
   const isArea = areaSlugs.includes(slug as typeof areaSlugs[number]);

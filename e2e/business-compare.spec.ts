@@ -31,10 +31,13 @@ test('a usual comparison states the verdict in range terms and shows its basis',
   expect(await tofuCharacters(prep)).toEqual([]);
 });
 
-test('a new area says it is still collecting instead of borrowing another area', async ({ page }) => {
+test('a retired area link keeps only the airport tab without borrowing a Seoul comparison', async ({ page }) => {
   const prep = await open(page, usual('itaewon', { basis: 'COLLECTING', verdict: null, range: null, validDays: 0, weeks: [] }));
   await expect(prep).toHaveAttribute('data-place','airport');
-  await expect(page.locator('.business-view .area-tabs')).toHaveCount(0);
+  const tabs = page.locator('.business-view .area-tabs').getByRole('tab');
+  await expect(tabs).toHaveCount(1);
+  await expect(tabs).toHaveText('인천공항');
+  await expect(tabs).toHaveAttribute('aria-selected', 'true');
   await expect(prep.getByTestId('usual-comparison')).toHaveCount(0);
   expect(usualReads.get(page)?.count).toBe(0);
 });
@@ -99,23 +102,41 @@ test('blocked storage hides the last-look block without breaking the briefing', 
   await expect(prep.getByTestId('last-check')).toHaveCount(0);
 });
 
-test('switching place and back keeps the earlier visit as the comparison', async ({ page }) => {
-  await open(page, usual('myeongdong'));
+test('switching terminals and back in one visit keeps the earlier T1 comparison', async ({ page }) => {
+  const prep = await open(page, usual('myeongdong'));
+  await expect(prep.getByTestId('prep-place')).toContainText('T1');
   await expect.poll(() => page.evaluate(() => localStorage.getItem('koretail-last-check-v1'))).not.toBeNull();
   await page.evaluate(() => {
     const ledger = JSON.parse(localStorage.getItem('koretail-last-check-v1') ?? '[]');
-    ledger[0].checkedAt = '2026-08-31T04:30:00.000Z';
-    const at=Object.keys(ledger[0].signature.airport)[0];
+    const previous = ledger.find((entry: {place: string}) => entry.place === 'airport:T1');
+    if (!previous) throw Error('airport T1 snapshot must have been saved');
+    previous.checkedAt = '2026-08-31T04:30:00.000Z';
+    const at=Object.keys(previous.signature.airport)[0];
     if(!at)throw Error('airport fixture must have an official band');
-    ledger[0].signature.airport[at]=Math.max(1,Math.floor(ledger[0].signature.airport[at]/2));
+    previous.signature.airport[at]=Math.max(1,Math.floor(previous.signature.airport[at]/2));
     localStorage.setItem('koretail-last-check-v1', JSON.stringify(ledger));
   });
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.getByTestId('last-check-headline')).toHaveText('지난 확인(13:30) 이후 달라진 점');
-  await page.goto('/ko/business?place=airport&terminal=T2');
-  await expect(page.getByTestId('business-prep')).toHaveAttribute('data-place','airport');
-  await page.goto('/ko/business?place=airport&terminal=T1');
+  // Use the real condition controls: page.goto would start another document
+  // visit and correctly compare against the snapshot this visit already wrote.
+  await prep.locator('.prep-change').click();
+  await prep.getByRole('radio', {name:'T2', exact:true}).check();
+  await prep.locator('.prep-form button[type=submit]').click();
+  await expect(prep.getByTestId('prep-place')).toContainText('T2');
+  await expect(prep).toHaveAttribute('data-place','airport');
+  await expect.poll(() => page.evaluate(() => {
+    const ledger = JSON.parse(localStorage.getItem('koretail-last-check-v1') ?? '[]');
+    return ledger.some((entry: {place: string}) => entry.place === 'airport:T2');
+  })).toBe(true);
+  await prep.getByTestId('last-check').locator(':scope > summary').click();
+  await expect(prep.getByTestId('last-check-first')).toBeVisible();
+  await expect(prep.getByTestId('last-check-changes')).toHaveCount(0);
+  await prep.locator('.prep-change').click();
+  await prep.getByRole('radio', {name:'T1', exact:true}).check();
+  await prep.locator('.prep-form button[type=submit]').click();
+  await expect(prep.getByTestId('prep-place')).toContainText('T1');
   await expect(page.getByTestId('last-check-headline')).toHaveText('지난 확인(13:30) 이후 달라진 점');
   await expect(page.getByTestId('last-check-changes')).toContainText('출국 예상 약');
   expect(usualReads.get(page)?.count).toBe(0);

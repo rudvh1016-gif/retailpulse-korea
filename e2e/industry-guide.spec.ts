@@ -17,16 +17,31 @@ for (const lang of ['ko', 'en', 'zh', 'ja'] as const) for (const width of [390, 
       await guide.getByRole('button', { name: industryProfiles[id].label[lang], exact: true }).click();
       for (const [index, row] of industryPlaybooks[id].priorities.entries()) {
         await expect(guide.getByRole('heading', { name: row.title[lang], exact: true })).toBeVisible();
-        await expect(guide.locator('.operating-priority').nth(index).locator('details')).toHaveCount(0);
-        await expect(guide.getByText(row.action[lang], { exact: true })).toBeVisible();
-        await expect(guide.getByText(row.reason[lang], { exact: true })).toBeVisible();
+        const priority = guide.locator('.operating-priority').nth(index);
+        await expect(priority.getByText(row.action[lang], { exact: true })).toBeVisible();
+        // Airport guidance keeps the reasoning in an evidence disclosure.
+        const evidence = priority.locator('details');
+        await expect(evidence).toHaveCount(1);
+        await expect(evidence).not.toHaveAttribute('open', '');
+        await expect(evidence.getByText(row.reason[lang], { exact: true })).not.toBeVisible();
+        const toggle = evidence.locator(':scope > summary');
+        await toggle.focus();
+        await toggle.press('Enter');
+        await expect(evidence).toHaveAttribute('open', '');
+        await expect(evidence.getByText(row.reason[lang], { exact: true })).toBeVisible();
+        await toggle.press('Enter');
+        await expect(evidence).not.toHaveAttribute('open', '');
       }
       await expect(guide.locator('.operating-record')).toHaveCount(0);
       await expect(guide.locator('.operating-priority')).toHaveCount(3);
-      await guide.locator('.operating-checklist > summary').click();
+      const checklist = guide.locator('.operating-checklist');
+      await checklist.locator(':scope > summary').click();
+      await expect(checklist).toHaveAttribute('open', '');
+      await expect(checklist.locator('.checklist-rows > li')).toHaveCount(industryProfiles[id].checklist[lang].length);
       expect(await tofuCharacters(guide)).toEqual([]);
     }
     await guide.getByRole('button', { name: industryProfiles.beauty.label[lang], exact: true }).click();
+    await guide.locator('.operating-priority').first().locator('details > summary').click();
     await expect(guide.getByText(industryPlaybooks.beauty.priorities[0].reason[lang], { exact: true })).toBeVisible();
     await guide.scrollIntoViewIfNeeded();
     await page.screenshot({ path: info.outputPath(`business-${lang}-${width}.png`) });
@@ -69,7 +84,7 @@ test('general preparation remains identifiable when current data is missing', as
   await expect(guide).not.toContainText('LIVE');
 });
 
-for (const width of [320, 390, 430]) test(`store scenes and keyboard disclosures ${width}`, async ({ page }, info) => {
+for (const width of [320, 390, 430]) test(`airport concept models and keyboard disclosures ${width}`, async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.setViewportSize({ width, height: 900 });
@@ -80,16 +95,20 @@ for (const width of [320, 390, 430]) test(`store scenes and keyboard disclosures
   const guide = page.getByTestId('industry-guide');
   for (const id of ['beauty', 'convenience'] as const) {
     await guide.getByRole('button', { name: industryProfiles[id].label.ko, exact: true }).click();
-    const image = guide.locator('.store-industry-model img');
+    const image = guide.locator('.airport-shop-model img');
+    await expect(guide.locator('.store-industry-model')).toHaveCount(0);
+    await expect(guide.locator('.airport-shop-model figcaption')).toContainText('실제 공항 매장 위치가 아닙니다');
     await image.scrollIntoViewIfNeeded();
     await expect(image).toHaveAttribute('loading', 'lazy');
     await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBeTruthy();
-    expect(await image.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(`/visuals/industry/v1/${id}-`);
+    expect(await image.evaluate((img: HTMLImageElement) => img.currentSrc)).toContain(`/airport-models/shop-${id}.webp`);
+    await expect(image).toHaveAttribute('alt', '');
     const detail = guide.locator('.operating-checklist');
     await expect(detail).not.toHaveAttribute('open', '');
     await detail.locator('summary').focus();
     await page.keyboard.press('Enter');
     await expect(guide.getByText(industryPlaybooks[id].priorities[0].action.ko, { exact: true })).toBeVisible();
+    await expect(detail.locator('.checklist-rows > li')).toHaveCount(industryProfiles[id].checklist.ko.length);
     await page.keyboard.press('Enter');
     await expect(detail).not.toHaveAttribute('open', '');
     await guide.scrollIntoViewIfNeeded();

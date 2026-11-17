@@ -1,3 +1,4 @@
+import { airportOnlyDestination } from "../../airport-only-routes";
 import { notFound, permanentRedirect } from "next/navigation";
 import { seoLocales, type SeoLocale } from "../../seo-config";
 
@@ -6,8 +7,8 @@ import { seoLocales, type SeoLocale } from "../../seo-config";
  * It renders no indexable copy of its own: the canonical Tourism Desk pages
  * always include the selected area in their URL.
  */
-export default async function TourismDeskRedirect({ params }: { params: Promise<{ locale: string }> }) {
+export default async function TourismDeskRedirect({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams?: Promise<{ date?: string | string[] }> }) {
   const { locale } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
-  permanentRedirect(`/${locale}`);
+  permanentRedirect(airportOnlyDestination(locale, "tourism-desk", (await searchParams)?.date)!);
 }

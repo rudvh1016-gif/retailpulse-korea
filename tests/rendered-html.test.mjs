@@ -189,12 +189,12 @@ test("renders the KORETAIL production shell", async () => {
 });
 
 test("retired Seoul routes redirect before data in all four locales", async () => {
- for(const locale of ["ko","en","zh","ja"])for(const slug of ["myeongdong","hongdae","seongsu","itaewon","today","where-to","consumption","forecast","predictions","tourism-desk",...["myeongdong","hongdae","seongsu","itaewon"].map(area=>`tourism-desk/${area}`)]){
-  const path=`/${locale}/${slug}`,response=await renderPath(`${path}?area=hongdae&date=2026-10-01`,locale);
+ for(const locale of ["ko","en","zh","ja"])for(const slug of ["myeongdong","hongdae","seongsu","itaewon","today","where-to","consumption","forecast","predictions","tourism-desk",...["myeongdong","hongdae","seongsu","itaewon"].map(area=>`tourism-desk/${area}`)])for(const [query,expectedSearch] of [["?area=hongdae&date=2026-10-01","?date=2026-10-01"],["?date=2026-02-30&area=hongdae",""],["?date=2026-10-01&date=2026-10-02",""],["?area=hongdae",""]]){
+  const path=`/${locale}/${slug}`,response=await renderPath(`${path}${query}`,locale);
   assert.equal(response.status,308,path);
   const location=new URL(response.headers.get("location"),"http://localhost");
   assert.equal(location.pathname,`/${locale}`,path);
-  assert.equal(location.search,"",path);
+  assert.equal(location.search,expectedSearch,path+query);
   assert.doesNotMatch(await response.text(),/class="tourism-background-values"|class="demand-card"|class="commercial-miniature-card"/);
  }
 });

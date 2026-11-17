@@ -10,6 +10,8 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
   await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+  // The retired area entry lands on airport home, whose optional baselines are explicitly unavailable.
+  for(const path of ['passenger-reference','glance-week-reference'])await page.route(`**/api/live/${path}*`,route=>route.fulfill({json:{status:'UNAVAILABLE',data:null}}));
   await page.route('**/api/live/flights*',routeSummary({mode:'live-flights',serviceDateKst:date,flights,truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}));
   await page.route('**/api/airport/facilities*',routeSummary({mode:'airport-facilities',facilities:[],hasMore:false}));
   await page.goto(`/${lang}/airport`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');

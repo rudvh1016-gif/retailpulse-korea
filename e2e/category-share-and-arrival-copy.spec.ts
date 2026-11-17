@@ -12,6 +12,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
   {group:'Retail',category:'편의점',level:null,payments:290,amountMin:0,amountMax:100},
  ]};
  await page.route('**/api/live/summary*',routeSummary(data));await page.route('**/api/live/flights*',r=>r.fulfill({json:{flights:[],count:0,serviceDateKst:data.serviceDateKst}}));
+ // Canonical airport home reads these references; no stored baseline is an explicit fixture state.
+ for(const path of ['passenger-reference','glance-week-reference'])await page.route(`**/api/live/${path}*`,route=>route.fulfill({json:{status:'UNAVAILABLE',data:null}}));
  await page.goto(`/${lang}/myeongdong`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page).toHaveURL(new RegExp(`/${lang}$`));
  await expect(page.getByTestId('commercial-composition')).toHaveCount(0);

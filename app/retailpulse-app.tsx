@@ -460,9 +460,9 @@ export default function Home({ initialLang = "ko", initialView = "airport-glance
   useEffect(() => {
     const onPopState = () => {
       const [, locale, legacySlug] = window.location.pathname.split("/");
-      const retired = airportOnlyDestination(locale, legacySlug);
-      if (retired) { window.location.replace(retired); return; }
       const query = new URLSearchParams(window.location.search);
+      const retired = airportOnlyDestination(locale, legacySlug, query.getAll("date").length === 1 ? query.get("date") : undefined);
+      if (retired) { window.location.replace(retired); return; }
       setServiceDate(/^\d{4}-\d{2}-\d{2}$/.test(query.get('date') ?? '') ? query.get('date') : null);
       if (!/\/(business|more)\/?$/.test(window.location.pathname) && query.get('area') && Object.hasOwn(areaInfo,query.get('area')!)) setSelected(query.get('area') as AreaId);
       const airportScope=deviceAirportScope(window.history.state);
@@ -961,7 +961,7 @@ function AirportAboutView({lang}:{lang:Lang}) {
 }
 
 function MoreView({
-  lang, setLang, selected, businessPlace, industry, onAbout, onNavigate,
+  lang, setLang, selected, businessPlace, industry, businessHref, onAbout, onNavigate,
 }: {
   lang: Lang; setLang: (value: Lang) => void; selected: AreaId; businessPlace: PrepPlace; industry: IndustryId | null; businessHref: string;
   onAbout: () => void;
@@ -969,6 +969,17 @@ function MoreView({
 }) {
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const airportSources = activeSourceCatalog.filter(row => !isSeoulOnlySourceId(row.id));
+  // More is the mobile entry to the retained airport briefing. Prepare only
+  // its two shared components after fonts settle, keeping the home lean.
+  useEffect(() => {
+    let live = true, idle = 0, timer: ReturnType<typeof setTimeout> | undefined;
+    void document.fonts.ready.then(() => {
+      if (!live) return;
+      if ("requestIdleCallback" in window) idle = requestIdleCallback(prepareBusinessView, { timeout: 1000 });
+      else timer = setTimeout(prepareBusinessView, 200);
+    });
+    return () => { live = false; if (idle) cancelIdleCallback(idle); clearTimeout(timer); };
+  }, []);
   return (
     <section className="view-section more-view">
       <SiteShare key={lang} lang={lang} />
@@ -984,7 +995,7 @@ function MoreView({
       <nav className="more-section-links" aria-label={localText(lang,{ko:'서비스 메뉴',en:'Service sections',zh:'服务菜单',ja:'サービスメニュー'})}>
         <button type="button" className="update-notice-trigger" aria-haspopup="dialog" onClick={()=>window.dispatchEvent(new Event(UPDATE_NOTICE_OPEN_EVENT))}>{localText(lang,{ko:'공지사항 보기',en:'View update notice',zh:'查看更新公告',ja:'更新のお知らせ'})}</button>
         {(lang === "ko" || lang === "zh") && <button type="button" className="update-notice-trigger" onClick={() => { const guide = document.getElementById("airport-usage-guide"); if (guide instanceof HTMLDetailsElement) { guide.open = true; guide.scrollIntoView({ behavior: "smooth", block: "start" }); } }}>{lang==='zh'?'仁川机场使用指南':'인천공항 이용 방법'}</button>}
-        {(['airport-glance','airport','airport-countries','airport-prepare','business','about'] as const).map(item=><a key={item} href={routeFor(lang,item,selected)} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
+        {(['airport-glance','airport','airport-countries','airport-prepare','business','about'] as const).map(item=><a key={item} href={item === 'business' ? businessHref : routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
       </nav>
       <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />

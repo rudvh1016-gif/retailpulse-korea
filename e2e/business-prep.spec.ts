@@ -4,15 +4,28 @@ import { tofuCharacters } from './font-glyphs';
 import { prepCopy, statusLine } from '../lib/business-prep-copy';
 import { industryProfiles } from '../lib/industry-guidance';
 import type { PrepWeatherRow } from '../lib/business-prep';
+import { airportSides } from '../lib/airport-sides-summary';
 
 // SUMMARY_FIXTURE is 2026-08-31 14:10 KST. Myeongdong has an official
 // "busy" band at 17:00 (issued 14:00), a 60% rain hour at 18:00 and two
 // official events running that day; the airport's T1 timeline has one
 // official band, 15:00 ~ 16:00, 3,500 departures.
 
-async function open(page: Page, lang = 'ko', width = 390) {
+// The generic summary intentionally has no optional sides block. These four
+// map/evidence cases supply the real projection instead of expecting absent data.
+const SIDES_FIXTURE = {
+  ...SUMMARY_FIXTURE,
+  airport: {
+    ...SUMMARY_FIXTURE.airport,
+    sides: airportSides('2026-08-31', 'TODAY', [], [
+      { physicalFlightId: 'prep-gate-1', terminal: 'T1', gate: '9', scheduledAt: '2026-08-31T15:05:00+09:00', status: 'scheduled', retrievedAt: SUMMARY_FIXTURE.generatedAt },
+    ], [], false, false),
+  },
+};
+
+async function open(page: Page, lang = 'ko', width = 390, summary = SUMMARY_FIXTURE) {
   await page.setViewportSize({ width, height: 900 });
-  await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+  await page.route('**/api/live/summary*', routeSummary(summary));
   // These cases exercise a chosen Seoul / beauty context. Fresh visits start
   // at the airport with no industry, covered in business-entry.spec.ts.
   await page.addInitScript(() => {
@@ -171,9 +184,11 @@ for (const width of [320, 390, 430]) {
   test(`airport preparation excludes Seoul models and keeps keyboard evidence at ${width}px`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    const prep = await open(page, 'ko', width);
+    const prep = await open(page, 'ko', width, SIDES_FIXTURE);
     await expect(prep).toHaveAttribute('data-place', 'airport');
     await expect(prep.getByTestId('airport-sides')).toBeVisible();
+    await expect(prep.getByTestId('departure-map-section')).toBeVisible();
+    await expect(prep.getByTestId('gates-areas')).toContainText('T1 본관 1편');
     await expect(prep.locator('[data-fact="CROWD_MAX"], [data-fact="RAIN_MAX"], [data-fact="EVENTS"]')).toHaveCount(0);
     const action = prep.locator('.prep-actions > li').first();
     await action.locator('summary').focus();
@@ -189,7 +204,7 @@ for (const width of [320, 390, 430]) {
 
 test('zero rain stays zero and absent weather creates no weather models', async ({ page }) => {
   const weather = (SUMMARY_FIXTURE.areas.myeongdong.weather as PrepWeatherRow[]).map(row => ({ ...row, precipitationProbability: 0 }));
-  await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
+  await page.route('**/api/live/summary*', routeSummary({ ...SIDES_FIXTURE, areas: {
     ...SUMMARY_FIXTURE.areas, myeongdong: { ...SUMMARY_FIXTURE.areas.myeongdong, weather },
   } }));
   await page.goto('/ko/business?place=airport&terminal=T1');
@@ -198,12 +213,14 @@ test('zero rain stays zero and absent weather creates no weather models', async 
   await expect(prep.getByTestId('prep-place')).toHaveText('인천공항 T1');
   await expect(prep.locator('.prep-actions > li[data-rule="RAIN"]')).toHaveCount(0);
   await page.unroute('**/api/live/summary*');
-  await page.route('**/api/live/summary*', routeSummary({ ...SUMMARY_FIXTURE, areas: {
+  await page.route('**/api/live/summary*', routeSummary({ ...SIDES_FIXTURE, areas: {
     ...SUMMARY_FIXTURE.areas, myeongdong: { ...SUMMARY_FIXTURE.areas.myeongdong, weather: [] },
   } }));
   await page.reload();
   await expect(prep.locator('[data-fact="RAIN_MAX"], [data-fact="TEMPERATURE_RANGE"]')).toHaveCount(0);
   await expect(prep.locator('img[src*="/rain-"], img[src*="/temperature-"]')).toHaveCount(0);
   await expect(prep.getByTestId('airport-sides')).toBeVisible();
+  await expect(prep.getByTestId('departure-map-section')).toBeVisible();
+  await expect(prep.getByTestId('gates-areas')).toContainText('T1 본관 1편');
   await expect(prep.locator('.prep-actions > li[data-rule="RAIN"]')).toHaveCount(0);
 });

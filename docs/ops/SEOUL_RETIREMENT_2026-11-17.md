@@ -56,3 +56,11 @@
 `seoul_subway_ridership`·`seoul_subway_collection_checkpoint`는 collector의 역별 저장·checkpoint 경로를 유지한다. 테이블명의 서울 접두어로 삭제 후보를 정하지 않는다. `drizzle/0016_operational_context_forecast.sql`의 prediction_inputs UPDATE/DELETE 차단 및 airport_forecast_versions 불변 trigger, `0001_crazy_nekra.sql` predictions 불변 trigger를 그대로 보존한다. weather/forecast는 지역 key가 공유되므로 이번 변경은 SQL 삭제 predicate를 만들지 않는다. 공개 summary의 서울 전용 query group만 비활성화하고 shared weather/subway group은 로컬 SQLite 회귀 검증으로 유지 확인했다.
 
 현재 결과는 서울 화면·수집 제외 코드의 로컬 검증이다. 측정된 운영 DB 여유=UNKNOWN, 회수한 물리 bytes=0, 신규 공항 저장 성공/공개 관측시각 갱신=미검증이다. CI·배포와 후속 공개 smoke 결과는 PR에 별도로 기록한다.
+
+## 실제 브라우저 검증에서 보완한 보존 경로
+
+유효한 단일 선택 날짜는 서울 경로에서 공항으로 이동해도 유지하고, 서울 지역·분류 등 다른 쿼리와 중복/잘못된 날짜는 제거한다. 빌드된 서버의 page searchParams 전달 문제를 실제 HTTP 검증에서 확인하여 기존 proxy의 은퇴 경로만 렌더링 전에 처리한다. 활성 공항 경로의 캐시·정적 생성은 바꾸지 않는다. More의 businessHref 전달 및 공항 매장 준비 코드의 idle/포인터/키보드 사전 로드를 복원하여 T2·동서편·날짜와 실제 매장 진입을 유지한다.
+
+뉴스 항목 테스트는 일시적인 DOM 교체가 끝난 뒤 유일 항목1개·링크·문구를 확인하며 기존 키보드 Enter 이동·도착 제목·API1회·크기 검증을 유지한다. 지속적인 중복은 실패한다. 뉴스 런타임 변경은 없다. 해당 레이스 자체를 고쳤다는 주장은 하지 않으며 최종 실제 Chromium 검증이 필요하다.
+
+최신 로컬 재검증: unit2,893/2,893, built Worker SSR53/53(은퇴 경로14개×4언어×유효/무효/중복/미지정 날짜4종의224개실제redirect 확인 포함), 보호·경로58/58, typecheck/build/secret scan 성공. lint0오류/기존25경고. 실제 Chromium의 마지막 실패를 반영한 최신 커밋 CI 전체 성공은 여전히 병합 전 게이트다.

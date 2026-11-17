@@ -55,8 +55,8 @@ test("all former Tourism Desk routes redirect to airport and never enter the sit
     readFile(new URL("../app/[locale]/tourism-desk/[area]/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/sitemap.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(redirectPage, /permanentRedirect\(`\/\$\{locale\}`\)/);
-  assert.match(areaPage, /permanentRedirect\(`\/\$\{locale\}`\)/);
+  assert.ok(redirectPage.includes('permanentRedirect(airportOnlyDestination(locale, "tourism-desk",'));
+  assert.ok(areaPage.includes('permanentRedirect(airportOnlyDestination(locale, "tourism-desk",'));
   assert.doesNotMatch(areaPage, /RetailPulseApp|preload|initialView/);
   assert.match(sitemap, /standaloneSeoSlugs(\.filter\([^\n]*?\))?\.map/);
   assert.doesNotMatch(sitemap, /tourismDeskAreas\.map/);
@@ -86,6 +86,6 @@ test("all former Tourism Desk routes redirect to airport and never enter the sit
 
 test("retired Tourism Desk destinations cannot inherit a saved Seoul location or retrieve data", async () => {
  const areaPage = await readFile(new URL("../app/[locale]/tourism-desk/[area]/page.tsx", import.meta.url), "utf8");
- assert.match(areaPage,/permanentRedirect\(`\/\$\{locale\}`\)/);
+  assert.ok(areaPage.includes('permanentRedirect(airportOnlyDestination(locale, "tourism-desk",'));
  assert.doesNotMatch(areaPage,/initialArea|initialScope|initialRoute|preload|RetailPulseApp/);
 });

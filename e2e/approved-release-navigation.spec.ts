@@ -32,7 +32,8 @@ for(const lang of ['ko','en','zh','ja'])test(`retired area normalizes before Mor
  await expect(page.locator('.more-section-links a[href*="hongdae"]')).toHaveCount(0);
  await page.locator(`.more-section-links a[href^="/${lang}/business"]`).click();
  await expect(page.getByTestId('business-prep')).toHaveAttribute('data-place','airport');
- await expect(page.locator('.business-view .area-tabs button')).toHaveCount(0);
+ await expect(page.locator('.business-view .area-tabs button')).toHaveCount(1);
+ await expect(page.locator('.business-view .area-tabs button')).toHaveText({ko:'인천공항',en:'Incheon Airport',zh:'仁川机场',ja:'仁川空港'}[lang]!);
  await page.goBack();await expect(page).toHaveURL(new RegExp(`/${lang}/more`));
  await page.goBack();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
 });

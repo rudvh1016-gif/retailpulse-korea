@@ -9,7 +9,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const terminal of ['all','T
  await page.goto(`/${lang}/airport?${terminal==='CONCOURSE'?'terminal=T1&building=CONCOURSE':`terminal=${terminal}`}#airport-departure-preparation`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const removed=page.locator('[data-testid="departure-preparation"],[data-testid="departure-guide-entry"],[data-testid="passenger-basic-steps"],[data-testid="prep-live-summary"],#airport-departure-preparation,a[href*="#airport-departure-preparation"]');
  await expect(removed).toHaveCount(0);
- const news=page.getByTestId('airport-customs-news-entry');await expect(news).toBeVisible();await expect(news).toHaveAttribute('href',`/${lang}/airport-news`);
+ const news=page.getByTestId('airport-customs-news-entry');
+ await expect(async()=>{await expect(news).toHaveCount(1);await expect(news).toBeVisible();await expect(news).toHaveAttribute('href',`/${lang}/airport-news`);}).toPass({timeout:8000});
  // The surviving action starts at its container's left edge: no empty guide column remains.
  const box=(await news.boundingBox())!,container=(await news.locator('..').boundingBox())!;expect(Math.abs(box.x-container.x)).toBeLessThanOrEqual(1);
  await expect(page.locator('#airport-data-flow')).toBeVisible();
