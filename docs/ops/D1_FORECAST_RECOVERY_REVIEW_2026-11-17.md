@@ -1,3 +1,5 @@
+> Follow-up: [independent authority and measured local read budgets](D1_ADMISSION_AND_READ_BUDGET_2026-11-17.md). Production HOLD remains; cache is never authoritative.
+
 # A5 and KMA isolated recovery: deployment review, not activation
 
 This addendum supersedes the A5/KMA exclusions and cache/bootstrap activation guidance in D1_CAPACITY_INTEGRATION_2026-11-17.md. All flags remain off; no production binding/configuration was changed. Production recovery and current authenticated database/account capacity are UNKNOWN. Draft #600 must not be deployed on the strength of local tests alone.
