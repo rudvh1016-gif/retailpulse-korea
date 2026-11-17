@@ -114,7 +114,8 @@ for (const width of [320, 390, 430]) test(`airport concept models and keyboard d
     await guide.scrollIntoViewIfNeeded();
     await guide.screenshot({ path: info.outputPath(`${id}-${width}.png`) });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
-    expect(await guide.locator('.operating-priority h4').first().evaluate(el => getComputedStyle(el).color)).toBe('rgb(0, 0, 0)');
+    // The retained airport guide inherits the existing --ink (#111111) token.
+    expect(await guide.locator('.operating-priority h4').first().evaluate(el => getComputedStyle(el).color)).toBe('rgb(17, 17, 17)');
   }
   expect(errors).toEqual([]);
 });
