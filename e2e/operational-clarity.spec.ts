@@ -56,16 +56,17 @@ test('a stale weather source says whether KMA had no data or the connection fail
  }
 });
 
-test('records show the preserved limited scorecard and exact missing weekday inputs',async({page})=>{
+test('retired Seoul archive: records show the preserved limited scorecard and exact missing weekday inputs',async({page})=>{
+ const langCode = 'ko';
+ const retiredReads: string[] = [];
+ await page.route('**/api/**',route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
- await page.route('**/api/live/predictions*',routeSummary({targetDate:'2026-09-06',run:null,
- coverage:{days:7,latestAt:null,missingDays:[],dailyHours:[],readiness:{targetDate:'2026-09-06',hours:[{hour:10,ready:false,compatible:true,missingWeeks:1,sampleDates:['2026-08-30']}]}},
- records:[{targetAt:'2026-09-05T10:00:00+09:00',predicted:1600,actual:1800,createdAt:'2026-09-04T09:30:00Z',actualAt:'2026-09-05T10:05:00+09:00'}]}));
- await page.goto('/ko/forecast');
- await page.getByText('자료·예측 정확도',{exact:true}).click();
- await expect(page.locator('.prediction-score')).toContainText('평균 차이 약 200명');
- await page.locator('.prediction-readiness summary').click();
- await expect(page.locator('.prediction-readiness')).toContainText('1주 확보 · 1주 더 필요');
+ page.on('request',request => { const url = new URL(request.url()); if (url.pathname === '/api/live/predictions' || url.searchParams.get('view') === 'records') retiredReads.push(request.url()); });
+ await page.goto(`/${langCode}/forecast?area=hongdae&date=2026-08-31#prediction-score`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}`);
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.prediction-history, .records-chart, .area-tabs')).toHaveCount(0);
+ expect(retiredReads).toEqual([]);
 });
 
 test('first load preloads one shared summary and uses the small Korean shell font',async({page})=>{

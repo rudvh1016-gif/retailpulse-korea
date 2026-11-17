@@ -9,7 +9,10 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/api/live/flights*',route=>route.fulfill({json:{mode:'live-flights',flights:[],truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}}));
  let newsRequests=0;await page.route('**/api/airport/news',route=>{newsRequests++;return route.fulfill({json:{status:'MISSING',today:'2026-10-11',items:[]}});});
  await page.goto(`/${lang}/airport`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');expect(newsRequests).toBe(0);
- const entry=page.getByTestId('airport-customs-news-entry');await entry.scrollIntoViewIfNeeded();await expect(entry).toHaveAttribute('href',`/${lang}/airport-news`);await expect(entry).toHaveText(airportNewsCopy[lang].entry);
+ const entry=page.getByTestId('airport-customs-news-entry');
+ // Hydration can replace the launcher as the stored summary settles. Re-resolve
+ // the same unique entry while retaining its destination/text requirements.
+ await expect(async()=>{await expect(entry).toHaveCount(1);await entry.scrollIntoViewIfNeeded();await expect(entry).toHaveAttribute('href',`/${lang}/airport-news`);await expect(entry).toHaveText(airportNewsCopy[lang].entry);}).toPass({timeout:8000});
  const newsBox=(await entry.boundingBox())!;expect(newsBox.height).toBeGreaterThanOrEqual(64);expect(newsBox.height).toBeLessThan(80);await expect(page.getByTestId('departure-guide-entry')).toHaveCount(0);
  const textBox=(await entry.locator('strong').boundingBox())!;expect(textBox.y).toBeGreaterThanOrEqual(newsBox.y);expect(textBox.y+textBox.height).toBeLessThanOrEqual(newsBox.y+newsBox.height);
  expect(await tofuCharacters(entry)).toEqual([]);await entry.focus();await page.keyboard.press('Enter');await expect(page.getByRole('heading',{level:1})).toHaveText(airportNewsCopy[lang].title);await expect(page.getByRole('status')).toHaveText(airportNewsCopy[lang].empty);

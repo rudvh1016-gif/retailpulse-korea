@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, isSeoulOnlySourceId } from "../lib/product-scope";
 /** Manual / existing post-deployment bookkeeping. No provider credentials or dispatch capability. */
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
 import { resolveProductionDatabaseConfig } from './production-database';
@@ -25,6 +26,7 @@ if(mode==='recover') {
     try {publicBody=await readPublicEvidence(new Date().toISOString());}catch { /* no publication proof */ }
     const sources=(await database.prepare('SELECT source_id FROM source_health ORDER BY source_id LIMIT 100').all<{source_id:string}>()).results;
     for(const {source_id} of sources) {
+      if(!SEOUL_ENABLED && isSeoulOnlySourceId(source_id))continue;
       const now=new Date().toISOString(),measurement=await measureSource(db,source_id,now);
       verifyPublicMeasurement(measurement,publicBody);
       // Existing run identity prevents inspecting the same failure twice from inventing recurrence.

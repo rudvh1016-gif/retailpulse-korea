@@ -1,9 +1,11 @@
+import {SEOUL_ENABLED} from '../../../../lib/product-scope';
 import { getDb } from '../../../../db';
 import { kstDayOf,shiftKstDay } from '../../../../lib/kst';
 import { POPULATION_MODEL } from '../../../../lib/population-predictions';
 import { CONTENT_API_ROBOTS_TAG } from '../../../../lib/crawl-policy';
 export const dynamic='force-dynamic';
 export async function GET(request:Request) {
+  if(!SEOUL_ENABLED)return Response.json({status:'RETIRED',reason:'seoul_product_removed'},{status:410,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
   return predictionsResponse(request);
 }
 export async function predictionsResponse(request:Request,resolveClient=async()=>(await getDb()).$client,now=()=>new Date().toISOString()) {

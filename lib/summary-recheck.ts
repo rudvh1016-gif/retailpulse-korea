@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, isSeoulOnlySourceId } from "./product-scope";
 /**
  * Which source problems make an open page re-check the summary sooner.
  *
@@ -31,7 +32,7 @@ export const FAST_RECHECK_SOURCE_IDS: ReadonlySet<string> = new Set([
   'KMA_VILAGE_FCST',
   'SEOUL_CITYDATA_CMRCL',
   'SEOUL_CITYDATA_PPLTN',
-]);
+].filter(id => SEOUL_ENABLED || !isSeoulOnlySourceId(id)));
 
 const PROBLEM_STATUSES: ReadonlySet<string> = new Set(['ERROR', 'DEGRADED', 'MISSING']);
 

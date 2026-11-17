@@ -40,10 +40,9 @@ jobs:
           # Only this primary has the existing serialized one-runner fallback.
           RPK_A4_STOP_ON_INITIAL_CONNECT_TIMEOUT: "true"
           ENABLE_PRODUCTION_COLLECTOR: "true"
-          RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2,seoul_realtime
+          RPK_PRODUCTION_SOURCES: airport_congestion,airport_congestion_t2
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
-          SEOUL_OPEN_DATA_KEY: ${{ secrets.SEOUL_OPEN_DATA_KEY }}
       # Reads THIS cycle's per-source results. `set -o pipefail` above keeps
       # the collector's own failure as this job's failure, so the red badge
       # and the operational ledger still record the original attempt exactly

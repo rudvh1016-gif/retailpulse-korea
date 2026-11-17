@@ -1,8 +1,9 @@
+import { archivedSeoulContract } from "./helpers/archived-seoul-contract.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
-import { collectForeignPurposeMobility } from "../lib/collector";
+const { collectForeignPurposeMobility } = await archivedSeoulContract("collector");
 import {
   aggregateForeignPurposeMobility,
   assertPurposeMobilityHeader,

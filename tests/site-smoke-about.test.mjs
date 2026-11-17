@@ -11,16 +11,15 @@ const predicate=workflow.match(/check\("about page is live", (.+), `status /)?.[
 assert.ok(predicate,'the real production About check must be exercised');
 const check=runInNewContext(`${helper}\n(status,html)=>{const about={status};const aboutHtml=html;return ${predicate};}`);
 const sections=[
- ['누구를 위한 서비스인가요?','공항의 오늘과 달라진 흐름을 살펴보는 서비스입니다.'],
- ['어떤 정보를 볼 수 있나요?','국가별 흐름은 목적지별 여객과 항공편'],
- ['숫자와 색은 어떻게 읽나요?','표시 숫자는 반올림하며 계산은 원래 값으로 합니다.'],
- ['자료를 볼 때 주의할 점','목적지 국가는 승객 국적이 아닙니다.'],
+ ['국가별 흐름','숫자는 이렇게 읽어주세요'],
+ ['언제 새 자료가 보이나요?','목적지 국가는 승객 국적이 아닙니다.'],
+ ['자료의 한계','매출·적정 인원·재고 수량을 예측하지 않습니다.'],
 ];
-const intro='<h1><span aria-hidden="true"></span>인천공항의 흐름을\n한눈에</h1><p>인천공항 항공편·여객 흐름과 여행 준비 정보를 제공하는 KORETAIL. 자료별 기준일과 출처를 함께 안내합니다.</p>';
-const section=([heading,body])=>`<section class="about-section"><h2>${heading}</h2><p>${body}</p></section>`;
-const page=(items=sections,lead=intro)=>`<html><head><title>KORETAIL 소개</title></head><body><main><section class="about-view">${lead}${items.map(section).join('')}</section></main></body></html>`;
+const intro='<h2 id="site-usage-title"><span aria-hidden="true"></span>누가, 어떻게 쓰면 좋을까요?</h2><p>인천공항에서 일하며 오늘의 상황과 평소와 달라진 흐름을 확인하는 곳입니다.</p>';
+const section=([heading,body])=>`<section><h3>${heading}</h3><p>${body}</p></section>`;
+const page=(items=sections,lead=intro)=>`<html><head><title>KORETAIL 소개</title></head><body><main><section class="site-usage-guide">${lead}<details data-testid="airport-usage-guide">${items.map(section).join('')}</details></section></main></body></html>`;
 
-test('current About title, introduction and four populated sections pass without the obsolete wording',()=>{
+test('airport guide title, introduction and populated truth boundaries pass without obsolete wording',()=>{
  assert.equal(page().includes('KORETAIL은 무엇인가요'),false);assert.equal(check(200,page()),true);
 });
 test('HTTP 200 and the old marker cannot pass an empty main',()=>{
@@ -42,5 +41,5 @@ test('metadata, scripts, templates and comments cannot substitute for real main 
  assert.equal(check(200,page().replace('<main>','<aside>').replace('</main>','</aside>')),false);
 });
 test('rendering whitespace and decorative heading spans do not break the semantic content check',()=>{
- assert.equal(check(200,page().replaceAll('<h2>','<h2>\n<span aria-hidden="true"></span>')),true);
+ assert.equal(check(200,page().replaceAll('<h3>','<h3>\n<span aria-hidden="true"></span>')),true);
 });

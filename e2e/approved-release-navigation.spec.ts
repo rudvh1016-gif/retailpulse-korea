@@ -23,10 +23,17 @@ for(const width of [390,1440])test(`airport glance keeps shared date URL and his
  await page.locator('.glance-controls').getByRole('button',{name:'Today',exact:true}).click();await expect(page).not.toHaveURL(/date=/);await expect(input).toHaveValue(SUMMARY_FIXTURE.serviceDateKst);
 });
 
-test('mobile More keeps the chosen store area and date',async({page})=>{
- await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto('/ko/hongdae?date=2026-10-01');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const nav=page.locator('.bottom-nav');await nav.locator('a').last().click();await page.locator('.more-section-links a[href^="/ko/business"]').click();await expect(page).toHaveURL(/business\?date=2026-10-01/);await expect(page.locator('.business-view .area-tabs button[aria-selected=true]')).toHaveText('홍대');
-});
-
-test('returning to the airport before More carries airport context and preserves the saved Seoul area',async({page})=>{
- await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.goto('/ko/hongdae?date=2026-10-01');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');const nav=page.locator('.bottom-nav');await nav.locator('a').first().click();await nav.locator('a').last().click();await page.locator('.more-section-links a[href^="/ko/business"]').click();await expect(page).toHaveURL(/business\?date=2026-10-01/);await expect(page.locator('.business-view .area-tabs button[aria-selected=true]')).toHaveText('인천공항');expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('retailpulse-preferences')??'{}').area)).toBe('hongdae');
+for(const lang of ['ko','en','zh','ja'])test(`retired area normalizes before More and airport business ${lang}`,async({page})=>{
+ await page.setViewportSize({width:390,height:900});await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${lang}/hongdae?date=2026-10-01`);
+ await expect(page).toHaveURL(new RegExp(`/${lang}\\?date=2026-10-01$`));
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ const nav=page.locator('.bottom-nav');await nav.locator('a').last().click();
+ await expect(page.locator('.more-section-links a[href*="hongdae"]')).toHaveCount(0);
+ await page.locator(`.more-section-links a[href^="/${lang}/business"]`).click();
+ await expect(page.getByTestId('business-prep')).toHaveAttribute('data-place','airport');
+ await expect(page.locator('.business-view .area-tabs button')).toHaveCount(1);
+ await expect(page.locator('.business-view .area-tabs button')).toHaveText({ko:'인천공항',en:'Incheon Airport',zh:'仁川机场',ja:'仁川空港'}[lang]!);
+ await page.goBack();await expect(page).toHaveURL(new RegExp(`/${lang}/more`));
+ await page.goBack();await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
 });

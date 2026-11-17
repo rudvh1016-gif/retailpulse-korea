@@ -10,6 +10,8 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   await page.setViewportSize({width,height:900});await page.emulateMedia({reducedMotion:'reduce'});
   const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>{if(message.type()==='error')errors.push(message.text());});
   await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+  // The retired area entry lands on airport home, whose optional baselines are explicitly unavailable.
+  for(const path of ['passenger-reference','glance-week-reference'])await page.route(`**/api/live/${path}*`,route=>route.fulfill({json:{status:'UNAVAILABLE',data:null}}));
   await page.route('**/api/live/flights*',routeSummary({mode:'live-flights',serviceDateKst:date,flights,truncated:false,retrievedAt:SUMMARY_FIXTURE.generatedAt}));
   await page.route('**/api/airport/facilities*',routeSummary({mode:'airport-facilities',facilities:[],hasMore:false}));
   await page.goto(`/${lang}/airport`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
@@ -31,18 +33,18 @@ for(const lang of ['ko','en','zh','ja'] as const) for(const width of [360,390,43
   await page.locator('.airport-context-nav button').nth(3).click();await expect(page.getByTestId('airport-parking-guide')).toHaveCount(0);await expect(page.locator('a[href="https://www.airport.kr/ap_ko/955/subview.do"]')).toHaveCount(0);
   await page.goto(`/${lang}/myeongdong`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await expect(page.getByTestId('seoul-facility-guide')).toHaveCount(0);
-  await expect(page.locator('#live-signals-title')).toBeVisible();
+  await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
   expect(errors).toEqual([]);
  });
 }
 
-test('Seoul facility removal preserves demand signals without requesting facility data',async({page})=>{
+test('Retired Seoul entry redirects without requesting facility data',async({page})=>{
  let calls=0;await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));await page.route('**/data/seoul-toilets/*',route=>{calls++;return route.fulfill({status:503,json:{}});});
  for(const area of ['myeongdong','hongdae','seongsu','itaewon']){
   await page.goto(`/ko/${area}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
   await expect(page.getByTestId('seoul-facility-guide')).toHaveCount(0);await expect(page.getByTestId('seoul-toilets')).toHaveCount(0);await expect(page.getByTestId('seoul-lockers')).toHaveCount(0);
-  await expect(page.locator('#live-signals-title')).toHaveText('오늘 수요를 움직이는 신호');
+  await expect(page).toHaveURL(/\/ko$/);await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
  }
  expect(calls).toBe(0);
 });

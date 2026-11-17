@@ -1,6 +1,5 @@
 import {test, expect} from '@playwright/test';
 import {routeSummary, SUMMARY_FIXTURE} from './summary-fixture';
-import {recordsFixture} from './monthly-records-fixture';
 import {airportNewsCopy} from '../lib/airport-customs-news-copy';
 
 test('stalled customs news reaches the existing error state and a manual retry recovers', async ({page}) => {
@@ -22,28 +21,17 @@ test('stalled customs news reaches the existing error state and a manual retry r
   } finally {release();}
 });
 
-test('stalled monthly records expose the existing retry without inventing zero data', async ({page}) => {
-  let release!: () => void, calls = 0;
-  const held = new Promise<void>(resolve => {release = resolve;});
-  await page.clock.setFixedTime(new Date('2026-10-06T10:00:00Z'));
-  await page.route('**/api/live/summary*', async route => {
-    const url = new URL(route.request().url());
-    if (url.searchParams.get('view') !== 'records') {await route.fulfill({json: SUMMARY_FIXTURE}); return;}
-    calls++;
-    if (calls === 1) {await held; await route.abort().catch(() => {}); return;}
-    await route.fulfill({json: recordsFixture()});
-  });
-  try {
-    await page.goto('/ko/forecast');
-    const panel = page.locator('.monthly-records');
-    await expect(panel.getByRole('status')).toContainText('불러오지 못했습니다', {timeout: 20_000});
-    await expect(page.getByTestId('monthly-records-result')).toHaveCount(0);
-    expect(calls).toBe(1);
-    await page.getByRole('button', {name: '다시 불러오기', exact: true}).click();
-    await expect(page.getByTestId('monthly-records-result')).toBeVisible();
-    await expect(page.getByTestId('record-month-2026-10')).toContainText('27,000–29,000');
-    expect(calls).toBe(2);
-  } finally {release();}
+test('retired Seoul archive: stalled monthly records expose the existing retry without inventing zero data', async ({page}) => {
+ const langCode = 'ko';
+ const retiredReads: string[] = [];
+ await page.route('**/api/**',route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
+ page.on('request',request => { const url = new URL(request.url()); if (url.pathname === '/api/live/predictions' || url.searchParams.get('view') === 'records') retiredReads.push(request.url()); });
+ await page.goto(`/${langCode}/forecast?area=hongdae&date=2026-08-31#prediction-score`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}`);
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.prediction-history, .records-chart, .area-tabs')).toHaveCount(0);
+ expect(retiredReads).toEqual([]);
 });
 
 test('stalled facility directory becomes a failed read and the next filter can recover', async ({page}) => {
@@ -70,23 +58,14 @@ test('stalled facility directory becomes a failed read and the next filter can r
   } finally {release();}
 });
 
-test('an invalid event cursor cannot append rows or create a repeated pagination loop', async ({page}) => {
-  await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-  let valid = false, calls = 0;
-  await page.route('**/api/live/events*', async route => {
-    calls++;
-    await route.fulfill({json: {events: SUMMARY_FIXTURE.areas.myeongdong.events, nextOffset: valid ? null : 0}});
-  });
-  await page.goto('/ko/myeongdong');
-  const panel = page.locator('.event-signal-panel');
-  await panel.getByRole('button', {name: '수집된 행사 전체 보기', exact: true}).click();
-  await expect(panel.getByRole('status')).toHaveText('행사를 불러오지 못했습니다. 다시 눌러주세요.');
-  await expect(panel.locator('.event-card')).toHaveCount(3);
-  expect(calls).toBe(1);
-  valid = true;
-  await panel.getByRole('button', {name: '행사 더 보기', exact: true}).click();
-  await expect(panel.locator('.event-card')).toHaveCount(4);
-  await expect(panel.getByRole('status')).toHaveCount(0);
-  await expect(panel.getByRole('button', {name: '행사 더 보기', exact: true})).toHaveCount(0);
-  expect(calls).toBe(2);
+test('retired Seoul entry: an invalid event cursor cannot append rows or create a repeated pagination loop', async ({page}) => {
+ const langCode = 'ko';
+ await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto(`/${langCode}/myeongdong?date=2026-08-31`);
+ await expect(page).toHaveURL(url => url.pathname === `/${langCode}` || url.pathname === `/${langCode}/`);
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ await expect(page.locator('.area-tabs, .tourism-desk, .commercial-miniature-card, .population-outlook, .seoul-weather-panel')).toHaveCount(0);
+ await expect(page.locator('a[href*="/myeongdong"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
 });

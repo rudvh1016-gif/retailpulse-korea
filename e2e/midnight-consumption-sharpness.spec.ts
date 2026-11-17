@@ -12,14 +12,8 @@ for(const lang of ['ko','en','zh','ja'] as const)for(const width of [360,390,430
  await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
  await page.route('**/api/live/commercial-months*',route=>{const url=new URL(route.request().url());return route.fulfill({json:{status:'READY',area:url.searchParams.get('area'),month:url.searchParams.get('month'),months:['2026-08','2026-07'],data:month}});});
  await page.goto('/'+lang+'/consumption');
- for(const name of ['명동','성수','홍대','이태원'].map((ko,i)=>({ko,en:['Myeongdong','Seongsu','Hongdae','Itaewon'][i],zh:['明洞','圣水','弘大','梨泰院'][i],ja:['明洞','聖水','弘大','梨泰院'][i]})[lang])){
-  await page.getByRole('tab',{name,exact:true}).click();await expect(page.locator('.consumption-category')).toHaveCount(5);
-  await expect.poll(()=>page.locator('.consumption-category').evaluateAll(els=>els.map(el=>el.getAttribute('data-category')))).toEqual(['편의점','화장품','약국','한식','여행']);
- }
- const image=page.locator('.consumption-category>img').first();await image.scrollIntoViewIfNeeded();
- await expect.poll(()=>image.evaluate(im=>(im as HTMLImageElement).currentSrc)).toContain('/sharp-v1/');
- const resolution=await image.evaluate(async element=>{const im=element as HTMLImageElement,source=new Image();source.src=im.currentSrc;await source.decode();const css=getComputedStyle(im);return {pixels:source.naturalWidth,required:im.getBoundingClientRect().width*devicePixelRatio,filter:css.filter,opacity:css.opacity,transform:css.transform};});
- expect(resolution.pixels).toBeGreaterThanOrEqual(resolution.required);expect(resolution).toMatchObject({filter:'none',opacity:'1',transform:'none'});
+ await expect(page).toHaveURL(url => url.pathname === '/'+lang);
+ await expect(page.locator('.consumption-category')).toHaveCount(0);
  await page.goto('/'+lang+'/airport');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  if(lang==='zh'&&width===390)await holdPendingAirportStream(page);
  const travel=page.locator('.app[data-hydrated="true"] main').getByTestId('airport-customs-news-entry');await expect(travel).toBeVisible();await travel.scrollIntoViewIfNeeded();
@@ -33,30 +27,9 @@ test('01xx current interval is shown separately from next, and published zero su
  await page.clock.setFixedTime(new Date(data.generatedAt));await page.route('**/api/live/summary*',routeSummary(data));await page.goto('/ko/airport');const card=page.locator('.terminal-brief-card[data-terminal="T2"]');await expect(card.locator('[data-metric="current"]')).toContainText('01:00 ~ 02:00');await expect(card.locator('[data-metric="current"]')).toContainText('0명');await expect(card.locator('[data-metric="next"]')).toContainText('02:00 ~ 03:00');
 });
 
-test('consumption means name the observed window unit, common bins and retained dates',async({page})=>{
- const legacy=structuredClone(month);for(const row of legacy.categories)delete row.comparison.coverage;
- await page.clock.setFixedTime(new Date(SUMMARY_FIXTURE.generatedAt));
- await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
- await page.route('**/api/live/commercial-months*',route=>{const url=new URL(route.request().url());return route.fulfill({json:{status:'READY',area:url.searchParams.get('area'),month:url.searchParams.get('month'),months:['2026-08','2026-07'],data:url.searchParams.get('area')==='hongdae'?legacy:month}});});
- await page.goto('/ko/consumption');
- const periodDetails=page.locator('.consumption-comparison > .comparison-details');await expect(periodDetails).not.toHaveAttribute('open','');
- await periodDetails.locator(':scope > summary').click();await expect(periodDetails).toHaveAttribute('open','');await expect(page.getByTestId('consumption-period')).toBeVisible();
- for(const date of ['2026-07-01','2026-07-30','2026-08-01','2026-08-30'])await expect(page.getByTestId('consumption-period')).toContainText(date);
- await periodDetails.locator(':scope > summary').click();
- const card=page.locator('.consumption-category[data-category="한식"]');
- await expect(card.locator('.consumption-mean-label').first()).toHaveText('10분 관측값 평균 · 일평균 아님');
- await expect(card.locator('.consumption-mean-label').nth(1)).toContainText('최근 관측시각');
- await expect(card.locator('.consumption-mean-label').nth(1)).toContainText('단일 10분 구간 아님');
- await expect(card.locator('.consumption-mean')).toHaveText('7월 0건 → 8월 0건');
- const details=card.locator('details');await expect(details).toHaveCount(1);await expect(details).not.toHaveAttribute('open','');
- await card.getByText('날짜·시간대와 계산 기준',{exact:true}).click();await expect(details).toHaveAttribute('open','');
- await expect(details).toContainText('공통 날짜 1 · 날짜×시간대 1');
- await expect(card).toContainText('2026-07-01');await expect(card).toContainText('2026-08-01');
- await expect(details).toContainText('2026-07-01 / 2026-08-01: 10시대');
- await expect(details).toContainText('평균에 포함한 결제값 관측 수: 2026-07 1 → 2026-08 1');
- await expect(details).toContainText('시간대 안의 10분 결제값을 먼저 평균낸 뒤, 양월 공통 날짜×시간대의 평균을 같은 비중으로 비교합니다.');
- await page.getByRole('tab',{name:'홍대',exact:true}).click();
- await expect(card).toBeVisible();if(await details.getAttribute('open')===null)await card.getByText('날짜·시간대와 계산 기준',{exact:true}).click();
- await expect(details).toContainText('보존된 집계에서 정확한 포함 날짜·시간대 목록은 확인되지 않습니다.');
- await expect(details).toContainText('공통 날짜 1 · 날짜×시간대 1');
+test('retired monthly consumption links cannot restore district controls', async ({page}) => {
+ await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+ await page.goto('/ko/consumption?area=hongdae&month=2026-08');
+ await expect(page).toHaveURL(url => url.pathname === '/ko');
+ await expect(page.locator('.consumption-comparison, .area-tabs')).toHaveCount(0);
 });

@@ -159,9 +159,12 @@ test('More explains airport roles with compact type and notice links match the r
 });
 test('소개 prioritizes airport staff and explains change symbols',async({page})=>{
  await page.goto('/ko/about');
- await expect(page.getByRole('heading',{name:'인천공항의 흐름을 한눈에'})).toBeVisible();
- await expect(page.locator('.about-sections')).toContainText('파란색 +는 신장, 빨간색 △는 역신장');
- await expect(page.locator('.about-sections')).toContainText('목적지 국가는 승객 국적이 아닙니다');
+ const guide=page.locator('.site-usage-guide');
+ await expect(guide.getByRole('heading',{name:'누가, 어떻게 쓰면 좋을까요?'})).toBeVisible();
+ await expect(guide).toContainText('인천공항에서 일하며');
+ await guide.getByText('집계 기준 보기',{exact:true}).click();
+ await expect(guide).toContainText('+는 신장, △는 역신장');
+ await expect(guide).toContainText('목적지 국가는 승객 국적이 아닙니다');
 });
 
 for(const width of [320,390,1440])test(`mobile airport controls and country heading remain compact ${width}`,async({page},info)=>{

@@ -1,3 +1,4 @@
+import {SEOUL_ENABLED,isSeoulOnlySourceId} from '../../../../lib/product-scope';
 import {projectDepartureCongestion} from '../../../../lib/airport-congestion-observation';
 import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
 import { readDepartureSchedule } from '../../../../lib/departure-schedule';
@@ -192,6 +193,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   // Monthly records reuse this endpoint, with an isolated bounded read. Ordinary summaries are unchanged.
   if (params.get('view') === 'records') {
+    if(!SEOUL_ENABLED)return Response.json({status:'RETIRED',reason:'seoul_product_removed'},{status:410,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
     const area = params.get('area') ?? '';
     const month = params.get('month') ?? kstDayOf(generatedAt).slice(0, 7);
     const headers = { 'x-robots-tag': CONTENT_API_ROBOTS_TAG, 'cache-control': 'no-store' };
@@ -235,7 +237,7 @@ export async function GET(request: Request) {
     const client = await getDb().then((db) => db.$client);
     return await summarizeLiveSummary(client, {
       generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt, availabilityMonth,
-    });
+    }, {includeSeoul:SEOUL_ENABLED});
   } catch {
     return degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation, availabilityMonth });
   }
@@ -261,7 +263,7 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
  * Builds the summary from prepared D1 statements. Exported so a test can hand
  * in a counting double and assert the read path stays one round trip.
  */
-export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock): Promise<Response> {
+export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock, scope: {includeSeoul:boolean}={includeSeoul:true}): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
   const selectedDayEndAt = kstDayBounds(serviceDate).endAt;
   const observedStartAt = dayRelation === "PAST" ? dayStartAt
@@ -572,14 +574,21 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   // the Worker in ONE D1 request. Awaiting them one after another was 18 full
   // Worker → D1 round trips and, measured on Production, 3.5–4.2 s per
   // uncached summary (see lib/d1-read-batch.ts). History reads are bounded above.
-  const readResult = await readGroups(client, { ...statementGroups, ...probeGroups }, { maxStatements: 50 });
+  const groups={...statementGroups,...probeGroups};
+  // Production explicitly opts out; legacy pure helper fixtures remain reproducible.
+  if(!scope.includeSeoul){
+    for(const key of ['contextRows','realtimeRows','observedSeriesRows','commercialRows','realtimeForecastRows','eventRows','salesRows','storeDynamicsRows','foreignPresenceRows','foreignPurposeRows','observedDateRows'] as const)groups[key]=[];
+    groups.sources=[client.prepare("SELECT source_id AS sourceId,status,last_event_at AS eventAt,last_retrieved_at AS retrievedAt,detail FROM source_health WHERE source_id NOT IN ('SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL','SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION','SEOUL_FOREIGN_PURPOSE_MOBILITY','SEOUL_ESTIMATED_SALES','SEOUL_STORE_DYNAMICS','KTO_TOURAPI_EVENT') ORDER BY source_id")];
+  }
+  const readResult = await readGroups(client, groups, { maxStatements: 50 });
   const blocks = readResult.rows;
   const readDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
   const {
-    sources, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
+    sources: sourceRows, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
     storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
     passengerForecastRows: allPassengerForecastRows, hallRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows, scheduleDateRows,
   } = blocks;
+  const sources=scope.includeSeoul?sourceRows:sourceRows.filter(row=>!isSeoulOnlySourceId(String(row.sourceId)));
   const passengerForecastRows = serviceDate > shiftKstDay(kstToday, 1) ? [] : allPassengerForecastRows.filter((row) => row.targetDate === serviceDate);
   const dayList = (rows: Row[]) => rows
     .map((row) => String(row.day ?? ""))

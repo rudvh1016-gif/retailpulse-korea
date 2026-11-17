@@ -1,3 +1,5 @@
+import {CONTENT_API_ROBOTS_TAG} from '../../../../lib/crawl-policy';
+import {SEOUL_ENABLED} from '../../../../lib/product-scope';
 import {getDb} from '../../../../db';
 import {publicAreaIds} from '../../../../lib/areas';
 import {kstDayOf} from '../../../../lib/kst';
@@ -20,9 +22,10 @@ export async function readCommercialMonths(db:Pick<D1Database,'prepare'>,area:st
  return {status:record?'READY':'MISSING',area,month,calculatedAt:record?.calculatedAt??null,months:(catalog.results??[]).map(row=>row.month),data:data?publicCommercialMonth(data):null};
 }
 export async function GET(request:Request){
+  if(!SEOUL_ENABLED)return Response.json({status:'RETIRED',reason:'seoul_product_removed'},{status:410,headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});
  const url=new URL(request.url),area=url.searchParams.get('area')??'myeongdong',month=url.searchParams.get('month')??kstDayOf(new Date().toISOString()).slice(0,7);
  if(!publicAreaIds.includes(area as typeof publicAreaIds[number])||!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return Response.json({status:'INVALID_SELECTION'},{status:400});
   try{const reply=await readCommercialMonths((await getDb()).$client,area,month);
    return Response.json(reply,{headers:{'cache-control':reply.status==='READY'?'public, max-age=60, s-maxage=300':'no-store','x-robots-tag':'noindex'}});
- }catch{return Response.json({status:'UNAVAILABLE',area,month,data:null,months:[]},{headers:{'cache-control':'no-store','x-robots-tag':'noindex'}});}
+ }catch{return Response.json({status:'UNAVAILABLE',area,month,data:null,months:[]},{headers:{'cache-control':'no-store','x-robots-tag':CONTENT_API_ROBOTS_TAG}});}
 }

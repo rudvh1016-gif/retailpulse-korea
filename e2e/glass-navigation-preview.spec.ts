@@ -8,12 +8,15 @@ async function setup(page:Page){
 }
 // More's approved aligned rows include the generated chevron in their accessible names.
 for(const width of [360,390,430,1440])test(`glass navigation preserves menus, dates, area and history ${width}`,async({page})=>{
- await page.setViewportSize({width,height:950});await setup(page);await page.goto('/ko/hongdae?date=2026-08-31');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await page.setViewportSize({width,height:950});await setup(page);await page.goto('/ko?date=2026-08-31');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const nav=page.locator(width<821?'.bottom-nav':'.top-nav'),links=nav.locator('a');await expect(nav).toBeVisible();await expect(links).toHaveCount(width<821?5:6);
  await expect(nav.getByRole('link',{name:'미리 준비',exact:true})).toBeVisible();
  for(const link of await links.all()){const box=await link.boundingBox();expect(box!.width).toBeGreaterThanOrEqual(44);expect(box!.height).toBeGreaterThanOrEqual(44);}
  await nav.getByRole('link',{name:'공항현황',exact:true}).click();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await expect(nav.getByRole('link',{name:'공항현황',exact:true})).toHaveAttribute('aria-current','page');
- await nav.getByRole('link',{name:'더보기',exact:true}).click();await page.locator('.more-section-links').getByRole('link',{name:'서울 ›',exact:true}).click();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/more/);await page.goBack();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);await page.goBack();await expect(page).toHaveURL(/\/ko\/hongdae\?date=2026-08-31/);
+ await nav.getByRole('link',{name:'더보기',exact:true}).click();await expect(page.locator('.more-section-links a[href*="hongdae"]')).toHaveCount(0);
+ await page.goBack();await expect(page).toHaveURL(/\/ko\/airport\?date=2026-08-31/);
+ await page.goBack();await expect(page).toHaveURL(/\/ko\?date=2026-08-31/);
+
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
 test('horizontal drag snaps once; vertical movement leaves navigation unchanged',async({page})=>{
@@ -45,7 +48,7 @@ test('desktop preserves plain operating menu and cancels mobile feedback on resi
 // Release checks (owner, 2026-10-14): small-screen clipping, bottom safe area,
 // content never hidden behind the bar. Order and functions are covered above.
 for(const lang of ['ko','en','zh','ja'])test(`320px phone keeps every label inside its target and the page above the bar ${lang}`,async({page})=>{
- await page.setViewportSize({width:320,height:568});await setup(page);await page.goto(`/${lang}/hongdae`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await page.setViewportSize({width:320,height:568});await setup(page);await page.goto(`/${lang}`);await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page.locator('.bottom-nav a')).toHaveCount(5);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  const nav=await page.locator('.bottom-nav').evaluate(n=>{const b=n.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom,top:b.top};});
@@ -61,7 +64,7 @@ test('bottom safe area keeps the glass bar and its targets above the home indica
  await page.setViewportSize({width:390,height:844});await setup(page);
  // Chromium's env(safe-area-inset-*) override; an emulation, not an iOS device.
  const cdp=await page.context().newCDPSession(page);await cdp.send('Emulation.setSafeAreaInsetsOverride' as never,{insets:{top:47,bottom:34,left:0,right:0}} as never);
- await page.goto('/ko/hongdae');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ await page.goto('/ko');await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  const bar=await page.locator('.bottom-nav').evaluate(n=>({bottom:n.getBoundingClientRect().bottom,links:[...n.querySelectorAll('a')].map(a=>a.getBoundingClientRect().bottom),glass:getComputedStyle(n,'::before').bottom}));
  // The glass floats 12px above the 34px inset, as the owner's reference bar does (2026-10-14).
  expect(Math.abs(bar.bottom-844)).toBeLessThanOrEqual(1);expect(bar.glass).toBe('46px');

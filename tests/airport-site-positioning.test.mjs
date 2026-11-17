@@ -17,11 +17,11 @@ test('site and home metadata describe the current airport-first scope without cl
   assert.doesNotMatch(shareDescription,/서울|실시간|공식 서비스|VIP/);
 });
 
-test('the indexed business page includes its airport mode but preserves Seoul and non-prediction limits',()=>{
+test('active business metadata retains airport truth labels and retired metadata parsers remain available',()=>{
   assert.equal(pageTitle('ko','business'),'인천공항·매장 운영 브리핑 | KORETAIL');
   for(const locale of seoLocales){
     assert.match(pageTitle(locale,'business'),/인천공항|Incheon Airport|仁川机场|仁川空港/);
-    assert.match(pageDescription(locale,'business'),/서울|Seoul|首尔|ソウル/);
+    assert.doesNotMatch(pageDescription(locale,'business'),/서울|Seoul|首尔|ソウル/);
     assert.equal(buildMetadata(locale,'business').alternates.canonical,`/${locale}/business`);
   }
   assert.match(pageDescription('ko','business'),/매출이나 방문객 수를 예측하지 않습니다/);
@@ -35,9 +35,10 @@ test('site JSON-LD reuses the same introduction and visible copy remains truthfu
   const guide=await readFile(new URL('../app/site-usage-guide.tsx',import.meta.url),'utf8');
   assert.match(layout,/description: shareDescription,/);
   assert.doesNotMatch(layout,/서울 주요 상권/);
-  assert.match(app,/서울 지역 참고자료도 함께 제공합니다/);
-  assert.match(app,/business\.place === "airport"/);
-  assert.match(guide,/서울 지역 자료는 더보기/);
+  assert.doesNotMatch(app,/서울 지역 참고자료도 함께 제공합니다/);
+  assert.match(app,/airport=\{\{ terminal: business\.terminal/);
+  assert.doesNotMatch(guide,/서울|Seoul|首尔|ソウル/);
+  assert.match(app,/airportOnlyDestination\(lang, next\)/);
   assert.doesNotMatch(app,/인천공항 출국장 대기·항공편 흐름과 서울 주요 상권의 혼잡·소비 정보를 한눈에/);
 });
 
@@ -50,4 +51,9 @@ test('the Korean visible footer agrees with the existing Korean and English site
   assert.match(layout,/name: "KORETAIL",/);
   assert.match(layout,/alternateName: \["코리테일",/);
   assert.match(pageTitle('ko'),/^코리테일 KORETAIL \|/);
+});
+
+test('retired page metadata resolves to airport copy before any old SEO labels are emitted',async()=>{
+ const route=await readFile(new URL('../app/[locale]/[slug]/page.tsx',import.meta.url),'utf8');
+ assert.match(route,/if \(destination\) return buildMetadata\(locale as SeoLocale, slug === "business" \? "airport-prepare" : undefined\)/);
 });

@@ -1,20 +1,29 @@
 import {test,expect} from '@playwright/test';
-import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
-for(const width of [390,1440])for(const state of ['stored-maintenance','normalized-maintenance','mixed','valid-zero'] as const)test(`air status and tourism-purpose movement ${state} ${width}`,async({page})=>{
- const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.setViewportSize({width,height:1000});
- const weather={observedAt:'2026-10-13T19:20:00+09:00',temperature:18,humidity:50,wind:2,pm10:state==='normalized-maintenance'?null:state==='stored-maintenance'?35:0,pm25:state==='normalized-maintenance'?null:0,pm10Grade:state==='valid-zero'?'좋음':'점검중',pm25Grade:state==='mixed'||state==='valid-zero'?'좋음':'미제공'};
- const areas=Object.fromEntries(Object.entries(SUMMARY_FIXTURE.areas).map(([key,area])=>[key,{...area,context:{commercialAt:null,categories:[],weather},foreignPurposeMobility:{tourism:360.5,shopping:null,referenceDate:'2026-09-30'}}]));
- await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,areas}));await page.goto('/ko/myeongdong');
- const air=page.getByRole('region',{name:'서울시 대기질 제공 상태'});await expect(air).toBeVisible();await expect(air).toContainText('서울시 제공 상태 · 업데이트');await expect(air).not.toContainText('관측');
- if(state==='valid-zero'){await expect(air).toContainText('미세먼지 좋음 0μg/m³');await expect(air).toContainText('초미세먼지 좋음 0μg/m³');}
- else {await expect(air).toContainText('미세먼지 점검 중 · 농도 미제공');await expect(air).not.toContainText('35μg/m³');if(state==='mixed')await expect(air).toContainText('초미세먼지 좋음 0μg/m³');else await expect(air).not.toContainText('μg/m³');}
- // Owner request 2026-10-14: the official 이동인구 (people per arrival, estimate) is shown, rounded, with a plain explanation.
- const tourism=page.locator('[data-flow="tourism"]');await expect(tourism.locator('dd')).toHaveCount(1);await expect(tourism.locator('dd')).toHaveText('361회 · 추정(이동 수)');await expect(tourism).toContainText('관광하러 도착');await expect(tourism).toContainText('한 사람이 두 번 오면 두 번 셉니다');await expect(tourism).toContainText('3명 이하인 칸은 가려져');await expect(tourism).not.toContainText('360.5');await expect(tourism).not.toContainText('수치는 표시하지 않습니다');await expect(tourism).toContainText('2026. 09. 30.');await expect(tourism).toContainText('서울 열린데이터광장');
- expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);expect(errors).toEqual([]);await expect(page.locator('body')).not.toContainText('360.5');await expect(page.locator('body')).not.toContainText('OA-22378');
-});
+import {airportOnlyFixture,expectAirportOnly} from './airport-only-fixture';
+import {SUMMARY_FIXTURE,MYEONGDONG_CONTEXT} from './summary-fixture';
 
-for(const lang of ['ko','en','zh','ja'])test(`legacy tourism detail hides unverified raw figures ${lang}`,async({page})=>{
- const areas=Object.fromEntries(Object.entries(SUMMARY_FIXTURE.areas).map(([key,area])=>[key,{...area,foreignPurposeMobility:{shopping:71.3,tourism:360.5,referenceDate:'2026-09-30',datasetId:'OA-22378'}}]));
- await page.route('**/api/live/summary*',routeSummary({...SUMMARY_FIXTURE,areas}));await page.goto(`/${lang}/tourism-desk/myeongdong`);
- const cards=page.locator('.tourism-background-item').filter({has:page.locator('.tourism-background-values')});await expect(cards).toHaveCount(1);await expect(cards).not.toContainText('360.5');await expect(cards).not.toContainText('71.3');await expect(cards).toContainText('2026-09-30');await expect(cards.locator('dd')).toHaveCount(2);
+// Keep the CI critical selector valid-zero 390: zero-valued historic data must
+// never resurrect removed Seoul screens. Shared source fields remain intact.
+for(const width of [390,1440])for(const state of ['stored-maintenance','normalized-maintenance','mixed','valid-zero'] as const)test(`airport-only historic air payload ${state} ${width}`,async({page})=>{
+ await page.setViewportSize({width,height:1000});
+ const weather={...MYEONGDONG_CONTEXT.weather,
+  pm10:state==='normalized-maintenance'?null:state==='stored-maintenance'?35:0,
+  pm25:state==='normalized-maintenance'?null:0,
+  pm10Grade:state==='valid-zero'?'좋음':'점검중',
+  pm25Grade:state==='mixed'||state==='valid-zero'?'좋음':'미제공'};
+ const payload={...SUMMARY_FIXTURE,areas:{...SUMMARY_FIXTURE.areas,myeongdong:{...SUMMARY_FIXTURE.areas.myeongdong,context:{...MYEONGDONG_CONTEXT,weather}}}};
+ const trace=await airportOnlyFixture(page,false,payload);
+ const summaryRead=page.waitForResponse(response=>response.url().includes('/api/live/summary')&&response.status()===200);
+ await page.goto('/ko/myeongdong?area=hongdae');await expectAirportOnly(page,'ko');
+ const summary=await (await summaryRead).json();
+ expect(summary.areas.myeongdong.context.weather).toEqual(weather);
+ expect(summary.areas.myeongdong.weather).toEqual(payload.areas.myeongdong.weather);
+ expect(summary.areas.myeongdong.subwayRidership).toEqual(payload.areas.myeongdong.subwayRidership);
+ await expect(page.getByRole('region',{name:'서울시 대기질 제공 상태'})).toHaveCount(0);
+ await expect(page.locator('[data-flow="tourism"]')).toHaveCount(0);
+ expect(trace.retiredReads).toEqual([]);expect(trace.errors).toEqual([]);
+});
+for(const lang of ['ko','en','zh','ja'])test(`legacy tourism detail resolves to airport with no Seoul figures ${lang}`,async({page})=>{
+ const trace=await airportOnlyFixture(page);await page.goto(`/${lang}/tourism-desk/myeongdong`);await expectAirportOnly(page,lang);
+ await expect(page.locator('.tourism-background-item')).toHaveCount(0);expect(trace.retiredReads).toEqual([]);expect(trace.errors).toEqual([]);
 });

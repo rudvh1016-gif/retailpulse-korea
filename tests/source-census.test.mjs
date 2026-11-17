@@ -1,3 +1,4 @@
+import { isSeoulOnlySource } from '../lib/product-scope.ts';
 /**
  * The denominator is a claim, and it has to be checkable.
  *
@@ -35,7 +36,7 @@ test('the census is derived from the collectors, not hand-listed', () => {
   // censused source without anyone editing a count.
   for (const name of PRODUCTION_SOURCE_NAMES) {
     const sourceId = DIAGNOSTIC_SOURCE_IDS[name];
-    if (!sourceId) continue;
+    if (!sourceId || isSeoulOnlySource(name)) continue;
     assert.ok(CENSUSED_SOURCE_IDS.includes(sourceId), `${name} -> ${sourceId} must be censused`);
   }
   // A runner key with no canonical id is a hole on the derivation side and is

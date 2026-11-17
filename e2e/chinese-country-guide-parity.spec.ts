@@ -67,5 +67,5 @@ test('Chinese More guide opens with keyboard and keeps all four locale links',as
  for(const path of ['/zh','/zh/airport','/zh/airport-countries','/zh/airport-prepare'])await expect(guide.locator(`a[href="${path}"]`)).toBeVisible();
  for(const item of await page.locator('.site-usage-guide > details').all())if(await item.getAttribute('open')===null)await item.locator(':scope > summary').press('Enter');
  await chineseOnly(page.locator('.site-usage-guide'));
- await page.goto('/zh/about');await expect(page.locator('.about-section')).toHaveCount(4);await chineseOnly(page.locator('.about-view'));await expect(page.locator('.about-view')).toContainText('目的地国家不代表乘客国籍');
+ await page.goto('/zh/about');const about=page.locator('.site-usage-guide');await expect(about.getByRole('heading',{level:2})).toBeVisible();await about.getByTestId('usage-method').locator('summary').click();await chineseOnly(about);await expect(about).toContainText('目的地国家不代表乘客国籍');
 });

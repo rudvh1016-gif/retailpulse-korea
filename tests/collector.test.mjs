@@ -1,3 +1,4 @@
+import { archivedSeoulContract } from "./helpers/archived-seoul-contract.mjs";
 import assert from "node:assert/strict";
 import { readFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -5,12 +6,12 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import { sha256 } from "../lib/hash.ts";
-import {
+const {
   collectAirportFlights,
   collectSeoulForeignPresence,
   pruneOperationalHistory,
   seoulForeignPeriodCandidates,
-} from "../lib/collector.ts";
+} = await archivedSeoulContract("collector");
 import {
   SEOUL_FOREIGN_MAPPING_VERSION,
   SEOUL_FOREIGN_PRODUCT_VERSION,

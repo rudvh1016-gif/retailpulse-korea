@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED } from "./product-scope";
 import {publicAreaIds} from './areas';
 import {kstDayOf,shiftKstDay} from './kst';
 import {sha256} from './hash';
@@ -7,6 +8,7 @@ import {buildCommercialMonth,compareCommercialMonths,previousCommercialMonth,typ
  * No provider request, forecast mutation or new scheduler.
  */
 export async function refreshCommercialMonths(db:D1Database,now=new Date()){
+ if(!SEOUL_ENABLED)return {status:'SKIPPED_PRODUCT_DISABLED',readRows:0,changedRows:0};
  const today=kstDayOf(now.toISOString()),through=shiftKstDay(today,-1),month=today.slice(0,7),previous=previousCommercialMonth(month);
  let readRows=0,changedRows=0;
  for(const area of publicAreaIds){

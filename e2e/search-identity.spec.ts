@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 
 const shareDescription = '인천공항 시간대별 예상 여객과 출발편 집중시간, 국가별 여객 흐름, 주요 휴일과 도착국 면세한도를 확인하세요. 날짜·터미널별로 비교하며 공식 출처와 자료 기준일을 함께 봅니다.';
-const aboutIntro = '인천공항 항공편·여객 흐름과 여행 준비 정보를 중심으로 제공하는 코리테일 KORETAIL은 Korea와 Retail을 합친 이름입니다. 자료별 기준일과 출처를 함께 안내합니다.';
 const aboutDescription = '인천공항 항공편·여객 흐름과 여행 준비 정보를 제공하는 코리테일을 소개합니다. 자료의 출처와 기준일, 관측·예상·과거 기록의 차이를 안내합니다.';
 
 test('legacy introduction redirects to its localized canonical without changing home discovery', async ({ request }) => {
@@ -40,9 +39,11 @@ for (const width of [390, 1440]) {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/ko/about');
-    await expect(page.locator('.about-view')).toBeVisible();
+    await expect(page.locator('.site-usage-guide')).toBeVisible();
     await expect(page).toHaveTitle('코리테일 소개 | 인천공항 중심 데이터 서비스 KORETAIL');
-    await expect(page.locator('.about-view .view-intro')).toContainText(aboutIntro);
+    await expect(page.locator('.site-usage-guide')).toContainText('인천공항에서 일하며');
+    await expect(page.locator('.about-view .view-intro')).toContainText('KORETAIL은 Korea와 Retail을 합친 이름');
+    await expect(page.locator('.about-view h1')).toBeVisible();
     await expect(page.locator('.site-footer')).toContainText('코리테일 KORETAIL');
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', aboutDescription);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/ko\/about$/);

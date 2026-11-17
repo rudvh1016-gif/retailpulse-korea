@@ -14,7 +14,8 @@ for(const lang of ['ko','en','zh','ja'] as const)test(`${lang}: optional example
  const examples=details.find(detail=>detail.includes('data-testid="usage-examples"'));
  const method=details.find(detail=>detail.includes('data-testid="usage-method"'));
  const updates=details.find(detail=>detail.includes('data-testid="usage-updates"'));
- assert.ok(examples);assert.equal((examples.match(/<dt>/g)??[]).length,3);
+ assert.ok(examples);assert.equal((examples.match(/<dt>/g)??[]).length,lang === "en" || lang === "ja" ? 1 : 3);
+ assert.doesNotMatch(html,/서울|Seoul|首尔|ソウル/);
  assert.ok(method);assert.match(method,/<p>/);
  assert.ok(updates);assert.match(updates,/<p>/);
  if(lang!=='ja'){const airport=details.find(detail=>detail.includes('data-testid="airport-usage-guide"'));assert.ok(airport);assert.equal((airport.match(/<dt>/g)??[]).length,4);}

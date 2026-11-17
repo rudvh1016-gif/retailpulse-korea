@@ -1,3 +1,4 @@
+import { airportOnlyDestination } from "../app/airport-only-routes";
 /**
  * Can a customer find this site at all?
  *
@@ -39,7 +40,6 @@ import {
   seoLocales,
   seoPath,
   standaloneSeoSlugs,
-  tourismDeskAreas,
   pageTitle,
   pageDescription,
   type SeoLocale,
@@ -219,8 +219,7 @@ async function get(context: Context, url: string, redirect: RequestRedirect = "f
 function expectedPaths(): string[] {
   return seoLocales.flatMap((locale) => [
     seoPath(locale),
-    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug as SeoSlug) === slug).map((slug) => seoPath(locale, slug as SeoSlug)),
-    ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
+    ...standaloneSeoSlugs.filter((slug) => canonicalSlug(slug as SeoSlug) === slug && !airportOnlyDestination(locale, slug)).map((slug) => seoPath(locale, slug as SeoSlug)),
   ]);
 }
 

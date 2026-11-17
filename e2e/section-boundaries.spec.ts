@@ -42,7 +42,7 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,1280]){
   await noOverflow(page);
  });
 
- test(`Seoul and More preserve layout and disclosure boundaries ${lang} ${width}`,async({page})=>{
+ test(`Retired Seoul redirects and More preserves layout and disclosure boundaries ${lang} ${width}`,async({page})=>{
   test.setTimeout(60_000);
   await page.setViewportSize({width,height:1000});await blockOtherApis(page);
   await page.clock.setFixedTime(new Date('2026-10-06T10:00:00Z'));
@@ -54,16 +54,8 @@ for(const lang of ['ko','en','zh','ja'])for(const width of [360,390,1280]){
    return route.fulfill({json});
   });
   await page.goto(`/${lang}/where-to`);
-  await expect(page.locator('.district-choice')).toHaveCount(4);
-  await expect(page.locator('.district-glance-section')).toHaveCount(12);
-  for(const section of await page.locator('.district-glance-section').all())await boundary(section,12,8);
-  const columns=await page.locator('.district-choice-grid').evaluate(element=>getComputedStyle(element).gridTemplateColumns.split(' ').length);
-  expect(columns).toBe(width<=960?2:4);await noOverflow(page);
-
-  await page.goto(`/${lang}/forecast`);
-  await expect(page.getByTestId('monthly-records-result')).toBeVisible();
-  await boundary(page.locator('.records-chart'),12,12);
-  await expect(page.getByTestId('record-month-2026-10')).toContainText('27,000–29,000');
+  await expect(page).toHaveURL(url => url.pathname === `/${lang}`);
+  await expect(page.locator('.district-choice, .area-tabs')).toHaveCount(0);
   await noOverflow(page);
 
   await page.goto(`/${lang}/more`);

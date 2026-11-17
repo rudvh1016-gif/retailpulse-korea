@@ -1,13 +1,20 @@
-import {test,expect} from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
 
-// While LiveSignals waits for the summary, a Seoul area page keeps its footer below the fold
-// (app/globals.css), so the content landing later does not push the footer down (CLS 0.29 → 0.01).
-// Only the loading line is reserved; the failed-summary line (aria-busy="false") keeps its own height.
-for(const [width,height] of [[390,844],[1280,800]] as const)test(`area page keeps the footer below the fold while the summary loads ${width}`,async({page})=>{
- await page.setViewportSize({width,height});
- await page.route('**/api/live/summary*',()=>{});
- await page.goto('/ko/myeongdong');
- await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
- await expect(page.locator('.page-shell > .area-tabs ~ .airport-empty-line[aria-busy="true"]')).toBeVisible();
- expect(await page.locator('footer.site-footer').evaluate(footer=>Math.round(footer.getBoundingClientRect().top)-innerHeight)).toBeGreaterThanOrEqual(0);
-});
+// Seoul source/model contracts remain in isolated unit tests. Retired product routes
+// must not resurrect cached source panels or issue Seoul-only browser reads.
+for (const lang of ['ko', 'en', 'zh', 'ja']) for (const path of ["myeongdong","hongdae"]) {
+ test(`area-loading-reserve: retired ${path} reaches airport home in ${lang}`, async ({ page }) => {
+  const seoulReads: string[] = [];
+  await page.route('**/api/**', route => route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+  await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
+  page.on('request', request => { if (/\/api\/live\/(commercial-months|events|seoul|population)/.test(request.url())) seoulReads.push(request.url()); });
+  await page.goto(`/${lang}/${path}`);
+  await expect(page).toHaveURL(url => url.pathname === `/${lang}` || url.pathname === `/${lang}/`);
+  await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
+  await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+  await expect(page.locator('.area-tabs, .commercial-miniature-card, .seoul-weather-panel, .population-outlook, .tourism-desk')).toHaveCount(0);
+  await expect(page.locator('a[href*="/myeongdong"], a[href*="/hongdae"], a[href*="/tourism-desk"], a[href*="/consumption"]')).toHaveCount(0);
+  expect(seoulReads).toEqual([]);
+ });
+}

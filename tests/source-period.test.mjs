@@ -228,24 +228,12 @@ test("daily and monthly sources keep the 48-hour rule, and the airport keeps its
   assert.equal(publicationStandpoint(WEEKLY_SUCCESS, "2026-10-06T00:36:45Z"), "COLLECTION_BEHIND");
 });
 
-test("the weekly slot is the schedule that actually checks every quarterly source", async () => {
-  const { readFile, readdir } = await import("node:fs/promises");
-  const workflow = await readFile(new URL("../.github/workflows/collect-sales.yml", import.meta.url), "utf8");
-  const cron = workflow.match(/cron: "(\d+) (\d+) \* \* (\d)"/);
-  assert.ok(cron, "collect-sales.yml keeps one weekly cron");
-  assert.deepEqual({ minute: Number(cron[1]), hour: Number(cron[2]), weekday: Number(cron[3]) },
-    { minute: QUARTERLY_CHECK_SLOT_UTC.minute, hour: QUARTERLY_CHECK_SLOT_UTC.hour, weekday: QUARTERLY_CHECK_SLOT_UTC.weekday });
-  assert.match(workflow, /RPK_PRODUCTION_SOURCES: seoul_sales,store_dynamics/);
-  assert.ok(QUARTERLY_CHECK_GRACE_MS < 24 * 3_600_000, "the grace absorbs delay and retries, not a missed day");
-
-  // Every quarterly period on screen belongs to a source that weekly job checks.
-  const files = (await readdir(new URL("../app/", import.meta.url), { recursive: true })).filter((file) => file.endsWith(".tsx"));
-  const sources = new Set();
-  for (const file of files) {
-    const text = await readFile(new URL(`../app/${file}`, import.meta.url), "utf8");
-    for (const call of text.matchAll(/cadence: "QUARTERLY"[\s\S]{0,240}?retrievedAt: (lastCollected\("([A-Z_]+)"\)|lastCollectedAt)/g)) {
-      sources.add(call[2] ?? (/lastCollected\("SEOUL_STORE_DYNAMICS"\)/.test(text) ? "SEOUL_STORE_DYNAMICS" : "UNKNOWN"));
-    }
-  }
-  assert.deepEqual([...sources].sort(), ["SEOUL_ESTIMATED_SALES", "SEOUL_STORE_DYNAMICS"]);
+test("retired quarterly Seoul sources have no weekly schedule; historical slot remains documented", async () => {
+ const {readFile}=await import('node:fs/promises');
+ const workflow=await readFile(new URL('../.github/workflows/collect-sales.yml',import.meta.url),'utf8');
+ assert.doesNotMatch(workflow,/^\s*schedule:/m);
+ assert.match(workflow,/if: \$\{\{ false \}\}/);
+ assert.match(workflow,/RPK_PRODUCTION_SOURCES: seoul_sales,store_dynamics/);
+ assert.deepEqual(QUARTERLY_CHECK_SLOT_UTC,{minute:7,hour:22,weekday:6});
+ assert.ok(QUARTERLY_CHECK_GRACE_MS<24*3_600_000);
 });

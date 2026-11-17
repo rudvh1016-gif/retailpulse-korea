@@ -1,3 +1,4 @@
+import { archivedSeoulContract } from "./helpers/archived-seoul-contract.mjs";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -5,7 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 
-import { collectTourismEvents, TOURAPI_DETAIL_POLICY } from "../lib/collector.ts";
+const { collectTourismEvents, TOURAPI_DETAIL_POLICY } = await archivedSeoulContract("collector");
 import { cleanOfficialText, normalizeTourismEvent, normalizeTourismEventDetail } from "../lib/source-adapters.ts";
 
 /**

@@ -1,3 +1,4 @@
+import { SEOUL_ENABLED, isSeoulOnlySourceId } from "./product-scope";
 /**
  * One derived census of every source Production actually collects.
  *
@@ -100,7 +101,7 @@ export const SOURCE_CENSUS: readonly CensusEntry[] = [
   ...DIRECT_COLLECTORS.map((entry): CensusEntry => ({
     sourceId: entry.sourceId, origin: "DIRECT_COLLECTOR", declaredBy: entry.declaredBy,
   })),
-].sort((a, b) => a.sourceId.localeCompare(b.sourceId));
+].filter(entry => SEOUL_ENABLED || !isSeoulOnlySourceId(entry.sourceId)).sort((a, b) => a.sourceId.localeCompare(b.sourceId));
 
 /**
  * Runner keys that are repair windows for an existing source, not sources.

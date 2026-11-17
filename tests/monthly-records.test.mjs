@@ -89,11 +89,11 @@ test('records, ordinary summaries, areas and months cannot share an edge cache k
   assert.notEqual(canonical('/api/live/summary?view=records&area=hongdae&month=bad'),canonical('/api/live/summary?view=records&area=hongdae'));
   assert.equal(canonical('/api/live/summary?view=records&area=bad&month=bad'),'https://koretaildata.com/api/live/summary?view=records&area=invalid&month=invalid');
 });
-test('invalid records inputs return 400 before D1 and remain invalid through the gateway',async()=>{
+test('retired Seoul records return 410 before D1 for every selection through the gateway',async()=>{
   for(const query of ['view=records&area=bad','view=records&area=hongdae&month=bad','view=records&area=hongdae&month=','view=records&area=hongdae&month=2999-12']){
     const url=new URL('https://koretaildata.com/api/live/summary?'+query);
     for(const requestUrl of [url.href,canonicalSummaryUrl(url)]) {
-      const response=await GET(new Request(requestUrl)); assert.equal(response.status,400); assert.equal(response.headers.get('cache-control'),'no-store');
+      const response=await GET(new Request(requestUrl)); assert.equal(response.status,410); assert.equal(response.headers.get('cache-control'),'no-store');
     }
   }
 });

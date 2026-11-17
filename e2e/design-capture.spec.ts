@@ -28,15 +28,9 @@ for (const locale of locales) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.route("**/api/live/summary**", routeSummary(SUMMARY_FIXTURE));
 
-      // Seoul observed/forecast chart.
       await page.goto(`/${locale}/myeongdong`);
-      const demand = page.locator('[data-testid="area-demand-card"]').first();
-      await expect(demand).toBeVisible();
-      await page.evaluate(() => document.fonts.ready);
-      await demand.screenshot({ path: `${OUT}/${locale}-${viewport.name}-seoul-card.png` });
-      await demand.locator(".population-history-disclosure>summary").click();
-      const flow = demand.locator(".population-flow");
-      if (await flow.count()) await flow.screenshot({ path: `${OUT}/${locale}-${viewport.name}-seoul-chart.png` });
+      await expect(page).toHaveURL(url => url.pathname === `/${locale}`);
+      await expect(page.getByTestId('area-demand-card')).toHaveCount(0);
 
       // Airport headline + hourly forecast chart.
       await page.goto(`/${locale}/airport`);

@@ -21,9 +21,7 @@ const cases=[
  {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:390,height:844,scale:3,file:'/airport-models/approval-v3/OVERVIEW_MOBILE.svg'},
  {name:'mobile overview',path:'/ko/airport',image:'[data-testid="airport-departure-model-slot"] .airport-concept-picture img',width:430,height:932,scale:3,file:'/airport-models/approval-v3/OVERVIEW_MOBILE.svg'},
  {name:'news entry mark',path:'/ko/airport',image:'[data-testid="airport-customs-news-entry"] img',width:390,height:844,scale:3,file:'/visuals/news/v1/paper-news-256.webp'},
- {name:'Seoul flow model',path:'/ko/myeongdong',image:'[data-testid="seoul-flow-models"] img',width:390,height:844,scale:3,file:'/seoul-flow-models/station-1200.webp'},
- {name:'consumption icon',path:'/ko/consumption',image:'.consumption-category>img',width:390,height:844,scale:3,file:'/commercial-icons/sharp-v1/convenience-192.webp'},
- {name:'district card',path:'/ko/where-to',image:'.district-choice-model',width:360,height:800,scale:2,file:'/visuals/seoul-comparison/myeongdong-320.webp'},
+
 ] as const;
 for(const c of cases)test(`${c.name} picks ${c.file.split('/').pop()} at ${c.width}x${c.height}@${c.scale}`,async({browser})=>{
  const context=await browser.newContext({storageState:noticeDismissedState(test.info().project.use.baseURL),viewport:{width:c.width,height:c.height},deviceScaleFactor:c.scale,isMobile:true,hasTouch:true});const page=await context.newPage();
@@ -43,4 +41,12 @@ for(const c of cases)test(`${c.name} picks ${c.file.split('/').pop()} at ${c.wid
  // Vector terminal art has no raster density ladder; retain decoded dimensions and nonzero paint checks.
  if(c.file.endsWith('.svg')){expect(natural).toBeGreaterThan(0);expect(painted).toBeGreaterThan(0);}else expect(natural,'the chosen file covers the painted width at this density').toBeGreaterThanOrEqual(Math.floor(painted*c.scale));
  await context.close();
+});
+
+for (const path of ['/ko/myeongdong','/ko/consumption','/ko/where-to']) test(`retired Seoul art is not downloaded from ${path}`,async({page})=>{
+ const downloaded:string[]=[];
+ page.on('request',request=>{if(/seoul-flow-models|commercial-icons|visuals\/seoul-comparison/.test(request.url()))downloaded.push(request.url());});
+ await open(page,path);await expect(page).toHaveURL(/\/ko$/);
+ await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+ expect(downloaded).toEqual([]);
 });

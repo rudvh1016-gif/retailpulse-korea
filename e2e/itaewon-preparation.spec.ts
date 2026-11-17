@@ -1,16 +1,24 @@
-import { expect, test } from '@playwright/test';
-import { routeSummary, SUMMARY_FIXTURE } from './summary-fixture';
-
-// English tab labels are upper-case, like MYEONGDONG.
-const names = { ko: '이태원', en: 'ITAEWON', zh: '梨泰院', ja: '梨泰院' } as const;
-
+import { test, expect } from '@playwright/test';
+import { SUMMARY_FIXTURE, routeSummary } from './summary-fixture';
+// Source/model history remains covered by unit fixtures; the public Seoul entry is retired.
+const retiredPaths = ['itaewon', 'tourism-desk/itaewon'];
 for (const locale of ['ko', 'en', 'zh', 'ja'] as const) {
-  test(`Itaewon is a public area like the other three in ${locale}`, async ({ page }) => {
-    await page.route('**/api/live/summary*', routeSummary(SUMMARY_FIXTURE));
-    const response = await page.goto(`/${locale}/itaewon`);
-    expect(response?.status()).toBe(200);
-    await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-    await expect(page.getByRole('tab', { name: names[locale], exact: true }).first()).toHaveAttribute('aria-selected', 'true');
-    expect((await page.goto(`/${locale}/tourism-desk/itaewon`))?.status()).toBe(200);
+  test(`retired Seoul entry preserves device history and opens airport home ${locale}`, async ({ page }) => {
+    const saved = JSON.stringify({ lang: locale, area: 'hongdae', terminal: 'T2', industry: 'food' });
+    await page.addInitScript(value => localStorage.setItem('retailpulse-preferences', value), saved);
+    const requests: string[] = [];
+    await page.route('**/api/live/summary*', async route => {
+      requests.push(route.request().url());
+      await routeSummary(SUMMARY_FIXTURE)(route);
+    });
+    for (const path of retiredPaths) {
+      await page.goto(`/${locale}/${path}`);
+      await expect(page).toHaveURL(new RegExp(`/${locale}$`));
+      await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
+      await expect(page.locator('.area-current-brief, .monthly-records')).toHaveCount(0);
+    }
+    expect(requests.some(url => new URL(url).searchParams.get('view') === 'records')).toBe(false);
+    // Historical preference must not restore an excluded public area.
+    expect(JSON.parse(await page.evaluate(() => localStorage.getItem('retailpulse-preferences') ?? '{}')).area).toBe('hongdae');
   });
 }

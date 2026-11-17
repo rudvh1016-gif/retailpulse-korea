@@ -68,7 +68,7 @@ for(const width of [360,390,430,1440])test(`airport production composition ${wid
  await expectPriorityCountryTables(page);await page.screenshot({path:info.outputPath(`production-countries-${width}.png`)});
  await nav.getByRole('link',{name:'미리 준비',exact:true}).click();await expect(page).toHaveURL(/airport-prepare/);
  await page.getByRole('link',{name:'도착국 반입 면세한도 확인하기',exact:false}).first().click();await expect(page.locator('#arrival-allowances')).toBeInViewport();await page.screenshot({path:info.outputPath(`production-preparation-${width}.png`)});
- await nav.getByRole('link',{name:'더보기',exact:true}).click();await expect(page.locator('.more-section-links')).toContainText('서울 한눈에');await expect(page.locator('.more-section-links a[href$="/consumption"]')).toBeVisible();expect(errors).toEqual([]);
+ await nav.getByRole('link',{name:'더보기',exact:true}).click();await expect(page.locator('.more-section-links a[href$="/consumption"], .more-section-links a[href$="/myeongdong"]')).toHaveCount(0);expect(errors).toEqual([]);
 });
 test('unavailable server date keeps the guide accessible without fabricating today',async({page})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));await page.route('**/api/live/summary*',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));

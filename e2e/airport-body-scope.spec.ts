@@ -17,7 +17,7 @@ test.beforeEach(async({page})=>{
  await page.route('**/api/live/usual*',route=>route.fulfill({status:503,json:{}}));
 });
 
-for(const lang of ['ko','en','zh','ja'])test(`airport body stays airport-only and Seoul navigation is preserved ${lang}`,async({page})=>{
+for(const lang of ['ko','en','zh','ja'])test(`airport body stays airport-only and retired Seoul navigation is absent ${lang}`,async({page})=>{
  await page.setViewportSize({width:390,height:900});
  for(const path of [`/${lang}`,`/${lang}/airport`]){
   await page.goto(path);
@@ -27,12 +27,7 @@ for(const lang of ['ko','en','zh','ja'])test(`airport body stays airport-only an
   const moreLink=page.locator(`.bottom-nav a[href^="/${lang}/more?"]`);
   await expectNavigationHref(page,moreLink,`/${lang}/more`,{place:'airport',terminal:'T1',area:null,date:null});
   await moreLink.click();
-  const seoul=page.locator(`.more-section-links a[href="/${lang}/myeongdong"]`);
-  await expect(seoul).toBeVisible();
-  await seoul.click();
-  await expect(page).toHaveURL(new RegExp(`/${lang}/myeongdong$`));
-  await expect(page.getByTestId('population-outlook')).toBeVisible();
-  await expect(page.locator('.area-tabs [role=tab]')).toHaveCount(4);
+  await expect(page.locator(`.more-section-links a[href*="myeongdong"], .more-section-links a[href*="hongdae"]`)).toHaveCount(0);
   await page.locator(`.bottom-nav a[href="/${lang}/airport"]`).click();
   await expect(page.locator('.airport-view')).toBeVisible();
   await expect(page.getByTestId('population-outlook')).toHaveCount(0);

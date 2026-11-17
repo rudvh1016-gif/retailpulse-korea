@@ -19,8 +19,8 @@ async function open(page: Page, payload: unknown = WEEK, path = '/ko/business', 
     } catch { /* A blocked-storage case chooses its industry in the UI. */ }
   });
   const url = new URL(path.replace('/ko/', `/${lang}/`), 'https://koretaildata.com');
-  url.searchParams.set('place', 'area');
-  url.searchParams.set('area', 'myeongdong');
+  url.searchParams.set('place', 'airport');
+  url.searchParams.set('terminal', 'T1');
   await page.goto(url.pathname + url.search);
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
   return page.getByTestId('business-prep');
@@ -30,15 +30,15 @@ test('the week ahead shows official holidays once, labels what is unknown, and h
   const prep = await open(page);
   const week = prep.getByTestId('week-ahead');
   // Counted per country: KASI's months are missing in this fixture, so Korea is unknown, not zero.
-  await expect(week.locator('summary').first()).toHaveText('이번 주 준비 (09/28 ~ 10/04) · 한국 공휴일 미확인 · 중국 공휴일 4일 · 행사 0건');
+  await expect(week.locator('summary').first()).toHaveText('이번 주 준비 (09/28 ~ 10/04) · 한국 공휴일 미확인 · 중국 공휴일 4일');
   await week.locator('summary').first().click();
   const october = week.locator('.prep-week-days > li').nth(3);
   await expect(october).toContainText('10/01 (목)');
   await expect(october).toContainText('확정 일정 중국 공휴일 · 국경절 (国庆节) 10/01 ~ 10/07');
   await expect(week.locator('.prep-week-days > li').first()).toContainText('오늘');
   await expect(week.getByTestId('week-korean-unavailable')).toHaveText(weekCopy.koreanUnavailable.ko);
-  await expect(week.getByTestId('week-no-events')).toHaveText(weekCopy.noEvents.ko);
-  await expect(week).toContainText(weekCopy.population.ko);
+  await expect(week.getByTestId('week-no-events')).toHaveCount(0);
+  await expect(week).not.toContainText(weekCopy.population.ko);
   expect(await tofuCharacters(week)).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 });
@@ -66,14 +66,14 @@ for (const lang of ['en', 'zh', 'ja'] as const) {
   });
 }
 
-test('the weekly review names its categories and never calls card activity sales', async ({ page }) => {
+test('the airport weekly review keeps 7/28-day comparisons without Seoul card activity', async ({ page }) => {
   const prep = await open(page);
   const review = prep.getByTestId('weekly-review');
   await review.locator('summary').first().click();
-  await expect(review).toContainText('화장품: 소비활동 매우 활발 · 4/4');
-  await expect(review).toContainText(reviewCopy.categoriesNote.ko);
-  await expect(review).toContainText(reviewCopy.quarterly.ko);
-  await expect(review).toContainText('지난주 같은 요일 대비');
+  await expect(review).not.toContainText('화장품: 소비활동 매우 활발 · 4/4');
+  await expect(review).toContainText(reviewCopy.airport.ko);
+  await expect(review).not.toContainText(reviewCopy.quarterly.ko);
+  await expect(review.locator('li')).toHaveCount(2);
 });
 
 test('the removed feeling entry preserves existing device records and the weekly review', async ({ page }) => {
@@ -84,7 +84,7 @@ test('the removed feeling entry preserves existing device records and the weekly
   const prep = await open(page);
   await expect(prep.getByTestId('feeling-log')).toHaveCount(0);
   await prep.getByTestId('weekly-review').locator('summary').first().click();
-  await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.categoriesNote.ko);
+  await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.airport.ko);
   expect(JSON.parse(await page.evaluate(() => localStorage.getItem('koretail-feeling-v1') ?? '[]'))).toEqual(saved);
   await page.reload();
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
@@ -102,5 +102,5 @@ test('the weekly review remains available with the removed entry and blocked sto
   await page.getByTestId('industry-guide').getByRole('button', { name: industryLabels.beauty.ko, exact: true }).click();
   await expect(prep.getByTestId('feeling-log')).toHaveCount(0);
   await prep.getByTestId('weekly-review').locator('summary').first().click();
-  await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.categoriesNote.ko);
+  await expect(prep.getByTestId('weekly-review')).toContainText(reviewCopy.airport.ko);
 });

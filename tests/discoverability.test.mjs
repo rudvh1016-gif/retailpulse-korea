@@ -1,3 +1,4 @@
+import { airportOnlyDestination } from "../app/airport-only-routes.ts";
 /**
  * Does the discoverability check actually catch a site nobody can find?
  *
@@ -22,7 +23,7 @@ process.env.NEXT_PUBLIC_SITE_ORIGIN ??= "https://koretaildata.com";
 process.env.RPK_DEPLOYMENT_STAGE = "production";
 
 const { runDiscoverabilityChecks } = await import("../lib/discoverability.ts");
-const { seoLocales, seoPath, standaloneSeoSlugs, tourismDeskAreas, pageTitle, pageDescription, siteOrigin, canonicalSlug } =
+const { seoLocales, seoPath, standaloneSeoSlugs, pageTitle, pageDescription, siteOrigin, canonicalSlug } =
   await import("../app/seo-config.ts");
 
 // The fixture site serves whatever origin THIS build is configured for. CI
@@ -63,8 +64,7 @@ const escapeHtml = (value) => value
 function indexablePaths() {
   return seoLocales.flatMap((locale) => [
     seoPath(locale),
-    ...standaloneSeoSlugs.map((slug) => seoPath(locale, slug)),
-    ...tourismDeskAreas.map((area) => seoPath(locale, "tourism-desk", area)),
+    ...standaloneSeoSlugs.filter(slug => !airportOnlyDestination(locale, slug)).map((slug) => seoPath(locale, slug)),
   ]);
 }
 
@@ -230,7 +230,7 @@ test("a page this build publishes but the sitemap omits is caught", async () => 
 });
 
 test("a sitemap URL that 404s is caught", async () => {
-  const report = await run({ missingPaths: ["/ja/business"] });
+  const report = await run({ missingPaths: ["/ja/airport"] });
   assert.equal(report.ok, false);
   assert.ok(failing(report).includes("every sitemap URL answers 200 without redirecting"));
 });
@@ -414,8 +414,8 @@ test("every localized sitemap entry declares all four locales plus x-default", (
   // exactly how this test first passed under the staging flag while the two
   // beside it failed.
   // A slug that serves the home's page (airport-glance since PR #357) is listed once, as the home.
-  const listed = standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug);
-  assert.equal(entries.length, seoLocales.length * (listed.length + 1 + tourismDeskAreas.length));
+  const listed = standaloneSeoSlugs.filter((slug) => canonicalSlug(slug) === slug && !airportOnlyDestination("ko", slug));
+  assert.equal(entries.length, seoLocales.length * (listed.length + 1));
   assert.equal(entries.filter((entry) => entry.url.endsWith("/airport-glance")).length, 0,
     "the glance URL names the home as canonical, so the sitemap lists only the home");
   for (const entry of entries) {
@@ -487,8 +487,8 @@ test("every response a crawler can get from a content API tells it not to index"
     Object.fromEntries(Object.keys(responses).map((name) => [name, CONTENT_API_ROBOTS_TAG])),
   );
   assert.equal(responses["summary (degraded)"].status, 200);
-  assert.equal(responses["predictions (unknown area)"].status, 400);
-  assert.equal(responses["predictions (unavailable)"].status, 503);
+  assert.equal(responses["predictions (unknown area)"].status, 410);
+  assert.equal(responses["predictions (unavailable)"].status, 410);
 });
 
 test("the staging flag really does withhold the whole site from crawlers", async () => {

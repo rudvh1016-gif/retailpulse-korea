@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect,type Request} from '@playwright/test';
 import {SUMMARY_FIXTURE,routeSummary} from './summary-fixture';
 
 // The business screen's code (its briefing and industry guide) loads with that
@@ -11,18 +11,37 @@ const businessCode=(url:string)=>/\/(?:app|assets)\/(business-prep|industry-guid
 test('More prepares the business screen, which then opens without a gap',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  const requested=new Set<string>(),errors:string[]=[];
- page.on('request',request=>{const code=request.resourceType()==='script'&&businessCode(request.url());if(code)requested.add(code);});
+ const completed=new Set<string>(),pendingScripts=new Set<Request>(),scriptFailures:string[]=[];
+ page.on('request',request=>{
+  if(request.resourceType()!=='script')return;
+  pendingScripts.add(request);
+  const code=businessCode(request.url());if(code)requested.add(code);
+ });
+ page.on('response',response=>{
+  if(response.request().resourceType()==='script'&&!response.ok())scriptFailures.push(`${response.status()} ${response.url()}`);
+ });
+ page.on('requestfinished',request=>{
+  pendingScripts.delete(request);
+  const code=request.resourceType()==='script'&&businessCode(request.url());if(code)completed.add(code);
+ });
+ page.on('requestfailed',request=>{
+  if(!pendingScripts.delete(request))return;
+  scriptFailures.push(`${request.failure()?.errorText} ${request.url()}`);
+ });
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('**/api/live/summary*',routeSummary(SUMMARY_FIXTURE));
- await page.goto('/ko/myeongdong');
+ await page.goto('/ko');
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await page.waitForTimeout(1000);
  // The shell may fetch the industry guide once idle (the airport screen needs it too); the briefing itself stays with 매장.
- expect([...requested].filter(code=>code!=='industry-guide'),'a Seoul page does not load the business briefing').toEqual([]);
+ expect([...requested].filter(code=>code!=='industry-guide'),'airport home does not load the business briefing').toEqual([]);
  await page.locator('.bottom-nav a[href^="/ko/more"]').click();
  await expect(page).toHaveURL(/\/ko\/more(?:\?|$)/);
  await expect.poll(()=>[...requested].sort(),{message:'More starts loading the business screen'}).toEqual(['business-prep','industry-guide']);
- await page.waitForLoadState('networkidle');
+ // The CI trace has unfinished 503 bodies from background passenger/week
+ // references. Wait for the real preloaded scripts and their dependencies,
+ // rather than making unrelated API traffic part of module readiness.
+ await expect.poll(()=>({completed:[...completed].sort(),pending:[...pendingScripts].map(request=>request.url()),failures:scriptFailures}),{message:'Both preloaded modules and their script dependencies finish successfully'}).toEqual({completed:['business-prep','industry-guide'],pending:[],failures:[]});
  await page.evaluate(()=>{
   const w=window as unknown as {firstBusinessFrame?:{prep:boolean;guide:boolean}};
   new MutationObserver((_,observer)=>{const view=document.querySelector('.business-view');if(!view)return;observer.disconnect();w.firstBusinessFrame={prep:Boolean(view.querySelector('[data-testid="business-prep"]')),guide:Boolean(view.querySelector('[data-testid="industry-guide"]'))};}).observe(document.body,{childList:true,subtree:true});
@@ -30,6 +49,7 @@ test('More prepares the business screen, which then opens without a gap',async({
  await page.locator('.more-section-links a[href^="/ko/business"]').click();
  await expect(page).toHaveURL(/\/ko\/business(?:\?|$)/);
  await expect(page.getByTestId('business-prep')).toBeVisible();
+ await expect(page.getByTestId('industry-guide')).toBeVisible();
  expect(await page.evaluate(()=>(window as unknown as {firstBusinessFrame?:unknown}).firstBusinessFrame),'the first frame of the business screen already holds its briefing and guide').toEqual({prep:true,guide:true});
  expect(errors).toEqual([]);
 });
