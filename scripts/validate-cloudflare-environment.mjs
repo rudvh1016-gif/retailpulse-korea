@@ -30,6 +30,16 @@ export function validateCloudflareEnvironment(config, stage) {
     throw new Error("Staging and production must use different D1 databases.");
   }
 
+  const overflow = production.d1_databases.find(entry => entry.binding === "A4_OVERFLOW_DB");
+  if (overflow && (overflow.database_name !== "retailpulse-korea-production-overflow"
+    || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(overflow.database_id ?? "")
+    || overflow.database_id === productionDb.database_id || overflow.database_id === stagingDb.database_id
+    || PLACEHOLDER_IDS.has(overflow.database_id)
+    || overflow.migrations_dir !== "db/a4-overflow-migrations"
+    || staging.d1_databases.some(entry => entry.binding === "A4_OVERFLOW_DB" || entry.database_id === overflow.database_id))) {
+    throw new Error("The standby D1 must be distinct and use its own migration directory.");
+  }
+
   const selected = stage === "staging" ? staging : production;
   const selectedDb = stage === "staging" ? stagingDb : productionDb;
   if (selected.vars?.APP_ENV !== stage) throw new Error(`${stage} APP_ENV is inconsistent.`);

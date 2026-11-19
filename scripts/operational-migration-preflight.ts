@@ -6,7 +6,10 @@ import { OPERATIONAL_MIGRATION, OPERATIONAL_OBJECTS, migrationGate, checkResumeE
 import { resolveProductionDatabaseConfig } from './production-database';
 
 const after = process.argv.includes('--after');
-const reclaimMigration = '0034_reclaim_retired_seoul_context.sql';
+const reclaimMigrations = [
+  '0034_reclaim_retired_seoul_context.sql',
+  '0035_reclaim_remaining_retired_seoul_context.sql',
+];
 const overflowName = 'retailpulse-korea-production-overflow';
 const quote = (s: string) => `'${s.replaceAll("'", "''")}'`;
 const names = Object.keys(OPERATIONAL_OBJECTS);
@@ -80,14 +83,14 @@ try {
     tables:gate.present.filter(n => OPERATIONAL_OBJECTS[n as keyof typeof OPERATIONAL_OBJECTS] === 'table').length,
     indexes:gate.present.filter(n => OPERATIONAL_OBJECTS[n as keyof typeof OPERATIONAL_OBJECTS] === 'index').length,
     triggers:gate.present.filter(n => OPERATIONAL_OBJECTS[n as keyof typeof OPERATIONAL_OBJECTS] === 'trigger').length}));
-  const reclaimPending = pending.includes(reclaimMigration);
+  const reclaimPending = reclaimMigrations.some(name => pending.includes(name));
   if (reclaimPending || (after && process.env.RPK_REPORT_RECLAIM_CAPACITY === '1')) {
     if (!after && process.env.GITHUB_ENV) appendFileSync(process.env.GITHUB_ENV, 'RPK_REPORT_RECLAIM_CAPACITY=1\n');
     await reportCapacity().catch(() => console.warn(JSON.stringify({
       phase: after ? 'POST_RECLAIM_CAPACITY' : 'PRE_RECLAIM_CAPACITY',
       status: 'METADATA_UNAVAILABLE',
     })));
-    const [rows] = read(`SELECT COUNT(*) AS remaining FROM seoul_context WHERE rowid BETWEEN 1 AND 12000
+    const [rows] = read(`SELECT COUNT(*) AS remaining FROM seoul_context WHERE rowid BETWEEN 1 AND 30000
       AND area IN ('myeongdong', 'hongdae', 'seongsu', 'itaewon') AND observed_at < '2026-11-18'`, 1);
     const remaining = rows[0]?.remaining;
     console.log(JSON.stringify({ phase: after ? 'POST_RECLAIM_ROWS' : 'PRE_RECLAIM_ROWS', remaining }));

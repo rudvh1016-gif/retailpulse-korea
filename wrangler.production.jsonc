@@ -53,6 +53,12 @@
           "database_name": "retailpulse-korea-production",
           "database_id": "a86b7e71-ddd8-4677-a65d-aa11490c578c",
           "migrations_dir": "drizzle"
+        },
+        {
+          "binding": "A4_OVERFLOW_DB",
+          "database_name": "retailpulse-korea-production-overflow",
+          "database_id": "42373a40-b6a1-45b5-9d0e-c100b4867663",
+          "migrations_dir": "db/a4-overflow-migrations"
         }
       ]
     }
