@@ -138,10 +138,14 @@ export default function AirportGlancePreview({lang,artworkSrc=null,published=fal
  const storedCurrent=monthRequest.reply?.data?.months.find(row=>row.month===month),storedPrevious=monthRequest.reply?.data?.months.find(row=>row.month===previousMonth);
  const current=scope==='T1'?mainBuildingMonth(storedCurrent):storedCurrent,previous=scope==='T1'?mainBuildingMonth(storedPrevious):storedPrevious;
  const monthScope=scope==='all'?'ALL':scope;
- const todayRanking=isToday&&!interruptedFlights?currentCountryComparison(day,data,previous,scope,payload,safeWeekReference,new Date(clock).toISOString()):null;
+ const monthlyComparable=glanceComparableCountries(current,previous,monthScope)>0;
+ const currentRanking=isToday?currentCountryComparison(day,data,previous,scope,payload,safeWeekReference,new Date(clock).toISOString()):null;
+ const monthlyFallback=Boolean(overviewHeading&&currentRanking?.status==='UNAVAILABLE'&&monthlyComparable
+  &&!settling&&!weekReference.pending);
+ const todayRanking=interruptedFlights||monthlyFallback?null:currentRanking;
  const ranking=todayRanking?todayRanking.rows.filter(row=>row.delta>0).sort((a,b)=>b.delta-a.delta||b.current-a.current||a.country.localeCompare(b.country)).slice(0,5):glanceCountryRanking(current,previous,monthScope);
  const declines=todayRanking?todayRanking.rows.filter(row=>row.delta<0).sort((a,b)=>a.delta-b.delta||b.previous-a.previous||a.country.localeCompare(b.country)).slice(0,5):glanceCountryDeclines(current,previous,monthScope);
- const comparable=todayRanking?todayRanking.status==='READY'&&(todayRanking.rows.length>0||(!todayRanking.unknownCurrent&&!todayRanking.unknownPrevious)):glanceComparableCountries(current,previous,monthScope)>0,growth=ranking[0]??null;
+ const comparable=todayRanking?todayRanking.status==='READY'&&(todayRanking.rows.length>0||(!todayRanking.unknownCurrent&&!todayRanking.unknownPrevious)):monthlyComparable,growth=ranking[0]??null;
  const rankCopy={ko:{collected:'수집',unavailable:'오늘 출발편의 비교 기준을 확인하지 못했습니다.',growth:'오늘 가장 늘어난 목적지',up:'오늘 출발편 증가 Top 5',down:'오늘 출발편 감소 Top 5',basis:'오늘 잠정 출발편 기록 · 전월 포함일 일평균 대비 · 목적지 확인 기록 기준',today:'선택일',note:'예정 출발시각 기준 수집 기록이며 운항 확정 실적이 아닙니다.',unknown:'미분류 제외 (오늘 / 전월)'},en:{collected:'Collected',unavailable:'The current-day comparison basis is unverified.',growth:'Largest current-day destination increase',up:'Today’s increases · Top 5',down:'Today’s decreases · Top 5',basis:'Provisional current-day departures vs prior-month included-day means · classified destinations',today:'Selected day',note:'Collected records by scheduled departure time; not certified actual operations.',unknown:'Unclassified excluded (today / prior month)'},zh:{collected:'收集',unavailable:'今日出发比较依据尚未确认。',growth:'今日增幅最大的目的地',up:'今日出发增加 · 前5',down:'今日出发减少 · 前5',basis:'今日暂定出发记录与上月纳入日期日均比较 · 已确认目的地记录',today:'所选日',note:'按计划出发时间收集的记录，不代表已确认实际运营。',unknown:'排除未分类（今日 / 上月）'},ja:{collected:'収集',unavailable:'今日の出発便の比較根拠を確認できません。',growth:'今日最も増えた目的地',up:'今日の出発便増加 · 上位5',down:'今日の出発便減少 · 上位5',basis:'今日の暫定出発記録と前月収集日の日平均を比較 · 目的地確認済み記録',today:'選択日',note:'出発予定時刻に基づく収集記録であり、確定した運航実績ではありません。',unknown:'未分類を除外（今日 / 前月）'}}[lang];
  const dailyComparison=glanceDayComparison(day,data?.total??null,previous,scope==='all'?'ALL':scope);
  const overviewMonth=previous?.includedDays.length?previous:current;

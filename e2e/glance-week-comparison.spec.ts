@@ -135,7 +135,7 @@ test('airport collection outage shows the confirmed schedule and baseline withou
  await page.setViewportSize({width:390,height:900});
  await fixtures(page);
  await page.route('**/api/live/summary*',route=>route.fulfill({json:{
-  ...summary,dayRelation:'TODAY',sources:[{sourceId:'INCHEON_FLIGHT_DETAIL',status:'ERROR',retrievedAt}],
+  ...summary,todayKst:day,dayRelation:'TODAY',sources:[{sourceId:'INCHEON_FLIGHT_DETAIL',status:'ERROR',retrievedAt}],
   airport:{...summary.airport,congestion:[],scheduledBriefing:{
    serviceDateKst:day,basis:'OFFICIAL_DEPARTURE_SCHEDULE',capped:false,
    ranking:{all:{totalFlights:547,retrievedAt}},scheduled:[{terminal:'T2',flights:257,retrievedAt}],
@@ -156,6 +156,7 @@ test('airport collection outage shows the confirmed schedule and baseline withou
  await expect(page.getByTestId('glance-key-wait')).toContainText('인천공항 공식 안내 보기');
  await expect(page.getByTestId('glance-key-wait')).toHaveAttribute('href','https://www.airport.kr/ap_ko/6652/subview.do');
  await expect(page.getByTestId('glance-key-upcoming')).toContainText('수집된 출발편 기준');
+ await expect(page.getByTestId('glance-key-growth')).toContainText('전월비 일평균 가장 늘어난 목적지');
  await expect(page.getByText('오늘 출발편의 비교 기준을 확인하지 못했습니다.',{exact:true})).toHaveCount(0);
 });
 
