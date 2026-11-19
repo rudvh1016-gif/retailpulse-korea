@@ -1,3 +1,4 @@
+import { getPublicA4ShardReader, mergePublicA4Terminal } from '../../../../lib/a4-overflow-public-read';
 import { getDb } from "../../../../db";
 import zoneMapFile from "../../../../config/airport-zone-map.v1.json";
 import { buildZoneMapIndex, resolveZoneMapping, type AirportZoneMapFile } from "../../../../lib/airport-zone-map";
@@ -107,7 +108,7 @@ export async function GET(request: Request) {
       ORDER BY target_start_at LIMIT 48`,
     ).bind(serviceDate, terminal, ).all<Row>()).results ?? []) : [];
 
-    const checkpoints = terminal ? await safeAll<Row>(async () => (await client.prepare(
+    const legacyCheckpoints = terminal ? await safeAll<Row>(async () => (await client.prepare(
       `SELECT terminal, zone, wait_time_minutes AS waitTimeMinutes, wait_time_raw AS waitTimeRaw,
         waiting_count AS waitingCount, observed_at AS observedAt, retrieved_at AS retrievedAt
       FROM airport_congestion
@@ -115,6 +116,21 @@ export async function GET(request: Request) {
       LIMIT 24`,
     ).bind(terminal, terminal).all<Row>()).results ?? []) : [];
 
+    const readA4Shard = terminal === 'T1' || terminal === 'T2' ? await getPublicA4ShardReader(client) : undefined;
+    const a4 = readA4Shard && (terminal === 'T1' || terminal === 'T2')
+      ? await mergePublicA4Terminal(terminal,legacyCheckpoints,readA4Shard,Date.parse(generatedAt),24)
+      : {rows:legacyCheckpoints,degraded:false,shard:false};
+    let a4Degraded=a4.degraded;
+    if(a4.shard&&(terminal==='T1'||terminal==='T2')) {
+      const source=terminal==='T1'?'INCHEON_DEPARTURE_CONGESTION':'INCHEON_DEPARTURE_CONGESTION_T2';
+      try {
+        const health=await client.prepare('SELECT status, last_event_at AS eventAt, last_retrieved_at AS retrievedAt FROM source_health WHERE source_id=?').bind(source).first<Row>();
+        a4Degraded=health?.status!=='LIVE'||a4.rows.some(r=>
+          Date.parse(String(health.eventAt))!==Date.parse(String(r.observedAt))||
+          Date.parse(String(health.retrievedAt))!==Date.parse(String(r.retrievedAt)));
+      } catch {a4Degraded=true;}
+    }
+    const checkpoints=a4Degraded?[]:a4.rows;
     const latest = (rows: Row[]) => rows.reduce<string | null>((newest, row) => {
       const value = typeof row.retrievedAt === "string" ? row.retrievedAt : null;
       return value && (!newest || value > newest) ? value : newest;
@@ -143,7 +159,8 @@ export async function GET(request: Request) {
       brief,
       // Published hours, never a live "open now" state.
       basis: "OFFICIAL_PUBLISHED_HOURS",
-    }, { headers: { "cache-control": "public, max-age=120, stale-while-revalidate=600" } });
+      ...(a4Degraded ? { checkpointReadStatus:"DEGRADED" } : {}),
+    }, { headers: { "cache-control": a4Degraded ? "no-store" : "public, max-age=120, stale-while-revalidate=600" } });
   } catch {
     // A read failure must never read as "nothing is happening at your store".
     return Response.json({ mode: "degraded", generatedAt, facility: null, brief: null },

@@ -189,7 +189,7 @@ test("the A4 endpoint is bounded, seeks indexes, and never widens beyond its win
   // A facility with no recognised terminal gets no terminal numbers at all.
   assert.match(route, /const flights = terminal \?/);
   assert.match(route, /const forecastBands = terminal \?/);
-  assert.match(route, /const checkpoints = terminal \?/);
+  assert.match(route, /const legacyCheckpoints = terminal \?/);
 
   // The mapping is bundled, so A3 costs no D1 read on this path either.
   assert.match(route, /buildZoneMapIndex\(zoneMapFile/);
@@ -288,4 +288,18 @@ test("a queue reading older than its refresh window is not this store's current 
   assert.ok(old.missingEvidence.includes("CHECKPOINT"));
   assert.notEqual(old.operatingReference, "INFLOW_WAITING");
   assert.equal(brief({ checkpoints: [{ terminal: "T1", zone: "1", waitTimeMinutes: 45, waitingCount: 300, observedAt: "not-a-date" }] }).checkpoint, null);
+});
+
+test("the default-off A4 shadow reader cannot replace the legacy checkpoint or cache an unverified one", async () => {
+  const [route, reader, runtime] = await Promise.all([
+    readFile(new URL("../app/api/airport/facility-operations/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/a4-overflow-public-read.ts", import.meta.url), "utf8"),
+    readFile(new URL("../wrangler.production.jsonc", import.meta.url), "utf8"),
+  ]);
+  assert.doesNotMatch(runtime, /RPK_A4_OVERFLOW_READS|A4_OVERFLOW_DB/);
+  assert.match(reader, /if\(cfg\.RPK_A4_OVERFLOW_READS!=='true'\)return undefined;/);
+  assert.match(route, /: \{rows:legacyCheckpoints,degraded:false,shard:false\};/);
+  assert.match(route, /const checkpoints=a4Degraded\?\[\]:a4\.rows;/);
+  assert.match(route, /a4Degraded \? \{ checkpointReadStatus:"DEGRADED" \} : \{\}/);
+  assert.match(route, /"cache-control": a4Degraded \? "no-store" :/);
 });
