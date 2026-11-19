@@ -31,6 +31,7 @@ const migrations = [
   "drizzle/0017_forecast_archive_trigger_conflict.sql",
   "drizzle/0018_airport_departure_schedule.sql",
   "drizzle/0033_airport_aircraft_metadata.sql",
+  "drizzle/0034_reclaim_retired_seoul_context.sql",
 ];
 
 function applyMigrations(database) {
@@ -42,6 +43,36 @@ function applyMigrations(database) {
     database.exec(sql);
   }
 }
+
+test("capacity repair reclaims only the bounded retired Seoul context rows", () => {
+  const database = new DatabaseSync(":memory:");
+  try {
+    applyMigrations(database);
+    database.exec(`
+      INSERT INTO seoul_context (rowid, area, observed_at, retrieved_at, payload, source_hash)
+      VALUES (1, 'myeongdong', '2026-09-01', '2026-09-01', '{}', 'retired'),
+             (12000, 'itaewon', '2026-11-17', '2026-11-17', '{}', 'boundary'),
+             (12001, 'hongdae', '2026-10-01', '2026-10-01', '{}', 'outside-window'),
+             (2, 'airport', '2026-09-01', '2026-09-01', '{}', 'other-area'),
+             (3, 'seongsu', '2026-11-18', '2026-11-18', '{}', 'after-retirement');
+      INSERT INTO airport_congestion
+        (id, source_id, record_origin, terminal, zone, wait_time_minutes, waiting_count,
+         observed_at, retrieved_at, freshness, schema_version, quality_status, source_hash)
+      VALUES ('t2', 'INCHEON_DEPARTURE_CONGESTION_T2', 'OFFICIAL', 'T2', 'DG1_A', 10, 3,
+              '2026-11-20', '2026-11-20', 'LIVE', '1', 'VERIFIED', 't2');
+    `);
+    const sql = readFileSync(migrations.at(-1), "utf8");
+    database.exec(sql);
+    database.exec(sql);
+    assert.deepEqual(
+      database.prepare("SELECT source_hash FROM seoul_context ORDER BY rowid").all().map(row => row.source_hash),
+      ["other-area", "after-retirement", "outside-window"],
+    );
+    assert.equal(database.prepare("SELECT count(*) AS count FROM airport_congestion").get().count, 1);
+  } finally {
+    database.close();
+  }
+});
 
 test("D1 migrations apply and prediction rows remain immutable", () => {
   const databasePath = join(tmpdir(), `rpk-migration-${process.pid}.db`);

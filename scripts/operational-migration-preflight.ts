@@ -1,10 +1,13 @@
 /** Runs only in the existing protected deployment. The token stays in the Actions environment. */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { appendFileSync, readFileSync, readdirSync } from 'node:fs';
 import { unstable_splitSqlQuery } from 'wrangler';
 import { OPERATIONAL_MIGRATION, OPERATIONAL_OBJECTS, migrationGate, checkResumeEvidence, readWranglerResults, type SchemaObject } from '../lib/operational-migration-preflight';
+import { resolveProductionDatabaseConfig } from './production-database';
 
 const after = process.argv.includes('--after');
+const reclaimMigration = '0034_reclaim_retired_seoul_context.sql';
+const overflowName = 'retailpulse-korea-production-overflow';
 const quote = (s: string) => `'${s.replaceAll("'", "''")}'`;
 const names = Object.keys(OPERATIONAL_OBJECTS);
 const tables = names.filter(n => OPERATIONAL_OBJECTS[n as keyof typeof OPERATIONAL_OBJECTS] === 'table');
@@ -15,6 +18,46 @@ function read(sql: string, count: number) {
   {encoding:'utf8',timeout:60000,maxBuffer:1024*1024,stdio:['ignore','pipe','pipe'],
     env:{...process.env,CI:'true',WRANGLER_SEND_METRICS:'false'}});
   return readWranglerResults(output, count);
+}
+
+async function reportCapacity() {
+  const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig('production');
+  type Database = { uuid: string; name: string; file_size?: number };
+  const root = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database`;
+  async function get<T>(path: string) {
+    const response = await fetch(root + path, {
+      headers: { authorization: `Bearer ${apiToken}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error('d1_metadata_http_error');
+    const body = await response.json() as { success: boolean; result: T; result_info?: { total_count?: number } };
+    if (!body.success) throw new Error('d1_metadata_unavailable');
+    return body;
+  }
+  const { result: list, result_info: page } = await get<Database[]>('?per_page=100');
+  if (!Array.isArray(list) || !list.every(row => /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(row?.uuid))
+    || new Set(list.map(row => row.uuid)).size !== list.length) throw new Error('d1_metadata_invalid_list');
+  const complete = page?.total_count === list.length || (page?.total_count == null && list.length < 100);
+  const overflow = list.find(row => row.name === overflowName && row.uuid !== databaseId);
+  const ids = complete && list.length <= 10 ? list.map(row => row.uuid) : [databaseId, ...(overflow ? [overflow.uuid] : [])];
+  const details = await Promise.all(ids.map(async id => {
+    try {
+      const { result } = await get<Database>(`/${id}`);
+      const size = result?.file_size;
+      return [id, result?.uuid === id && typeof size === 'number' && Number.isSafeInteger(size) && size >= 0 ? size : null] as const;
+    } catch {
+      return [id, null] as const;
+    }
+  }));
+  const bytes = new Map(details);
+  const sizes = list.map(row => bytes.get(row.uuid) ?? null);
+  console.log(JSON.stringify({
+    phase: after ? 'POST_RECLAIM_CAPACITY' : 'PRE_RECLAIM_CAPACITY',
+    accountDatabaseCount: complete ? list.length : null,
+    accountFileSizeBytes: complete && sizes.every(value => value !== null) ? sizes.reduce<number>((sum, value) => sum + (value ?? 0), 0) : null,
+    primaryFileSizeBytes: bytes.get(databaseId) ?? null,
+    overflow: overflow ? { name: overflow.name, id: overflow.uuid, fileSizeBytes: bytes.get(overflow.uuid) ?? null } : null,
+  }));
 }
 
 try {
@@ -37,6 +80,19 @@ try {
     tables:gate.present.filter(n => OPERATIONAL_OBJECTS[n as keyof typeof OPERATIONAL_OBJECTS] === 'table').length,
     indexes:gate.present.filter(n => OPERATIONAL_OBJECTS[n as keyof typeof OPERATIONAL_OBJECTS] === 'index').length,
     triggers:gate.present.filter(n => OPERATIONAL_OBJECTS[n as keyof typeof OPERATIONAL_OBJECTS] === 'trigger').length}));
+  const reclaimPending = pending.includes(reclaimMigration);
+  if (reclaimPending || (after && process.env.RPK_REPORT_RECLAIM_CAPACITY === '1')) {
+    if (!after && process.env.GITHUB_ENV) appendFileSync(process.env.GITHUB_ENV, 'RPK_REPORT_RECLAIM_CAPACITY=1\n');
+    await reportCapacity().catch(() => console.warn(JSON.stringify({
+      phase: after ? 'POST_RECLAIM_CAPACITY' : 'PRE_RECLAIM_CAPACITY',
+      status: 'METADATA_UNAVAILABLE',
+    })));
+    const [rows] = read(`SELECT COUNT(*) AS remaining FROM seoul_context WHERE rowid BETWEEN 1 AND 12000
+      AND area IN ('myeongdong', 'hongdae', 'seongsu', 'itaewon') AND observed_at < '2026-11-18'`, 1);
+    const remaining = rows[0]?.remaining;
+    console.log(JSON.stringify({ phase: after ? 'POST_RECLAIM_ROWS' : 'PRE_RECLAIM_ROWS', remaining }));
+    if (after && remaining !== 0) process.exitCode = 1;
+  }
   if (gate.action === 'UNSAFE' || (after && (gate.action !== 'ALREADY_VALID' || pending.length))) process.exitCode=1;
 } catch {
   console.error(JSON.stringify({phase:after?'POST_MIGRATION':'PREFLIGHT',classification:'STATE_F_UNKNOWN',action:'UNSAFE',
