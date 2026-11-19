@@ -1,3 +1,4 @@
+import {readA1CardEvidence} from './a1-current-snapshot';
 import {isValidKstDay,kstDayOf,shiftKstDay} from './kst';
 import {summarizePassengerForecast,type AirportForecastAggregateRow} from './airport-today-summary';
 import {passengerReferenceSum} from './passenger-reference-sum';
@@ -33,16 +34,21 @@ export function completeGlanceProfile(payload:unknown,day:string):FlightTotals {
 interface CurrentScanRow {startedAt:string;finishedAt:string|null;status:string;detail:string|null;healthStatus:string;healthRetrievedAt:string|null}
 /** SUCCESS belongs only to the verified all-page scan. Legacy first-page
  * successes, partial/failed refreshes, old clocks and incomplete storage fail closed. */
-export function currentGlanceSnapshot(payload:unknown,day:string,row:CurrentScanRow|undefined,nowIso:string){
+function currentScanWitness(day:string,row:CurrentScanRow|undefined,nowIso:string){
  if(!Number.isFinite(Date.parse(nowIso))||day!==kstDayOf(nowIso)||!row||row.status!=='SUCCESS'||row.healthStatus!=='LIVE'||row.healthRetrievedAt!==row.startedAt)return null;
  const started=Date.parse(row.startedAt),finished=Date.parse(row.finishedAt??''),now=Date.parse(nowIso);
  if(!Number.isFinite(started)||!Number.isFinite(finished)||started>finished||finished>now||kstDayOf(row.startedAt)!==day)return null;
  const detail=typeof row.detail==='string'?row.detail:'',range=/^recent (\d{4}-\d{2}-\d{2})\.\.(\d{4}-\d{2}-\d{2});/.exec(detail);
  const physical=/; today unique physical (\d+);/.exec(detail),expected=physical?Number(physical[1]):null;
  if(!range||!isValidKstDay(range[1])||range[1]>day||range[2]!==day||!count(expected)||expected===0||expected>1200)return null;
+ return {expected,detail,snapshot:{day,retrievedAt:row.startedAt,provisional:true as const}};
+}
+export function currentGlanceSnapshot(payload:unknown,day:string,row:CurrentScanRow|undefined,nowIso:string){
+ const witness=currentScanWitness(day,row,nowIso);
+ if(!witness)return null;
  const totals=glanceProfileTotals(payload,day,false),profile=profileOf(payload);
- if(!totals||!profile||!count(profile.cancelled)||totals.all+profile.cancelled!==expected)return null;
- return {totals,snapshot:{day,retrievedAt:row.startedAt,provisional:true as const}};
+ if(!totals||!profile||!count(profile.cancelled)||totals.all+profile.cancelled!==witness.expected)return null;
+ return {totals,snapshot:witness.snapshot};
 }
 
 /** Three bounded existing-table reads, plus one indexed scan/health witness for
@@ -82,8 +88,12 @@ export async function readGlanceWeekReference(db:Pick<D1Database,'prepare'>,day:
   try{return JSON.parse(matches[0].payload) as {profile:DayProfile};}catch{return null;}
  };
  const selectedPayload=payload(day),completed=completeGlanceProfile(selectedPayload,day);
- const current=isToday&&scan?.success!==false&&(scan?.results?.length??0)<=1?currentGlanceSnapshot(selectedPayload,day,scan?.results?.[0],nowIso):null;
+ const scanRow=isToday&&scan?.success!==false&&(scan?.results?.length??0)===1?scan?.results?.[0]:undefined;
+ const current=currentGlanceSnapshot(selectedPayload,day,scanRow,nowIso);
+ const exactWitness=currentScanWitness(day,scanRow,nowIso);
+ const exactTotals=exactWitness?readA1CardEvidence(exactWitness.detail,exactWitness.expected):null;
  return {day,previousDay,passengers,flights:completeGlanceProfile(payload(previousDay),previousDay),
   selectedFlights:isToday?current?.totals??null:day<kstDayOf(nowIso)?completed:null,
-  ...(current?{selectedFlightSnapshot:current.snapshot}:{})};
+  ...(current?{selectedFlightSnapshot:current.snapshot}:{}),
+  ...(exactTotals&&exactWitness?{selectedCardSnapshot:{...exactWitness.snapshot,totals:exactTotals}}:{})};
 }

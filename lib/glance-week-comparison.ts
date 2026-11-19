@@ -8,6 +8,8 @@ export interface GlanceWeekReference {
  flights:FlightTotals;selectedFlights:FlightTotals;
  /** A fully paginated current-day schedule scan, not a final operations count. */
  selectedFlightSnapshot?:{day:string;retrievedAt:string;provisional:true};
+ /** Current-day glance tile only: exact full-scan totals, separate from retained records. */
+ selectedCardSnapshot?:{day:string;retrievedAt:string;provisional:true;totals:NonNullable<FlightTotals>};
 }
 const count=(value:unknown):value is number=>typeof value==='number'&&Number.isSafeInteger(value)&&value>=0;
 
@@ -24,4 +26,15 @@ export function glanceWeekChange(total:number|null,day:string,reference:GlanceWe
  if(!count(previous)||(kind==='flights'&&reference.selectedFlights?.[scope]!==total))return null;
  const delta=total-previous;
  return {previous,delta,percent:previous>0?delta/previous*100:null};
+}
+
+/** Keep the headline and weekly arithmetic on exactly the same scan. */
+export function glanceCardFlightSnapshot(day:string,reference:GlanceWeekReference|null|undefined,scope:GlanceScope,nowIso:string){
+ const card=reference?.selectedCardSnapshot,now=Date.parse(nowIso),at=Date.parse(card?.retrievedAt??'');
+ if(!reference||!card||!isValidKstDay(day)||reference.day!==day||reference.previousDay!==shiftKstDay(day,-7)
+  ||card.day!==day||card.provisional!==true||!Number.isFinite(now)||!Number.isFinite(at)||at>now
+  ||kstDayOf(nowIso)!==day||kstDayOf(card.retrievedAt)!==day||!count(card.totals?.[scope]))return null;
+ const {day:scanDay,retrievedAt,provisional}=card;
+ return {total:card.totals[scope],reference:{...reference,selectedFlights:card.totals,
+  selectedFlightSnapshot:{day:scanDay,retrievedAt,provisional}}};
 }

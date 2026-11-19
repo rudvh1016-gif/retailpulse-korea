@@ -138,3 +138,25 @@ test('comparison geometry guard catches visible overflow and keeps clipped spoke
  expect((await page.locator('#overflows').evaluate(comparisonTextGeometry)).overflow.length).toBeGreaterThan(0);
  expect((await page.locator('#unclipped').evaluate(comparisonTextGeometry)).hidden[0].clip).not.toBe('rect(0px, 0px, 0px, 0px)');
 });
+
+for(const reason of ['exact scan','non-LIVE health','a different collection generation','an unverified truncation flag'])test(`the flight card respects ${reason} when retained rows differ`,async({page})=>{
+ const retrievedAt='2026-10-19T00:45:00.000Z',exact=reason==='exact scan';
+ await page.clock.setFixedTime(new Date('2026-10-19T01:00:00Z'));await fixtures(page);
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:{...summary,dayRelation:'TODAY',sources:[{
+  sourceId:'INCHEON_FLIGHT_DETAIL',status:reason==='non-LIVE health'?'ERROR':'LIVE',
+  retrievedAt:reason==='a different collection generation'?'2026-10-19T00:46:00.000Z':retrievedAt}]}}));
+ if(reason==='an unverified truncation flag')await page.route('**/api/live/flights*',route=>route.fulfill({json:{...flights,truncated:undefined}}));
+ await page.route('**/api/live/glance-week-reference*',route=>route.fulfill({json:{status:'READY',month:'2026-10',data:{
+  ...reference,selectedFlights:exact?null:selectedFlights,selectedCardSnapshot:{day,retrievedAt,provisional:true,totals:{...selectedFlights,all:selectedFlights.all-1,T2:selectedFlights.T2-1}}}}}));
+ await page.goto(`/ko?date=${day}`,{waitUntil:'domcontentloaded'});
+ const flight=page.locator('.focus-flight-metric');
+ await page.getByRole('button',{name:'T2',exact:true}).first().click();
+ if(exact){
+  await expect(flight.locator('.focus-metric-total')).toHaveText(`${selectedFlights.T2-1}편`);
+  await expect(flight.locator('.focus-metric-total')).toHaveAttribute('title','최근 전체 수집 기준 · 잠정 출발 예정편');
+  await expect(flight.locator('.focus-week-change')).toContainText('△ 8편');
+ }else{
+  await expect(flight.locator('.focus-week-change')).toHaveText('① 비교 불가');
+  await expect(flight.locator('.focus-metric-total')).not.toHaveAttribute('title',/최근 전체 수집/);
+ }
+});
