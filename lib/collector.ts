@@ -79,6 +79,42 @@ import {
   type CanonicalStoreDynamicsAggregate,
 } from "./store-dynamics";
 import { kstDayOf, shiftKstDay } from "./kst";
+import type {selectA4WriteTarget} from './a4-overflow-routing';
+
+type A4LocalOverflowOptions={
+ overflow:D1Database;
+ routing:Parameters<typeof selectA4WriteTarget>[0];
+};
+
+/** Explicit local/staged callers only: production runners pass no options.
+ * Coverage is proven before any storage; after a shard attempt no legacy
+ * fallback or new provider retry is permitted. */
+async function tryA4LocalOverflow(
+ primary:D1Database|undefined, options:A4LocalOverflowOptions|undefined,
+ terminal:'T1'|'T2', rows:readonly CanonicalAirportCongestion[],
+ captureComplete:boolean, startedAt:string, providerRequests?:number,
+):Promise<CollectorResult|undefined>{
+ if(!options||!primary||!captureComplete||!rows.length||rows.length>60
+  ||rows.some(row=>row.qualityStatus!=='VALID'||row.observedAt!==rows[0].observedAt)
+  ||new Set(rows.map(row=>row.zone)).size!==rows.length)return;
+ try{
+  const {selectA4WriteTarget}=await import('./a4-overflow-routing');
+  if(selectA4WriteTarget(options.routing,terminal,rows)!=='overflow')return;
+ }catch{return;} // Deterministic eligibility check before any shard read/write.
+ try{
+  const {publishA4CaptureWithEvidence}=await import('./a4-overflow-writer');
+  const finishedAt=nowIso(),outcome=await publishA4CaptureWithEvidence(
+   {terminal,rows,startedAt,finishedAt,status:'SUCCESS'},
+   {primary,overflow:options.overflow},options.routing);
+  return outcome==='published'?{status:'SUCCESS',records:rows.length,providerRequests,detail:'A4_OVERFLOW_LOCAL_PUBLICATION'}
+   :{status:'SKIPPED_NO_NEW_PUBLICATION',records:0,providerRequests,detail:'A4_OVERFLOW_LOCAL_SUPERSEDED'};
+ }catch{return {status:'ERROR',records:0,providerRequests,detail:'A4_OVERFLOW_STORAGE_UNVERIFIED'};}
+}
+
+function a4DeclaredCount(value:unknown):number|null {
+ const n=typeof value==='string'&&/^\d+$/.test(value)?Number(value):value;
+ return typeof n==='number'&&Number.isSafeInteger(n)&&n>0?n:null;
+}
 
 export interface CollectorEnv {
   DB?: D1Database;
@@ -1888,7 +1924,7 @@ function officialResponseItems(value: unknown): unknown[] {
 }
 
 // A4 — departure-hall congestion; T2 stays N/A unless officially returned.
-export async function collectAirportCongestion(env: CollectorEnv): Promise<CollectorResult> {
+export async function collectAirportCongestion(env: CollectorEnv, localOverflow?: A4LocalOverflowOptions): Promise<CollectorResult> {
   const sourceId = "INCHEON_DEPARTURE_CONGESTION";
   const requestedAt = nowIso();
   if (!env.DATA_GO_KR_SERVICE_KEY) {
@@ -1900,6 +1936,8 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
   const failures: string[] = [];
   const terminalCounts: string[] = [];
   const rowSkips: string[] = [];
+  const overflowRows=localOverflow?[] as CanonicalAirportCongestion[]:null;
+  let sourceCount:number|null=null;
   let lastRow: CanonicalAirportCongestion | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
   let providerRequests = 0;
@@ -1915,11 +1953,12 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
     );
     try {
       const payload = await fetchAirportCongestionJson(url, { ...boundedA4Policy(DATA_GO_KR_LOW_CALL_POLICY, env), fetchImpl: countedFetch });
-      const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown } } } };
+      const root = payload as { response?: { header?: { resultCode?: string }; body?: { items?: unknown[] | { item?: unknown[] | unknown }; totalCount?: unknown } } };
       const resultCode = root?.response?.header?.resultCode;
       if (resultCode !== "00") throw new Error(`congestion_result_${String(resultCode ?? "missing")}`);
       if (!root.response?.body || root.response.body.items === undefined) throw new SourceFetchError("SCHEMA");
       const items = officialResponseItems(root.response.body.items);
+      if(overflowRows)sourceCount=a4DeclaredCount(root.response.body.totalCount);
       if (items.length === 0) throw new Error("congestion_no_data");
       terminalCounts.push(`${terminalId}:${items.length}`);
       const retrievedAt = nowIso();
@@ -1932,6 +1971,7 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
         try { canonical = await normalizeAirportCongestion(item, retrievedAt); }
         catch (error) { rowFailures.push(safeSourceFailureDetail(error)); continue; }
         lastRow = canonical;
+        overflowRows?.push(canonical);
         if (!env.DB) continue;
         statements.push(env.DB.prepare(`INSERT INTO airport_congestion (
             id, source_id, record_origin, terminal, zone, wait_time_minutes, wait_time_raw, waiting_count,
@@ -1951,6 +1991,11 @@ export async function collectAirportCongestion(env: CollectorEnv): Promise<Colle
       const refused = error instanceof Error && error.message.startsWith("congestion_rows_refused ");
       failures.push(`${terminalId}: ${refused ? error.message.slice("congestion_rows_refused ".length) : safeSourceFailureDetail(error)}`);
     }
+  }
+  if(overflowRows){
+   const overflow=await tryA4LocalOverflow(env.DB,localOverflow,'T1',overflowRows,
+    !failures.length&&!rowSkips.length&&sourceCount===overflowRows.length&&sourceCount<=50,requestedAt,providerRequests);
+   if(overflow)return overflow;
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
   const detail = `requestedAt=${requestedAt}; terminals ${terminalCounts.join(", ") || "none"}; ${describeWrites(written)}${rowSkips.length ? `; ${rowSkips.join(" | ")}` : ""}${failures.length ? `; failed ${failures.join(" | ")}` : ""}`;
@@ -1979,7 +2024,7 @@ const A4_T2_MAX_PAGES = 3;
  * A4-T1 via a distinct sourceId + terminal='T2'; they can never overwrite
  * each other because both are part of the table's unique key.
  */
-export async function collectAirportCongestionT2(env: CollectorEnv): Promise<CollectorResult> {
+export async function collectAirportCongestionT2(env: CollectorEnv, localOverflow?: A4LocalOverflowOptions): Promise<CollectorResult> {
   const sourceId = "INCHEON_DEPARTURE_CONGESTION_T2";
   const requestedAt = nowIso();
   if (!env.DATA_GO_KR_SERVICE_KEY) {
@@ -1989,6 +2034,8 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
   }
   const statements: D1PreparedStatement[] = [];
   const rowFailures: string[] = [];
+  const overflowRows=localOverflow?[] as CanonicalAirportCongestion[]:null;
+  let declaredOverflowTotal:number|null=null,overflowCountConsistent=true;
   let lastRow: CanonicalAirportCongestion | undefined;
   let written: D1WriteCounts = NO_D1_WRITES;
   let pagesFetched = 0;
@@ -2015,12 +2062,19 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
       if (!root.response?.body || root.response.body.items === undefined) throw new SourceFetchError("SCHEMA");
       const items = officialResponseItems(root.response.body.items);
       pagesFetched += 1;
+      if(overflowRows){
+       const declared=a4DeclaredCount(root.response.body.totalCount);
+       if(declared===null||pagesFetched>1&&declared!==declaredOverflowTotal)overflowCountConsistent=false;
+       if(pagesFetched===1)declaredOverflowTotal=declared;
+       if(declared!==null&&items.length!==Math.min(A4_T2_PAGE_SIZE,Math.max(0,declared-(pageNo-1)*A4_T2_PAGE_SIZE)))overflowCountConsistent=false;
+      }
       totalCount = typeof root?.response?.body?.totalCount === "number" ? root.response.body.totalCount : totalCount;
       for (const item of items) {
         try {
           const canonical = await normalizeAirportCongestionT2(item, retrievedAt);
           normalizedCount += 1;
           lastRow = canonical;
+          overflowRows?.push(canonical);
           if (!env.DB) continue;
           statements.push(env.DB.prepare(`INSERT INTO airport_congestion (
               id, source_id, record_origin, terminal, zone, wait_time_minutes, wait_time_raw, waiting_count,
@@ -2047,6 +2101,11 @@ export async function collectAirportCongestionT2(env: CollectorEnv): Promise<Col
     await writeCollectorStatus(env.DB, sourceId, "ERROR", detail);
     await writeSourceHealth(env.DB, sourceId, "ERROR", detail);
     return { status: "ERROR", records: 0, detail };
+  }
+  if(overflowRows){
+   const overflow=await tryA4LocalOverflow(env.DB,localOverflow,'T2',overflowRows,
+    !rowFailures.length&&overflowCountConsistent&&declaredOverflowTotal===overflowRows.length,requestedAt);
+   if(overflow)return overflow;
   }
   if (env.DB && statements.length) written = await runBatches(env.DB, statements);
   const detail = `requestedAt=${requestedAt}; pages ${pagesFetched}; totalCount ${totalCount ?? "unknown"}; normalized ${normalizedCount}; ${describeWrites(written)}${rowFailures.length ? `; row failures ${rowFailures.length}: ${rowFailures[0]}` : ""}`;
