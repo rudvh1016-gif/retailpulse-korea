@@ -129,6 +129,36 @@ test('a held schedule cannot borrow a current collected-scan witness even when i
  await expect(row).toContainText('① 비교 불가');await expect(row.locator('.focus-week-snapshot')).toHaveCount(0);await expect(row.locator('.change-rate')).toHaveCount(0);
 });
 
+test('airport collection outage shows the confirmed schedule and baseline without an incomplete-day delta',async({page})=>{
+ const retrievedAt='2026-10-18T02:28:59Z';
+ await page.clock.setFixedTime(new Date('2026-10-19T01:00:00Z'));
+ await page.setViewportSize({width:390,height:900});
+ await fixtures(page);
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:{
+  ...summary,dayRelation:'TODAY',sources:[{sourceId:'INCHEON_FLIGHT_DETAIL',status:'ERROR',retrievedAt}],
+  airport:{...summary.airport,congestion:[],scheduledBriefing:{
+   serviceDateKst:day,basis:'OFFICIAL_DEPARTURE_SCHEDULE',capped:false,
+   ranking:{all:{totalFlights:547,retrievedAt}},scheduled:[{terminal:'T2',flights:257,retrievedAt}],
+  }},
+ }}));
+ await page.route('**/api/live/glance-week-reference*',route=>route.fulfill({json:{
+  status:'READY',month:'2026-10',data:{...reference,selectedFlights:null,flights:{...reference.flights,T2:258}},
+ }}));
+ await page.goto(`/ko?date=${day}`,{waitUntil:'domcontentloaded'});
+ await page.getByRole('button',{name:'T2',exact:true}).first().click();
+ const flight=page.locator('.focus-flight-metric');
+ await expect(flight.locator('.focus-metric-label')).toHaveText('공식 사전 출발 일정');
+ await expect(flight.locator('.focus-metric-total')).toHaveText('257편');
+ await expect(flight.locator('.focus-week-comparison')).toContainText('① 258편');
+ await expect(flight.locator('.focus-week-basis')).toHaveAttribute('data-comparison-state','reference');
+ await expect(flight.locator('.change-rate')).toHaveCount(0);
+ await expect(flight).not.toContainText('비교 불가');
+ await expect(page.getByTestId('glance-key-wait')).toContainText('인천공항 공식 안내 보기');
+ await expect(page.getByTestId('glance-key-wait')).toHaveAttribute('href','https://www.airport.kr/ap_ko/6652/subview.do');
+ await expect(page.getByTestId('glance-key-upcoming')).toContainText('수집된 출발편 기준');
+ await expect(page.getByText('오늘 출발편의 비교 기준을 확인하지 못했습니다.',{exact:true})).toHaveCount(0);
+});
+
 
 test('comparison geometry guard catches visible overflow and keeps clipped spoken counts separate',async({page})=>{
  await page.setContent('<style>.focus-core-metric{width:80px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style><div class="focus-core-metric"><p id="fits">① <span aria-hidden="true">+2명</span><span class="sr-only">증가 2명이라는 스크린리더 전용 긴 발화문구</span></p><p id="overflows"><span style="white-space:nowrap">VISIBLE_TEXT_MUST_NOT_ESCAPE_THE_COLUMN</span></p><p id="unclipped"><span class="sr-only" style="clip:auto">incorrectly exposed spoken count</span></p></div>');
