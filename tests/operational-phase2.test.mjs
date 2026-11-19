@@ -281,8 +281,14 @@ const airportOnlyPatches=JSON.parse(readFileSync('tests/fixtures/airport-only-20
 const airportOnlyFiles=["app/[locale]/[slug]/page.tsx", "app/[locale]/tourism-desk/[area]/page.tsx", "app/[locale]/tourism-desk/page.tsx", "app/api/health/route.ts", "app/api/live/events/route.ts", "app/api/live/predictions/route.ts", "app/api/live/summary/route.ts", "app/not-found.tsx", "app/retailpulse-app.tsx", "app/seo-config.ts", "app/site-usage-guide.tsx", "app/sitemap.ts"];
 assert.deepEqual(Object.keys(airportOnlyPatches),airportOnlyFiles);
 for(const [file,patches] of Object.entries(airportOnlyPatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
-function protectedUiBytes(file){
- const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
+// A4 shadow readers only: reverse the exact reviewed endpoint diff before
+// checking the original locks. Apply first, before earlier Seoul-retirement
+// reversals. Do not rebaseline hashes or exempt either API route.
+const a4ShadowPatches=JSON.parse(readFileSync('tests/fixtures/a4-overflow-20261119-shadow-patches.json','utf8'));
+assert.deepEqual(Object.keys(a4ShadowPatches),['app/api/airport/facility-operations/route.ts','app/api/live/summary/route.ts']);
+for(const [file,patches] of Object.entries(a4ShadowPatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+function protectedUiBytes(file,bytes=readFileSync(file)){
+ if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');
  for(const [approved,original] of approvedCanonicalPatches[file]){
   assert.equal(source.split(approved).length-1,1,file+' approved canonical expression must occur once');
@@ -299,6 +305,18 @@ test('no new recurring schedule and protected UI remains byte-identical outside 
   }
   for(const [file,expected] of Object.entries(locks.protectedFiles))assert.equal(createHash('sha256').update(protectedUiBytes(file)).digest('hex'),expected,file);
   const workflow=readWorkflowFacts('operational-memory.yml',readFileSync('.github/workflows/operational-memory.yml','utf8'));assert.deepEqual(workflow.triggers,['workflow_dispatch']);
+});
+test('A4 shadow exception still rejects unrelated edits and modified reviewed hunks',()=>{
+ const locks=JSON.parse(readFileSync('tests/fixtures/phase2-locks.json','utf8')).protectedFiles;
+ for(const file of Object.keys(a4ShadowPatches)){
+  const source=readFileSync(file,'utf8');
+  const guarded=bytes=>createHash('sha256').update(protectedUiBytes(file,Buffer.from(bytes))).digest('hex');
+  assert.equal(guarded(source),locks[file],file);
+  assert.notEqual(guarded(source+'// unrelated route edit\n'),locks[file],file);
+  const mutated=source.replace('import { getPublicA4ShardReader,','import { modifiedPublicA4ShardReader,');
+  assert.notEqual(mutated,source,file);
+  assert.throws(()=>guarded(mutated),/approved canonical expression must occur once/,file);
+ }
 });
 test('real schema version used; unavailable remains unknown; companion source included',()=>{assert.equal(observedContract('KMA_VILAGE_FCST',{schema_version:'weather-v1'}),'weather-v1');assert.equal(observedContract('KMA_VILAGE_FCST',{schema_version:'unavailable'}),'UNKNOWN_CONTRACT');assert.deepEqual(sourceIdsForRun('seoul_realtime'),['SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL']);});
 test('empty actual database is not successful coverage or forecast skill',async()=>{const {db}=setup();const measured=await measureSource(db,'SEOUL_CITYDATA_PPLTN',at);assert.equal(measured.dataValid,false);assert.equal(measured.publicValid,null);const forecasts=await readForecastEvidence(db,at);assert.equal(forecasts.length,4);assert.ok(forecasts.every(row=>row.state==='UNKNOWN'&&!row.performanceClaimAllowed));});

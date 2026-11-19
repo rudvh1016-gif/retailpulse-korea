@@ -480,6 +480,16 @@ test('default-off A4 shard reader keeps per-terminal isolation and unrelated sum
   health.run('INCHEON_DEPARTURE_CONGESTION_T2',at,got);
   database.prepare("INSERT INTO airport_congestion (id,source_id,record_origin,terminal,zone,wait_time_minutes,waiting_count,observed_at,retrieved_at,freshness,schema_version,quality_status,source_hash) VALUES ('last-good','INCHEON_DEPARTURE_CONGESTION','LIVE','T1','DG2_E',15,100,?,?,'LIVE','v1','VALID','h1')").run(prev,prev);
   const row=await normalizeAirportCongestionT2({terminalId:'P03',gateId:'DG2_A',waitTime:'60+',waitLength:'12',occurtime:at},got);
+  // The same primary data remains available with no shadow reader and no
+  // extra D1 requests. Only opt-in shadow mode can report the scoped failure.
+  const defaultClient=new LocalD1Database(database);
+  const defaultResponse=await summarizeLiveSummary(defaultClient,clockFor(),{includeSeoul:true});
+  const defaultBody=await defaultResponse.json();
+  assert.equal(defaultClient.trips.length,1);
+  assert.equal(defaultBody.mode,'live-summary');
+  assert.equal(defaultBody.readStatus.status,'COMPLETE');
+  assert.equal(defaultBody.airport.congestion.find(x=>x.terminal==='T1').collectionStatus,'LIVE');
+  assert.equal(defaultBody.airport.congestion.find(x=>x.terminal==='T2'),undefined);
   const scope={includeSeoul:true,readA4Shard:async terminal=>terminal==='T2'?{state:'ok',rows:[row]}:{state:'error'}};
   const response=await summarizeLiveSummary(client,clockFor(),scope);
   const body=await response.json();
