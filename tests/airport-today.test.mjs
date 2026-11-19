@@ -96,6 +96,7 @@ test("A1 scan stores D-3 through today, separates every held future date, dedupl
 class MemoryD1 {
   flights = new Map();
   schedules = new Map();
+  evidence = [];
   batches = 0;
 
   prepare(sql) {
@@ -103,7 +104,7 @@ class MemoryD1 {
       bind: (...params) => ({
         sql,
         params,
-        run: async () => ({ meta: { rows_written: 1 } }),
+        run: async () => { this.evidence.push({sql,params}); return { meta: { rows_written: 1 } }; },
       }),
     };
   }
@@ -295,4 +296,27 @@ test('an externally unpublished current day preserves good records and independe
  const db=new MemoryD1();db.flights.set('last-good',{scheduledAt:'2026-10-09T08:00:00+09:00'});
  let calls=0;const result=await collectAirportFlightsToday({DB:db,DATA_GO_KR_SERVICE_KEY:'fixture-key'},new Date('2026-10-09T15:00:01Z'),async()=>{calls++;return pagePayload([flight({flightId:'KE11',scheduleDatetime:'202610110900',terminalId:'P03'})],1);});
  assert.equal(result.status,'NOT_YET_PUBLISHED');assert.equal(calls,1);assert.equal(result.trackedToday,0);assert.equal(db.flights.has('last-good'),true);assert.equal(db.schedules.has('2026-10-11'),true);assert.match(result.detail,/NOT_YET_PUBLISHED/);
+});
+
+test('only successful full current A1 publication retains the compact evidence', async () => {
+  const db=new MemoryD1(), now=new Date(), time=kstDate(now).replaceAll('-','')+'0900';
+  const records=[flight({flightId:'KE001',scheduleDatetime:time,terminalId:'P03'}),flight({flightId:'KE002',scheduleDatetime:time,terminalId:'P02'})];
+  let requests=0;
+  const env={DB:db,DATA_GO_KR_SERVICE_KEY:'fixture-key'};
+  const result=await collectAirportFlightsToday(env,now,async()=>{requests++;return pagePayload(records,records.length);});
+  assert.equal(result.status,'SUCCESS');assert.equal(requests,1);
+  const run=db.evidence.find(row=>row.sql.includes('INSERT INTO collector_runs')&&row.sql.includes("'SUCCESS'"));
+  const health=db.evidence.find(row=>row.sql.includes('INSERT INTO source_health')&&row.sql.includes("'LIVE'"));
+  assert.ok(run);assert.ok(health);
+  const detail=run.params.at(-1);
+  assert.ok(detail.length<=500);
+  assert.match(detail,/^recent .*; today unique physical 2; range unique physical 2;/);
+  assert.match(detail,/; glance-v1 [\w.-]+ 0,1,1,0,0 [a-f0-9]{64}$/);
+  assert.equal(health.params[2],run.params[2]);
+  assert.equal(detail.startsWith(health.params[4]),true);
+  assert.doesNotMatch(health.params[4],/glance-v1/);
+  const failed=new MemoryD1();
+  const failure=await collectAirportFlightsToday({...env,DB:failed},now,async()=>pagePayload(records,records.length+1));
+  assert.equal(failure.status,'ERROR');
+  assert.ok(failed.evidence.every(row=>!row.params.some(param=>typeof param==='string'&&param.includes('glance-v1'))));
 });

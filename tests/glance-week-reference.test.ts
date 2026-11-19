@@ -201,3 +201,20 @@ test('SQLite current-day witness seeks existing source/start and source-health i
   assert.ok(plans.every(plan=>!/^SCAN (?:airport_|c\b|h\b)/.test(plan)),plans.join('\n'));
  }finally{sqlite.close();}
 });
+
+test('exact card proof survives retained drift while legacy stays withheld',async()=>{
+ const storage=[{day,payload:JSON.stringify(currentProfile())},{day:previousDay,payload:JSON.stringify(profile())}];
+ const {glanceCardFlightSnapshot}=await import('../lib/glance-week-comparison');
+ const marked={...scan(),detail:scan().detail.replace('physical 40;','physical 39;')
+  +`; glance-v1 ${AIRPORT_SIDES_VERSION} 10,5,19,2,3 ${'a'.repeat(64)}`};
+ const read=async(patch:Partial<ReturnType<typeof scan>>={})=>readGlanceWeekReference(mockDb({profiles:storage,scans:[{...marked,...patch}]}) as never,day,currentNow);
+ const result=await read();
+ assert.equal(result.selectedFlights,null);
+ const card=glanceCardFlightSnapshot(day,result,'T2',currentNow);
+ assert.equal(card?.total,19);
+ assert.deepEqual(glanceWeekChange(19,day,card?.reference,'T2','flights',currentNow),{previous:20,delta:-1,percent:-5});
+ assert.equal(glanceWeekChange(20,day,card?.reference,'T2','flights',currentNow),null);
+ assert.equal(glanceCardFlightSnapshot(day,result,'T2','2026-10-30T15:00:00Z'),null);
+ for(const patch of [{status:'ERROR'},{healthStatus:'STALE'},{healthRetrievedAt:'2026-10-30T01:01:00Z'},{finishedAt:'2026-10-30T03:00:00Z'},{detail:marked.detail.slice(0,-2)}])
+  assert.equal((await read(patch)).selectedCardSnapshot,undefined);
+});

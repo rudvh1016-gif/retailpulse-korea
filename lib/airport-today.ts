@@ -1,3 +1,4 @@
+import {a1CardEvidence} from './a1-current-snapshot';
 import {retainOperatingFlight} from './airport-flight-dedupe';
 import {reserveAirportRequestBudget,settleAirportRequestBudget} from './airport-request-budget';
 import { prepareDepartureSchedules } from './departure-schedule';
@@ -327,6 +328,10 @@ async function recordSuccess(
   const futureDates = [...new Set(fetched.futureRecords.map(record => record.scheduledAt.slice(0,10)))].sort();
   const detail = `recent ${fetched.windowStartDate}..${fetched.targetDate}; future scheduled ${fetched.futureRecords.length} dates ${futureDates[0] ?? 'none'}..${futureDates.at(-1) ?? 'none'}; pages ${fetched.pagesFetched}; requests ${fetched.requestsIssued}; population ${fetched.totalCount}; range rows ${fetched.sourceRowsInRange}; today source rows ${fetched.sourceRowsForDate}; today unique physical ${fetched.trackedToday}; range unique physical ${fetched.records.length}; ${describeWrites(changedRows)}`;
   if (!db) return detail;
+  // Optional derived evidence must not invalidate a verified collection or
+  // change the bounded operational detail published through source_health.
+  const cardEvidence = await a1CardEvidence(fetched).catch(() => null);
+  const retainedDetail = cardEvidence && detail.length+cardEvidence.length<=500 ? detail+cardEvidence : detail.slice(0,500);
 
   await db.prepare(`INSERT INTO source_health (
       source_id, status, last_event_at, last_published_at, last_retrieved_at,
@@ -354,7 +359,7 @@ async function recordSuccess(
       finishedAt,
       fetched.totalCount,
       changedRows.changedRows,
-      detail.slice(0, 500),
+      retainedDetail,
     )
     .run();
   return detail;
