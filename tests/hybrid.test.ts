@@ -150,6 +150,18 @@ test("Cloudflare deploy gate accepts production and rejects unresolved staging D
   });
 });
 
+test("standby D1 is production-only and cannot reuse the primary database or migrations", async () => {
+  const config = await readCloudflareConfig();
+  const [primary, standby] = config.env.production.d1_databases;
+  assert.equal(standby.binding, "A4_OVERFLOW_DB");
+  assert.notEqual(standby.database_id, primary.database_id);
+  assert.equal(standby.migrations_dir, "db/a4-overflow-migrations");
+  assert.equal(config.env.staging.d1_databases.some((db: { binding: string }) => db.binding === standby.binding), false);
+
+  standby.database_id = primary.database_id;
+  assert.throws(() => validateCloudflareEnvironment(config, "production"), /standby D1 must be distinct/i);
+});
+
 test("deploy workflow maps one stage to matching GitHub and Wrangler environments", async () => {
   const workflow = await readFile(new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url), "utf8");
   const deployScript = await readFile(new URL("../scripts/deploy-cloudflare.mjs", import.meta.url), "utf8");

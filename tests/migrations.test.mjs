@@ -32,6 +32,7 @@ const migrations = [
   "drizzle/0018_airport_departure_schedule.sql",
   "drizzle/0033_airport_aircraft_metadata.sql",
   "drizzle/0034_reclaim_retired_seoul_context.sql",
+  "drizzle/0035_reclaim_remaining_retired_seoul_context.sql",
 ];
 
 function applyMigrations(database) {
@@ -53,6 +54,8 @@ test("capacity repair reclaims only the bounded retired Seoul context rows", () 
       VALUES (1, 'myeongdong', '2026-09-01', '2026-09-01', '{}', 'retired'),
              (12000, 'itaewon', '2026-11-17', '2026-11-17', '{}', 'boundary'),
              (12001, 'hongdae', '2026-10-01', '2026-10-01', '{}', 'outside-window'),
+             (30000, 'seongsu', '2026-10-06', '2026-10-06', '{}', 'followup-boundary'),
+             (30001, 'seongsu', '2026-10-07', '2026-10-07', '{}', 'outside-both'),
              (2, 'airport', '2026-09-01', '2026-09-01', '{}', 'other-area'),
              (3, 'seongsu', '2026-11-18', '2026-11-18', '{}', 'after-retirement');
       INSERT INTO airport_congestion
@@ -61,16 +64,41 @@ test("capacity repair reclaims only the bounded retired Seoul context rows", () 
       VALUES ('t2', 'INCHEON_DEPARTURE_CONGESTION_T2', 'OFFICIAL', 'T2', 'DG1_A', 10, 3,
               '2026-11-20', '2026-11-20', 'LIVE', '1', 'VERIFIED', 't2');
     `);
-    const sql = readFileSync(migrations.at(-1), "utf8");
+    const sql = readFileSync("drizzle/0034_reclaim_retired_seoul_context.sql", "utf8");
     database.exec(sql);
     database.exec(sql);
     assert.deepEqual(
       database.prepare("SELECT source_hash FROM seoul_context ORDER BY rowid").all().map(row => row.source_hash),
-      ["other-area", "after-retirement", "outside-window"],
+      ["other-area", "after-retirement", "outside-window", "followup-boundary", "outside-both"],
+    );
+    const followup = readFileSync("drizzle/0035_reclaim_remaining_retired_seoul_context.sql", "utf8");
+    database.exec(followup);
+    database.exec(followup);
+    assert.deepEqual(
+      database.prepare("SELECT source_hash FROM seoul_context ORDER BY rowid").all().map(row => row.source_hash),
+      ["other-area", "after-retirement", "outside-both"],
     );
     assert.equal(database.prepare("SELECT count(*) AS count FROM airport_congestion").get().count, 1);
   } finally {
     database.close();
+  }
+});
+
+test("congestion standby schema is isolated and its captures are immutable", () => {
+  const primary = new DatabaseSync(":memory:");
+  const standby = new DatabaseSync(":memory:");
+  try {
+    applyMigrations(primary);
+    standby.exec(readFileSync("db/a4-overflow-migrations/0000_a4_generation.sql", "utf8"));
+    const digest = "a".repeat(64);
+    standby.prepare("INSERT INTO a4_generation VALUES (?, ?, ?, ?, ?)").run(digest, "T2", "2026-11-20T00:00:00Z", 1, "[]");
+    assert.throws(() => standby.exec("UPDATE a4_generation SET row_count = 2"), /immutable_generation/);
+    assert.throws(() => standby.exec("DELETE FROM a4_generation"), /immutable_generation/);
+    assert.equal(primary.prepare("SELECT name FROM sqlite_master WHERE name = 'a4_generation'").get(), undefined);
+    assert.equal(standby.prepare("SELECT name FROM sqlite_master WHERE name = 'airport_congestion'").get(), undefined);
+  } finally {
+    primary.close();
+    standby.close();
   }
 });
 
