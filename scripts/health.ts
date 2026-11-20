@@ -50,7 +50,7 @@ import { buildWatchdogReport, type Heartbeat } from "../lib/watchdog";
 import { observeQuota, type QuotaObservation, type QuotaVerdict } from "../lib/quota-observation";
 import { calendarCoverage } from "../lib/holiday-calendar";
 import { scanForRuntimeLlm, isScannableProductionPath } from "../lib/runtime-llm-scan";
-import { resolveProductionDatabaseConfig } from "./production-database";
+import { productionA4Overflow, resolveProductionDatabaseConfig } from "./production-database";
 
 const repoRoot = new URL("../", import.meta.url);
 const wantsJson = process.argv.includes("--json");
@@ -134,6 +134,7 @@ async function readLiveState() {
   try { config=resolveProductionDatabaseConfig('production'); } catch { return null; }
   const database=new CloudflareD1RestDatabase(config.accountId,config.databaseId,config.apiToken);
   const db=database as unknown as D1Database;
+  const a4Overflow=productionA4Overflow(config) as unknown as D1Database | undefined;
   const health=await database.prepare('SELECT source_id FROM source_health ORDER BY source_id LIMIT 100').all<{source_id:string}>();
   // What Production ACTUALLY has, before any table of ours is consulted. This
   // is the census's observation, and it is the only list that can reveal a
@@ -141,7 +142,7 @@ async function readLiveState() {
   const observedSourceIds=health.results.map(row=>row.source_id).filter(id => SEOUL_ENABLED || !isSeoulOnlySourceId(id));
   const ids=[...new Set([...Object.values(DIAGNOSTIC_SOURCE_IDS),'SEOUL_CITYDATA_CMRCL',...observedSourceIds])].filter(id => SEOUL_ENABLED || !isSeoulOnlySourceId(id));
   const measurements:SourceMeasurement[]=[];
-  for(const id of ids)measurements.push(await measureSource(db,id,new Date().toISOString()));
+  for(const id of ids)measurements.push(await measureSource(db,id,new Date().toISOString(),{a4Overflow}));
   if(process.argv.includes('--production')) {
     try {const publicBody=await readPublicEvidence(new Date().toISOString());for(const item of measurements)verifyPublicMeasurement(item,publicBody);}
     catch { /* unavailable public measurement remains null; never a false pass */ }

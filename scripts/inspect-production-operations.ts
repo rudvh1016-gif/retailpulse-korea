@@ -15,7 +15,8 @@
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { COVERAGE_PROBES, buildCoverageContext, isReadOnlyProbe } from "../lib/data-coverage";
 import { resolveDiagnosticSourceIds, sanitizeProductionDetail } from "../lib/production-diagnostics";
-import { resolveProductionDatabaseConfig } from "./production-database";
+import { productionA4Overflow, resolveProductionDatabaseConfig } from "./production-database";
+import { measureSource } from "../lib/operational-evidence";
 
 const since = process.env.RPK_DIAGNOSTIC_SINCE?.trim();
 if (!since || Number.isNaN(Date.parse(since))) throw new Error("invalid_diagnostic_since");
@@ -25,7 +26,8 @@ if (!sourceSelection) throw new Error("diagnostic_sources_required");
 const sourceIds = resolveDiagnosticSourceIds(sourceSelection);
 const placeholders = sourceIds.map(() => "?").join(", ");
 
-const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig("production");
+const config=resolveProductionDatabaseConfig("production");
+const { accountId, databaseId, apiToken } = config;
 const database = new CloudflareD1RestDatabase(accountId, databaseId, apiToken);
 const migrations = await database.prepare('SELECT name FROM d1_migrations ORDER BY id DESC LIMIT 5').all();
 
@@ -65,6 +67,19 @@ const selectedCoverageProbes = COVERAGE_PROBES.filter((probe) =>
 for (const probe of selectedCoverageProbes) {
   if (!isReadOnlyProbe(probe)) throw new Error(`coverage_probe_not_read_only_${probe.name}`);
   try {
+    if (probe.name==='airport_congestion_latest') {
+      const shard=productionA4Overflow(config) as unknown as D1Database | undefined;
+      const rows=[];
+      for (const id of probe.sourceIds.filter(id=>selectedSourceIds.has(id))) {
+        const receipt=await measureSource(database as unknown as D1Database,id,new Date().toISOString(),{a4Overflow:shard});
+        if(receipt.storageReadFailed)throw new Error('a4_coverage_storage_unverified');
+        rows.push({terminal:id.endsWith('_T2')?'T2':'T1',latestObservedAt:receipt.sample[0]?.observed_at??null,
+          zones:receipt.storedRows,retrievedAt:receipt.sample[0]?.retrieved_at??null,
+          storage:receipt.a4Pointer?'standby':'primary',valid:receipt.dataValid});
+      }
+      coverage.push({probe:probe.name,meaning:probe.meaning,rows});
+      continue;
+    }
     const result = await database.prepare(probe.sql).bind(...probe.params(coverageContext)).run();
     coverage.push({ probe: probe.name, meaning: probe.meaning, rows: result.results ?? [] });
   } catch (error) {

@@ -1,7 +1,7 @@
 import { SEOUL_ENABLED, isSeoulOnlySourceId } from "../lib/product-scope";
 /** Manual / existing post-deployment bookkeeping. No provider credentials or dispatch capability. */
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
-import { resolveProductionDatabaseConfig } from './production-database';
+import { productionA4Overflow, resolveProductionDatabaseConfig } from './production-database';
 import { OperationalMemory } from '../lib/operational-memory';
 import { measureSource, verifyPublicMeasurement, readPublicEvidence } from '../lib/operational-evidence';
 import { saveMeasurement } from '../lib/operational-bookkeeping';
@@ -21,13 +21,14 @@ if(mode==='recover') {
   console.log(JSON.stringify({migrationState:migration.results}));
   if(!await memory.available())throw new Error('operational_migration_unavailable');
   if(mode==='record') {
+    const a4Overflow=productionA4Overflow(config) as unknown as D1Database | undefined;
     const before=database.usageSnapshot();
     let publicBody: Awaited<ReturnType<typeof readPublicEvidence>>={today:null,tomorrow:null};
     try {publicBody=await readPublicEvidence(new Date().toISOString());}catch { /* no publication proof */ }
     const sources=(await database.prepare('SELECT source_id FROM source_health ORDER BY source_id LIMIT 100').all<{source_id:string}>()).results;
     for(const {source_id} of sources) {
       if(!SEOUL_ENABLED && isSeoulOnlySourceId(source_id))continue;
-      const now=new Date().toISOString(),measurement=await measureSource(db,source_id,now);
+      const now=new Date().toISOString(),measurement=await measureSource(db,source_id,now,{a4Overflow});
       verifyPublicMeasurement(measurement,publicBody);
       // Existing run identity prevents inspecting the same failure twice from inventing recurrence.
       await saveMeasurement(memory,measurement,measurement.runId??`inspection:${now}`,

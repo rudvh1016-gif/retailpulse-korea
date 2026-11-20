@@ -63,19 +63,26 @@ export async function recheckCongestionPublication(db:D1Database,measurement:Sou
   const healthGuard=HEALTH_FIELDS.map(field=>`h.${field} IS ?`).join(' AND ');
   const runGuard=RUN_FIELDS.map(field=>`r.${field} IS ?`).join(' AND ');
   const rowGuard=ROW_FIELDS.map(field=>`c.${field} IS json_extract(j.value,'$.${field}')`).join(' AND ');
+  const pointer=measurement.a4Pointer;
+  // An immutable verified generation needs the same pointer at commit time.
+  // A newer legacy publication after a rollback also invalidates the witness.
+  const storageGuard=pointer ? `EXISTS(SELECT 1 FROM a4_pointer WHERE terminal=? AND observed_at=? AND digest=? AND row_count=?)
+    AND COALESCE(julianday((SELECT MAX(observed_at) FROM airport_congestion WHERE terminal=? AND source_id=?)),0)<julianday(?)` : `
+    (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal=? AND source_id=?)=?
+    AND (SELECT COUNT(*) FROM airport_congestion WHERE terminal=? AND source_id=? AND observed_at=?)=?
+    AND NOT EXISTS(SELECT 1 FROM airport_congestion c WHERE c.terminal=? AND c.source_id=? AND c.observed_at=?
+      AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE ${rowGuard}))`;
   const guard=`EXISTS(SELECT 1 FROM operational_source_state WHERE source_id=? AND run_id=? AND checked_at=?
       AND data_valid=1 AND storage_valid=1 AND contract_version=?)
     AND EXISTS(SELECT 1 FROM source_health h WHERE h.source_id=? AND ${healthGuard})
     AND EXISTS(SELECT 1 FROM collector_runs r WHERE r.source_id=? AND ${runGuard})
     AND NOT EXISTS(SELECT 1 FROM collector_runs WHERE source_id=? AND (started_at>? OR (started_at=? AND run_id<>?)))
-    AND (SELECT MAX(observed_at) FROM airport_congestion WHERE terminal=? AND source_id=?)=?
-    AND (SELECT COUNT(*) FROM airport_congestion WHERE terminal=? AND source_id=? AND observed_at=?)=?
-    AND NOT EXISTS(SELECT 1 FROM airport_congestion c WHERE c.terminal=? AND c.source_id=? AND c.observed_at=?
-      AND NOT EXISTS(SELECT 1 FROM json_each(?) j WHERE ${rowGuard}))`;
+    AND ${storageGuard}`;
   const observed=measurement.sample[0].observed_at;
   const params=[source,String(measurement.runId),at,measurement.contractVersion,source,...HEALTH_FIELDS.map(field=>health[field]??null),source,...RUN_FIELDS.map(field=>run[field]??null),
-    source,run.started_at,run.started_at,run.run_id,terminal,source,observed,terminal,source,observed,measurement.sample.length,
-    terminal,source,observed,JSON.stringify(measurement.sample)];
+    source,run.started_at,run.started_at,run.run_id,...(pointer
+      ? [terminal,pointer.observedAt,pointer.digest,pointer.count,terminal,source,pointer.observedAt]
+      : [terminal,source,observed,terminal,source,observed,measurement.sample.length,terminal,source,observed,JSON.stringify(measurement.sample)])];
   const evidence=safeOperationalEvidence('regular collection: exact latest stored/public congestion rows and clocks reverified; prior attempt outcomes unchanged');
   for(const incident of incidents.results) {
     const eventId=`${incident.fingerprint}|HEALTHY|${runId}`;

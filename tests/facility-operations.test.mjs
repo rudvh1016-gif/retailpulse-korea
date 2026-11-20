@@ -189,7 +189,7 @@ test("the A4 endpoint is bounded, seeks indexes, and never widens beyond its win
   // A facility with no recognised terminal gets no terminal numbers at all.
   assert.match(route, /const flights = terminal \?/);
   assert.match(route, /const forecastBands = terminal \?/);
-  assert.match(route, /const checkpoints = terminal \?/);
+  assert.match(route, /const legacyCheckpoints = terminal \?/);
 
   // The mapping is bundled, so A3 costs no D1 read on this path either.
   assert.match(route, /buildZoneMapIndex\(zoneMapFile/);
