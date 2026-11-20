@@ -180,6 +180,14 @@ test("a broken statement is explicit degraded data, never cached as absence, and
     assert.ok(body.readStatus.skippedGroups.length>0);
     assert.equal(body.readStatus.statementsAttempted,50);
     assert.equal(client.trips.reduce((n,trip)=>n+(trip.kind==='batch'?trip.count:1),0),50);
+    const withStandby=new LocalD1Database(database);
+    const reserved=[];
+    const standby=await summarizeLiveSummary(withStandby,clockFor(),{includeSeoul:true,readA4Shard:async terminal=>{
+      reserved.push(terminal);
+      return {state:'ok',rows:[]};
+    }});
+    assert.deepEqual(reserved.sort(),['T1','T2']);
+    assert.equal((await standby.json()).readStatus.statementsAttempted,46);
     assert.equal(response.headers.get("x-robots-tag"), CONTENT_API_ROBOTS_TAG,
       "robots.txt lets crawlers fetch this so pages render; the tag keeps the JSON itself out of results");
 

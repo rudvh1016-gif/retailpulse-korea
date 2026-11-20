@@ -582,7 +582,12 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     for(const key of ['contextRows','realtimeRows','observedSeriesRows','commercialRows','realtimeForecastRows','eventRows','salesRows','storeDynamicsRows','foreignPresenceRows','foreignPurposeRows','observedDateRows'] as const)groups[key]=[];
     groups.sources=[client.prepare("SELECT source_id AS sourceId,status,last_event_at AS eventAt,last_retrieved_at AS retrievedAt,detail FROM source_health WHERE source_id NOT IN ('SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL','SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION','SEOUL_FOREIGN_PURPOSE_MOBILITY','SEOUL_ESTIMATED_SALES','SEOUL_STORE_DYNAMICS','KTO_TOURAPI_EVENT') ORDER BY source_id")];
   }
-  const readResult = await readGroups(client, groups, { maxStatements: 50 });
+  // Each terminal can read one pointer and one immutable generation. Reserve
+  // their four statements even on the isolated fallback path.
+  const shardReader=dayRelation === "TODAY" ? scope.readA4Shard : undefined;
+  const shardReads=shardReader && new Map(CONGESTION_TERMINALS.map(terminal=>
+    [terminal,Promise.resolve().then(()=>shardReader(terminal)).catch(()=>({state:'error' as const}))]));
+  const readResult = await readGroups(client, groups, { maxStatements: shardReads ? 46 : 50 });
   const blocks = readResult.rows;
   // Optional overflow failures must not invalidate an otherwise refreshable main snapshot.
   const mainReadDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
@@ -766,9 +771,10 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   );
   const a4Unverified = new Set<string>();
   let congestionRows = primaryCongestionRows;
-  if (dayRelation === "TODAY" && scope.readA4Shard) {
+  if (shardReads) {
     const merged = await Promise.all(CONGESTION_TERMINALS.map(async terminal => {
-      const result=await mergePublicA4Terminal(terminal,primaryCongestionRows.filter(r=>r.terminal===terminal),scope.readA4Shard,now,12);
+      const result=await mergePublicA4Terminal(terminal,primaryCongestionRows.filter(r=>r.terminal===terminal),
+        key=>shardReads.get(key)!,now,12);
       const sourceId=terminal==='T1'?'INCHEON_DEPARTURE_CONGESTION':'INCHEON_DEPARTURE_CONGESTION_T2';
       const health=sources.find(r=>r.sourceId===sourceId);
       const match=(row:Row)=>typeof health?.eventAt==='string'&&typeof health.retrievedAt==='string'
