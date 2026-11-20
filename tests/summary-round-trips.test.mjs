@@ -1,3 +1,4 @@
+import {isValidSummaryRefreshPayload} from '../lib/summary-refresh-policy.ts';
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -179,6 +180,14 @@ test("a broken statement is explicit degraded data, never cached as absence, and
     assert.ok(body.readStatus.skippedGroups.length>0);
     assert.equal(body.readStatus.statementsAttempted,50);
     assert.equal(client.trips.reduce((n,trip)=>n+(trip.kind==='batch'?trip.count:1),0),50);
+    const withStandby=new LocalD1Database(database);
+    const reserved=[];
+    const standby=await summarizeLiveSummary(withStandby,clockFor(),{includeSeoul:true,readA4Shard:async terminal=>{
+      reserved.push(terminal);
+      return {state:'ok',rows:[]};
+    }});
+    assert.deepEqual(reserved.sort(),['T1','T2']);
+    assert.equal((await standby.json()).readStatus.statementsAttempted,46);
     assert.equal(response.headers.get("x-robots-tag"), CONTENT_API_ROBOTS_TAG,
       "robots.txt lets crawlers fetch this so pages render; the tag keeps the JSON itself out of results");
 
@@ -465,4 +474,46 @@ test('future selections skip both unused raw flight history scans; present and p
    assert.equal(body.readStatus.status,'COMPLETE');
   }
  } finally {database.close();unlinkSync(databasePath);}
+});
+
+test('default-off A4 shard reader keeps per-terminal isolation and unrelated summary evidence',async()=>{
+ const {database,databasePath}=openDatabase('a4-overflow-shadow');
+ try{
+  seed(database);
+  const {normalizeAirportCongestionT2}=await import('../lib/source-adapters');
+  const client=new LocalD1Database(database);
+  const prev='2026-09-04T04:09:00.000Z', at='2026-09-04T13:10:00+09:00', got='2026-09-04T04:11:00.000Z';
+  const health=database.prepare("INSERT INTO source_health (source_id,status,last_event_at,last_retrieved_at,schema_version,detail) VALUES (?, 'LIVE', ?, ?, 'v1', 'fixture')");
+  health.run('INCHEON_DEPARTURE_CONGESTION',prev,prev);
+  health.run('INCHEON_DEPARTURE_CONGESTION_T2',at,got);
+  database.prepare("INSERT INTO airport_congestion (id,source_id,record_origin,terminal,zone,wait_time_minutes,waiting_count,observed_at,retrieved_at,freshness,schema_version,quality_status,source_hash) VALUES ('last-good','INCHEON_DEPARTURE_CONGESTION','LIVE','T1','DG2_E',15,100,?,?,'LIVE','v1','VALID','h1')").run(prev,prev);
+  const row=await normalizeAirportCongestionT2({terminalId:'P03',gateId:'DG2_A',waitTime:'60+',waitLength:'12',occurtime:at},got);
+  const scope={includeSeoul:true,readA4Shard:async terminal=>terminal==='T2'?{state:'ok',rows:[row]}:{state:'error'}};
+  const response=await summarizeLiveSummary(client,clockFor(),scope);
+  const body=await response.json();
+  assert.equal(body.mode,'live-summary');
+  assert.equal(body.readStatus.status,'DEGRADED');
+  assert.equal(response.headers.get('cache-control'),SUMMARY_NO_STORE);
+  assert.equal(isValidSummaryRefreshPayload(body,null),true);
+  assert.equal(client.trips.length,1);
+  assert.deepEqual(body.readStatus.failedGroups,['congestionRows']);
+  assert.ok(body.areas.myeongdong);
+  const t1=body.airport.congestion.find(x=>x.terminal==='T1'),t2=body.airport.congestion.find(x=>x.terminal==='T2');
+  assert.equal(t1.collectionStatus,'UNKNOWN');
+  assert.equal(t1.freshness,'STALE');
+  assert.equal(t2.collectionStatus,'LIVE');
+  assert.equal(t2.waitTimeMinutes,null);
+  assert.equal(t2.waitTimeRaw,'60+');
+  assert.equal(body.airport.currentBusiestDepartureHallByTerminal.T1,undefined);
+  database.prepare("UPDATE source_health SET status='ERROR' WHERE source_id='INCHEON_DEPARTURE_CONGESTION'").run();
+  const withFailure=await (await summarizeLiveSummary(client,clockFor(),scope)).json();
+  assert.equal(withFailure.airport.congestion.find(x=>x.terminal==='T1').collectionStatus,'FAILED');
+  assert.equal(isValidSummaryRefreshPayload(withFailure,null),true);
+  database.exec('DROP TABLE airport_flights');
+  const critical=await summarizeLiveSummary(client,clockFor(),scope);
+  const criticalBody=await critical.json();
+  assert.equal(criticalBody.mode,'degraded');
+  assert.equal(isValidSummaryRefreshPayload(criticalBody,null),false);
+  assert.equal(critical.headers.get('cache-control'),SUMMARY_NO_STORE);
+ }finally{database.close();unlinkSync(databasePath);}
 });

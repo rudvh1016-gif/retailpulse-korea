@@ -45,7 +45,8 @@
       },
       "vars": {
         "APP_ENV": "production",
-        "ENABLE_BETA_SIGNUPS": "false"
+        "ENABLE_BETA_SIGNUPS": "false",
+        "RPK_A4_OVERFLOW_READS": "true"
       },
       "d1_databases": [
         {

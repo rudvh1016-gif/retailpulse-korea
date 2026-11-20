@@ -14,10 +14,11 @@
  * each script's own confirmation/enablement check.
  */
 import { readFileSync } from "node:fs";
+import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 
 interface WranglerConfig {
   account_id: string;
-  env: Record<string, { d1_databases: Array<{ database_id: string }> }>;
+  env: Record<string, { d1_databases: Array<{ binding: string; database_id: string }> }>;
 }
 
 export interface ProductionDatabaseConfig {
@@ -27,12 +28,12 @@ export interface ProductionDatabaseConfig {
   stage: string;
 }
 
-export function resolveProductionDatabaseConfig(stage?: string): ProductionDatabaseConfig {
+export function resolveProductionDatabaseConfig(stage?: string, binding = "DB"): ProductionDatabaseConfig {
   const resolvedStage = stage?.trim() || process.env.RPK_ONESHOT_STAGE?.trim() || "production";
   const wranglerConfig = JSON.parse(
     readFileSync(new URL("../wrangler.production.jsonc", import.meta.url), "utf8"),
   ) as WranglerConfig;
-  const databaseId = wranglerConfig.env[resolvedStage]?.d1_databases?.[0]?.database_id;
+  const databaseId = wranglerConfig.env[resolvedStage]?.d1_databases?.find(entry => entry.binding === binding)?.database_id;
   if (!databaseId || databaseId.startsWith("00000000")) throw new Error(`oneshot_stage_unavailable_${resolvedStage}`);
 
   // Prefer the least-privilege dedicated write token when configured; the
@@ -41,4 +42,13 @@ export function resolveProductionDatabaseConfig(stage?: string): ProductionDatab
   if (!apiToken) throw new Error("missing_cloudflare_api_token");
 
   return { accountId: wranglerConfig.account_id, databaseId, apiToken, stage: resolvedStage };
+}
+
+export function productionA4Overflow(primary: ProductionDatabaseConfig) {
+  if (primary.stage !== 'production') return undefined;
+  const overflow = resolveProductionDatabaseConfig(primary.stage, 'A4_OVERFLOW_DB');
+  if (overflow.accountId !== primary.accountId || overflow.databaseId === primary.databaseId) {
+    throw new Error('a4_requires_distinct_databases');
+  }
+  return new CloudflareD1RestDatabase(overflow.accountId, overflow.databaseId, overflow.apiToken);
 }

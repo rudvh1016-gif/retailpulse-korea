@@ -32,7 +32,7 @@ import {
 } from "../lib/collector";
 import { CloudflareD1RestDatabase } from "../lib/d1-rest";
 import { collectAirportMonthlyStats } from "../lib/airport-monthly-stats";
-import { resolveProductionDatabaseConfig } from "./production-database";
+import { productionA4Overflow, resolveProductionDatabaseConfig } from "./production-database";
 
 if (process.env.RPK_ONESHOT_CONFIRM !== "IMPORT") {
   throw new Error("oneshot_not_confirmed: set the confirm input to IMPORT");
@@ -42,7 +42,8 @@ if (process.env.RPK_ONESHOT_CONFIRM !== "IMPORT") {
 // CLOUDFLARE_ACCOUNT_ID secret pointed at the wrong account (see PR #12),
 // which surfaces here as d1_http_403. See scripts/production-database.ts.
 const stage = process.env.RPK_ONESHOT_STAGE?.trim() || "production";
-const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig(stage);
+const config = resolveProductionDatabaseConfig(stage);
+const { accountId, databaseId, apiToken } = config;
 const restDatabase = new CloudflareD1RestDatabase(
   accountId,
   databaseId,
@@ -53,6 +54,7 @@ const database = restDatabase as unknown as D1Database;
 const env = {
   A1_SHARED_REQUEST_BUDGET: true,
   DB: database,
+  A4_OVERFLOW_DB: productionA4Overflow(config) as unknown as D1Database | undefined,
   DATA_GO_KR_SERVICE_KEY: process.env.DATA_GO_KR_SERVICE_KEY?.trim() || undefined,
   SEOUL_OPEN_DATA_KEY: process.env.SEOUL_OPEN_DATA_KEY?.trim() || undefined,
 };

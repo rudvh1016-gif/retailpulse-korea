@@ -17,6 +17,8 @@ import { verifyRecovery, type RecoveryVerification } from './recovery-orchestrat
 import type { SourceObservation } from './source-lifecycle';
 import { FACILITY_REFRESH_DAYS } from './airport-facilities';
 import type { FailureState } from './operational-states';
+import { createWitnessedA4Reader } from './a4-overflow-public-read';
+import type { A4Pointer } from './a4-overflow-publication';
 
 export type EvidenceRow=Record<string,unknown>;
 export interface SourceMeasurement extends RecoveryVerification {
@@ -24,6 +26,7 @@ export interface SourceMeasurement extends RecoveryVerification {
   run: EvidenceRow|null; health:EvidenceRow|null; storedRows:number|null;
   storageReadFailed:boolean; coverage:'COMPLETE'|'PARTIAL'|'UNKNOWN';
   failureClass:FailureState|null; detail:string; sample:EvidenceRow[];
+  a4Pointer?:A4Pointer;
 }
 const MAPPINGS:Record<string,string>={SEOUL_STORE_DYNAMICS:STORE_DYNAMICS_MAPPING_VERSION,
   SEOUL_SUBWAY_RIDERSHIP:SEOUL_SUBWAY_MAPPING_VERSION,SEOUL_FOREIGN_PURPOSE_MOBILITY:FOREIGN_PURPOSE_MAPPING_VERSION,
@@ -77,7 +80,7 @@ export function sourceFreshnessEvidence(measurement:Pick<SourceMeasurement,'sour
 }
 
 // Full A1 projection is opt-in for the one admitted recovery child, never routine health polling.
-export async function measureSource(db:D1Database,sourceId:string,nowIso:string,options:{airportRecovery?:boolean}={}):Promise<SourceMeasurement> {
+export async function measureSource(db:D1Database,sourceId:string,nowIso:string,options:{airportRecovery?:boolean;a4Overflow?:D1Database}={}):Promise<SourceMeasurement> {
   const [run,health]=await Promise.all([
     db.prepare('SELECT run_id,status,started_at,finished_at,records_read,records_written,detail FROM collector_runs WHERE source_id=? ORDER BY started_at DESC LIMIT 1').bind(sourceId).first<EvidenceRow>(),
     db.prepare('SELECT * FROM source_health WHERE source_id=?').bind(sourceId).first<EvidenceRow>(),
@@ -139,8 +142,27 @@ export async function measureSource(db:D1Database,sourceId:string,nowIso:string,
       const terminal=sourceId.endsWith('_T2')?'T2':'T1';
       output.sample=await rows(db,`SELECT * FROM airport_congestion WHERE terminal=? AND source_id=?
         AND observed_at=(SELECT MAX(observed_at) FROM airport_congestion WHERE terminal=? AND source_id=?) LIMIT 30`,[terminal,sourceId,terminal,sourceId]);
+      let current = true;
+      if (options.a4Overflow) {
+        const publication = await createWitnessedA4Reader(db,options.a4Overflow)(terminal);
+        const legacyAt = output.sample.length ? Date.parse(String(output.sample[0].observed_at)) : -Infinity;
+        if (publication.state==='error' && (!publication.pointer || Date.parse(publication.pointer.observedAt)>legacyAt)) {
+          throw new Error('a4_storage_unverified');
+        }
+        if (publication.state==='ok' && publication.pointer && Date.parse(publication.pointer.observedAt)>legacyAt) {
+          output.a4Pointer=publication.pointer;
+          current=publication.current===true && run?.run_id===`a4-overflow-v1:${publication.pointer.digest}`
+            && health?.last_retrieved_at===publication.rows[0]?.retrievedAt && health?.status==='LIVE';
+          output.sample=publication.rows.map(row=>({
+            source_id:row.sourceId,record_origin:row.recordOrigin,terminal:row.terminal,zone:row.zone,
+            wait_time_minutes:row.waitTimeMinutes,wait_time_raw:row.waitTimeRaw,waiting_count:row.waitingCount,
+            observed_at:row.observedAt,retrieved_at:row.retrievedAt,freshness:row.freshness,
+            schema_version:row.schemaVersion,quality_status:row.qualityStatus,source_hash:row.sourceHash,
+          }));
+        }
+      }
       output.storedRows=output.sample.length;output.storageValid=output.sample.length>0;
-      output.dataValid=output.storageValid&&output.sample.every(row=>row.quality_status==='VALID'&&validTime(row.observed_at)
+      output.dataValid=current&&output.storageValid&&output.sample.every(row=>row.quality_status==='VALID'&&validTime(row.observed_at)
         &&now-Date.parse(String(row.observed_at))>=0&&now-Date.parse(String(row.observed_at))<=35*60_000);
       // This proves the stored reported checkpoints, not that the provider covers all gates.
       output.coverage='UNKNOWN';output.failureClass=output.dataValid?null:output.storageValid?'STALE':'PARTIAL_DATA';

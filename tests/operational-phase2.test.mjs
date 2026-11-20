@@ -281,14 +281,17 @@ const airportOnlyPatches=JSON.parse(readFileSync('tests/fixtures/airport-only-20
 const airportOnlyFiles=["app/[locale]/[slug]/page.tsx", "app/[locale]/tourism-desk/[area]/page.tsx", "app/[locale]/tourism-desk/page.tsx", "app/api/health/route.ts", "app/api/live/events/route.ts", "app/api/live/predictions/route.ts", "app/api/live/summary/route.ts", "app/not-found.tsx", "app/retailpulse-app.tsx", "app/seo-config.ts", "app/site-usage-guide.tsx", "app/sitemap.ts"];
 assert.deepEqual(Object.keys(airportOnlyPatches),airportOnlyFiles);
 for(const [file,patches] of Object.entries(airportOnlyPatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
-// The owner authorized the existing standby D1. Reverse only this exact binding;
-// the original primary and staging bindings and every scheduler remain protected.
+// Apply the congestion endpoint reversal before earlier route reversals.
+const a4RoutePatches=JSON.parse(readFileSync('tests/fixtures/a4-overflow-20261119-shadow-patches.json','utf8'));
+assert.deepEqual(Object.keys(a4RoutePatches),['app/api/airport/facility-operations/route.ts','app/api/live/summary/route.ts']);
+for(const [file,patches] of Object.entries(a4RoutePatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+// Preserve the original production, staging, and scheduler contract hashes.
 approvedCanonicalPatches['wrangler.production.jsonc']=[[`,\n        {
           "binding": "A4_OVERFLOW_DB",
           "database_name": "retailpulse-korea-production-overflow",
           "database_id": "42373a40-b6a1-45b5-9d0e-c100b4867663",
           "migrations_dir": "db/a4-overflow-migrations"
-        }`,'']];
+        }`,''],[',\n        "RPK_A4_OVERFLOW_READS": "true"','']];
 function protectedUiBytes(file){
  const bytes=readFileSync(file);if(!approvedCanonicalPatches[file])return bytes;
  let source=bytes.toString('utf8');

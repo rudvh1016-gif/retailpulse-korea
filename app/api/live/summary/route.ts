@@ -1,3 +1,4 @@
+import { getPublicA4ShardReader, mergePublicA4Terminal } from '../../../../lib/a4-overflow-public-read';
 import {SEOUL_ENABLED,isSeoulOnlySourceId} from '../../../../lib/product-scope';
 import {projectDepartureCongestion} from '../../../../lib/airport-congestion-observation';
 import {serviceDayCacheControl} from '../../../../lib/service-day-cache';
@@ -235,9 +236,10 @@ export async function GET(request: Request) {
 
   try {
     const client = await getDb().then((db) => db.$client);
+    const readA4Shard = dayRelation === "TODAY" ? await getPublicA4ShardReader(client) : undefined;
     return await summarizeLiveSummary(client, {
       generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt, availabilityMonth,
-    }, {includeSeoul:SEOUL_ENABLED});
+    }, {includeSeoul:SEOUL_ENABLED,readA4Shard});
   } catch {
     return degradedSummary({ generatedAt, kstToday, serviceDate, dayRelation, availabilityMonth });
   }
@@ -263,7 +265,7 @@ export type SummaryClient = ReadClient & { prepare(sql: string): D1PreparedState
  * Builds the summary from prepared D1 statements. Exported so a test can hand
  * in a counting double and assert the read path stays one round trip.
  */
-export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock, scope: {includeSeoul:boolean}={includeSeoul:true}): Promise<Response> {
+export async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock, scope: {includeSeoul:boolean;readA4Shard?:Awaited<ReturnType<typeof getPublicA4ShardReader>>}={includeSeoul:true}): Promise<Response> {
   const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;
   const selectedDayEndAt = kstDayBounds(serviceDate).endAt;
   const observedStartAt = dayRelation === "PAST" ? dayStartAt
@@ -580,12 +582,21 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     for(const key of ['contextRows','realtimeRows','observedSeriesRows','commercialRows','realtimeForecastRows','eventRows','salesRows','storeDynamicsRows','foreignPresenceRows','foreignPurposeRows','observedDateRows'] as const)groups[key]=[];
     groups.sources=[client.prepare("SELECT source_id AS sourceId,status,last_event_at AS eventAt,last_retrieved_at AS retrievedAt,detail FROM source_health WHERE source_id NOT IN ('SEOUL_CITYDATA_PPLTN','SEOUL_CITYDATA_CMRCL','SEOUL_SHORT_STAY_FOREIGN_LIVING_POPULATION','SEOUL_FOREIGN_PURPOSE_MOBILITY','SEOUL_ESTIMATED_SALES','SEOUL_STORE_DYNAMICS','KTO_TOURAPI_EVENT') ORDER BY source_id")];
   }
-  const readResult = await readGroups(client, groups, { maxStatements: 50 });
+  // Each terminal can read one pointer and one immutable generation. Reserve
+  // their four statements even on the isolated fallback path.
+  const shardReader=dayRelation === "TODAY" ? scope.readA4Shard : undefined;
+  const shardReads=shardReader && new Map(CONGESTION_TERMINALS.map(terminal=>
+    [terminal,Promise.resolve().then(()=>shardReader(terminal)).catch(()=>({state:'error' as const}))]));
+  const readResult = shardReads
+    ? await readGroups(client, groups, { maxStatements: 46 })
+    : await readGroups(client, groups, { maxStatements: 50 });
   const blocks = readResult.rows;
-  const readDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
+  // Optional overflow failures must not invalidate an otherwise refreshable main snapshot.
+  const mainReadDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
+  const failedGroups = [...readResult.failedGroups];
   const {
     sources: sourceRows, contextRows, holidayRows, compositionRows, realtimeRows, observedSeriesRows, commercialRows, realtimeForecastRows, weatherRows, eventRows, salesRows,
-    storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows,
+    storeDynamicsRows, foreignPresenceRows, foreignPurposeRows, subwayRows, congestionRows: primaryCongestionRows,
     passengerForecastRows: allPassengerForecastRows, hallRows, monthToDateRows, historicalFlightCounts, flightRows, scheduledRows, departureScheduleRows, transferRows, flightDateRows, forecastDateRows, observedDateRows, scheduleDateRows,
   } = blocks;
   const sources=scope.includeSeoul?sourceRows:sourceRows.filter(row=>!isSeoulOnlySourceId(String(row.sourceId)));
@@ -760,7 +771,26 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
     0.5,
     distinctFlightsByTerminal,
   );
-  const publicCongestion = projectDepartureCongestion(congestionRows,sources,now);
+  const a4Unverified = new Set<string>();
+  let congestionRows = primaryCongestionRows;
+  if (shardReads) {
+    const merged = await Promise.all(CONGESTION_TERMINALS.map(async terminal => {
+      const result=await mergePublicA4Terminal(terminal,primaryCongestionRows.filter(r=>r.terminal===terminal),
+        key=>shardReads.get(key)!,now,12);
+      const sourceId=terminal==='T1'?'INCHEON_DEPARTURE_CONGESTION':'INCHEON_DEPARTURE_CONGESTION_T2';
+      const health=sources.find(r=>r.sourceId===sourceId);
+      const match=(row:Row)=>typeof health?.eventAt==='string'&&typeof health.retrievedAt==='string'
+        &&Date.parse(health.eventAt)===Date.parse(String(row.observedAt))
+        &&Date.parse(health.retrievedAt)===Date.parse(String(row.retrievedAt));
+      if(result.degraded||(result.shard&&result.rows.some(row=>!match(row))))a4Unverified.add(terminal);
+      return result.rows;
+    }));
+    congestionRows=merged.flat();
+    if(a4Unverified.size&&!failedGroups.includes("congestionRows"))failedGroups.push("congestionRows");
+  }
+  const readDegraded = failedGroups.length > 0 || readResult.skippedGroups.length > 0;
+  const publicCongestion = projectDepartureCongestion(congestionRows,sources,now).map(row=>
+    a4Unverified.has(String(row.terminal))?{...row,freshness:'STALE' as const,collectionStatus:row.collectionStatus==='FAILED'?'FAILED' as const:'UNKNOWN' as const}:row);
   const currentBusiest = summarizeCurrentBusiestDepartureHalls(
     publicCongestion.filter(row=>row.freshness==='LIVE') as unknown as AirportCongestionSummaryRow[],
   );
@@ -829,8 +859,8 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   );
 
   return Response.json({
-    mode: readDegraded ? "degraded" : "live-summary",
-    readStatus: { status: readDegraded ? 'DEGRADED' : 'COMPLETE', failedGroups: readResult.failedGroups, skippedGroups: readResult.skippedGroups, statementsAttempted: readResult.statementsAttempted },
+    mode: mainReadDegraded ? "degraded" : "live-summary",
+    readStatus: { status: readDegraded ? 'DEGRADED' : 'COMPLETE', failedGroups, skippedGroups: readResult.skippedGroups, statementsAttempted: readResult.statementsAttempted },
     generatedAt,
     todayKst: kstToday,
     serviceDateKst: serviceDate,

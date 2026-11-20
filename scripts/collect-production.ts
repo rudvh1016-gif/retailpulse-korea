@@ -29,7 +29,7 @@ import {
   runSelectedProductionSources,
   type ProductionSourceName,
 } from "../lib/production-runner";
-import { resolveProductionDatabaseConfig } from "./production-database";
+import { productionA4Overflow, resolveProductionDatabaseConfig } from "./production-database";
 import { createForeignPurposeMobilitySource } from "./foreign-purpose-mobility-source";
 import { recordExistingCompletion } from '../lib/operational-bookkeeping';
 
@@ -49,7 +49,8 @@ function annotate(level: "warning" | "error", title: string, message: string): v
 
 // The account/database are always the pinned wrangler config values, never a
 // CLOUDFLARE_ACCOUNT_ID secret. See scripts/production-database.ts.
-const { accountId, databaseId, apiToken } = resolveProductionDatabaseConfig("production");
+const config = resolveProductionDatabaseConfig("production");
+const { accountId, databaseId, apiToken } = config;
 const database = new CloudflareD1RestDatabase(accountId, databaseId, apiToken);
 
 const requested = (process.env.RPK_PRODUCTION_SOURCES ?? "airport_recent")
@@ -61,9 +62,12 @@ const unknown = requested.filter((name) => !PRODUCTION_SOURCE_NAMES.includes(nam
 if (unknown.length) throw new Error(`unknown_sources_${unknown.join("_")}`);
 if (!requested.length) throw new Error("no_sources_selected");
 
+const overflow = requested.some(source => source === 'airport_congestion' || source === 'airport_congestion_t2')
+  ? productionA4Overflow(config) : undefined;
 const env = {
   A1_SHARED_REQUEST_BUDGET: true,
   DB: database as unknown as D1Database,
+  A4_OVERFLOW_DB: overflow as unknown as D1Database | undefined,
   // Individual collectors report NEEDS_KEY for their own source when a key
   // is absent; a source that does not need a given key must still run.
   DATA_GO_KR_SERVICE_KEY: process.env.DATA_GO_KR_SERVICE_KEY?.trim() || undefined,
@@ -91,11 +95,19 @@ const env = {
 
 const results = [];
 const collectionNow = new Date();
+const usage = () => {
+  const primary = database.usageSnapshot(), shard = overflow?.usageSnapshot();
+  return {
+    rowsRead: primary.rowsRead + (shard?.rowsRead ?? 0),
+    rowsWritten: primary.rowsWritten + (shard?.rowsWritten ?? 0),
+    unmeasuredStatements: primary.unmeasuredStatements + (shard?.unmeasuredStatements ?? 0),
+  };
+};
 for (const source of requested) {
-  const startedAt = new Date().toISOString(), before = database.usageSnapshot();
+  const startedAt = new Date().toISOString(), before = usage();
   const [result] = await runSelectedProductionSources(env, [source], collectionNow);
   results.push(result);
-  const completedAt = new Date().toISOString(), after = database.usageSnapshot();
+  const completedAt = new Date().toISOString(), after = usage();
   // Bookkeeping is outside the collector result. Failure never causes an extra provider retry.
   try {
     const attempt = Math.max(1, Number(process.env.RPK_OPERATIONAL_ATTEMPT) || 1);
@@ -103,7 +115,7 @@ for (const source of requested) {
     const measured = after.unmeasuredStatements === before.unmeasuredStatements;
     const memory = await recordExistingCompletion(env.DB, result, {runId, startedAt, completedAt, attempt,
       rowsRead: measured ? after.rowsRead-before.rowsRead : null,
-      rowsWritten: measured ? after.rowsWritten-before.rowsWritten : null});
+      rowsWritten: measured ? after.rowsWritten-before.rowsWritten : null}, {a4Overflow:env.A4_OVERFLOW_DB});
     console.log(JSON.stringify({operationalMemory: memory.state, source, sourceCount: memory.sourceCount}));
   } catch {
     console.error(JSON.stringify({operationalMemory:'UNKNOWN',source,reason:'bookkeeping failed; collector result preserved; human review required'}));
@@ -143,6 +155,15 @@ const now = new Date();
 if ((now.getUTCHours() + 9) % 24 === 3) {
   const prunedRows = await pruneOperationalHistory(database as unknown as D1Database, now);
   console.log(JSON.stringify({ maintenance: "retention", prunedRows }));
+  if (requested.includes('airport_congestion') && env.A4_OVERFLOW_DB) {
+    try {
+      const {pruneA4Overflow} = await import('../lib/a4-overflow-retention');
+      const removed=await pruneA4Overflow(env.DB,env.A4_OVERFLOW_DB,now);
+      console.log(JSON.stringify({maintenance:'airport_congestion_history',removed}));
+    } catch {
+      annotate('warning','Airport congestion history','The bounded retention operation could not be verified.');
+    }
+  }
 }
 
 // Additional user-authorized context stays in the existing runner; no duplicate scheduler.
