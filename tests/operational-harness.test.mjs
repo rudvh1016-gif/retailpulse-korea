@@ -166,6 +166,52 @@ test("the all-healthy control case reaches HEALTHY, so the harness is not a fals
   assert.equal(verdict.failureClass, null);
 });
 
+// These cases use only the pure evaluator: no database, provider or recovery execution.
+for (const [name, observation, now, blockedAt] of [
+  ["invalid audit clock", healthyObservation(), "not-a-time", "TRIGGERED"],
+  ["future run start", healthyObservation({lastRun: {...healthyObservation().lastRun,
+    startedAt: "2026-09-11T06:00:00.001Z"}}), NOW, "TRIGGERED"],
+  ["unparseable run finish", healthyObservation({lastRun: {...healthyObservation().lastRun,
+    finishedAt: "not-a-time"}}), NOW, "RUNNING"],
+  ["future run finish", healthyObservation({lastRun: {...healthyObservation().lastRun,
+    finishedAt: "2026-09-11T06:00:00.001Z"}}), NOW, "RUNNING"],
+  ["future source retrieval", healthyObservation({health: {...healthyObservation().health,
+    lastRetrievedAt: "2026-09-11T06:00:00.001Z"}}), NOW, "VALIDATED"],
+  ["future publication clock", healthyObservation({published: {present: true,
+    asOf: "2026-09-11T06:00:00.001Z"}}), NOW, "PUBLISHED"],
+]) {
+  test(`source lifecycle cannot claim health from ${name}`, () => {
+    const before = structuredClone(observation);
+    const verdict = evaluateSource(observation, now);
+    assert.equal(verdict.walk.state, "UNKNOWN");
+    assert.equal(verdict.walk.blockedAt, blockedAt);
+    assert.equal(verdict.failureClass, "UNKNOWN");
+    assert.deepEqual(observation, before, "diagnosis must preserve the supplied evidence");
+  });
+}
+
+for (const cadence of [NaN, Infinity, -1, 0, Number.MAX_VALUE]) {
+  test(`source lifecycle refuses invalid or overflowing cadence ${cadence}`, () => {
+    const verdict = evaluateSource(healthyObservation({expectedIntervalMs: cadence}), NOW);
+    assert.equal(verdict.walk.state, "UNKNOWN");
+    assert.equal(verdict.walk.blockedAt, "TRIGGERED");
+  });
+}
+
+test("source clocks exactly at the audit instant remain valid, including zero-duration runs", () => {
+  const observation = healthyObservation({lastRun: {...healthyObservation().lastRun, startedAt: NOW, finishedAt: NOW},
+    health: {...healthyObservation().health, lastRetrievedAt: NOW}, published: {present: true, asOf: NOW}});
+  assert.equal(evaluateSource(observation, NOW).walk.state, "HEALTHY");
+  // Public payload identity can be independently verified without an asOf clock.
+  assert.equal(evaluateSource({...observation, published: {present: true, asOf: null}}, NOW).walk.state, "HEALTHY");
+});
+
+test("the collector's unique start millisecond is not treated as a duration boundary", () => {
+  const observation = healthyObservation({lastRun: {...healthyObservation().lastRun,
+    startedAt: "2026-09-11T05:43:10.001Z", finishedAt: "2026-09-11T05:43:10.000Z"}});
+  assert.equal(evaluateSource(observation, NOW).walk.state, "HEALTHY");
+});
+
 test("a stale source reports STALE, not success, even when its coverage is complete", () => {
   const verdict = evaluateSource(
     healthyObservation({
@@ -467,6 +513,31 @@ test("a heartbeat with no derivable cadence is UNKNOWN rather than assumed alive
     NOW,
   );
   assert.equal(verdict.state, "UNKNOWN");
+});
+
+test("a future heartbeat is unknown rather than proof the scheduler is alive", () => {
+  const verdict = evaluateHeartbeat({name: "collect-weather.yml", lastSeenAt: "2026-09-11T06:00:00.001Z",
+    expectedIntervalMs: HOUR, observedByIndependentPlatform: true}, NOW);
+  assert.equal(verdict.state, "UNKNOWN");
+  assert.equal(verdict.severity, "UNKNOWN");
+  assert.equal(verdict.ageMs, null, "a future event has no measured elapsed age");
+});
+
+for (const cadence of [NaN, Infinity, -1, 0, Number.MAX_VALUE]) {
+  test(`heartbeat refuses invalid or overflowing cadence ${cadence}`, () => {
+    const verdict = evaluateHeartbeat({name: "collect-weather.yml", lastSeenAt: NOW,
+      expectedIntervalMs: cadence, observedByIndependentPlatform: true}, NOW);
+    assert.equal(verdict.state, "UNKNOWN");
+    assert.equal(verdict.severity, "UNKNOWN");
+  });
+}
+
+test("heartbeat silence preserves the exact grace boundary", () => {
+  const beat = {name: "collect-weather.yml", lastSeenAt: "2026-09-11T02:55:00.000Z",
+    expectedIntervalMs: HOUR, observedByIndependentPlatform: true};
+  assert.equal(evaluateHeartbeat(beat, NOW).state, "ALIVE");
+  assert.equal(evaluateHeartbeat(beat, "2026-09-11T06:00:00.001Z").state, "SILENT");
+  assert.equal(evaluateHeartbeat({...beat, lastSeenAt: NOW}, NOW).ageMs, 0);
 });
 
 test("the watchdog always reports its own coverage gap and is never HEALTHY", () => {
