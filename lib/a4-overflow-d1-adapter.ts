@@ -1,4 +1,4 @@
-/** Local/reference adapter; not imported by production runtime. */
+/** Shared adapter for the Worker bindings and the Actions D1 REST client. */
 import { A4_PUBLISH_POINTER } from './a4-overflow-publication';
 import type { A4Pointer, A4Stores } from './a4-overflow-publication';
 
@@ -9,7 +9,7 @@ const project = (row: StoredPointer): A4Pointer =>
 
 export function createA4D1Stores(config: {
   primary: Database; overflow: Database;
-  /** Local experiments only; the caller must guard evidence on pointer advancement. */
+  /** Evidence must require this exact pointer inside the publication transaction. */
   preparePrimaryEvidence?: (db: Database, p: A4Pointer) => D1PreparedStatement[];
   preparePrimaryPointer?: (db: Database, p: A4Pointer) => D1PreparedStatement;
 }): A4Stores {

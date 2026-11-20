@@ -31,7 +31,7 @@
       " */\nexport async function summarizeLiveSummary(client: SummaryClient, clock: SummaryClock, scope: {includeSeoul:boolean}={includeSeoul:true}): Promise<Response> {\n  const { generatedAt, now, kstNowIso, kstToday, kstHourStart, serviceDate, dayRelation, dayStartAt } = clock;\n"
     ],
     [
-      "  // Each terminal can read one pointer and one immutable generation. Reserve\n  // their four statements even on the isolated fallback path.\n  const shardReader=dayRelation === \"TODAY\" ? scope.readA4Shard : undefined;\n  const shardReads=shardReader && new Map(CONGESTION_TERMINALS.map(terminal=>\n    [terminal,Promise.resolve().then(()=>shardReader(terminal)).catch(()=>({state:'error' as const}))]));\n  const readResult = await readGroups(client, groups, { maxStatements: shardReads ? 46 : 50 });\n",
+      "  // Each terminal can read one pointer and one immutable generation. Reserve\n  // their four statements even on the isolated fallback path.\n  const shardReader=dayRelation === \"TODAY\" ? scope.readA4Shard : undefined;\n  const shardReads=shardReader && new Map(CONGESTION_TERMINALS.map(terminal=>\n    [terminal,Promise.resolve().then(()=>shardReader(terminal)).catch(()=>({state:'error' as const}))]));\n  const readResult = shardReads\n    ? await readGroups(client, groups, { maxStatements: 46 })\n    : await readGroups(client, groups, { maxStatements: 50 });\n",
       "  const readResult = await readGroups(client, groups, { maxStatements: 50 });\n"
     ],
     [

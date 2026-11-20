@@ -587,7 +587,9 @@ export async function summarizeLiveSummary(client: SummaryClient, clock: Summary
   const shardReader=dayRelation === "TODAY" ? scope.readA4Shard : undefined;
   const shardReads=shardReader && new Map(CONGESTION_TERMINALS.map(terminal=>
     [terminal,Promise.resolve().then(()=>shardReader(terminal)).catch(()=>({state:'error' as const}))]));
-  const readResult = await readGroups(client, groups, { maxStatements: shardReads ? 46 : 50 });
+  const readResult = shardReads
+    ? await readGroups(client, groups, { maxStatements: 46 })
+    : await readGroups(client, groups, { maxStatements: 50 });
   const blocks = readResult.rows;
   // Optional overflow failures must not invalidate an otherwise refreshable main snapshot.
   const mainReadDegraded = readResult.failedGroups.length > 0 || readResult.skippedGroups.length > 0;
