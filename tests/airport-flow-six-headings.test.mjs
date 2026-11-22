@@ -47,7 +47,9 @@ test('the metrics and staff topics retain the vertical mobile reading order',()=
 
 
 test('the opt-in topics lower content and nested emphasis below their titles',()=>{
- const content=declarations(rule(scope+' .staff-brief-grid :is(p,h4,a)'));
+ const bodyRule=rule(scope+' .staff-brief-grid :is(p,h4,a:where(:not(.staff-brief-grid>section>a)))');
+ assert.ok(bodyRule,'body and nested links keep this typography, excluding the two direct actions');
+ const content=declarations(bodyRule);
  assert.deepEqual([content['font-size'],content['font-weight']],['14px','400']);
  const metric=declarations(rule(scope+' .staff-brief-grid>section>p,'+scope+'>a>strong'));
  assert.deepEqual([metric['font-size'],metric['font-weight']],['14px','400']);

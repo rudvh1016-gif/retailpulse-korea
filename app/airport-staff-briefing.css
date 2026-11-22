@@ -5,7 +5,7 @@
 .staff-brief-grid section{min-width:0}.staff-brief-grid h3{font-size:14px;font-weight:600;color:var(--navy,#24272c);margin:0 0 10px}
 .airport-staff-briefing p{font-size:13px;line-height:1.7;margin:0 0 8px;overflow-wrap:anywhere}
 .glance-insights .airport-staff-briefing small{display:block;font-size:11px;line-height:1.7;color:#536172}
-.staff-brief-grid>section>a{display:block;min-height:36px;padding:8px 0;font-size:12px;color:var(--navy,#24272c)}
+.staff-brief-grid>section>a{display:block;min-height:36px;padding:8px 0;color:var(--navy,#24272c)}
 .airport-staff-briefing a:focus-visible{outline:2px solid var(--navy,#24272c);outline-offset:3px}
 @media(max-width:700px){.staff-brief-grid{grid-template-columns:1fr;gap:18px}.staff-brief-grid section+section{border-top:1px solid var(--silver,#dce1e7);padding-top:16px}.staff-brief-heading{gap:6px}.airport-staff-briefing{padding-top:16px}}
 
@@ -63,7 +63,7 @@
 /* Within the six overview topics, h3 titles carry content emphasis.
    Native disclosure labels retain the separate control hierarchy.
    Time, counts, route names and holiday names remain ordinary content. */
-.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(p,h4,a){font-size:14px;font-weight:400;line-height:1.5}
+.glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(p,h4,a:where(:not(.staff-brief-grid>section>a))){font-size:14px;font-weight:400;line-height:1.5}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid small{font-size:12px;font-weight:400;line-height:1.6}
 .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a>strong :is(b,strong,span),
 .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(b,strong,span,time){font-size:inherit;font-weight:400!important}
@@ -136,7 +136,7 @@
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid{row-gap:24px}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>p{font-size:14px;line-height:1.75}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid :is(b,strong){font-weight:650!important}
- .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>a{min-height:44px;padding-block:12px;font-size:12px;color:#24578a;box-sizing:border-box}
+ .glance-insights[aria-labelledby="airport-staff-briefing-title"] .staff-brief-grid>section>a{min-height:44px;padding-block:12px;color:#24578a;box-sizing:border-box}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a:focus-visible{outline:2px solid #24578a;outline-offset:4px}
  .glance-insights[aria-labelledby="airport-staff-briefing-title"]>a[data-testid="glance-key-wait"]:focus-visible{outline-color:#183c67}
 }

@@ -1,13 +1,16 @@
-import {test,expect} from '@playwright/test';
+import {test,expect,type Page} from '@playwright/test';
 import summary from './fixtures/airport-focus/summary.json' with {type:'json'};
 import flights from './fixtures/airport-focus/flights.json' with {type:'json'};
 import months from './fixtures/airport-focus/months.json' with {type:'json'};
 import passengerStats from './fixtures/airport-focus/passenger-stats.json' with {type:'json'};
-for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins key metrics and staff details ${width}`,async({page},info)=>{
- test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
+async function staffBriefingFixtures(page:Page){
  await page.route('**/api/live/summary*',r=>r.fulfill({json:summary}));
  for(const [path,json] of [['flights',flights],['airport-months',months],['airport-passenger-stats',passengerStats]] as const)await page.route(`**/api/live/${path}*`,r=>r.fulfill({json}));
  await page.route('**/api/live/passenger-reference*',r=>r.fulfill({json:{status:'UNAVAILABLE',data:null}}));
+}
+for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins key metrics and staff details ${width}`,async({page},info)=>{
+ test.setTimeout(120000);await page.setViewportSize({width,height:1000});await page.emulateMedia({reducedMotion:'reduce'});
+ await staffBriefingFixtures(page);
  await page.goto('/ko?date=2026-10-19',{waitUntil:'domcontentloaded'});
  await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
  await expect(page.locator('.focus-report')).toContainText('단순합계 112,403명');
@@ -75,4 +78,40 @@ for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins 
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
  await page.screenshot({path:info.outputPath(`navy-home-${width}.png`)});
  await briefing.scrollIntoViewIfNeeded();await briefing.screenshot({path:info.outputPath(`navy-staff-${width}.png`)});
+});
+
+for(const width of [390,650,1440])test(`home briefing links match the nearby calendar action typography at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await staffBriefingFixtures(page);
+ // This verifies type, not scroll-trigger timing. Deliver the first calendar
+ // observer entry as intersecting; other lazy content keeps the native behavior.
+ await page.addInitScript(()=>{
+  const NativeObserver=window.IntersectionObserver;
+  window.IntersectionObserver=class extends NativeObserver {
+   constructor(callback: IntersectionObserverCallback,options?:IntersectionObserverInit){
+    super((entries,observer)=>callback(entries.map(entry=>entry.target.classList.contains('focus-calendar-deferred')
+     ? {target:entry.target,isIntersecting:true} as IntersectionObserverEntry
+     : entry),observer),options);
+   }
+  };
+ });
+ const date='2026-10-19';
+ await page.goto(`/ko?date=${date}`,{waitUntil:'domcontentloaded'});
+ await expect(page.locator('.app')).toHaveAttribute('data-hydrated','true');
+ const flow=page.getByRole('region',{name:'주목할 공항 흐름',exact:true});
+ const holidays=page.locator('#focus-holidays');
+ const calendar=holidays.getByRole('button',{name:'90일 일정 보기 ↗',exact:true});
+ await expect(holidays).not.toHaveAttribute('aria-busy','true');
+ await expect(calendar).toBeVisible();
+ const type=['font-family','font-size','font-weight','line-height','letter-spacing'];
+ const calendarType=await calendar.evaluate((el,keys)=>keys.map(key=>getComputedStyle(el).getPropertyValue(key)),type);
+ for(const [name,path] of [['시간대·터미널 자세히 ↗','airport'],['국가별 흐름·휴일 맥락 ↗','airport-countries']]){
+  const link=flow.getByRole('link',{name,exact:true});
+  await expect(link).toHaveAttribute('href',`/ko/${path}?date=${date}`);
+  for(const [i,property] of type.entries())await expect(link).toHaveCSS(property,calendarType[i]);
+  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await link.focus();
+  await expect(link).toHaveCSS('outline-style','solid');
+ }
 });
