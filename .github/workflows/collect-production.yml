@@ -73,6 +73,14 @@ jobs:
           RPK_CUSTOMS_NEWS_COLLECTION_ENABLED: "true"
           RPK_CUSTOMS_RSS_LINKS_ENABLED: "true"
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Measure and retire historical Seoul records within the shared D1 allowance
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'schedule' }}
+        timeout-minutes: 4
+        run: node --import tsx scripts/cleanup-retired-seoul.ts
+        env:
+          RPK_RETIRED_SEOUL_CLEANUP: ${{ vars.RPK_RETIRED_SEOUL_CLEANUP }}
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
   customs-allowance-check:
     # Shares the existing daily event, but another collector's failure cannot skip it.
