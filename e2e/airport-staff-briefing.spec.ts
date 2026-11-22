@@ -76,3 +76,24 @@ for(const width of [320,390,701,1024,1440])test(`one airport-flow section joins 
  await page.screenshot({path:info.outputPath(`navy-home-${width}.png`)});
  await briefing.scrollIntoViewIfNeeded();await briefing.screenshot({path:info.outputPath(`navy-staff-${width}.png`)});
 });
+
+for(const width of [390,650,1440])test(`home briefing links match the nearby calendar action typography at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:1000});
+ await page.route('**/api/**',r=>r.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ const date='2026-10-19';
+ await page.goto(`/ko?date=${date}`);
+ const flow=page.getByRole('region',{name:'주목할 공항 흐름',exact:true});
+ const calendar=page.getByRole('button',{name:'90일 일정 보기 ↗',exact:true});
+ await page.locator('#focus-holidays').scrollIntoViewIfNeeded();
+ await expect(calendar).toBeVisible();
+ const type=['font-family','font-size','font-weight','line-height','letter-spacing'];
+ const calendarType=await calendar.evaluate((el,keys)=>keys.map(key=>getComputedStyle(el).getPropertyValue(key)),type);
+ for(const [name,path] of [['시간대·터미널 자세히 ↗','airport'],['국가별 흐름·휴일 맥락 ↗','airport-countries']]){
+  const link=flow.getByRole('link',{name,exact:true});
+  await expect(link).toHaveAttribute('href',`/ko/${path}?date=${date}`);
+  for(const [i,property] of type.entries())await expect(link).toHaveCSS(property,calendarType[i]);
+  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await link.focus();
+  await expect(link).toHaveCSS('outline-style','solid');
+ }
+});

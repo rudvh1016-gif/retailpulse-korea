@@ -81,3 +81,14 @@ test('route holiday body uses the same typography as time terminal without chang
  assert.match(block,/@media\(max-width:600px\)[^]*--staff-brief-body-leading:1\.75/);
  assert.doesNotMatch(block,/color:|:is\(b|strong|change-rate|display:|margin:|padding:/);
 });
+
+test('the two direct briefing actions use the nearby calendar action type instead of card body type',()=>{
+ const focusStyles=read('../app/airport-focus-preview.css');
+ const shared=':is(.focus-section-heading>button,.staff-brief-grid>section>a)';
+ const rules=focusStyles.split(shared);
+ assert.equal(rules.length,3,'shared action type must cover default and narrow widths');
+ assert.match(rules[1],/^\{[^}]*font-size:11px/);
+ assert.match(rules[2],/^\{font-size:10px\}/);
+ assert.doesNotMatch(styles,/\.staff-brief-grid>section>a\{[^}]*font-size/,'card layouts must not override the action typography');
+ assert.doesNotMatch(styles,/\.staff-brief-grid :is\(p,h4,a\)\{/, 'keep footer actions out of the body cascade');
+});
