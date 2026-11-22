@@ -3,12 +3,14 @@ import { readFileSync, readdirSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 import {
+  D1_FREE_PLANNING_LIMITS,
   STORAGE_TABLES,
   allocateBytes,
   byteSampleStatement,
   completeKstDays,
   cutoffValue,
   dailyCountStatements,
+  d1StorageHeadroom,
   identifier,
   isSystemTable,
   planIsBounded,
@@ -42,6 +44,19 @@ const db = migrated();
 const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => String(row.name));
 const columnsOf = (table) => db.prepare(`PRAGMA table_info(${table})`).all().map((row) => String(row.name));
 const planOf = (statement) => db.prepare(`EXPLAIN QUERY PLAN ${statement.sql}`).all(...statement.binds).map((row) => String(row.detail));
+
+test('Cloudflare query metadata uses the decimal per-database capacity and measured thresholds', () => {
+  assert.equal(D1_FREE_PLANNING_LIMITS.accountBytes, 5_000_000_000);
+  assert.deepEqual(d1StorageHeadroom(468_652_032), {
+    basis: 'CLOUDFLARE_D1_QUERY_META', level: 'PROTECT', usedBytes: 468_652_032,
+    limitBytes: 500_000_000, remainingBytes: 31_347_968,
+  });
+  assert.equal(d1StorageHeadroom(475_000_000).level, 'EMERGENCY');
+  assert.equal(d1StorageHeadroom(500_001_000).remainingBytes, 0);
+  assert.deepEqual(d1StorageHeadroom(undefined), {
+    basis: 'UNAVAILABLE', level: 'UNKNOWN', usedBytes: null, limitBytes: 500_000_000, remainingBytes: null,
+  });
+});
 
 test("every product table in the schema has exactly one storage class", () => {
   const product = tables.filter((name) => !isSystemTable(name));

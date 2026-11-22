@@ -2,7 +2,7 @@
  * What each D1 table is, how long it is kept today, and how to measure it
  * without spending the budget it is meant to protect.
  *
- * This file deletes nothing and no production path imports it. It exists so
+ * This file deletes nothing and is separate from serving and collection. It exists so
  * that three questions have one answer in the repository instead of three
  * different answers in three documents:
  *
@@ -23,6 +23,8 @@
  * docs/ZERO_COST_HYBRID_AUDIT.md forbids deleting prospective predictions or
  * their outcomes to recover free-tier space.
  */
+
+import { evaluateQuotaUsage } from './quota-guard';
 
 export type RecordClass =
   | "A_CURRENT"
@@ -354,16 +356,23 @@ export function countOf(value: unknown): number | null {
 
 export interface StorageLimit { perDatabaseBytes: number; accountBytes: number; basis: string }
 
-/**
- * Planning limits as recorded in docs/ENGINEERING_DIRECTION.md §2, NOT a live
- * reading of Cloudflare's page: the official limits page was not reachable
- * from the 2026-09-28 work environment, so `basis` says exactly that.
- */
+/** Decimal units match the Cloudflare Free-plan limit and the Production size failure. */
 export const D1_FREE_PLANNING_LIMITS: StorageLimit = {
-  perDatabaseBytes: 500 * 1024 * 1024,
-  accountBytes: 5 * 1024 * 1024 * 1024,
-  basis: "docs/ENGINEERING_DIRECTION.md §2 planning limit (Workers Free); official page unreachable from the work environment on 2026-09-28",
+  perDatabaseBytes: 500_000_000,
+  accountBytes: 5_000_000_000,
+  basis: "Cloudflare D1 limits (Workers Free), developers.cloudflare.com/d1/platform/limits/",
 };
+
+export function d1StorageHeadroom(sizeAfter: unknown) {
+  const limitBytes = D1_FREE_PLANNING_LIMITS.perDatabaseBytes;
+  const usedBytes = countOf(sizeAfter);
+  if (usedBytes === null) {
+    return { basis: 'UNAVAILABLE', level: 'UNKNOWN', usedBytes, limitBytes, remainingBytes: null } as const;
+  }
+  const { level } = evaluateQuotaUsage(usedBytes, limitBytes, 'OFFICIAL_USAGE');
+  return { basis: 'CLOUDFLARE_D1_QUERY_META', level, usedBytes, limitBytes,
+    remainingBytes: Math.max(0, limitBytes - usedBytes) } as const;
+}
 
 export const GUARDRAIL_STEPS = [
   { level: "NOTICE", ratio: 0.7 },
