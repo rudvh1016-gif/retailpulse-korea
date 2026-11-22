@@ -4,6 +4,7 @@ import { CloudflareD1RestDatabase } from '../lib/d1-rest';
 import { readAirportTodayCoverage } from '../lib/airport-today-coverage';
 import { resolveProductionDatabaseConfig } from './production-database';
 import { checkAirportMidnightCandidate } from './airport-midnight-recovery';
+import { reportProductionD1StorageHeadroom } from './report-d1-storage-headroom';
 import { appendFileSync } from 'node:fs';
 
 try {
@@ -24,4 +25,11 @@ try {
   // Do not infer zero flights from a failed read. failureText names the failure without credentials.
   console.error(`airportTodayCoverage=READ_UNAVAILABLE; error=${failureText(error)}; no missing coverage inferred; providerRequests=0 writes=0`);
   process.exitCode = 1;
+}
+
+// Keep capacity observation independent of A1 availability and recovery admission.
+if (process.env.GITHUB_REF === 'refs/heads/main') {
+  await reportProductionD1StorageHeadroom().catch(() => {
+    console.warn('::warning title=D1 storage UNKNOWN::Production storage configuration unavailable');
+  });
 }
