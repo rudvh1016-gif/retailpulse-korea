@@ -11,7 +11,7 @@ import { passengerCopy } from '../lib/passenger-copy';
  * operands = formula. When no transfer forecast exists the sum cannot be
  * formed and the hall figure leads again, labelled as itself.
  */
-for(const width of [390,1280]) test(`production Seoul and airport truth closure ${width}px`, async({page})=>{
+for(const width of [390,1280]) test(`production airport forecast and source truth ${width}px`, async({page})=>{
   test.setTimeout(180000);
   await page.setViewportSize({width,height:900});
   await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',selectedLocations:['myeongdong','hongdae','seongsu','itaewon','airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers','weather','events','crowding'],day:'today',selectedDays:['today','tomorrow','yesterday'],analytics:false})),PREFERENCE_KEY);
@@ -19,12 +19,6 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
   await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
 
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  for(const area of ['myeongdong','hongdae','seongsu','itaewon']){
-    await page.goto('/ko/'+area);
-    await expect(page.locator('.area-current-brief').first()).toBeVisible();
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await page.screenshot({path:`production-visual-results/closure-${area}-${width}.png`,fullPage:false});
-  }
   await page.goto('/ko/airport');
   await expectHeadline(page.locator('.airport-current-brief'));
   await page.screenshot({path:`production-visual-results/closure-airport-home-${width}.png`,fullPage:false});

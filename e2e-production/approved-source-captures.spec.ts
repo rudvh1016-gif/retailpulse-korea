@@ -32,7 +32,7 @@ test('whole-airport official hourly comparison live 1440', async ({ page }, test
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/ko/airport?terminal=all#airport-hourly-comparison');
   await expect(page.locator('.app')).toHaveAttribute('data-hydrated', 'true');
-  await expect(page.getByRole('tablist', { name: '터미널 선택', exact: true })
+  await expect(page.getByRole('tablist', { name: '터미널', exact: true })
     .getByRole('tab', { name: /전체/ })).toHaveAttribute('aria-selected', 'true');
   const section = page.locator('.airport-forecast');
   await expect(section.locator('#airport-hourly-comparison')).toBeVisible();

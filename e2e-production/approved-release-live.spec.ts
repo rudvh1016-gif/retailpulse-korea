@@ -82,8 +82,8 @@ for(const width of [390,1440]){
   await expect(page).toHaveURL(url=>url.pathname==='/ko/more');
   expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual(businessQuery);
   const more=page.locator('.more-section-links');
-  await expect(more.locator('a')).toHaveText(['서울 한눈에','서울','요즘 뜨는 소비','매장','관광안내','기록','소개']);
-  expect(await more.locator('a').evaluateAll(links=>links.map(link=>new URL((link as HTMLAnchorElement).href).pathname))).toEqual(['/ko/where-to','/ko/myeongdong','/ko/consumption','/ko/business','/ko/tourism-desk/myeongdong','/ko/forecast','/ko/about']);
+  await expect(more.locator('a')).toHaveText(['한눈에','공항현황','국가별 흐름','미리 준비','매장','소개']);
+  expect(await more.locator('a').evaluateAll(links=>links.map(link=>new URL((link as HTMLAnchorElement).href).pathname))).toEqual(['/ko','/ko/airport','/ko/airport-countries','/ko/airport-prepare','/ko/business','/ko/about']);
   const business=more.getByRole('link').filter({hasText:/^매장$/});
   // Keep exact visible copy and link semantics; CSS chevrons can enter the accessible name.
   await expect(business).toBeVisible();
