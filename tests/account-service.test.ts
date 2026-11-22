@@ -216,3 +216,16 @@ for(const [index,endpoint] of ['https://oauth2.googleapis.com/token','https://ww
  assert.equal(response.status,303);assert.match(response.headers.get('location')!,/auth=failed/);assert.equal(calls,index+1);
  assert.equal(f.sql.prepare('SELECT count(*) AS n FROM account_sessions').get()!.n,0);
 });
+
+test('revision check is private, account-bound and independent of document decryption',async()=>{
+ const f=fixture(),a=await f.login(),accountA=(await(await f.call('status','GET',undefined,a.session)).json()).accountId;
+ assert.equal((await f.call('revision')).status,401);
+ assert.deepEqual(await(await f.call('revision','GET',undefined,a.session)).json(),{revision:'empty'});
+ f.sql.prepare('INSERT INTO account_documents VALUES (?,?,?)').run(accountA,'saved-version','unreadable-test-document');
+ const revision=await f.call('revision','GET',undefined,a.session);
+ assert.equal(revision.status,200);assert.match(revision.headers.get('cache-control')??'',/no-store/);
+ assert.deepEqual(await revision.json(),{revision:'saved-version'});
+ f.setSubject('google-test-user-b');const b=await f.login();
+ assert.equal((await f.call('revision','GET',undefined,b.session,NOW,{'x-koretail-account':accountA})).status,409);
+ assert.deepEqual(await(await f.call('revision','GET',undefined,b.session)).json(),{revision:'empty'});
+});

@@ -70,6 +70,9 @@ const AREAS = ["myeongdong", "hongdae", "seongsu", "itaewon"] as const;
 const BY_AREA = { column: "area", values: AREAS } as const;
 
 export const STORAGE_TABLES: readonly TableInventory[] = [
+  { table: "retired_seoul_cleanup_days", recordClass: "F_OPERATIONAL_EVIDENCE", retentionDays: 14,
+    prunedBy: "scripts/cleanup-retired-seoul.ts", readWindowDays: 1,
+    readers: "Same-day cleanup claim and limited recovery bookmark history", personal: true },
   // Bounded current reference data: maximum 24 source checks, one JP numeric row and two calendars.
   { table: "customs_allowance_observations", recordClass: "A_CURRENT", retentionDays: null, prunedBy: null, readWindowDays: null,
     readers: "Latest source-check status and last verified hash; hard cap 24, no raw pages/history", insertedAt: "checked_at" },

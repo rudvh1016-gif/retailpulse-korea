@@ -1,5 +1,5 @@
 import { minutesOf, type AirportSide, type PrepTerminal } from '../business-hours';
-import { isValidKstDay, kstDayOf } from '../kst';
+import { isValidKstDay, kstDayOf, shiftKstDay } from '../kst';
 import type { ShiftAvailability, ShiftReason } from '../shift-briefing';
 
 export const MAX_PERSONAL_STATE_BYTES = 256 * 1024;
@@ -15,7 +15,9 @@ export interface BriefingSnapshot {
 export interface JournalNote { id: string; date: string; body: string; createdAt: string; updatedAt: string; snapshot: BriefingSnapshot | null }
 export type GuideId = 'allowance' | 'facilities' | 'routes';
 export interface GuideFavorite { guideId: GuideId; checkedDate: string | null }
-export interface GuideSnippet { id: string; label: string; body: string }
+export const GUIDE_LANGUAGES = ['ko', 'en', 'zh', 'ja', 'other'] as const;
+export type GuideLanguage = typeof GUIDE_LANGUAGES[number];
+export interface GuideSnippet { id: string; label: string; body: string; language?: GuideLanguage }
 export interface ChecklistItem { id: string; text: string }
 export interface ChecklistTemplate { id: string; label: string; items: ChecklistItem[] }
 export interface ChecklistRun { id: string; date: string; patternId: string; templateId: string; pattern: ShiftPattern; templateLabel: string; items: Array<ChecklistItem & { done: boolean }> }
@@ -37,6 +39,7 @@ export interface PersonalState {
 export type PersonalCommand =
   | { type: 'pattern.upsert'; pattern: ShiftPattern } | { type: 'pattern.remove'; id: string }
   | { type: 'assignment.set'; date: string; patternId: string } | { type: 'assignment.remove'; date: string }
+  | { type: 'assignment.repeat'; start: string; end: string; weekdays: number[]; patternId: string }
   | { type: 'note.add'; id: string; date: string; body: string; snapshot: BriefingSnapshot | null }
   | { type: 'note.update'; id: string; body: string } | { type: 'note.remove'; id: string }
   | { type: 'favorites.set'; favorites: GuideFavorite[] }
@@ -164,8 +167,10 @@ function readTemplate(value: unknown): ChecklistTemplate {
   }), item => item.id) };
 }
 function readGuideSnippet(value: unknown): GuideSnippet {
-  const row = object(value, ['id', 'label', 'body']);
-  return { id: identifier(row.id), label: text(row.label, 60), body: text(row.body, 1000, true) };
+  const tagged = Boolean(value && typeof value === 'object' && Object.hasOwn(value, 'language'));
+  const row = object(value, tagged ? ['id', 'label', 'body', 'language'] : ['id', 'label', 'body']);
+  return { id: identifier(row.id), label: text(row.label, 60), body: text(row.body, 1000, true),
+    ...(tagged ? { language: choice(row.language, GUIDE_LANGUAGES) } : {}) };
 }
 function readNotifications(value: unknown): NotificationPreferences {
   const keys = ['beforeShiftMinutes', 'briefingChanges', 'guideChanges'];
@@ -250,6 +255,25 @@ function remove<T extends { id: string }>(values: T[], id: unknown): T[] {
   find(values, id); return values.filter(item => item.id !== id);
 }
 
+/** Used by the UI and by the authoritative reducer. Existing assignments win. */
+export function planRepeatedAssignments(assignments: readonly ShiftAssignment[], start: string, end: string, weekdays: readonly number[]) {
+  day(start); day(end);
+  const chosen = new Set(list(weekdays, 7, value => choice(value, [0, 1, 2, 3, 4, 5, 6])));
+  const days = (Date.parse(end) - Date.parse(start)) / 86400000 + 1;
+  if (days < 1 || days > 31 || !chosen.size || chosen.size !== weekdays.length) fail('INVALID_VALUE');
+  const occupied = new Set(assignments.map(item => item.date));
+  const dates: string[] = [];
+  let skipped = 0;
+  for (let offset = 0; offset < days; offset++) {
+    const date = shiftKstDay(start, offset);
+    if (!chosen.has(new Date(date).getUTCDay())) continue;
+    if (occupied.has(date)) skipped++;
+    else dates.push(date);
+  }
+  if (assignments.length + dates.length > 400) fail('LIMIT_EXCEEDED');
+  return { dates, skipped };
+}
+
 /** Pure reducer: caller supplies a new opaque token and a clock; storage owns CAS. */
 export function applyPersonalCommand(state: PersonalState, command: PersonalCommand, context: { revision: string; now: string }): PersonalState {
   const next = parsePersonalState(state);
@@ -272,6 +296,14 @@ export function applyPersonalCommand(state: PersonalState, command: PersonalComm
       const index = next.assignments.findIndex(item => item.date === command.date);
       const assignment = { date: command.date, patternId: command.patternId };
       if (index < 0) next.assignments.push(assignment); else next.assignments[index] = assignment;
+      break;
+    }
+    case 'assignment.repeat': {
+      read(['start', 'end', 'weekdays', 'patternId']);
+      const pattern = find(next.patterns, command.patternId);
+      const { dates } = planRepeatedAssignments(next.assignments, command.start, command.end, command.weekdays);
+      if (!dates.length) fail('INVALID_VALUE');
+      next.assignments.push(...dates.map(date => ({ date, patternId: pattern.id })));
       break;
     }
     case 'assignment.remove': {
@@ -301,7 +333,7 @@ export function applyPersonalCommand(state: PersonalState, command: PersonalComm
     }
     case 'run.start': {
       read(['id', 'date', 'templateId']); identifier(command.id); day(command.date); identifier(command.templateId);
-      if (next.runs.some(item => item.id === command.id)) fail('DUPLICATE_ID');
+      if (next.runs.some(item => item.id === command.id || (item.date === command.date && item.templateId === command.templateId))) fail('DUPLICATE_ID');
       const assignment = next.assignments.find(item => item.date === command.date);
       const template = next.templates.find(item => item.id === command.templateId);
       if (!assignment || !template) return fail('DANGLING_REFERENCE');

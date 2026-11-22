@@ -46,6 +46,10 @@ export class AccountRepository {
  document(account:string) {
   return this.db.prepare('SELECT revision,encrypted_state FROM account_documents WHERE account_id=?').bind(account).first<{revision:string;encrypted_state:string}>();
  }
+ async revision(account:string) {
+  return (await this.db.prepare('SELECT revision FROM account_documents WHERE account_id=?')
+    .bind(account).first<{revision:string}>())?.revision ?? 'empty';
+ }
  async save(account:string,expected:string,revision:string,encrypted:string) {
   const result=expected==='empty'
    ?await this.db.prepare('INSERT INTO account_documents VALUES (?,?,?) ON CONFLICT(account_id) DO NOTHING RETURNING revision').bind(account,revision,encrypted).first()

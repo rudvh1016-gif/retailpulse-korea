@@ -26,7 +26,7 @@ export function departureAlert(summary: Summary, state: PersonalState, now: numb
   const threshold = state.notificationPreferences.departureWaitMinutes;
   const shift = activeDepartureShift(state, now);
   const rows = summary.airport?.congestion;
-  if (!threshold || !shift || summary.mode !== 'live-summary' || summary.dayRelation !== 'TODAY' ||
+  if (!threshold || !shift || (summary.mode !== 'live-summary' && summary.mode !== 'departure-alert') || summary.dayRelation !== 'TODAY' ||
     !Array.isArray(rows) || rows.length > 24 || rows.some(row => !row || typeof row.zone !== 'string' ||
       typeof row.observedAt !== 'string' || (row.waitTimeRaw != null && typeof row.waitTimeRaw !== 'string'))) return null;
 

@@ -103,6 +103,7 @@ export async function handleAccountRequest(request:Request,env:AccountEnvironmen
   if(!session)return json({error:'UNAUTHENTICATED'},401);
   if(request.headers.get('x-koretail-account')!==session.account_id)return json({error:'ACCOUNT_CHANGED'},409);
   if(path==='logout'&&request.method==='POST'){await repo.logout(sessionHash!);const r=json({ok:true});setCookie(r,SESSION,'',0);return r;}
+  if(path==='revision'&&request.method==='GET')return json({revision:await repo.revision(session.account_id)});
   if(path!=='state'&&path!=='delete')return json({error:'NOT_FOUND'},404);
   const read=async()=>{const row=await repo.document(session.account_id);if(!row)return emptyPersonalState();const state=parsePersonalBackup(await decrypt(row.encrypted_state,'state:'+session.account_id,config.encryption));if(state.revision!==row.revision)fail('STORAGE');return state;};
   if(path==='state'&&request.method==='GET')return json(await read());
