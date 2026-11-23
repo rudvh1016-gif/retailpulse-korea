@@ -3,6 +3,7 @@ import {waitForRenderedRoute} from './route-readiness';
 
 import { lookupAirline } from "../lib/airline-country";
 import { AIRLINE_REGISTRY } from "../lib/airline-registry";
+import { installGuide } from "../lib/install-guide";
 import { tofuCharacters } from "../e2e/font-glyphs";
 
 /**
@@ -185,6 +186,34 @@ test("public airport navigation makes only reads and Cloudflare analytics reques
   }
   expect(await page.locator("script[data-cf-beacon], script[src*='beacon.min.js']").count()).toBeLessThanOrEqual(1);
 });
+
+for (const [locale, width] of [["ko", 390], ["ko", 1440], ["en", 390], ["zh", 390], ["ja", 390]] as const) {
+  test(`production install guide opens and restores keyboard focus · ${locale} · ${width}px`, async ({ page }) => {
+    const guide = installGuide(locale);
+    await page.setViewportSize({ width, height: 900 });
+    await openRoute(page, `/${locale}`);
+
+    const trigger = page.getByRole("button", { name: guide.buttonLabel, exact: true });
+    await expect(trigger).toBeVisible();
+    await trigger.focus();
+    await trigger.press("Enter");
+
+    const dialog = page.getByRole("dialog", { name: guide.title, exact: true });
+    await expect(dialog).toBeFocused();
+    await expect(dialog).toContainText(guide.intro);
+    for (const section of guide.sections) {
+      await expect(dialog.getByRole("heading", { name: section.heading, exact: true })).toBeVisible();
+    }
+    if (locale === "ko") await expect(dialog).toContainText("인터넷 연결이 필요합니다");
+    expect(await tofuCharacters(dialog)).toEqual([]);
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(dialog.getByRole("button", { name: guide.closeLabel, exact: true })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+}
 
 type ProductionFacilityFontRow = {
   facilityId: string;

@@ -52,19 +52,21 @@ for (const width of [360, 390]) test(`airport preferences and date controls on P
   await expect(page.locator('.site-header')).toHaveCSS('position', 'sticky');
   const inset = await page.locator('.site-header').evaluate(el => parseFloat(getComputedStyle(el).paddingTop));
   expect((await page.locator('.brand').boundingBox())!.y).toBeGreaterThanOrEqual(inset);
-  const picker = page.locator('.airport-date-reserved .date-nav-picker input');
-  const today = await picker.inputValue();
+  const dateNav = page.locator('.airport-date-reserved .date-nav');
+  const today = await dateButtons.nth(1).locator('time').getAttribute('datetime');
+  expect(today).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  await expect(dateNav).toHaveAttribute('data-selected-date', today!);
   for (const index of [0, 2]) {
     const button = dateButtons.nth(index);
     const date = await button.locator('time').getAttribute('datetime');
-    expect(date, 'each shortcut identifies its service date').not.toBeNull();
+    expect(date, 'each shortcut identifies its service date').toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(date).not.toBe(today);
     await button.click();
-    await expect(picker).not.toHaveValue(today);
-    await expect(picker).toHaveValue(date!);
+    await expect(dateNav).toHaveAttribute('data-selected-date', date!);
     await expect(button).toHaveAttribute('aria-pressed', 'true');
   }
   await dateButtons.nth(1).click();
-  await expect(picker).toHaveValue(today);
+  await expect(dateNav).toHaveAttribute('data-selected-date', today!);
   await expect(dateButtons.nth(1)).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('script[data-koretail-analytics]')).toHaveCount(0);
 });
