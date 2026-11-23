@@ -3,7 +3,9 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
-import { applySeoulCleanup, planSeoulCleanup, seoulDailyAllowance } from '../lib/retired-seoul-cleanup';
+import { applySeoulCleanup, planSeoulCleanup, seoulCleanupBudget, seoulCleanupDecision, seoulDailyAllowance } from '../lib/retired-seoul-cleanup';
+import { d1StorageHeadroom } from '../lib/storage-inventory';
+import { renderSeoulCleanupSummary, type SeoulCleanupSummary } from '../scripts/retired-seoul-cleanup-summary';
 
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
@@ -36,6 +38,52 @@ test('cleanup allowance is account-wide, leaves operating reserve, and fails clo
   assert.equal(seoulDailyAllowance({ rowsRead: 900_000, rowsWritten: 4_000 }), 8_000);
   assert.equal(seoulDailyAllowance({ rowsRead: 100, rowsWritten: 69_975 }), 25);
   assert.equal(seoulDailyAllowance({ rowsRead: 100, rowsWritten: 70_000 }), 0);
+});
+
+test('cleanup budget distinguishes missing account evidence from both quota thresholds', () => {
+  assert.deepEqual(seoulCleanupBudget(null), { allowance: 0, reason: 'SEOUL_USAGE_UNVERIFIED' });
+  assert.deepEqual(seoulCleanupBudget({ rowsRead: 1, rowsWritten: -1 }), { allowance: 0, reason: 'SEOUL_USAGE_UNVERIFIED' });
+  assert.deepEqual(seoulCleanupBudget({ rowsRead: 3_500_001, rowsWritten: 0 }), { allowance: 0, reason: 'SEOUL_READ_PROTECTION' });
+  assert.deepEqual(seoulCleanupBudget({ rowsRead: 3_500_000, rowsWritten: 70_000 }), { allowance: 0, reason: 'SEOUL_WRITE_PROTECTION' });
+  assert.deepEqual(seoulCleanupBudget({ rowsRead: 3_500_000, rowsWritten: 69_999 }), { allowance: 1, reason: null });
+});
+
+test('runtime gates explain why a deletion was disabled even when the account has enough writes', () => {
+  const usage = { rowsRead: 10, rowsWritten: 10 };
+  const gates = { seoulEnabled: false, cleanupEnabled: true, scheduled: true };
+  assert.deepEqual(seoulCleanupDecision(usage, { ...gates, seoulEnabled: true }), { allowance: 0, reason: 'SEOUL_PRODUCT_ENABLED' });
+  assert.deepEqual(seoulCleanupDecision(usage, { ...gates, cleanupEnabled: false }), { allowance: 0, reason: 'SEOUL_CLEANUP_DISABLED' });
+  assert.deepEqual(seoulCleanupDecision(usage, { ...gates, scheduled: false }), { allowance: 0, reason: 'SEOUL_UNSCHEDULED' });
+  assert.deepEqual(seoulCleanupDecision(usage, gates), { allowance: 8_000, reason: null });
+});
+
+test('run summary separates actual deletion from measured storage and unverified observations', () => {
+  const report = {
+    utcDay: '2026-11-22', status: 'PROCESSED', reason: null,
+    accountUsage: { rowsRead: 550, rowsWritten: 300 }, maximumBillableWrites: 8000, deleted: 100, rowsWritten: 245,
+    storageBefore: { checkedAt: '2026-11-22T21:07:00Z', d1StorageHeadroom: [
+      { binding: 'DB', ...d1StorageHeadroom(12_288) },
+      { binding: 'A4_OVERFLOW_DB', ...d1StorageHeadroom(4_096) },
+    ] },
+    storageAfter: { checkedAt: '2026-11-22T21:07:45Z', d1StorageHeadroom: [
+      { binding: 'DB', ...d1StorageHeadroom(8_192) },
+      { binding: 'A4_OVERFLOW_DB', ...d1StorageHeadroom(8_192) },
+    ] },
+    remaining: [{ table: 'seoul_context', sampledRows: 1 }],
+  } satisfies SeoulCleanupSummary;
+  const output = renderSeoulCleanupSummary(report);
+  assert.match(output, /100건.*245행/);
+  assert.match(output, /550행.*300행/);
+  assert.match(output, /\| Primary \| 12,288 \| 8,192 \| 4,096 \| 499,991,808 \|/);
+  assert.match(output, /\| Overflow \| 4,096 \| 8,192 \| 0 \| 499,991,808 \|/);
+  assert.match(output, /06:07:00.*06:07:45/);
+  assert.match(output, /`seoul_context` 최소 1건/);
+  const unknown = renderSeoulCleanupSummary({ ...report, status: 'STOPPED', reason: 'SEOUL_RESULT_UNVERIFIED',
+    deleted: null, rowsWritten: null, storageAfter: null, remaining: null });
+  assert.match(unknown, /STOPPED.*SEOUL_RESULT_UNVERIFIED/);
+  assert.match(unknown, /\| Primary \| 12,288 \| 미확인 \| 미확인 \| 미확인 \|/);
+  assert.match(unknown, /논리 삭제 미확인.*D1 쓰기 미확인/);
+  assert.match(unknown, /남은 서울 기록 표본\n\n미확인/);
 });
 
 test('real migration schema retains shared airport data and resumes at most once per UTC day', async () => {

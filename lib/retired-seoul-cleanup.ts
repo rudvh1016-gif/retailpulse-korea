@@ -17,16 +17,35 @@ const scope = [
 ] as const;
 
 type Db = Pick<CloudflareD1RestDatabase, 'prepare' | 'batch' | 'usageSnapshot'>;
-type Usage = { rowsRead: number; rowsWritten: number };
+export type SeoulCleanupUsage = { rowsRead: number; rowsWritten: number };
 type Plan = { table: (typeof scope)[number]['table']; predicate: string; areas: readonly string[]; maxRowid: number; planned: number; writeBound: number };
 const isCount = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 
-export function seoulDailyAllowance(usage: Usage | null) {
-  if (!usage || !isCount(usage.rowsRead) || !isCount(usage.rowsWritten) || usage.rowsRead > 3_500_000) return 0;
+export function seoulCleanupBudget(usage: SeoulCleanupUsage | null) {
+  if (!usage || !isCount(usage.rowsRead) || !isCount(usage.rowsWritten)) {
+    return { allowance: 0, reason: 'SEOUL_USAGE_UNVERIFIED' } as const;
+  }
+  if (usage.rowsRead > 3_500_000) return { allowance: 0, reason: 'SEOUL_READ_PROTECTION' } as const;
+  if (usage.rowsWritten >= 70_000) return { allowance: 0, reason: 'SEOUL_WRITE_PROTECTION' } as const;
   // Leave at least 30,000 daily writes for collection, analytics lag and indexing.
   // The cleanup itself is capped at 8,000 billable writes, including its ledger.
-  return Math.max(0, Math.min(8_000, 70_000 - usage.rowsWritten));
+  return { allowance: Math.min(8_000, 70_000 - usage.rowsWritten), reason: null };
+}
+
+export function seoulDailyAllowance(usage: SeoulCleanupUsage | null) {
+  return seoulCleanupBudget(usage).allowance;
+}
+
+export function seoulCleanupDecision(usage: SeoulCleanupUsage | null, gates: {
+  seoulEnabled: boolean;
+  cleanupEnabled: boolean;
+  scheduled: boolean;
+}) {
+  if (gates.seoulEnabled) return { allowance: 0, reason: 'SEOUL_PRODUCT_ENABLED' } as const;
+  if (!gates.cleanupEnabled) return { allowance: 0, reason: 'SEOUL_CLEANUP_DISABLED' } as const;
+  if (!gates.scheduled) return { allowance: 0, reason: 'SEOUL_UNSCHEDULED' } as const;
+  return seoulCleanupBudget(usage);
 }
 
 export async function planSeoulCleanup(db: Db, allowance: number) {
