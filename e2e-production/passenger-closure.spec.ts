@@ -11,7 +11,7 @@ import { passengerCopy } from '../lib/passenger-copy';
  * operands = formula. When no transfer forecast exists the sum cannot be
  * formed and the hall figure leads again, labelled as itself.
  */
-for(const width of [390,1280]) test(`production Seoul and airport truth closure ${width}px`, async({page})=>{
+for(const width of [390,1280]) test(`production airport forecast and source truth ${width}px`, async({page})=>{
   test.setTimeout(180000);
   await page.setViewportSize({width,height:900});
   await page.addInitScript(key=>localStorage.setItem(key,JSON.stringify({version:1,role:'manager',location:'myeongdong',selectedLocations:['myeongdong','hongdae','seongsu','itaewon','airport'],terminal:'all',selectedTerminals:['all'],interests:['passengers','weather','events','crowding'],day:'today',selectedDays:['today','tomorrow','yesterday'],analytics:false})),PREFERENCE_KEY);
@@ -19,12 +19,6 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
   await expect(page.getByTestId('airport-glance-preview')).toBeVisible();
 
   await expect(page.getByTestId('personal-briefing')).toHaveCount(0);
-  for(const area of ['myeongdong','hongdae','seongsu','itaewon']){
-    await page.goto('/ko/'+area);
-    await expect(page.locator('.area-current-brief').first()).toBeVisible();
-    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-    await page.screenshot({path:`production-visual-results/closure-${area}-${width}.png`,fullPage:false});
-  }
   await page.goto('/ko/airport');
   await expectHeadline(page.locator('.airport-current-brief'));
   await page.screenshot({path:`production-visual-results/closure-airport-home-${width}.png`,fullPage:false});
@@ -48,8 +42,9 @@ for(const width of [390,1280]) test(`production Seoul and airport truth closure 
   await page.screenshot({path:`production-visual-results/closure-tomorrow-${width}.png`,fullPage:false});
   for(const path of ['/ko/more','/ko/about']) {
     await page.goto(path);
-    await expect(page.getByText(path==='/ko/more'?'한눈에의 예상 인원은 출국장 예고와 별도 환승 예고의 단순 합계입니다. 출국장 예고에는 내·외국인 구분이 없습니다.':passengerCopy.limitation.ko,{exact:false}).first()).toBeVisible();
-    await expect(page.getByText(passengerCopy.noSum.ko,{exact:false}).first()).toBeVisible();
+    const usageGuide = page.getByRole('region', {name:'누가, 어떻게 쓰면 좋을까요?',exact:true});
+    await expect(usageGuide.getByText('한눈에의 예상 인원은 출국장 예고와 별도 환승 예고의 단순 합계입니다. 출국장 예고에는 내·외국인 구분이 없습니다.',{exact:true})).toBeVisible();
+    await expect(usageGuide.getByText(passengerCopy.noSum.ko,{exact:true})).toBeVisible();
     await expect(page.locator('body')).not.toContainText('공항 승객에는 내국인과 환승객 등이 포함');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   }

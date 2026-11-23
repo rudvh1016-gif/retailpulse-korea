@@ -3,6 +3,7 @@ import {waitForRenderedRoute} from './route-readiness';
 
 import { lookupAirline } from "../lib/airline-country";
 import { AIRLINE_REGISTRY } from "../lib/airline-registry";
+import { installGuide } from "../lib/install-guide";
 import { tofuCharacters } from "../e2e/font-glyphs";
 
 /**
@@ -14,8 +15,7 @@ const WHITE = "rgb(255, 255, 255)";
 const locales = ["ko", "en", "zh", "ja"] as const;
 const viewports = [390, 430, 768, 1280, 1440, 1920] as const;
 const routes = [
-  "", "/myeongdong", "/hongdae", "/seongsu", "/itaewon", "/airport", "/business", "/forecast",
-  "/tourism-desk/myeongdong", "/tourism-desk/hongdae", "/tourism-desk/seongsu", "/tourism-desk/itaewon", "/about", "/more",
+  "", "/airport", "/business", "/about", "/more",
 ] as const;
 const surfaces = [
   "html", "body", ".app", ".page-shell", ".topbar", ".top-nav", ".bottom-nav",
@@ -23,8 +23,6 @@ const surfaces = [
   ".airport-today-grid article", ".airport-detail-section", ".airport-composition",
   ".airport-composition-tabs", ".airport-composition-panel", ".business-pro",
   ".airport-focus-shell", ".airport-focus-shell .glance-preview", ".airport-focus-shell .focus-detail",
-  ".tourism-desk", ".tourism-shift-brief", ".tourism-event", ".tourism-subway",
-  ".tourism-current-reading", ".tourism-background-item", ".tourism-link-block",
 ];
 const registeredCountryCodes = [...new Set(Object.values(AIRLINE_REGISTRY)
   .filter((entry) => lookupAirline(entry.iata)?.country === entry.country)
@@ -155,245 +153,65 @@ for (const locale of locales) {
   }
 }
 
-const tourismAreas = [
-  {
-    id: "myeongdong",
-    name: "명동",
-    heading: "명동 관광안내",
-    station: "명동역 4호선",
-    otherStations: ["홍대입구역 2호선", "성수역 2호선", "이태원역 6호선"],
-  },
-  {
-    id: "hongdae",
-    name: "홍대",
-    heading: "홍대 관광안내",
-    station: "홍대입구역 2호선",
-    otherStations: ["명동역 4호선", "성수역 2호선", "이태원역 6호선"],
-  },
-  {
-    id: "seongsu",
-    name: "성수",
-    heading: "성수 관광안내",
-    station: "성수역 2호선",
-    otherStations: ["명동역 4호선", "홍대입구역 2호선", "이태원역 6호선"],
-  },
-  {
-    id: "itaewon",
-    name: "이태원",
-    heading: "이태원 관광안내",
-    station: "이태원역 6호선",
-    otherStations: ["명동역 4호선", "홍대입구역 2호선", "성수역 2호선"],
-  },
+const retiredSeoulPaths = [
+  "/myeongdong", "/hongdae", "/seongsu", "/itaewon", "/today", "/where-to",
+  "/consumption", "/predictions", "/forecast", "/tourism-desk",
+  "/tourism-desk/myeongdong", "/tourism-desk/hongdae",
+  "/tourism-desk/seongsu", "/tourism-desk/itaewon",
 ] as const;
 
-const tourismSectionHeadings = [
-  "오늘 근무 브리핑",
-  "오늘 안내할 것",
-  "교통 흐름 참고",
-  "지금 지역 상황",
-  "관광 흐름 배경 참고",
-  "자료 기준과 한계",
-] as const;
-
-for (const width of viewports) {
-  test(`production Tourism guide workflow · ${width}px`, async ({ page, baseURL }, testInfo) => {
-    test.setTimeout(120_000);
-    await page.setViewportSize({ width, height: width <= 430 ? 900 : 1000 });
-
-    // Any non-GET this acceptance run causes, split into the one kind that is
-    // expected and everything else.
-    //
-    // Cloudflare Web Analytics reports each page view as a POST to the SAME
-    // ORIGIN at /cdn-cgi/rum, an endpoint Cloudflare's own edge answers. It is
-    // telemetry, not a write to a provider or to this application: it reaches
-    // no upstream API and no D1 row. It appeared here the moment
-    // next.config.ts let the beacon through the CSP, which is also the proof
-    // that measurement is live — so it is counted and checked below rather
-    // than ignored, and `writes` keeps exactly its old meaning for everything
-    // else.
-    const writes: string[] = [];
-    const analyticsBeacons: string[] = [];
-    const siteHost = new URL(baseURL ?? "https://koretaildata.com").host;
-    const isEdgeTelemetry = (url: string) => {
-      try {
-        const parsed = new URL(url);
-        return parsed.host === siteHost && parsed.pathname.startsWith("/cdn-cgi/");
-      } catch {
-        return false;
-      }
-    };
-    page.on("request", (request) => {
-      if (["GET", "HEAD", "OPTIONS"].includes(request.method())) return;
-      const record = `${request.method()} ${request.url()}`;
-      if (isEdgeTelemetry(request.url())) analyticsBeacons.push(record);
-      else writes.push(record);
-    });
-
-    // Enter by the navigation a real worker sees at this width.
-    await openRoute(page, "/ko/myeongdong");
-    await expect(page.locator(".app")).toHaveAttribute("data-hydrated", "true");
-    if (width > 820) {
-      const topNav = page.locator("nav.top-nav");
-      await expect(topNav).toBeVisible();
-      await topNav.getByRole("link", { name: "더보기", exact: true }).click();
-      await page.locator('.more-section-links a[href="/ko/tourism-desk/myeongdong"]').click();
-      await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
-      await expect(topNav.getByRole("link", { name: "더보기", exact: true })).toHaveAttribute("aria-current", "location");
-      await testInfo.attach(`tourism-desktop-nav-${width}.png`, {
-        body: await page.locator(".topbar").screenshot({ animations: "disabled", caret: "hide" }),
-        contentType: "image/png",
-      });
-    } else {
-      const bottomNav = page.locator("nav.bottom-nav");
-      await expect(bottomNav).toBeVisible();
-      await expect(bottomNav.locator("a")).toHaveCount(5);
-      await expect(bottomNav.getByRole("link", { name: /내\s*브리핑/ })).toHaveCount(0);
-      const moreLink=bottomNav.getByRole("link", { name: /더보기/ });
-      const areaQuery={place:'area',area:'myeongdong'},moreUrl=new URL((await moreLink.getAttribute('href'))!,page.url());
-      expect(moreUrl.pathname).toBe('/ko/more');
-      expect(Object.fromEntries(moreUrl.searchParams)).toEqual(areaQuery);
-      await moreLink.click();
-      await expect(page).toHaveURL(url=>url.pathname==='/ko/more');
-      expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual(areaQuery);
-      const business=page.locator('.more-section-links').getByRole('link').filter({hasText:/^매장$/});
-      await expect(business).toHaveText('매장');
-      const businessUrl=new URL((await business.getAttribute('href'))!,page.url());
-      expect(businessUrl.pathname).toBe('/ko/business');
-      expect(Object.fromEntries(businessUrl.searchParams)).toEqual(areaQuery);
-      await business.click();
-      await expect(page).toHaveURL(url=>url.pathname==='/ko/business');
-      expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual(areaQuery);
-      await expect(page.getByTestId('business-prep')).toHaveAttribute('data-place','area');
-      await expect(page.getByTestId('business-prep').getByTestId('prep-place')).toHaveText('명동');
-      await page.goBack();
-      await expect(page).toHaveURL(url=>url.pathname==='/ko/more');
-      expect(Object.fromEntries(new URL(page.url()).searchParams)).toEqual(areaQuery);
-      await expect(page.locator(".tourism-link-block")).toHaveCount(0);
-      await expect(page.locator(".site-usage-guide h2")).toHaveText("누가, 어떻게 쓰면 좋을까요?");
-      const tourismLink = page.locator(".footer-links a").filter({ hasText: "관광안내 데스크" });
-      await expect(tourismLink).toHaveAttribute("href", "/ko/tourism-desk/myeongdong");
-      await testInfo.attach(`tourism-mobile-more-${width}.png`, {
-        body: await page.screenshot({ animations: "disabled", caret: "hide" }),
-        contentType: "image/png",
-      });
-      await tourismLink.click();
-      await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
-      await expect(bottomNav.getByRole("link", { name: /더보기/ })).toHaveAttribute("aria-current", "location");
+for (const locale of locales) {
+  test(`retired Seoul routes preserve the selected date on the airport home · ${locale}`, async ({ request }) => {
+    const date = "2026-11-21";
+    for (const route of retiredSeoulPaths) {
+      const response = await request.get(`/${locale}${route}?date=${date}`, { maxRedirects: 0 });
+      expect(response.status(), route).toBe(308);
+      const destination = new URL(response.headers().location ?? "", response.url());
+      expect(destination.href, route).toBe(new URL(`/${locale}?date=${date}`, response.url()).href);
     }
+  });
+}
 
-    const desk = page.locator(".tourism-desk");
-    const sectionHeadings = desk.locator(".tourism-guide-section > .tourism-section-head h2");
-    await expect(sectionHeadings).toHaveCount(tourismSectionHeadings.length, { timeout: 30_000 });
-    expect(await sectionHeadings.allInnerTexts()).toEqual([...tourismSectionHeadings]);
+test("public airport navigation makes only reads and Cloudflare analytics requests", async ({ page }) => {
+  const requests: { url: string; method: string }[] = [];
+  page.on("request", request => requests.push({ url: request.url(), method: request.method() }));
+  await openRoute(page, "/ko");
+  await openRoute(page, "/ko/airport");
+  const origin = new URL(page.url()).origin;
+  for (const request of requests) {
+    if (["GET", "HEAD", "OPTIONS"].includes(request.method)) continue;
+    expect(request.method).toBe("POST");
+    const url = new URL(request.url);
+    expect(url.origin + url.pathname).toBe(origin + "/cdn-cgi/rum");
+  }
+  expect(await page.locator("script[data-cf-beacon], script[src*='beacon.min.js']").count()).toBeLessThanOrEqual(1);
+});
 
-    // All four links reuse the same module, preserve the locale and swap the
-    // exact station scope. Other station names must not leak into the panel.
-    for (const area of tourismAreas) {
-      const link = desk.locator(".tourism-area-switcher").getByRole("link", { name: area.name, exact: true });
-      if (area.id !== "myeongdong") await link.click();
-      await expect(page).toHaveURL(new RegExp(`/ko/tourism-desk/${area.id}$`));
-      await expect(link).toHaveAttribute("aria-current", "page");
-      await expect(desk.getByRole("heading", { level: 1, name: area.heading })).toBeVisible();
-      const subway = desk.locator(".tourism-subway");
-      await expect(subway.getByRole("heading", { level: 3, name: area.station })).toBeVisible();
-      for (const otherStation of area.otherStations) await expect(subway).not.toContainText(otherStation);
-      expect(await tofuCharacters(desk), `${area.id} @${width}px contains missing-glyph boxes`).toEqual([]);
+for (const [locale, width] of [["ko", 390], ["ko", 1440], ["en", 390], ["zh", 390], ["ja", 390]] as const) {
+  test(`production install guide opens and restores keyboard focus · ${locale} · ${width}px`, async ({ page }) => {
+    const guide = installGuide(locale);
+    await page.setViewportSize({ width, height: 900 });
+    await openRoute(page, `/${locale}`);
+
+    const trigger = page.getByRole("button", { name: guide.buttonLabel, exact: true });
+    await expect(trigger).toBeVisible();
+    await trigger.focus();
+    await trigger.press("Enter");
+
+    const dialog = page.getByRole("dialog", { name: guide.title, exact: true });
+    await expect(dialog).toBeFocused();
+    await expect(dialog).toContainText(guide.intro);
+    for (const section of guide.sections) {
+      await expect(dialog.getByRole("heading", { name: section.heading, exact: true })).toBeVisible();
     }
+    if (locale === "ko") await expect(dialog).toContainText("인터넷 연결이 필요합니다");
+    expect(await tofuCharacters(dialog)).toEqual([]);
 
-    await desk.locator(".tourism-area-switcher").getByRole("link", { name: "명동", exact: true }).click();
-    await expect(page).toHaveURL(/\/ko\/tourism-desk\/myeongdong$/);
-    const overflow = await page.evaluate(() => ({
-      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      switcher: (() => {
-        const element = document.querySelector<HTMLElement>(".tourism-area-switcher");
-        return element ? element.scrollWidth - element.clientWidth : Infinity;
-      })(),
-    }));
-    expect(overflow.page).toBeLessThanOrEqual(1);
-    expect(overflow.switcher).toBeLessThanOrEqual(1);
-    await testInfo.attach(`tourism-guide-myeongdong-${width}.png`, {
-      body: await page.screenshot({ fullPage: true, animations: "disabled", caret: "hide" }),
-      contentType: "image/png",
-    });
-
-    // Visitor Show exists only when the official payload has an eligible
-    // event. An empty official result is valid and must never be fabricated.
-    const visitorLaunches = desk.locator(".tourism-visitor-launches button");
-    if (await visitorLaunches.count()) {
-      const before = page.url();
-      await visitorLaunches.first().click();
-      const visitor = page.locator("dialog.tourism-visitor-show");
-      await expect(visitor).toBeVisible();
-      const languageButtons = visitor.getByRole("group", { name: "표시 언어" }).getByRole("button");
-      await expect(languageButtons).toHaveCount(4);
-      for (const locale of ["ko", "en", "zh", "ja"] as const) {
-        await visitor.locator(`button[lang="${locale}"]`).click();
-        await expect(visitor).toHaveAttribute("lang", locale);
-        expect(await tofuCharacters(visitor),
-          `Visitor Show ${locale} @${width}px contains missing-glyph boxes`).toEqual([]);
-      }
-      await visitor.getByRole("button", { name: "English", exact: true }).click();
-      await expect(visitor.locator("dd[lang='ko']").first()).not.toBeEmpty();
-      expect(page.url()).toBe(before);
-
-      const scriptFonts = await visitor.evaluate((element) => {
-        const fontOf = (lang: string) => getComputedStyle(element.querySelector<HTMLElement>(`button[lang="${lang}"]`)!).fontFamily;
-        return { zh: fontOf("zh"), ja: fontOf("ja") };
-      });
-      expect(scriptFonts.zh).toContain("Noto Sans SC Variable");
-      expect(scriptFonts.ja).toContain("Noto Sans JP Variable");
-
-      const visitorOverflow = await visitor.evaluate((element) => ({
-        dialog: element.scrollWidth - element.clientWidth,
-        page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      }));
-      expect(visitorOverflow.dialog).toBeLessThanOrEqual(1);
-      expect(visitorOverflow.page).toBeLessThanOrEqual(1);
-      await testInfo.attach(`tourism-visitor-show-${width}.png`, {
-        body: await page.screenshot({ animations: "disabled", caret: "hide" }),
-        contentType: "image/png",
-      });
-      await visitor.locator(".tourism-visitor-show-close").click();
-      await expect(visitor).toBeHidden();
-      expect(page.url()).toBe(before);
-    }
-
-    // PWA guidance remains reachable from Tourism without invoking install.
-    await page.locator(".topbar .install-app-button").click();
-    const install = page.locator(".install-modal");
-    await expect(install).toBeVisible();
-    await expect(install).toContainText("플레이스토어나 앱스토어에서 내려받는 앱은 아니며");
-    await expect(install).toContainText("인터넷 연결이 필요합니다");
-    await expect(install.locator(".install-section h3")).toHaveCount(6);
-    expect(await tofuCharacters(install), `PWA install guide @${width}px contains missing-glyph boxes`).toEqual([]);
-    await testInfo.attach(`pwa-install-guide-${width}.png`, {
-      body: await page.screenshot({ animations: "disabled", caret: "hide" }),
-      contentType: "image/png",
-    });
-    await install.locator(":scope > button:last-child").click();
-    await expect(install).toHaveCount(0);
-
-    expect(writes, "visual acceptance must not issue provider or application writes").toEqual([]);
-
-    // Whatever telemetry did fire must be Cloudflare's own same-origin
-    // endpoint and nothing else. This check visits with usage analytics
-    // switched off (playwright.production.config.ts), so a GA4 hit here would
-    // mean the 더보기 switch is not holding on the live site, and any other
-    // third-party host would mean reader data leaving for somewhere nobody
-    // approved. A run before that switch (38590080344) failed exactly here.
-    for (const beacon of analyticsBeacons) {
-      const target = new URL(beacon.slice(beacon.indexOf(" ") + 1));
-      expect(
-        `${target.host}${target.pathname}`,
-        "only Cloudflare's same-origin RUM endpoint may receive telemetry",
-      ).toEqual(`${siteHost}/cdn-cgi/rum`);
-    }
-
-    // One beacon per page, never two. A duplicated beacon would double every
-    // page view and make the first number the owner ever sees a wrong one —
-    // and it is invisible on screen, so nothing else would catch it.
-    const beaconScripts = page.locator("script[data-cf-beacon], script[src*='beacon.min.js']");
-    expect(await beaconScripts.count(), "a second analytics beacon would double-count every visit").toBeLessThanOrEqual(1);
+    await page.keyboard.press("Shift+Tab");
+    await expect(dialog.getByRole("button", { name: guide.closeLabel, exact: true })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
   });
 }
 
