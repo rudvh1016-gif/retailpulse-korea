@@ -56,3 +56,22 @@ for(const width of [390,1440])test(`home checkpoint waits follow the selected te
  await expect(schematics).toHaveCount(1);await expect(schematics).toHaveAttribute('data-terminal','T2');
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
+
+test('home uses terminal-specific official links and does not invent a missing observation clock',async({page})=>{
+ const summary=structuredClone(SUMMARY_FIXTURE);
+ const stamp=new Date(Date.parse(summary.generatedAt)-21*60_000).toISOString();
+ const base=summary.airport.congestion[0];
+ summary.airport.congestion=[{...base,terminal:'T1',zone:'DG2_E',observedAt:stamp,freshness:'STALE'}];
+ await page.clock.setFixedTime(new Date(summary.generatedAt));
+ await page.route('**/api/**',route=>route.fulfill({status:503,json:{status:'UNAVAILABLE'}}));
+ await page.route('**/api/live/summary*',route=>route.fulfill({json:summary}));
+ await page.goto('/ko');
+ const rows=page.getByTestId('home-checkpoint-official-fallback');
+ const t1=rows.filter({has:page.getByRole('link',{name:/T1 공식 실시간 대기/})});
+ const t2=rows.filter({has:page.getByRole('link',{name:/T2 공식 실시간 대기/})});
+ await expect(t1.locator('time')).toHaveAttribute('datetime',stamp);
+ await expect(t1.getByRole('link')).toHaveAttribute('href','https://www.airport.kr/ap_ko/6651/subview.do');
+ await expect(t2).toContainText('관측 시각 미확인');
+ await expect(t2.locator('time')).toHaveCount(0);
+ await expect(t2.getByRole('link')).toHaveAttribute('href','https://business.airport.kr/ap_ko/6652/subview.do');
+});
