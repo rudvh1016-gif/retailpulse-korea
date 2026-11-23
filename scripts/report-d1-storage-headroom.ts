@@ -17,10 +17,12 @@ export async function reportProductionD1StorageHeadroom() {
     return { binding, ...d1StorageHeadroom(size) };
   }));
 
-  console.log(JSON.stringify({ checkedAt: new Date().toISOString(), d1StorageHeadroom: results }));
+  const report = { checkedAt: new Date().toISOString(), d1StorageHeadroom: results };
+  console.log(JSON.stringify(report));
   for (const result of results) {
     if (result.level !== 'NORMAL') {
       console.warn(`::warning title=D1 storage ${result.level}::${result.binding} remaining bytes: ${result.remainingBytes ?? 'unknown'}`);
     }
   }
+  return report;
 }
