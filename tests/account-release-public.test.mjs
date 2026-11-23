@@ -15,7 +15,7 @@ function fixture(overrides = {}) {
   const requests = [];
   const responses = {
     '/ko': () => html(`<footer><a href="${privacyPath}">개인정보처리방침</a></footer>`),
-    [privacyPath]: () => html('<main><h1>개인정보처리방침</h1></main>'),
+    [privacyPath]: () => html('<main><h1>개인정보처리방침</h1><p>계정을 구분하기 위해 Google 계정 식별자를 사용합니다.</p></main>'),
     '/ko/account': () => html('<main><h1>내 계정</h1></main>'),
     '/api/account/status': () => json(enabled),
     '/api/account/state': () => json({error: 'UNAUTHENTICATED'}, 401),
@@ -49,6 +49,18 @@ test('policy can be proven independently while no account routes are enabled', a
   const result = await verifyAccountReleasePublic({mode: 'policy', origin, privacyPath}, fetcher);
   assert.equal(result.publicChecksPassed, true);
   assert.deepEqual(requests.map(request => request.url.pathname).sort(), ['/ko', privacyPath]);
+});
+
+test('a fallback page or empty policy shell with HTTP 200 does not prove publication', async () => {
+  for (const content of [
+    '<main><h1>요청하신 페이지를 찾을 수 없습니다</h1><p>KORETAIL 홈으로 돌아가세요.</p></main>',
+    '<main><h1>개인정보처리방침</h1><p hidden>미게시 원고</p></main>',
+  ]) {
+    const {fetcher} = fixture({[privacyPath]: () => html(content)});
+    const result = await verifyAccountReleasePublic({mode: 'policy', origin, privacyPath}, fetcher);
+    assert.equal(result.publicChecksPassed, false);
+    assert.deepEqual(result.checks.privacyPage, {httpStatus: 200, verified: false});
+  }
 });
 
 test('hidden homepage link, non-policy fallback and unlaunched account are not positive evidence', async () => {

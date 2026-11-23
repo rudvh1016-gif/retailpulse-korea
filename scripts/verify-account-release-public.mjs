@@ -15,6 +15,14 @@ function verifiedPolicyLink(document, homepage, expectedPolicy) {
   });
 }
 
+function verifiedPolicyPage(document) {
+  const main = document.querySelector('main');
+  const visible = element => !element.closest('[hidden], [inert], [aria-hidden="true"]');
+  const heading = main?.querySelector('h1');
+  return Boolean(heading && visible(heading) && /^(?:(?:코리테일|KORETAIL)\s+)?개인정보\s*처리방침$/iu.test(heading.textContent.trim()) &&
+    [...main.querySelectorAll('p, li, dd')].some(element => visible(element) && element.textContent.trim()));
+}
+
 async function readHtml(response, inspect) {
   if (response.status !== 200 || !/^text\/html(?:;|$)/i.test(response.headers.get('content-type') ?? '')) return false;
   const dom = new JSDOM(await response.text());
@@ -59,7 +67,7 @@ export async function verifyAccountReleasePublic({mode, origin, privacyPath, pri
 
   const probes = {
     homepagePrivacyLink: get(homepage, response => readHtml(response, document => verifiedPolicyLink(document, homepage, privacyPolicy))),
-    privacyPage: get(privacyPolicy, response => readHtml(response, document => Boolean(document.body?.textContent.trim()))),
+    privacyPage: get(privacyPolicy, response => readHtml(response, verifiedPolicyPage)),
   };
   if (mode === 'account') {
     probes.accountPage = get(new URL('/ko/account', base), response => readHtml(response, document =>
