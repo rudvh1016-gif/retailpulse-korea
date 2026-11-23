@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
 import {runInNewContext} from 'node:vm';
 
@@ -16,6 +16,49 @@ async function renderPath(path, documentLanguage = "ko") {
 }
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
+
+test('privacy stays unlinked when publication settings are missing', async () => {
+  const [home, policy] = await Promise.all([renderPath('/ko'), renderPath('/ko/privacy')]);
+  assert.equal(home.status, 200);
+  assert.doesNotMatch(await home.text(), /<a\b[^>]*href="\/ko\/privacy"/);
+  assert.equal(policy.status, 404);
+});
+
+test('the built Worker can publish the Korean policy and link it from home before accounts exist', async () => {
+  const { Miniflare } = await import('miniflare');
+  const directory = new URL('../dist/server/', import.meta.url);
+  const paths = (await readdir(directory, { recursive: true })).filter(path => path.endsWith('.js'));
+  const modules = Object.fromEntries(await Promise.all(paths.map(async path =>
+    [path, { type: 'esm', contents: await readFile(new URL(path, directory), 'utf8') }])));
+  const policy = {
+    version: 'example-v1', effectiveDate: '2026-11-23', operator: 'Example Operator',
+    email: 'privacy@example.invalid', processing: 'Example processing', rights: 'Example rights',
+    retention: 'Example retention', providers: 'Example providers', overseas: 'Example transfers', logs: 'Example logs',
+  };
+  const worker = new Miniflare({ enableDevRegistry: false, telemetry: { enabled: false }, workers: [{ config: {
+    name: 'local-privacy-proof', compatibilityDate: '2026-08-24', compatibilityFlags: ['nodejs_compat'],
+    manifest: { mainModule: 'index.js', modules },
+    env: { KORETAIL_PUBLIC_PRIVACY_POLICY: { type: 'text', value: JSON.stringify(policy) } },
+  } }] });
+  try {
+    const paths = ['/ko/privacy', '/ko', '/en/privacy', '/api/account/status'];
+    const [document, home, otherLocale, account] = await Promise.all(paths.map(path =>
+      worker.dispatchFetch('https://koretaildata.com' + path)));
+    assert.equal(document.status, 200);
+    const html = await document.text();
+    assert.match(html, /<h1 data-heading="page">[^]*?개인정보처리방침<\/h1>/);
+    assert.match(html, /href="mailto:privacy@example\.invalid"/);
+    assert.match(html, /Example retention/);
+    assert.equal(home.status, 200);
+    const homeHtml = await home.text();
+    assert.match(homeHtml, /<a\b[^>]*href="\/ko\/privacy"[^>]*>개인정보처리방침<\/a>/);
+    assert.doesNotMatch(homeHtml, /privacy@example\.invalid/);
+    assert.equal(otherLocale.status, 404);
+    assert.equal(account.status, 404);
+  } finally {
+    await worker.dispose();
+  }
+});
 
 test('production About smoke accepts the actual built server-rendered product',async()=>{
   const response=await renderPath('/ko/about'),workflow=await read('../.github/workflows/site-smoke.yml');

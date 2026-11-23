@@ -285,6 +285,20 @@ for(const [file,patches] of Object.entries(airportOnlyPatches))approvedCanonical
 const a4RoutePatches=JSON.parse(readFileSync('tests/fixtures/a4-overflow-20261119-shadow-patches.json','utf8'));
 assert.deepEqual(Object.keys(a4RoutePatches),['app/api/airport/facility-operations/route.ts','app/api/live/summary/route.ts']);
 for(const [file,patches] of Object.entries(a4RoutePatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+// Reverse only the approved Korean home footer policy link. The remaining
+// protected home and shell bytes must still match their original contracts.
+approvedCanonicalPatches['app/[locale]/page.tsx']=[
+ ["import { getPublicPrivacyPolicy, publicPrivacyPath } from '../../lib/public-privacy-policy';\n",''],
+ ["  const privacyPolicyHref = locale === 'ko' && await getPublicPrivacyPolicy() ? publicPrivacyPath : undefined;\n",''],
+ [' privacyPolicyHref={privacyPolicyHref}',''],
+ ...(approvedCanonicalPatches['app/[locale]/page.tsx']??[]),
+];
+approvedCanonicalPatches['app/retailpulse-app.tsx']=[
+ ["  privacyPolicyHref?: '/ko/privacy';\n",''],
+ [', privacyPolicyHref }: RetailPulseProps = {}) {',' }: RetailPulseProps = {}) {'],
+ ["            {privacyPolicyHref && lang === 'ko' && <a href={privacyPolicyHref}>개인정보처리방침</a>}\n",''],
+ ...(approvedCanonicalPatches['app/retailpulse-app.tsx']??[]),
+];
 // Preserve the original production, staging, and scheduler contract hashes.
 approvedCanonicalPatches['wrangler.production.jsonc']=[[`,\n        {
           "binding": "A4_OVERFLOW_DB",
