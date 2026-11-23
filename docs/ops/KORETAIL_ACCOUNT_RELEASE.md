@@ -13,8 +13,8 @@
 
 ## 실행 순서
 
-1. 운영용 Google 클라이언트 발급 및 게시 상태를 Google Auth Platform에서 확인한다. 공개 콜백은 `https://koretaildata.com/api/account/google/callback`이다. 비밀 값은 서비스 비밀 저장소만 사용한다.
-2. 운영자가 승인한 개인정보처리방침과 지원 연락처를 공개 사이트에 게시한다. 방침에는 구글 로그인 때 사용하는 검증된 계정 식별 정보, 개인 저장 자료, 실서비스의 보관·삭제 기간과 문의 절차를 명시한다. 홈페이지와 Google 동의 화면에서 같은 HTTPS 방침 주소로 연결되는지 확인한다.
+1. 운영자가 승인한 개인정보처리방침과 지원 연락처를 공개 사이트에 게시한다. 방침에는 구글 로그인 때 사용하는 검증된 계정 식별 정보, 개인 저장 자료, 실서비스의 보관·삭제 기간과 문의 절차를 명시한다. 홈페이지와 Google 동의 화면에 같은 HTTPS 방침 주소를 사용한다.
+2. 운영용 Google 프로젝트를 `koretail-login-test`와 분리한다. 운영용 웹 클라이언트와 게시 상태를 Google Auth Platform에서 각각 확인한다. 공개 콜백은 `https://koretaildata.com/api/account/google/callback`이다. 비밀 값은 서비스 비밀 저장소만 사용한다.
 3. 별도 검증 환경에서 개인 D1 연결, 로그인과 세션, 암호화된 저장과 복구, 공식 출국장 관측에 따른 테스트 알림을 확인한다. 운영 계정 DB는 공항 DB와 별도다.
 4. 후보 PR의 서버/렌더링/브라우저 CI 결과를 확인한다. 환경별 인증 설정과 거부 경로를 검증하고 두 실계정 테스트가 통과하면 운영 계정 플래그를 켠다. 한국어 더보기 메뉴는 로그인 없이 받은 상태 응답이 계정 사용 가능을 확인한 뒤 내 계정 링크를 표시한다.
 5. A1 과거 복구는 정기 수집과 별개로 다룬다. 운영 레코드의 실행 ID, GitHub 작업의 종료, 확정된 오류와 실제 저장 상태를 대조한 뒤 승인된 복구 절차를 사용한다.
@@ -29,6 +29,7 @@ node scripts/verify-account-release-public.mjs account https://koretaildata.com 
 ```
 
 - [Google OAuth 브랜딩 요건](https://support.google.com/cloud/answer/15549049)
+- [Google 운영 OAuth 프로젝트 분리 요건](https://developers.google.com/identity/protocols/oauth2/production-readiness/policy-compliance#separate-projects)
 - [Cloudflare D1 무료 플랜 한도](https://developers.cloudflare.com/d1/platform/limits/)
 - [첫 서울 정리 PR #610](https://github.com/rudvh1016-gif/retailpulse-korea/pull/610)
 - [계정 출시 PR #611](https://github.com/rudvh1016-gif/retailpulse-korea/pull/611)
