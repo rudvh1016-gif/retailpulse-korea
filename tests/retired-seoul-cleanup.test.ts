@@ -3,7 +3,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
-import { applySeoulCleanup, planSeoulCleanup, seoulDailyAllowance } from '../lib/retired-seoul-cleanup';
+import { applySeoulCleanup, planSeoulCleanup, seoulDailyAllowance, seoulCleanupSkipReason } from '../lib/retired-seoul-cleanup';
+import { seoulCleanupSummary } from '../scripts/retired-seoul-cleanup-summary';
 
 function fixture() {
   const sqlite = new DatabaseSync(':memory:');
@@ -38,6 +39,39 @@ test('cleanup allowance is account-wide, leaves operating reserve, and fails clo
   assert.equal(seoulDailyAllowance({ rowsRead: 100, rowsWritten: 70_000 }), 0);
 });
 
+test('operator summary distinguishes logical deletes, billed writes, net bytes, and residual samples', () => {
+  const summary = seoulCleanupSummary({
+    utcDay: '2026-11-23', reason: 'PROCESSED',
+    usage: { rowsRead: 201223, rowsWritten: 169 }, allowance: 8000,
+    result: { deleted: 1581, rowsWritten: 1583 },
+    before: [{ binding: 'DB', usedBytes: 475037696 }, { binding: 'A4_OVERFLOW_DB', usedBytes: 3612672 }],
+    after: [{ binding: 'DB', usedBytes: 474017792 }, { binding: 'A4_OVERFLOW_DB', usedBytes: 3612672 }],
+    remaining: [{ table: 'seoul_realtime_forecast', sampledRows: 1 }],
+  });
+  assert.match(summary, /논리 삭제.*1,581/);
+  assert.match(summary, /D1 쓰기.*1,583/);
+  assert.match(summary, /201,223.*169/);
+  assert.match(summary, /Primary.*475,037,696.*474,017,792.*1,019,904/);
+  assert.match(summary, /Overflow.*3,612,672.*3,612,672.*0/);
+  assert.match(summary, /seoul_realtime_forecast.*1/);
+});
+
+test('operator summary preserves unavailable usage, storage, and post-run evidence as unknown', () => {
+  const summary = seoulCleanupSummary({ utcDay: '2026-11-23', reason: 'ACCOUNT_USAGE_UNAVAILABLE', allowance: 0 });
+  assert.match(summary, /계정 전체 사용량 미확인/);
+  assert.match(summary, /논리 삭제.*미확인/);
+  assert.match(summary, /Primary.*미확인/);
+  assert.match(summary, /남은 표본.*미확인/);
+});
+
+test('operator reasons distinguish scheduling, unavailable usage and quota reserves', () => {
+  const allowed = { retired: true, enabled: true, scheduled: true, usage: { rowsRead: 100, rowsWritten: 0 } };
+  assert.equal(seoulCleanupSkipReason({ ...allowed, scheduled: false }), 'NOT_SCHEDULED');
+  assert.equal(seoulCleanupSkipReason({ ...allowed, usage: null }), 'ACCOUNT_USAGE_UNAVAILABLE');
+  assert.equal(seoulCleanupSkipReason({ ...allowed, usage: { rowsRead: 3_500_001, rowsWritten: 0 } }), 'ACCOUNT_READ_RESERVE');
+  assert.equal(seoulCleanupSkipReason({ ...allowed, usage: { rowsRead: 100, rowsWritten: 70_000 } }), 'ACCOUNT_WRITE_RESERVE');
+});
+
 test('real migration schema retains shared airport data and resumes at most once per UTC day', async () => {
   const { sqlite, db } = fixture();
   const seed = sqlite.prepare("INSERT INTO seoul_context VALUES (?, ?, ?, '{}', 'h')");
@@ -51,6 +85,11 @@ test('real migration schema retains shared airport data and resumes at most once
   assert.equal(plans[0]?.planned, 10);
   const first = await applySeoulCleanup(db, '2026-11-22', 'first', 'bookmark', plans, 46);
   assert.equal(first.deleted, 10);
+  const appliedUsage = db.usageSnapshot().rowsWritten;
+  assert.deepEqual((await planSeoulCleanup(db, 0)).inventory, [
+    { table: 'seoul_context', sampledRows: 1 }, { table: 'area_data_coverage', sampledRows: 1 },
+  ]);
+  assert.equal(db.usageSnapshot().rowsWritten, appliedUsage);
   assert.equal((await applySeoulCleanup(db, '2026-11-22', 'duplicate', 'bookmark', plans, 46)).deleted, 0);
   assert.equal((await applySeoulCleanup(db, '2026-11-23', 'next', 'bookmark', plans, 46)).deleted, 0);
 

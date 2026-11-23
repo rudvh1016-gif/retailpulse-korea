@@ -29,6 +29,18 @@ export function seoulDailyAllowance(usage: Usage | null) {
   return Math.max(0, Math.min(8_000, 70_000 - usage.rowsWritten));
 }
 
+export function seoulCleanupSkipReason({ retired, enabled, scheduled, usage }: {
+  retired: boolean; enabled: boolean; scheduled: boolean; usage: Usage | null;
+}) {
+  if (!retired) return 'SEOUL_ACTIVE';
+  if (!enabled) return 'CLEANUP_DISABLED';
+  if (!scheduled) return 'NOT_SCHEDULED';
+  if (!usage || !isCount(usage.rowsRead) || !isCount(usage.rowsWritten)) return 'ACCOUNT_USAGE_UNAVAILABLE';
+  if (usage.rowsRead > 3_500_000) return 'ACCOUNT_READ_RESERVE';
+  if (usage.rowsWritten >= 70_000) return 'ACCOUNT_WRITE_RESERVE';
+  return 'INSUFFICIENT_BATCH_BUDGET';
+}
+
 export async function planSeoulCleanup(db: Db, allowance: number) {
   if (!isCount(allowance) || allowance > 8_000) throw Error('SEOUL_INVALID_BUDGET');
   const before = db.usageSnapshot();
