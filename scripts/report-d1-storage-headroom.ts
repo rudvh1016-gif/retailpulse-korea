@@ -23,4 +23,5 @@ export async function reportProductionD1StorageHeadroom() {
       console.warn(`::warning title=D1 storage ${result.level}::${result.binding} remaining bytes: ${result.remainingBytes ?? 'unknown'}`);
     }
   }
+  return results;
 }
