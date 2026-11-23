@@ -159,12 +159,14 @@ for(const width of [320,390,1440])test(`shift briefing shows six destinations an
 for(const width of [390,1440])test(`tomorrow shows only comparable terminal forecast and its one advice line ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await fixtures(page);
  const tomorrow='2026-11-02';
+ let futureReads=0;
+ page.on('request',request=>{const url=new URL(request.url());if(url.pathname==='/api/live/summary'&&url.searchParams.get('date')===tomorrow)futureReads++;});
  const bands=[999,300,100,300,150,0].map((expectedPassengers,i)=>({
   expectedPassengers,targetStartAt:`${tomorrow}T${10+i}:00:00+09:00`,targetEndAt:`${tomorrow}T${11+i}:00:00+09:00`,
  }));
  await page.route(`**/api/live/summary?date=${tomorrow}`,route=>route.fulfill({json:{...summary,generatedAt:now,todayKst:day,serviceDateKst:tomorrow,dayRelation:'FUTURE',airport:{...summary.airport,serviceDateKst:tomorrow,forecastCoverage:{all:'PARTIAL',byTerminal:{T1:'PARTIAL',T2:'COMPLETE'}},passengerForecastRetrievedAtByTerminal:{T1:now,T2:now},passengerForecastTimelineByTerminal:{T1:bands,T2:bands}}}}));
  await page.addInitScript(({key,value})=>localStorage.setItem(key,JSON.stringify(value)),{key:BUSINESS_KEY,value:{...shift,hours:{open:'10:30',close:'15:30'}}});
- await page.goto('/ko?insight=briefing');
+ await page.goto(width===1440?'/ko?insight=briefing&date='+tomorrow:'/ko?insight=briefing');
  const card=page.getByTestId('tomorrow-shift-briefing');
  await expect(card.getByRole('heading',{name:'내일 근무 브리핑',exact:true})).toBeVisible();
  await expect(card).toContainText('11:00–12:00');await expect(card).toContainText('13:00–14:00');
@@ -175,5 +177,6 @@ for(const width of [390,1440])test(`tomorrow shows only comparable terminal fore
  await page.getByTestId('shift-settings').getByRole('button',{name:'저장하고 보기',exact:true}).click();
  await expect(card).toContainText('비교할 공식 예보 없음');
  await expect(card).not.toContainText('재고 확인');
+ expect(futureReads).toBe(1);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });

@@ -17,7 +17,8 @@ import {siteOrigin} from './seo-config';
 import {ChangeRate,CountChange} from './change-rate';
 import {formatChangeRate} from '../lib/change-rate';
 import {trackPersonalEvent} from '../lib/personal-analytics';
-import {useLiveSummary} from './live-summary';
+import {useTomorrowShiftSummary} from './tomorrow-shift-summary';
+import type {LiveSummary} from './live-signals';
 import {forecastForTomorrowShift,tomorrowKst} from '../lib/airport-workday-forecast';
 import type {BusinessHours,PrepTerminal} from '../lib/business-hours';
 import './shift-briefing.css';
@@ -262,8 +263,9 @@ const tomorrowCopy={
  ja:{title:'明日の勤務ブリーフィング',high:'最も混む時間帯',low:'最も空く時間帯',pending:'予報を確認中',empty:'比較できる公式予報なし',people:'人',basis:'公式の出国者数予報・勤務内の1時間単位・店舗来客数予測ではありません',action:'空いている時間帯に在庫確認と陳列の整理を準備してください'},
 } satisfies Record<Lang,Record<string,string>>;
 
-function TomorrowShiftBriefing({lang,day,terminal,hours,nowIso}:{lang:Lang;day:string;terminal:PrepTerminal;hours:BusinessHours;nowIso:string}){
- const summary=useLiveSummary(day,undefined,{once:true});
+function TomorrowShiftBriefing({lang,day,terminal,hours,nowIso,ownsSelectedDate,selectedSummary}:{lang:Lang;day:string;terminal:PrepTerminal;hours:BusinessHours;nowIso:string;ownsSelectedDate:boolean;selectedSummary?:LiveSummary|null}){
+ const fetched=useTomorrowShiftSummary(ownsSelectedDate?null:day);
+ const summary=ownsSelectedDate?selectedSummary:fetched;
  const result=forecastForTomorrowShift(day,terminal,hours,summary,nowIso);
  const text=tomorrowCopy[lang], id=useId();
  return <section className="shift-briefing" lang={lang} aria-labelledby={id} data-testid="tomorrow-shift-briefing">
@@ -273,7 +275,7 @@ function TomorrowShiftBriefing({lang,day,terminal,hours,nowIso}:{lang:Lang;day:s
  </section>;
 }
 
-export default function ShiftBriefing({lang,day,industry,onIndustryChange,preferredTerminal='T1',flights,weekReference,nowIso}:{lang:Lang;day:string;industry:IndustryId|null;onIndustryChange:(id:IndustryId|null)=>void;preferredTerminal?:'T1'|'T2';flights:FlightsPayload|null|undefined;weekReference?:GlanceWeekReference|null;nowIso:string}){
+export default function ShiftBriefing({lang,day,industry,onIndustryChange,selectedSummary,preferredTerminal='T1',flights,weekReference,nowIso}:{lang:Lang;day:string;industry:IndustryId|null;onIndustryChange:(id:IndustryId|null)=>void;preferredTerminal?:'T1'|'T2';selectedSummary?:LiveSummary|null;flights:FlightsPayload|null|undefined;weekReference?:GlanceWeekReference|null;nowIso:string}){
  const stored=useBusinessPreferences(),configured=stored.saved&&stored.preferences.place==='airport';
  const preferences=configured?stored.preferences:{...stored.preferences,place:'airport' as const,terminal:preferredTerminal,side:null,hours:null};
  const history=useAirportHistory(configured&&day?day:null);
@@ -285,5 +287,5 @@ export default function ShiftBriefing({lang,day,industry,onIndustryChange,prefer
  const previousCheck=usePreviousCheck(checkKey,signature);
  if(!stored.ready)return <section className="shift-briefing" aria-label={copy.title[lang]}><h2 data-heading="section" className="shift-title"><span className="heading-marker" aria-hidden="true"/>{copy.title[lang]}</h2><p className="shift-data-note">{copy.loadingSettings[lang]}</p></section>;
  const tomorrow=nowIso.startsWith('1970-')?null:tomorrowKst(nowIso);
- return <><ShiftBriefingView lang={lang} day={day} preferences={preferences} industry={configured?industry:null} configured={configured} result={result} areaReference={areaReference} previousCheck={previousCheck} storageFailed={stored.storageFailed} businessHref={shareLink(siteOrigin,lang,day,{kind:'airport',terminal:preferences.terminal,side:preferences.side})} onSave={(next,nextIndustry)=>{saveBusinessPreferences(next);onIndustryChange(nextIndustry);trackPersonalEvent('business_hours_saved',{language:lang,location:'airport',terminal:next.terminal});}}/>{configured&&preferences.hours&&tomorrow&&<TomorrowShiftBriefing lang={lang} day={tomorrow} terminal={preferences.terminal} hours={preferences.hours} nowIso={nowIso}/>}</>;
+ return <><ShiftBriefingView lang={lang} day={day} preferences={preferences} industry={configured?industry:null} configured={configured} result={result} areaReference={areaReference} previousCheck={previousCheck} storageFailed={stored.storageFailed} businessHref={shareLink(siteOrigin,lang,day,{kind:'airport',terminal:preferences.terminal,side:preferences.side})} onSave={(next,nextIndustry)=>{saveBusinessPreferences(next);onIndustryChange(nextIndustry);trackPersonalEvent('business_hours_saved',{language:lang,location:'airport',terminal:next.terminal});}}/>{configured&&preferences.hours&&tomorrow&&<TomorrowShiftBriefing lang={lang} day={tomorrow} terminal={preferences.terminal} hours={preferences.hours} nowIso={nowIso} ownsSelectedDate={day===tomorrow} selectedSummary={selectedSummary}/>}</>;
 }
