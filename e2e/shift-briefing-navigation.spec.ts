@@ -159,16 +159,16 @@ for(const width of [320,390,1440])test(`shift briefing shows six destinations an
 for(const width of [390,1440])test(`tomorrow shows only comparable terminal forecast and its one advice line ${width}`,async({page})=>{
  await page.setViewportSize({width,height:950});await fixtures(page);
  const tomorrow='2026-11-02';
- const bands=[200,300,100,300,150,200].map((expectedPassengers,i)=>({
+ const bands=[999,300,100,300,150,0].map((expectedPassengers,i)=>({
   expectedPassengers,targetStartAt:`${tomorrow}T${10+i}:00:00+09:00`,targetEndAt:`${tomorrow}T${11+i}:00:00+09:00`,
  }));
- await page.route(`**/api/live/summary?date=${tomorrow}`,route=>route.fulfill({json:{...summary,generatedAt:now,todayKst:day,serviceDateKst:tomorrow,dayRelation:'FUTURE',airport:{...summary.airport,serviceDateKst:tomorrow,forecastCoverage:{all:'PARTIAL',byTerminal:{T1:'PARTIAL',T2:'COMPLETE'}},passengerForecastTimelineByTerminal:{T1:bands,T2:bands}}}}));
+ await page.route(`**/api/live/summary?date=${tomorrow}`,route=>route.fulfill({json:{...summary,generatedAt:now,todayKst:day,serviceDateKst:tomorrow,dayRelation:'FUTURE',airport:{...summary.airport,serviceDateKst:tomorrow,forecastCoverage:{all:'PARTIAL',byTerminal:{T1:'PARTIAL',T2:'COMPLETE'}},passengerForecastRetrievedAtByTerminal:{T1:now,T2:now},passengerForecastTimelineByTerminal:{T1:bands,T2:bands}}}}));
  await page.addInitScript(({key,value})=>localStorage.setItem(key,JSON.stringify(value)),{key:BUSINESS_KEY,value:{...shift,hours:{open:'10:30',close:'15:30'}}});
  await page.goto('/ko?insight=briefing');
  const card=page.getByTestId('tomorrow-shift-briefing');
  await expect(card.getByRole('heading',{name:'내일 근무 브리핑',exact:true})).toBeVisible();
  await expect(card).toContainText('11:00–12:00');await expect(card).toContainText('13:00–14:00');
- await expect(card).toContainText('12:00–13:00');await expect(card).toContainText('매장 방문객 예측 아님');
+ await expect(card).toContainText('12:00–13:00');await expect(card).not.toContainText('10:00–11:00');await expect(card).not.toContainText('15:00–16:00');await expect(card).toContainText('매장 방문객 예측 아님');
  await expect(card.getByText('한산한 시간에는 재고 확인과 진열 정리를 준비하세요',{exact:true})).toBeVisible();
  await page.getByTestId('shift-briefing').getByRole('button',{name:'설정 변경',exact:true}).click();
  await page.getByTestId('shift-settings').getByRole('combobox',{name:'터미널',exact:true}).selectOption('T1');

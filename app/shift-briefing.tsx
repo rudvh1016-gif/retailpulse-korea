@@ -256,20 +256,20 @@ function usePreviousCheck(key:string,signature:string|null){
 }
 
 const tomorrowCopy={
- ko:{title:'내일 근무 브리핑',high:'가장 붐빌 시간',low:'가장 한산할 시간',pending:'예보 확인 중',empty:'비교할 공식 예보 없음',people:'명',basis:'공식 예상 출국객 · 1시간 단위 · 매장 방문객 예측 아님',action:'한산한 시간에는 재고 확인과 진열 정리를 준비하세요'},
- en:{title:'Tomorrow’s shift briefing',high:'Busiest hours',low:'Quietest hours',pending:'Checking forecast',empty:'No comparable official forecast',people:' people',basis:'Official departures forecast · hourly totals · not a store visitor forecast',action:'Plan stock checks and display tidying for quieter hours'},
- zh:{title:'明日工作简报',high:'最繁忙时段',low:'最空闲时段',pending:'正在确认预报',empty:'暂无可比较的官方预报',people:'人',basis:'官方出境旅客预测 · 按整小时 · 非门店客流预测',action:'请在较空闲的时段安排检查库存和整理陈列'},
- ja:{title:'明日の勤務ブリーフィング',high:'最も混む時間帯',low:'最も空く時間帯',pending:'予報を確認中',empty:'比較できる公式予報なし',people:'人',basis:'公式の出国者数予報・1時間単位・店舗来客数予測ではありません',action:'空いている時間帯に在庫確認と陳列の整理を準備してください'},
+ ko:{title:'내일 근무 브리핑',high:'가장 붐빌 시간',low:'가장 한산할 시간',pending:'예보 확인 중',empty:'비교할 공식 예보 없음',people:'명',basis:'공식 예상 출국객 · 근무 안의 1시간 단위 · 매장 방문객 예측 아님',action:'한산한 시간에는 재고 확인과 진열 정리를 준비하세요'},
+ en:{title:'Tomorrow’s shift briefing',high:'Busiest hours',low:'Quietest hours',pending:'Checking forecast',empty:'No comparable official forecast',people:' people',basis:'Official departures forecast · whole hours within shift · not a store visitor forecast',action:'Plan stock checks and display tidying for quieter hours'},
+ zh:{title:'明日工作简报',high:'最繁忙时段',low:'最空闲时段',pending:'正在确认预报',empty:'暂无可比较的官方预报',people:'人',basis:'官方出境旅客预测 · 班次内的整小时 · 非门店客流预测',action:'请在较空闲的时段安排检查库存和整理陈列'},
+ ja:{title:'明日の勤務ブリーフィング',high:'最も混む時間帯',low:'最も空く時間帯',pending:'予報を確認中',empty:'比較できる公式予報なし',people:'人',basis:'公式の出国者数予報・勤務内の1時間単位・店舗来客数予測ではありません',action:'空いている時間帯に在庫確認と陳列の整理を準備してください'},
 } satisfies Record<Lang,Record<string,string>>;
 
-function TomorrowShiftBriefing({lang,day,terminal,hours}:{lang:Lang;day:string;terminal:PrepTerminal;hours:BusinessHours}){
- const summary=useLiveSummary(day);
- const result=forecastForTomorrowShift(day,terminal,hours,summary);
+function TomorrowShiftBriefing({lang,day,terminal,hours,nowIso}:{lang:Lang;day:string;terminal:PrepTerminal;hours:BusinessHours;nowIso:string}){
+ const summary=useLiveSummary(day,undefined,{once:true});
+ const result=forecastForTomorrowShift(day,terminal,hours,summary,nowIso);
  const text=tomorrowCopy[lang], id=useId();
  return <section className="shift-briefing" lang={lang} aria-labelledby={id} data-testid="tomorrow-shift-briefing">
   <h2 id={id} className="shift-title" data-heading="section"><span className="heading-marker" aria-hidden="true"/>{text.title}</h2>
   <div className="shift-scope"><p>{shortDay(day)}</p><p><strong className={`shift-terminal shift-terminal-${terminal}`}>{terminal}</strong><b>{hours.open}–{hours.close} KST</b></p></div>
-  {result?<><div className="shift-data">{([[text.high,result.busiest],[text.low,result.quietest]] as const).map(([label,bands])=><div className="shift-peak" key={label}><p>{label}</p><strong>{bands.map(band=><span key={band.targetStartAt}>{time(band.targetStartAt)}–{time(band.targetEndAt)}</span>)}<span className="shift-peak-count">· {bands[0].expectedPassengers.toLocaleString(lang)}{text.people}</span></strong></div>)}</div><p className="shift-source-line">{text.basis}</p><p className="shift-data-note">{text.action}</p></>:<p className="shift-data-note" role="status">{summary===undefined?text.pending:text.empty}</p>}
+  {result?<><div className="shift-data">{([[text.high,result.busiest],[text.low,result.quietest]] as const).map(([label,bands])=><div className="shift-peak" key={label}><p>{label}</p><strong>{bands.map(band=><span key={band.targetStartAt}>{time(band.targetStartAt)}–{time(band.targetEndAt)}</span>)}<span className="shift-peak-count">· {bands[0].expectedPassengers.toLocaleString(lang)}{text.people}</span></strong></div>)}</div><p className="shift-source-line"><a href="https://www.airport.kr/ap_ko/884/subview.do" target="_blank" rel="noopener noreferrer">{text.basis} ↗</a></p><p className="shift-data-note">{text.action}</p></>:<p className="shift-data-note" role="status">{summary===undefined?text.pending:text.empty}</p>}
  </section>;
 }
 
@@ -285,5 +285,5 @@ export default function ShiftBriefing({lang,day,industry,onIndustryChange,prefer
  const previousCheck=usePreviousCheck(checkKey,signature);
  if(!stored.ready)return <section className="shift-briefing" aria-label={copy.title[lang]}><h2 data-heading="section" className="shift-title"><span className="heading-marker" aria-hidden="true"/>{copy.title[lang]}</h2><p className="shift-data-note">{copy.loadingSettings[lang]}</p></section>;
  const tomorrow=nowIso.startsWith('1970-')?null:tomorrowKst(nowIso);
- return <><ShiftBriefingView lang={lang} day={day} preferences={preferences} industry={configured?industry:null} configured={configured} result={result} areaReference={areaReference} previousCheck={previousCheck} storageFailed={stored.storageFailed} businessHref={shareLink(siteOrigin,lang,day,{kind:'airport',terminal:preferences.terminal,side:preferences.side})} onSave={(next,nextIndustry)=>{saveBusinessPreferences(next);onIndustryChange(nextIndustry);trackPersonalEvent('business_hours_saved',{language:lang,location:'airport',terminal:next.terminal});}}/>{configured&&preferences.hours&&tomorrow&&<TomorrowShiftBriefing lang={lang} day={tomorrow} terminal={preferences.terminal} hours={preferences.hours}/>}</>;
+ return <><ShiftBriefingView lang={lang} day={day} preferences={preferences} industry={configured?industry:null} configured={configured} result={result} areaReference={areaReference} previousCheck={previousCheck} storageFailed={stored.storageFailed} businessHref={shareLink(siteOrigin,lang,day,{kind:'airport',terminal:preferences.terminal,side:preferences.side})} onSave={(next,nextIndustry)=>{saveBusinessPreferences(next);onIndustryChange(nextIndustry);trackPersonalEvent('business_hours_saved',{language:lang,location:'airport',terminal:next.terminal});}}/>{configured&&preferences.hours&&tomorrow&&<TomorrowShiftBriefing lang={lang} day={tomorrow} terminal={preferences.terminal} hours={preferences.hours} nowIso={nowIso}/>}</>;
 }

@@ -1,10 +1,15 @@
 import { minutesOf, type BusinessHours, type PrepTerminal } from './business-hours';
 import { kstDay } from './demand-presentation';
+import { isValidKstDay } from './kst';
 
 const HOUR=3_600_000;
+// Same daily-publication allowance as the A5 store preparation forecast.
+const MAX_A5_AGE=30*HOUR;
+const ISO_CLOCK=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/;
 type Hour={targetStartAt:string;targetEndAt:string;expectedPassengers:number};
-type ForecastSummary={serviceDateKst:string;airport:{
+type ForecastSummary={serviceDateKst:string;clientRefresh?:{failedAt:string};airport:{
  serviceDateKst:string|null;
+ passengerForecastRetrievedAtByTerminal?:Record<string,string|null>;
  forecastCoverage?:{byTerminal?:Record<string,string>};
  passengerForecastTimelineByTerminal?:Record<string,readonly Hour[]>;
 }};
@@ -14,13 +19,17 @@ export function tomorrowKst(now:string):string|null {
  return Number.isFinite(time)?kstDay(time+24*HOUR):null;
 }
 
-/** COMPLETE A5 departures, same terminal/date, with all intersecting whole bands represented. */
-export function forecastForTomorrowShift(day:string,terminal:PrepTerminal,hours:BusinessHours,summary?:ForecastSummary|null){
- if(summary?.serviceDateKst!==day||summary.airport.serviceDateKst!==day
+/** COMPLETE A5 departures, same terminal/date, with every whole hour inside the saved shift represented. */
+export function forecastForTomorrowShift(day:string,terminal:PrepTerminal,hours:BusinessHours,summary:ForecastSummary|null|undefined,now:string){
+ if(tomorrowKst(now)!==day||summary?.clientRefresh||summary?.serviceDateKst!==day||summary.airport.serviceDateKst!==day
   ||summary.airport.forecastCoverage?.byTerminal?.[terminal]!=='COMPLETE')return null;
+ const retrievedAt=summary.airport.passengerForecastRetrievedAtByTerminal?.[terminal];
+ if(!retrievedAt||!ISO_CLOCK.test(retrievedAt)||!isValidKstDay(retrievedAt.slice(0,10)))return null;
+ const age=Date.parse(now)-Date.parse(retrievedAt);
+ if(!Number.isFinite(age)||age<0||age>MAX_A5_AGE)return null;
  const midnight=Date.parse(day+'T00:00:00+09:00'),open=minutesOf(hours.open),close=minutesOf(hours.close);
  if(!Number.isFinite(midnight)||open===null||close===null||close<open)return null;
- const startHour=open===close?0:Math.floor(open/60),endHour=open===close?24:Math.ceil(close/60);
+ const startHour=open===close?0:Math.ceil(open/60),endHour=open===close?24:Math.floor(close/60);
  if(endHour-startHour<2)return null;
  const timeline=summary.airport.passengerForecastTimelineByTerminal?.[terminal];
  if(!Array.isArray(timeline))return null;

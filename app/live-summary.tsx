@@ -116,7 +116,7 @@ async function loadSummary(date: string | null, month: string | undefined, key: 
  * `date` is null for "whatever today is in KST", which keeps the first paint
  * free of any date the client had to guess before the server answered.
  */
-export function useLiveSummary(date: string | null = null, availabilityMonth?: string): LiveSummary | null | undefined {
+export function useLiveSummary(date: string | null = null, availabilityMonth?: string, {once = false}: {once?: boolean} = {}): LiveSummary | null | undefined {
   const key = summaryKey(date, availabilityMonth);
   const [state, setState] = useState<{ key: string; value: LiveSummary | null | undefined }>(() => ({ key, value: summaryCache.get(key)?.value }));
   // Switching dates must not leave the previous day's numbers on screen for a
@@ -140,6 +140,7 @@ export function useLiveSummary(date: string | null = null, availabilityMonth?: s
         setState({ key: currentKey, value: summaryCache.get(currentKey)?.value });
         return;
       }
+      if (once) document.removeEventListener("visibilitychange", refresh);
       refreshing = true;
       void loadSummary(date, availabilityMonth, key).then(value => {
         retryNotBefore = 0;
@@ -158,15 +159,19 @@ export function useLiveSummary(date: string | null = null, availabilityMonth?: s
         retryNotBefore = Date.now() + SUMMARY_RECHECK_MS.normal;
       }).finally(() => {
         refreshing = false;
-        if (active && document.visibilityState !== "hidden") {
+        if (active && !once && document.visibilityState !== "hidden") {
           timer = setTimeout(refresh, Math.max(1, retryNotBefore - Date.now(), (summaryCache.get(key)?.recheckAt ?? Date.now() + SUMMARY_RECHECK_MS.empty) - Date.now()));
         }
       });
     };
     refresh();
-    document.addEventListener("visibilitychange", refresh);
-    window.addEventListener("online", refresh);
-    window.addEventListener("pageshow", refresh);
+    // Lightweight consumers (tomorrow's shift) take the shared date cache or
+    // one in-flight read. They do not start another background refresh loop.
+    if (!once || document.visibilityState === "hidden") document.addEventListener("visibilitychange", refresh);
+    if (!once) {
+      window.addEventListener("online", refresh);
+      window.addEventListener("pageshow", refresh);
+    }
     return () => {
       active = false;
       clearTimeout(timer);
@@ -174,7 +179,7 @@ export function useLiveSummary(date: string | null = null, availabilityMonth?: s
       window.removeEventListener("online", refresh);
       window.removeEventListener("pageshow", refresh);
     };
-  }, [date, availabilityMonth, key]);
+  }, [date, availabilityMonth, key, once]);
   return state.key === key ? state.value : undefined;
 }
 
