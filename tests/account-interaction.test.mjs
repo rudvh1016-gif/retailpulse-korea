@@ -17,7 +17,7 @@ globalThis.fetch=async(url,init={})=>{
  if(url==='/api/account/status'){if(statusWaiter)await statusWaiter;return Response.json({enabled:true,authenticated:!!actor,...(actor?{accountId:actor}:{})},{status:statusCode});}
  assert.equal(url,'/api/account/state');requests++;
  assert.equal(new Headers(init.headers).get('x-koretail-account'),A);
- if(error)return Response.json({error},{status:error==='UNAUTHENTICATED'?401:409});
+ if(error)return Response.json({error},{status:error==='UNAUTHENTICATED'?401:error==='ACCOUNT_UNAVAILABLE'?503:409});
  if(init.method==='POST'){writes++;const body=JSON.parse(init.body);if(body.expectedRevision!==state.revision)return Response.json({error:'CONFLICT'},{status:409});state=applyPersonalCommand(state,body.command,{revision:'server-'+(++counter),now:'2026-11-13T00:00:00Z'});}
  return Response.json(state);
 };
@@ -39,6 +39,18 @@ test('five feature editors persist through remote adapter and remount without lo
  await fill('근무 전 알림','30');await settled(()=>state.notificationPreferences.beforeShiftMinutes===30);
  assert.equal(state.notes[0].body,'Cloud note');assert.equal(state.favorites.length,1);assert.equal(state.runs.length,1);assert.ok(writes>=7);
  await act(async()=>root.unmount());root=null;await mount();assert.match(container.textContent,/Cloud note/);assert.equal(input('근무 전 알림').value,'30');
+});
+test('an unavailable initial account read can be retried without reloading or writing',async()=>{
+ seed();error='ACCOUNT_UNAVAILABLE';
+ await act(async()=>{root=createRoot(container);root.render(createElement(Preview,{accountId:A}));});
+ await settled(()=>container.textContent.includes('계정 저장소를 열지 못했습니다'));
+ assert.equal(container.querySelector('fieldset').disabled,true);
+ assert.doesNotMatch(container.textContent,/private-canary/);
+ error='';
+ await click('저장소 다시 열기');
+ assert.match(container.textContent,/private-canary/);
+ assert.equal(requests,2);
+ assert.equal(writes,0);
 });
 test('repeat shifts preview exact additions and preserve an occupied day',async()=>{
  const opening={id:'opening',label:'Open',terminal:'T1',side:null,open:'07:00',close:'15:00'};

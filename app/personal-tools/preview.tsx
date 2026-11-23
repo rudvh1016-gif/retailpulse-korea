@@ -61,6 +61,7 @@ function authenticationLost(error:unknown){return error instanceof Error&&['UNAU
 export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsPaused=false}:{accountId?:string;onAccountInvalid?:()=>void;alertsPaused?:boolean}) {
   const store=useRef<PersonalStore|null>(null),live=useRef(false),lock=useRef(false);
   const [privateHidden,setPrivateHidden]=useState(false);
+  const [openAttempt,setOpenAttempt]=useState(0),[openFailed,setOpenFailed]=useState(false);
   const editorBases=useRef({pattern:'',template:'',note:''});
   const [state,setState]=useState<PersonalState>(emptyPersonalState),[ready,setReady]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
   const [pattern,setPattern]=useState<ShiftPattern>(initialPattern),[date,setDate]=useState(()=>kstDayOf(new Date().toISOString())),[assignmentPattern,setAssignmentPattern]=useState('');
@@ -86,9 +87,15 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
   const hidePrivate=useCallback(()=>{store.current?.close();store.current=null;setReady(false);setState(emptyPersonalState());resetEditors();setPrivateHidden(true);onAccountInvalid?.();},[onAccountInvalid,resetEditors]);
   useEffect(()=>{
     live.current=true;let owned:PersonalStore|null=null,cancelled=false;
-    void (accountId?openRemotePersonalStore(accountId):openPersonalStore()).then(async opened=>{owned=opened;if(cancelled){opened.close();return;}const value=await opened.read();if(cancelled){opened.close();return;}store.current=opened;setState(value);setReady(true);}).catch(error=>{if(!cancelled){if(authenticationLost(error)){hidePrivate();return;}setMessage(`${accountId?'계정':'기기'} 저장소를 열지 못했습니다 (${error instanceof Error?error.message:'UNKNOWN_ERROR'}). 기존 자료를 초기화하지 않습니다.`);}});
+    void (accountId?openRemotePersonalStore(accountId):openPersonalStore()).then(async opened=>{owned=opened;if(cancelled){opened.close();return;}const value=await opened.read();if(cancelled){opened.close();return;}store.current=opened;setState(value);setReady(true);}).catch(error=>{
+      if(cancelled)return;
+      owned?.close();owned=null;
+      if(authenticationLost(error)){hidePrivate();return;}
+      setOpenFailed(true);
+      setMessage(`${accountId?'계정':'기기'} 저장소를 열지 못했습니다. 연결을 확인한 뒤 다시 시도해 주세요.`);
+    });
     return()=>{cancelled=true;live.current=false;store.current=null;owned?.close();};
-  },[accountId,hidePrivate]);
+  },[accountId,hidePrivate,openAttempt]);
   async function perform(action:(saved:PersonalStore)=>Promise<PersonalState>,success=accountId?'계정에 저장했습니다.':'이 기기에 저장했습니다.'):Promise<boolean>{
     if(lock.current||!store.current||!ready)return false;
     lock.current=true;setBusy(true);setMessage('');
@@ -155,6 +162,7 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
     <p>새로 재구성한 개발용 준비 화면입니다. 이전 작업본의 동일 복구본이 아니며 공개 운영에 연결되지 않았습니다.</p>
     <button disabled>Google 로그인 준비 중</button><p>계정, 실제 동기화, 알림 발송: <strong>NOT_IMPLEMENTED</strong>. 로그인 없이 공개 서비스는 계속 이용할 수 있습니다.</p></>}</header>
     <p role="status" aria-live="polite">{message||(!ready?(accountId?'계정 저장소 확인 중…':'기기 저장소 확인 중…'):(accountId?'현재 계정의 개인 자료입니다.':'메모와 패턴 이름은 서버로 전송하지 않습니다. 공개 브리핑을 읽을 때 선택 날짜만 조회에 사용합니다.'))}</p>
+    {openFailed&&<button type="button" onClick={()=>{setOpenFailed(false);setMessage('');setOpenAttempt(attempt=>attempt+1);}}>저장소 다시 열기</button>}
     <button disabled={!ready||busy} onClick={()=>void perform(saved=>saved.read(),`${accountId?'최신 계정':'최신 기기'} 자료를 읽었습니다. 입력은 유지했습니다. 자료가 바뀌었다면 삭제·교체를 다시 확인해 주세요.`)}>최신 자료 다시 읽기</button>
     <fieldset disabled={!ready||busy} className="pt-all"><legend className="pt-sr">개인 도구</legend>
       <section><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>1. 근무 패턴과 달력</h2><form onSubmit={event=>{event.preventDefault();if(pattern.id&&!unchangedEditor('pattern',state.patterns.find(item=>item.id===pattern.id)))return;void send({type:'pattern.upsert',pattern:{...pattern,id:pattern.id||uid()}}).then(ok=>{if(ok)setPattern(initialPattern);});}}>
