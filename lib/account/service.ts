@@ -82,18 +82,17 @@ export async function handleAccountRequest(request:Request,env:AccountEnvironmen
    // never forward the authorization code, client secret or bearer to a redirect.
    const tokenResponse=await fetcher('https://oauth2.googleapis.com/token',{method:'POST',redirect:'manual',signal,headers:{'content-type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:config.client,client_secret:config.secret,code,code_verifier:verifier,grant_type:'authorization_code',redirect_uri:config.origin+'/api/account/google/callback'}).toString()});
    if(!tokenResponse.ok)return bad();const token=object(await boundedJson(tokenResponse,16384));
-   if(typeof token.access_token!=='string'||!token.access_token||token.access_token.length>4096||token.token_type!=='Bearer'||/[\r\n]/.test(token.access_token))return bad();
-   // Verify Google signature and claims using pinned endpoints and a mature JOSE implementation.
+   // Sign-in only uses the signed ID token. Google requires a basic scope in
+   // addition to openid; user profile claims and the access token are unused.
    if(typeof token.id_token!=='string'||token.id_token.length>16384)return bad();
    const certResponse=await fetcher('https://www.googleapis.com/oauth2/v3/certs',{redirect:'manual',signal});
    if(!certResponse.ok)return bad();const certs=object(await boundedJson(certResponse,32768));
    if(!Array.isArray(certs.keys)||certs.keys.length>10)return bad();
    const verified=await jwtVerify(token.id_token,createLocalJWKSet(certs as {keys: import('jose').JWK[]}),{issuer:['https://accounts.google.com','accounts.google.com'],audience:config.client,algorithms:['RS256'],currentDate:new Date(now),clockTolerance:30,maxTokenAge:'10m',requiredClaims:['sub','iat','exp','nonce']});
    if(verified.payload.aud!==config.client||verified.payload.nonce!==nonce||(verified.payload.azp!==undefined&&verified.payload.azp!==config.client))return bad();
-   const identityResponse=await fetcher('https://openidconnect.googleapis.com/v1/userinfo',{redirect:'manual',signal,headers:{authorization:'Bearer '+token.access_token}});
-   if(!identityResponse.ok)return bad();const identity=object(await boundedJson(identityResponse,16384));
-   if(typeof identity.sub!=='string'||!/^[A-Za-z0-9_-]{1,255}$/.test(identity.sub)||identity.sub!==verified.payload.sub)return bad();
-   const account=await repo.account(identity.sub,now);if(!account)return bad();
+   const subject=verified.payload.sub;
+   if(typeof subject!=='string'||!/^[A-Za-z0-9_-]{1,255}$/.test(subject))return bad();
+   const account=await repo.account(subject,now);if(!account)return bad();
    const session=random();await repo.putSession(await hash(session),account,now,now+SESSION_MS);
    const result=redirect(true);setCookie(result,FLOW,'',0);setCookie(result,SESSION,session,SESSION_MS/1000);return result;
   }

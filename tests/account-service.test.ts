@@ -14,7 +14,7 @@ function fixture() {
  const db={prepare(query:string){let values:unknown[]=[]; const q={bind(...v:unknown[]){values=v;return q;},async first(){return sql.prepare(query).get(...values as [])??null;},async all(){return {success:true,results:sql.prepare(query).all(...values as [])};},async run(){const r=sql.prepare(query).run(...values as []);return {success:true,meta:{changes:Number(r.changes)}};}};return q;},async batch(statements:{run:()=>Promise<unknown>}[]){sql.exec('BEGIN');try{const result=[];for(const s of statements)result.push(await s.run());sql.exec('COMMIT');return result;}catch(e){sql.exec('ROLLBACK');throw e;}}} as unknown as D1Database;
  const env:AccountEnvironment={ACCOUNTS_ENABLED:'true',ACCOUNT_ORIGIN:ORIGIN,ACCOUNT_PRIVACY_VERSION:'2026-11-13-reviewed',GOOGLE_CLIENT_ID:'local-test.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'synthetic-test-only',PERSONAL_DATA_KEY:'12'.repeat(32),PERSONAL_DB:db};
  let nonce='',subject='google-test-user-a'; let tokenOverrides:Record<string,unknown>={}; const calls:Array<{url:string;init?:RequestInit}>=[];
- const fetcher=async(input:RequestInfo|URL,init?:RequestInit)=>{const url=String(input);calls.push({url,init});if(url==='https://oauth2.googleapis.com/token')return Response.json({access_token:'synthetic-access-token',token_type:'Bearer',expires_in:3600,id_token:await new SignJWT({nonce,iss:'https://accounts.google.com',aud:env.GOOGLE_CLIENT_ID!,sub:subject,iat:NOW/1000,exp:NOW/1000+3600,...tokenOverrides}).setProtectedHeader({alg:'RS256',kid:'fixture'}).sign((await signing).privateKey)});if(url==='https://www.googleapis.com/oauth2/v3/certs')return Response.json({keys:[{...await exportJWK((await signing).publicKey),kid:'fixture',alg:'RS256'}]});if(url==='https://openidconnect.googleapis.com/v1/userinfo')return Response.json({sub:subject});throw Error('unexpected upstream');};
+ const fetcher=async(input:RequestInfo|URL,init?:RequestInit)=>{const url=String(input);calls.push({url,init});if(url==='https://oauth2.googleapis.com/token')return Response.json({access_token:'synthetic-access-token',token_type:'Bearer',expires_in:3600,id_token:await new SignJWT({nonce,iss:'https://accounts.google.com',aud:env.GOOGLE_CLIENT_ID!,sub:subject,iat:NOW/1000,exp:NOW/1000+3600,...tokenOverrides}).setProtectedHeader({alg:'RS256',kid:'fixture'}).sign((await signing).privateKey)});if(url==='https://www.googleapis.com/oauth2/v3/certs')return Response.json({keys:[{...await exportJWK((await signing).publicKey),kid:'fixture',alg:'RS256'}]});throw Error('unexpected upstream');};
  const call=async(path:string,method='GET',body?:unknown,cookie?:string,now=NOW,headers:Record<string,string>={})=>{const response=await handleAccountRequest(new Request(ORIGIN+'/api/account/'+path,{method,headers:{...(cookie?{'x-koretail-account':String(sql.prepare('SELECT account_id FROM account_sessions WHERE token_hash=?').get(createHash('sha256').update(cookie.split('=')[1]).digest('hex'))?.account_id??'')}:{}),...(method!=='GET'?{origin:ORIGIN,'content-type':'application/json'}:{}),...(cookie?{cookie}:{}),...headers},...(body===undefined?{}:{body:JSON.stringify(body)})}),env,fetcher,()=>now);if(path==='google/start'&&response.ok)nonce=new URL((await response.clone().json()).url).searchParams.get('nonce')??'';return response;};
  const cookie=(r:Response,name:string)=>r.headers.getSetCookie().find(v=>v.startsWith(name+'='))!.split(';')[0];
  async function login(){const start=await call('google/start','POST');assert.equal(start.status,200);const data=await start.json();const state=new URL(data.url).searchParams.get('state');const flowCookie=cookie(start,'__Host-koretail_oauth');const callback=await call('google/callback?state='+state+'&code=synthetic-code','GET',undefined,flowCookie);assert.equal(callback.status,303);return {session:cookie(callback,'__Host-koretail_session'),state,flowCookie,start,callback};}
@@ -29,11 +29,21 @@ test('OAuth start requires exact origin and returns minimal-scope PKCE with secu
  const rows=f.sql.prepare('SELECT * FROM account_oauth_flows').all();assert.equal(rows.length,1);assert.doesNotMatch(JSON.stringify(rows),/code_verifier|synthetic-test-only/);
 });
 test('callback is browser-bound, one-use, and cannot expose provider tokens',async()=>{
- const f=fixture(), x=await f.login();assert.equal(f.calls.length,3);assert.equal(f.calls[0].url,'https://oauth2.googleapis.com/token');assert.equal(f.calls[1].url,'https://www.googleapis.com/oauth2/v3/certs');assert.equal(f.calls[2].url,'https://openidconnect.googleapis.com/v1/userinfo');
+ const f=fixture(), x=await f.login();assert.deepEqual(f.calls.map(call=>call.url),['https://oauth2.googleapis.com/token','https://www.googleapis.com/oauth2/v3/certs']);
  const form=new URLSearchParams(String(f.calls[0].init?.body));assert.equal(form.get('grant_type'),'authorization_code');assert.ok(form.get('code_verifier')!.length>=43);
+ for(const call of f.calls)assert.equal(new Headers(call.init?.headers).has('authorization'),false);
  assert.equal(x.callback.headers.get('location'),ORIGIN+'/ko/account');assert.doesNotMatch([...x.callback.headers].join(''),/synthetic-access-token|synthetic-test-only/);
- const repeat=await f.call('google/callback?state='+x.state+'&code=another','GET',undefined,x.flowCookie);assert.equal(repeat.status,303);assert.match(repeat.headers.get('location')!,/auth=failed/);assert.equal(f.calls.length,3);
+ const repeat=await f.call('google/callback?state='+x.state+'&code=another','GET',undefined,x.flowCookie);assert.equal(repeat.status,303);assert.match(repeat.headers.get('location')!,/auth=failed/);assert.equal(f.calls.length,2);
  const rows=f.sql.prepare('SELECT * FROM account_sessions').all();assert.equal(rows.length,1);assert.doesNotMatch(JSON.stringify(rows),new RegExp(x.session.split('=')[1]));
+});
+test('verified subject alone links sessions when unused profile claims change',async()=>{
+ const f=fixture();f.setToken({email:'synthetic-email-claim-a',name:'synthetic-name-claim-a'});await f.login();
+ f.setToken({email:'synthetic-email-claim-b',name:'synthetic-name-claim-b'});const {session}=await f.login();
+ const accounts=f.sql.prepare('SELECT * FROM accounts').all();assert.equal(accounts.length,1);
+ assert.equal(accounts[0].google_sub,'google-test-user-a');
+ assert.doesNotMatch(JSON.stringify(accounts),/synthetic-(email|name)-claim/);
+ const status=await (await f.call('status','GET',undefined,session)).json();assert.equal(status.authenticated,true);
+ assert.doesNotMatch(JSON.stringify(status),/synthetic-(email|name)-claim/);
 });
 test('wrong cookie, expired flow and duplicate callback parameters cannot authenticate',async()=>{
  for(const kind of ['cookie','expired','duplicate']){const f=fixture(),start=await f.call('google/start','POST'),state=new URL((await start.json()).url).searchParams.get('state');const cookie=kind==='cookie'?'__Host-koretail_oauth=wrong':f.cookie(start,'__Host-koretail_oauth');const r=await f.call('google/callback?state='+state+'&code=x'+(kind==='duplicate'?'&code=y':''),'GET',undefined,cookie,kind==='expired'?NOW+601000:NOW);assert.match(r.headers.get('location')!,/auth=failed/);assert.equal(f.calls.length,0);}
@@ -85,7 +95,7 @@ test('private endpoints send no-store/no-referrer and provider failures expose o
  const r=await handleAccountRequest(request,f.env,async()=>{throw Error('secret upstream diagnostic');},()=>NOW);assert.equal(r.status,303);assert.match(r.headers.get('location')!,/auth=failed/);assert.match(r.headers.get('cache-control')!,/no-store/);assert.equal(r.headers.get('referrer-policy'),'no-referrer');assert.doesNotMatch(await r.text(),/secret upstream/);
 });
 
-for(const [name,claims] of Object.entries({audience:{aud:'other-client'},nonce:{nonce:'wrong-nonce'},issuer:{iss:'https://evil.invalid'},expiry:{exp:NOW/1000-31},issued:{iat:NOW/1000+1000},age:{iat:NOW/1000-631},subject:{sub:'different-subject'},presenter:{azp:'other-client'},missingExpiry:{exp:undefined}}))test('validly signed fixture with wrong '+name+' cannot create a session',async()=>{
+for(const [name,claims] of Object.entries({audience:{aud:'other-client'},nonce:{nonce:'wrong-nonce'},issuer:{iss:'https://evil.invalid'},expiry:{exp:NOW/1000-31},issued:{iat:NOW/1000+1000},age:{iat:NOW/1000-631},subject:{sub:'invalid subject'},missingSubject:{sub:undefined},presenter:{azp:'other-client'},missingExpiry:{exp:undefined}}))test('validly signed fixture with wrong '+name+' cannot create a session',async()=>{
  const f=fixture();f.setToken(claims);const start=await f.call('google/start','POST'),u=new URL((await start.json()).url);
  const response=await f.call('google/callback?state='+u.searchParams.get('state')+'&code=x','GET',undefined,f.cookie(start,'__Host-koretail_oauth'));
  assert.match(response.headers.get('location')!,/auth=failed/);assert.equal(f.sql.prepare('SELECT count(*) AS n FROM account_sessions').get()!.n,0);
@@ -177,7 +187,7 @@ test('encrypted state cannot be transplanted to a different account',async()=>{
  f.sql.prepare('INSERT INTO account_documents VALUES (?,?,?)').run(id,doc.revision,doc.encrypted_state);
  assert.equal((await f.call('state','GET',undefined,b.session)).status,503);
 });
-for(const kind of ['bad-signature','malformed-token-body','oversized-token-body','malformed-jwks','missing-id-token','mismatched-userinfo'])test('rejects '+kind+' without creating an account or leaking credentials',async()=>{
+for(const kind of ['bad-signature','malformed-token-body','oversized-token-body','malformed-jwks','missing-id-token'])test('rejects '+kind+' without creating an account or leaking credentials',async()=>{
  const f=fixture(),start=await f.call('google/start','POST'),url=new URL((await start.json()).url);
  const req=new Request(ORIGIN+'/api/account/google/callback?state='+url.searchParams.get('state')+'&code=test',{headers:{cookie:f.cookie(start,'__Host-koretail_oauth')}});
  const result=await handleAccountRequest(req,f.env,async(input,init)=>{
@@ -191,7 +201,6 @@ for(const kind of ['bad-signature','malformed-token-body','oversized-token-body'
    return Response.json(body);
   }
   if(endpoint.endsWith('/certs')&&kind==='malformed-jwks')return Response.json({keys:[null]});
-  if(endpoint.endsWith('/userinfo')&&kind==='mismatched-userinfo')return Response.json({sub:'other-subject'});
   return f.fetcher(input,init);
  },()=>NOW);
  assert.match(result.headers.get('location')!,/auth=failed/);assert.equal(f.sql.prepare('SELECT count(*) AS n FROM accounts').get()!.n,0);
@@ -206,10 +215,10 @@ test('old account tab cannot log out a newly selected different account',async()
 });
 
 test('provider requests use workerd-compatible manual redirect mode',async()=>{
- const f=fixture();await f.login();assert.equal(f.calls.length,3);
+ const f=fixture();await f.login();assert.equal(f.calls.length,2);
  for(const call of f.calls)assert.equal(call.init?.redirect,'manual');
 });
-for(const [index,endpoint] of ['https://oauth2.googleapis.com/token','https://www.googleapis.com/oauth2/v3/certs','https://openidconnect.googleapis.com/v1/userinfo'].entries())test('provider redirect at step '+(index+1)+' is rejected without session or forwarding',async()=>{
+for(const [index,endpoint] of ['https://oauth2.googleapis.com/token','https://www.googleapis.com/oauth2/v3/certs'].entries())test('provider redirect at step '+(index+1)+' is rejected without session or forwarding',async()=>{
  const f=fixture(),start=await f.call('google/start','POST'),state=new URL((await start.json()).url).searchParams.get('state');let calls=0;
  const request=new Request(ORIGIN+'/api/account/google/callback?state='+state+'&code=synthetic',{headers:{cookie:f.cookie(start,'__Host-koretail_oauth')}});
  const response=await handleAccountRequest(request,f.env,async(input,init)=>{calls++;if(String(input)===endpoint)return new Response(null,{status:302,headers:{location:'https://unapproved.invalid/blocked'}});return f.fetcher(input,init);},()=>NOW);

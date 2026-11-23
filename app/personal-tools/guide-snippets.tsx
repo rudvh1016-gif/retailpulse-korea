@@ -5,19 +5,20 @@ import {GUIDE_LANGUAGES, type GuideLanguage, type GuideSnippet, type PersonalCom
 
 const languageLabels: Record<GuideLanguage,string> = {ko:'한국어',en:'영어',zh:'중국어',ja:'일본어',other:'기타'};
 
-export function GuideSnippets({items,send}:{items:GuideSnippet[];send:(command:PersonalCommand)=>Promise<boolean>}) {
+export function GuideSnippets({items,revision,send}:{items:GuideSnippet[];revision:string;send:(command:PersonalCommand)=>Promise<boolean>}) {
   const [draft,setDraft]=useState<GuideSnippet|null>(null);
   const [original,setOriginal]=useState<GuideSnippet|null>(null);
   const [message,setMessage]=useState('');
   const [query,setQuery]=useState('');
   const [language,setLanguage]=useState<GuideLanguage|''>('');
-  const [removeId,setRemoveId]=useState('');
+  const [removal,setRemoval]=useState<{id:string;revision:string}|null>(null);
   const keyword=query.trim().toLowerCase();
   const visible=items.filter(item=>(!language||(item.language??'other')===language)&&
     (!keyword||[item.label,item.body].some(value=>value.toLowerCase().includes(keyword))));
   const edit=(item:GuideSnippet|null)=>{
     setOriginal(item);
-    setDraft(item??{id:'',label:'',body:''});
+    setDraft(item??{id:'',label:'',body:'',language:'other'});
+    setRemoval(null);
     setMessage('');
   };
   const save=async()=>{
@@ -52,11 +53,12 @@ export function GuideSnippets({items,send}:{items:GuideSnippet[];send:(command:P
     </form>}
     {items.length>0&&!visible.length&&<p>검색 조건에 맞는 문구가 없습니다.</p>}
     {visible.map(item=><article className="pt-inset" key={item.id}>
-      <p><strong>{item.label}</strong>{item.language&&<> · {languageLabels[item.language]}</>}</p><p className="pt-note">{item.body}</p>
+      <p><strong>{item.label}</strong>{item.language&&<> · {languageLabels[item.language]}</>}</p>
+      <p className="pt-note" lang={item.language==='other'?undefined:item.language}>{item.body}</p>
       <button type="button" onClick={()=>void copy(item)}>복사</button>
       <button type="button" onClick={()=>edit(item)}>수정</button>
-      {removeId===item.id?<><button type="button" onClick={async()=>{if(await send({type:'snippet.remove',id:item.id}))setRemoveId('');}}>이 문구 삭제</button>
-        <button type="button" onClick={()=>setRemoveId('')}>삭제 취소</button></>:<button type="button" disabled={draft?.id===item.id} onClick={()=>setRemoveId(item.id)}>삭제</button>}
+      {removal?.id===item.id&&removal.revision===revision?<><button type="button" onClick={async()=>{if(await send({type:'snippet.remove',id:item.id}))setRemoval(null);}}>이 문구 삭제</button>
+        <button type="button" onClick={()=>setRemoval(null)}>삭제 취소</button></>:<button type="button" disabled={draft?.id===item.id} onClick={()=>setRemoval({id:item.id,revision})}>삭제</button>}
     </article>)}
     {message&&<p role="status">{message}</p>}
   </div>;

@@ -39,6 +39,41 @@ async function fill(label,value){const node=input(label),prototype=node.tagName=
  await act(async()=>{Object.getOwnPropertyDescriptor(prototype,'value').set.call(node,value);node.dispatchEvent(new dom.window.Event(node.tagName==='SELECT'?'change':'input',{bubbles:true}));});}
 function status(){return container.querySelector('[role="status"]').textContent;}
 
+test('an existing shift is visibly replaced, while note edits keep their recorded day',async()=>{
+ const first=pattern('first'),second=pattern('second'),date='2026-11-12',noteDate='2026-11-11';
+ await seed([
+  {type:'pattern.upsert',pattern:first},{type:'pattern.upsert',pattern:second},
+  {type:'assignment.set',date,patternId:first.id},
+  {type:'note.add',id:'previous',date:noteDate,body:'Original note',snapshot:null},
+ ]);
+ await mount();await fill('근무 날짜',date);await fill('배정할 패턴',first.id);
+ assert.equal(button('날짜에 배정').disabled,true);
+ assert.match(container.textContent,/선택 날짜의 배정 · Pattern first/);
+ await fill('배정할 패턴',second.id);await click(button('기존 배정 교체'));
+ assert.deepEqual((await read()).assignments,[{date,patternId:second.id}]);
+ await click(button('글 수정'));await fill('메모','Updated note');
+ assert.match(container.textContent,/수정 중인 메모 날짜 2026-11-11/);
+ await click(button('메모 수정 저장'));
+ assert.deepEqual((await read()).notes.map(({date,body})=>({date,body})),[{date:noteDate,body:'Updated note'}]);
+});
+
+test('a changed reread revokes individual note and checklist deletion confirmations',async()=>{
+ const p=pattern('opening'),t=template('opening'),date='2026-11-12';
+ await seed([
+  {type:'pattern.upsert',pattern:p},{type:'assignment.set',date,patternId:p.id},
+  {type:'template.upsert',template:t},{type:'run.start',id:'run',date,templateId:t.id},
+  {type:'note.add',id:'note',date,body:'Original note',snapshot:null},
+ ]);
+ await mount();await click(button('메모 삭제'));assert.ok(button('이 메모 삭제'));
+ await seed([{type:'note.update',id:'note',body:'Newer note'}]);await click(button('최신 자료 다시 읽기'));
+ assert.ok(button('메모 삭제'));assert.match(container.textContent,/Newer note/);
+ await click(button('실행 기록 삭제'));assert.ok(button('이 실행 기록 삭제'));
+ await seed([{type:'run.toggle',id:'run',itemId:t.items[0].id,done:true}]);await click(button('최신 자료 다시 읽기'));
+ assert.ok(button('실행 기록 삭제'));assert.equal(input(t.items[0].text).checked,true);
+ await click(button('실행 기록 삭제'));await click(button('이 실행 기록 삭제'));
+ assert.equal((await read()).runs.length,0);assert.equal((await read()).notes[0].body,'Newer note');
+});
+
 for(const kind of ['pattern','template'])test(`${kind} deletion clears only its active editor and selected reference after a committed delete`,async()=>{
  const first=kind==='pattern'?pattern('first'):template('first'),second=kind==='pattern'?pattern('second'):template('second');
  await seed([{type:`${kind}.upsert`,[kind]:first},{type:`${kind}.upsert`,[kind]:second}]);await mount();

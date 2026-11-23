@@ -5,14 +5,15 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Inspect memory or A1 projection/cache/ledger without writes, record observations, plan, prove recovery dormant, or release abandoned pre-collector attempts
+        description: Inspect memory or A1 projection/cache/ledger without writes, record observations, plan, prove recovery dormant, or release abandoned pre-collector attempts, or reconcile the verified November A1 capacity failure
         required: true
         default: inspect
         type: choice
-        options: [inspect, inspect_a1, record, plan, recover, release_abandoned]
+        options: [inspect, inspect_a1, record, plan, recover, release_abandoned, preview_a1_capacity_failure, settle_a1_capacity_failure]
 
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: operational-memory-inspection
   cancel-in-progress: false
@@ -29,7 +30,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run operations:memory
-        if: inputs.mode != 'inspect_a1'
+        if: inputs.mode != 'inspect_a1' && inputs.mode != 'preview_a1_capacity_failure' && inputs.mode != 'settle_a1_capacity_failure'
         env:
           RPK_OPERATIONAL_MODE: ${{ inputs.mode }}
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
@@ -38,8 +39,15 @@ jobs:
         run: npx --no-install tsx scripts/inspect-airport-recovery.ts
         env:
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
+      - name: Reconcile the verified historical A1 capacity failure
+        if: inputs.mode == 'preview_a1_capacity_failure' || inputs.mode == 'settle_a1_capacity_failure'
+        run: node --import tsx scripts/settle-a1-capacity-failure.ts
+        env:
+          RPK_A1_CAPACITY_SETTLEMENT: ${{ inputs.mode }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}
       - name: Read central evidence after the operation
-        if: inputs.mode != 'recover' && inputs.mode != 'inspect_a1'
+        if: inputs.mode != 'recover' && inputs.mode != 'inspect_a1' && inputs.mode != 'preview_a1_capacity_failure' && inputs.mode != 'settle_a1_capacity_failure'
         run: npm run health:production -- --json
         env:
           CLOUDFLARE_D1_WRITE_TOKEN: ${{ secrets.CLOUDFLARE_D1_WRITE_TOKEN }}

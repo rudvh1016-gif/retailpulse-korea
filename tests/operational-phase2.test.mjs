@@ -281,6 +281,12 @@ const airportOnlyPatches=JSON.parse(readFileSync('tests/fixtures/airport-only-20
 const airportOnlyFiles=["app/[locale]/[slug]/page.tsx", "app/[locale]/tourism-desk/[area]/page.tsx", "app/[locale]/tourism-desk/page.tsx", "app/api/health/route.ts", "app/api/live/events/route.ts", "app/api/live/predictions/route.ts", "app/api/live/summary/route.ts", "app/not-found.tsx", "app/retailpulse-app.tsx", "app/seo-config.ts", "app/site-usage-guide.tsx", "app/sitemap.ts"];
 assert.deepEqual(Object.keys(airportOnlyPatches),airportOnlyFiles);
 for(const [file,patches] of Object.entries(airportOnlyPatches))approvedCanonicalPatches[file]=[...patches,...(approvedCanonicalPatches[file]??[])];
+// Personal account launch adds only a lazy Korean More link to the protected app.
+approvedCanonicalPatches['app/retailpulse-app.tsx']=[
+ ['const AccountToolsLink=dynamic(()=>import(\'./personal-tools/account-link\').then(module=>module.AccountToolsLink));\n',''],
+ ["        {lang === 'ko' && <AccountToolsLink />}\n",''],
+ ...approvedCanonicalPatches['app/retailpulse-app.tsx'],
+];
 // Apply the congestion endpoint reversal before earlier route reversals.
 const a4RoutePatches=JSON.parse(readFileSync('tests/fixtures/a4-overflow-20261119-shadow-patches.json','utf8'));
 assert.deepEqual(Object.keys(a4RoutePatches),['app/api/airport/facility-operations/route.ts','app/api/live/summary/route.ts']);

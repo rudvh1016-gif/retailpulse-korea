@@ -64,12 +64,12 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
   const editorBases=useRef({pattern:'',template:'',note:''});
   const [state,setState]=useState<PersonalState>(emptyPersonalState),[ready,setReady]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
   const [pattern,setPattern]=useState<ShiftPattern>(initialPattern),[date,setDate]=useState(()=>kstDayOf(new Date().toISOString())),[assignmentPattern,setAssignmentPattern]=useState('');
-  const [body,setBody]=useState(''),[editingNote,setEditingNote]=useState(''),[briefingDate,setBriefingDate]=useState<string|null>(null);
+  const [body,setBody]=useState(''),[editingNote,setEditingNote]=useState<{id:string;date:string}|null>(null),[briefingDate,setBriefingDate]=useState<string|null>(null);
   const [templateId,setTemplateId]=useState(''),[templateLabel,setTemplateLabel]=useState(''),[templateLines,setTemplateLines]=useState(''),[runTemplate,setRunTemplate]=useState('');
   const [guideEditorKey,setGuideEditorKey]=useState(0);
   const [noteQuery,setNoteQuery]=useState(''),[notesForDay,setNotesForDay]=useState(false);
   const [checklistsForDay,setChecklistsForDay]=useState(true);
-  const [runToRemove,setRunToRemove]=useState('');
+  const [removal,setRemoval]=useState<{kind:'note'|'run';id:string}|null>(null);
   const keyword=noteQuery.trim().toLowerCase();
   const visibleNotes=accountId?state.notes.filter(note=>
     (!notesForDay||note.date===date)&&(!keyword||note.body.toLowerCase().includes(keyword)||note.date.includes(keyword)))
@@ -80,8 +80,8 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
   const resetEditors=useCallback(()=>{
     editorBases.current={pattern:'',template:'',note:''};
     setPattern(initialPattern);setAssignmentPattern('');setDate(kstDayOf(new Date().toISOString()));
-    setBody('');setEditingNote('');setBriefingDate(null);setTemplateId('');setTemplateLabel('');setTemplateLines('');setRunTemplate('');
-    setBackup('');setReplaceConfirmed(false);setDeletePhrase('');setGuideEditorKey(key=>key+1);setNoteQuery('');setNotesForDay(false);setRunToRemove('');
+    setBody('');setEditingNote(null);setBriefingDate(null);setTemplateId('');setTemplateLabel('');setTemplateLines('');setRunTemplate('');
+    setBackup('');setReplaceConfirmed(false);setDeletePhrase('');setGuideEditorKey(key=>key+1);setNoteQuery('');setNotesForDay(false);setChecklistsForDay(true);setRemoval(null);
   },[]);
   const hidePrivate=useCallback(()=>{store.current?.close();store.current=null;setReady(false);setState(emptyPersonalState());resetEditors();setPrivateHidden(true);onAccountInvalid?.();},[onAccountInvalid,resetEditors]);
   useEffect(()=>{
@@ -95,7 +95,7 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
     try{const next=await action(store.current);if(live.current){
       // A reread or committed edit may change what a previous destructive
       // confirmation covered. Keep drafts, but require renewed confirmation.
-      if(next.revision!==state.revision){setReplaceConfirmed(false);setDeletePhrase('');}
+      if(next.revision!==state.revision){setReplaceConfirmed(false);setDeletePhrase('');setRemoval(null);}
       setState(next);setMessage(success);}return live.current;}
     catch(error){if(live.current){if(authenticationLost(error))hidePrivate();else setMessage(explain(error));}return false;}
     finally{lock.current=false;if(live.current)setBusy(false);}
@@ -120,6 +120,11 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
     setRunTemplate(current=>current===id?'':current);
   }
   const selectedPattern=state.patterns.find(item=>item.id===state.assignments.find(item=>item.date===date)?.patternId);
+  const replacesAssignment=!!selectedPattern&&!!assignmentPattern&&selectedPattern.id!==assignmentPattern;
+  function dismissNoteEditor(){setEditingNote(null);setBody('');}
+  async function removeNote(id:string){
+    if(await send({type:'note.remove',id})&&editingNote?.id===id)dismissNoteEditor();
+  }
   async function saveNote(snapshot:BriefingSnapshot|null){const saved=await send({type:'note.add',id:uid(),date,body,snapshot});if(saved)setBody('');return saved;}
   async function downloadCalendar(){
     if(lock.current||!store.current||!ready)return;lock.current=true;setBusy(true);
@@ -161,19 +166,44 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
         <button type="submit">{pattern.id?'패턴 수정':'패턴 추가'}</button>{pattern.id&&<button type="button" onClick={()=>setPattern(initialPattern)}>수정 취소</button>}</form>
         <p>시작과 종료가 같으면 24시간입니다. 야간 패턴은 저장할 수 있지만 자정 이후 항공편 합산은 지원하지 않습니다.</p>
         <ul>{state.patterns.map(item=><li key={item.id}>{item.label} · {item.terminal} · {item.open}–{item.close} <button onClick={()=>{editorBases.current.pattern=JSON.stringify(item);setPattern({...item});}}>수정</button> <button onClick={()=>void removePattern(item.id)}>삭제</button></li>)}</ul>
-        <form onSubmit={event=>{event.preventDefault();void send({type:'assignment.set',date,patternId:assignmentPattern});}}><label>근무 날짜<input type="date" value={date} required onChange={event=>setDate(event.target.value)}/></label><label>배정할 패턴<select required value={assignmentPattern} onChange={event=>setAssignmentPattern(event.target.value)}><option value="">선택</option>{state.patterns.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label><button>날짜에 배정</button></form>
+        <form onSubmit={event=>{
+          event.preventDefault();
+          if(assignmentPattern&&assignmentPattern!==selectedPattern?.id)void send({type:'assignment.set',date,patternId:assignmentPattern});
+        }}>
+          <label>근무 날짜<input type="date" value={date} required onChange={event=>setDate(event.target.value)}/></label>
+          <label>배정할 패턴<select required value={assignmentPattern} onChange={event=>setAssignmentPattern(event.target.value)}>
+            <option value="">선택</option>{state.patterns.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}
+          </select></label>
+          <button disabled={!!selectedPattern&&selectedPattern.id===assignmentPattern}>{replacesAssignment?'기존 배정 교체':'날짜에 배정'}</button>
+        </form>
+        {selectedPattern&&<p>선택 날짜의 배정 · {selectedPattern.label} · {selectedPattern.terminal} · {selectedPattern.open}–{selectedPattern.close}</p>}
         {accountId&&state.patterns.length>0&&<RepeatShifts key={guideEditorKey} day={date} state={state} send={send}/>}
         <ul>{(accountId?[...state.assignments].sort((a,b)=>a.date.localeCompare(b.date)):state.assignments).map(item=><li key={item.date}><button onClick={()=>setDate(item.date)}>{item.date}</button> · {state.patterns.find(row=>row.id===item.patternId)?.label} <button onClick={()=>void send({type:'assignment.remove',date:item.date})}>배정 해제</button></li>)}</ul>
       </section>
-      <section><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>2. 근무 메모</h2><p>선택 날짜 {date}. 수정은 글에만 반영되며 저장한 브리핑은 갱신되지 않습니다.</p><label>메모<textarea value={body} maxLength={2000} onChange={event=>setBody(event.target.value)}/></label>
-        {editingNote?<><button disabled={!body.trim()} onClick={()=>{if(!unchangedEditor('note',state.notes.find(item=>item.id===editingNote)))return;void send({type:'note.update',id:editingNote,body}).then(ok=>{if(ok){setEditingNote('');setBody('');}});}}>메모 수정 저장</button><button onClick={()=>{setEditingNote('');setBody('');}}>수정 취소</button></>:<><button disabled={!body.trim()} onClick={()=>void saveNote(null)}>브리핑 없이 메모 저장</button>{selectedPattern&&ready&&<><p>공개 브리핑을 읽으면 선택 날짜를 KORETAIL의 기존 공개 조회 API로 보냅니다. 메모와 패턴 이름은 보내지 않습니다.</p><button onClick={()=>setBriefingDate(date)}>선택 날짜의 공개 브리핑 읽기</button></>}{selectedPattern&&ready&&briefingDate===date&&<Briefing key={`${date}:${selectedPattern.id}`} date={date} pattern={selectedPattern} body={body} busy={busy} onSave={saveNote}/>}</>}
+      <section><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>2. 근무 메모</h2>
+        <p>{editingNote?`수정 중인 메모 날짜 ${editingNote.date}. 글만 수정할 수 있습니다.`:`새 메모를 저장할 날짜 ${date}.`}</p>
+        <label>메모<textarea value={body} maxLength={2000} onChange={event=>setBody(event.target.value)}/></label>
+        {editingNote?<><button disabled={!body.trim()} onClick={()=>{
+          if(!unchangedEditor('note',state.notes.find(item=>item.id===editingNote.id)))return;
+          void send({type:'note.update',id:editingNote.id,body}).then(ok=>{if(ok)dismissNoteEditor();});
+        }}>메모 수정 저장</button><button onClick={dismissNoteEditor}>수정 취소</button></>:<><button disabled={!body.trim()||!date} onClick={()=>void saveNote(null)}>브리핑 없이 메모 저장</button>{selectedPattern&&ready&&<><p>공개 브리핑을 읽으면 선택 날짜를 KORETAIL의 기존 공개 조회 API로 보냅니다. 메모와 패턴 이름은 보내지 않습니다.</p><button onClick={()=>setBriefingDate(date)}>선택 날짜의 공개 브리핑 읽기</button></>}{selectedPattern&&ready&&briefingDate===date&&<Briefing key={`${date}:${selectedPattern.id}`} date={date} pattern={selectedPattern} body={body} busy={busy} onSave={saveNote}/>}</>}
         {accountId&&<><label>근무 기록 검색<input type="search" maxLength={80} value={noteQuery} onChange={event=>setNoteQuery(event.target.value)}/></label>
           <label className="pt-check"><input type="checkbox" checked={notesForDay} onChange={event=>setNotesForDay(event.target.checked)}/>선택한 날짜만 보기</label>
           {visibleNotes.length===0&&<p>표시할 근무 기록이 없습니다.</p>}</>}
-        {visibleNotes.map(note=><article key={note.id} className="pt-inset"><h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{note.date}</h3><p className="pt-note">{note.body}</p>{note.snapshot?<details><summary>저장 당시 브리핑 · {note.snapshot.capturedAt}</summary><Snapshot value={note.snapshot}/></details>:<p>브리핑 없이 저장한 메모</p>}<button onClick={()=>{editorBases.current.note=JSON.stringify(note);setEditingNote(note.id);setBody(note.body);}}>글 수정</button> <button onClick={()=>void send({type:'note.remove',id:note.id}).then(ok=>{if(ok&&editingNote===note.id){setEditingNote('');setBody('');}})}>메모 삭제</button></article>)}
+        {visibleNotes.map(note=><article key={note.id} className="pt-inset">
+          <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{note.date}</h3>
+          <p className="pt-note">{note.body}</p>
+          {note.snapshot?<details><summary>저장 당시 브리핑 · {note.snapshot.capturedAt}</summary><Snapshot value={note.snapshot}/></details>:<p>브리핑 없이 저장한 메모</p>}
+          <button onClick={()=>{
+            editorBases.current.note=JSON.stringify(note);
+            setEditingNote({id:note.id,date:note.date});setBody(note.body);setRemoval(null);
+          }}>글 수정</button>
+          {removal?.kind==='note'&&removal.id===note.id?<><button onClick={()=>void removeNote(note.id)}>이 메모 삭제</button>
+            <button onClick={()=>setRemoval(null)}>삭제 취소</button></>:<button onClick={()=>setRemoval({kind:'note',id:note.id})}>메모 삭제</button>}
+        </article>)}
       </section>
       <section><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{accountId?'3. 고객 안내 문구 보관함':'3. 가이드 즐겨찾기'}</h2><p>가이드를 직접 확인한 날짜를 함께 저장할 수 있습니다.</p>
-        {accountId&&<GuideSnippets key={guideEditorKey} items={state.guideSnippets??[]} send={send}/>}
+        {accountId&&<GuideSnippets key={guideEditorKey} items={state.guideSnippets??[]} revision={state.revision} send={send}/>}
         {(Object.keys(guides) as GuideId[]).filter(id=>!state.favorites.some(item=>item.guideId===id)).map(id=><button key={id} onClick={()=>void send({type:'favorites.set',favorites:[...state.favorites,{guideId:id,checkedDate:null}]})}>{guides[id].label} 추가</button>)}
         <ol>{state.favorites.map((item,index)=><li key={item.guideId}><a href={guides[item.guideId].href}>{guides[item.guideId].label}</a><label>직접 확인한 날짜<input type="date" value={item.checkedDate??''} onChange={event=>void send({type:'favorites.set',favorites:state.favorites.map(row=>row.guideId===item.guideId?{...row,checkedDate:event.target.value||null}:row)})}/></label><button disabled={index===0} onClick={()=>{const next=[...state.favorites];[next[index-1],next[index]]=[next[index],next[index-1]];void send({type:'favorites.set',favorites:next});}}>위로</button> <button disabled={index===state.favorites.length-1} onClick={()=>{const next=[...state.favorites];[next[index+1],next[index]]=[next[index],next[index+1]];void send({type:'favorites.set',favorites:next});}}>아래로</button> <button onClick={()=>void send({type:'favorites.set',favorites:state.favorites.filter(row=>row.guideId!==item.guideId)})}>즐겨찾기 삭제</button></li>)}</ol>
       </section>
@@ -184,14 +214,22 @@ export default function PersonalToolsPreview({accountId,onAccountInvalid,alertsP
         <label>시작할 템플릿<select value={runTemplate} onChange={event=>setRunTemplate(event.target.value)}><option value="">선택</option>{state.templates.map(item=><option key={item.id} value={item.id}>{item.label}</option>)}</select></label><button disabled={!selectedPattern||!runTemplate||runStarted} onClick={()=>void send({type:'run.start',id:uid(),date,templateId:runTemplate})}>{date} 체크리스트 시작</button><p>근무가 배정된 날짜만 시작할 수 있습니다. 시작 당시 패턴과 항목을 고정합니다.</p>
         {accountId&&<><label className="pt-check"><input type="checkbox" checked={checklistsForDay} onChange={event=>setChecklistsForDay(event.target.checked)}/>선택한 날짜의 체크리스트만 보기</label>
           {runStarted&&<p>이 날짜의 체크리스트가 이미 있습니다.</p>}</>}
-        {visibleRuns.map(run=><article key={run.id} className="pt-inset"><h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{run.date} · {run.templateLabel}</h3><p>{run.pattern.label} · {run.pattern.open}–{run.pattern.close}</p>{accountId&&<p>완료 {run.items.filter(item=>item.done).length}/{run.items.length}</p>}{run.items.map(item=><label key={item.id} className="pt-check"><input type="checkbox" checked={item.done} onChange={event=>void send({type:'run.toggle',id:run.id,itemId:item.id,done:event.target.checked})}/>{item.text}</label>)}{accountId?(runToRemove===run.id?<><button onClick={async()=>{if(await send({type:'run.remove',id:run.id}))setRunToRemove('');}}>이 실행 기록 삭제</button>
-          <button onClick={()=>setRunToRemove('')}>삭제 취소</button></>:<button onClick={()=>setRunToRemove(run.id)}>실행 기록 삭제</button>):<button onClick={()=>void send({type:'run.remove',id:run.id})}>실행 기록 삭제</button>}</article>)}
+        {visibleRuns.map(run=><article key={run.id} className="pt-inset">
+          <h3 data-heading="subsection"><span className="heading-marker" aria-hidden="true"/>{run.date} · {run.templateLabel}</h3>
+          <p>{run.pattern.label} · {run.pattern.open}–{run.pattern.close}</p>
+          {accountId&&<p>완료 {run.items.filter(item=>item.done).length}/{run.items.length}</p>}
+          {run.items.map(item=><label key={item.id} className="pt-check"><input type="checkbox" checked={item.done} onChange={event=>void send({type:'run.toggle',id:run.id,itemId:item.id,done:event.target.checked})}/>{item.text}</label>)}
+          {removal?.kind==='run'&&removal.id===run.id?<><button onClick={()=>void send({type:'run.remove',id:run.id})}>이 실행 기록 삭제</button>
+            <button onClick={()=>setRemoval(null)}>삭제 취소</button></>:<button onClick={()=>setRemoval({kind:'run',id:run.id})}>실행 기록 삭제</button>}
+        </article>)}
       </section>
-      <section><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>5. 알림 선택 준비</h2><p>{accountId?'선택값은 계정에 저장됩니다.':'선택값만 이 기기에 저장됩니다.'} 근무 전 알림은 달력 파일을 가져와 사용할 수 있습니다. 브리핑·가이드 변경 알림 발송은 NOT_IMPLEMENTED입니다.</p><label>근무 전 알림<select value={state.notificationPreferences.beforeShiftMinutes} onChange={event=>void send({type:'notifications.set',preferences:{...state.notificationPreferences,beforeShiftMinutes:Number(event.target.value) as 0|15|30|60}})}>{[0,15,30,60].map(value=><option key={value} value={value}>{value?`${value}분 전`:'끄기'}</option>)}</select></label>
+      <section><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>{accountId?'5. 근무·출국장 알림':'5. 알림 선택 준비'}</h2>
+        <p>{accountId?'알림 기준은 계정에 저장됩니다.':'브리핑·가이드 변경 설정은 이 기기에 보관하며 알림은 발송하지 않습니다.'} 근무 전 알림을 쓰려면 저장한 파일을 달력 앱에 가져오세요.</p>
+        <label>근무 전 알림<select value={state.notificationPreferences.beforeShiftMinutes} onChange={event=>void send({type:'notifications.set',preferences:{...state.notificationPreferences,beforeShiftMinutes:Number(event.target.value) as 0|15|30|60}})}>{[0,15,30,60].map(value=><option key={value} value={value}>{value?`${value}분 전`:'끄기'}</option>)}</select></label>
         {accountId&&<><label>출국장 대기시간 알림<select value={state.notificationPreferences.departureWaitMinutes??0} disabled={busy} onChange={event=>void send({type:'notifications.set',preferences:{...state.notificationPreferences,departureWaitMinutes:Number(event.target.value) as DepartureWaitThreshold}})}>
           {DEPARTURE_WAIT_THRESHOLDS.map(value=><option key={value} value={value}>{value?`${value}분 이상`:'끄기'}</option>)}
         </select></label><DepartureAlert state={state} accountId={accountId} paused={alertsPaused||busy} onRefresh={()=>perform(saved=>saved.read(),'다른 기기의 최신 자료를 읽었습니다.')}/></>}
-        <label className="pt-check"><input type="checkbox" checked={state.notificationPreferences.briefingChanges} onChange={event=>void send({type:'notifications.set',preferences:{...state.notificationPreferences,briefingChanges:event.target.checked}})}/>브리핑 변경</label><label className="pt-check"><input type="checkbox" checked={state.notificationPreferences.guideChanges} onChange={event=>void send({type:'notifications.set',preferences:{...state.notificationPreferences,guideChanges:event.target.checked}})}/>가이드 변경</label>
+        {!accountId&&<><label className="pt-check"><input type="checkbox" checked={state.notificationPreferences.briefingChanges} onChange={event=>void send({type:'notifications.set',preferences:{...state.notificationPreferences,briefingChanges:event.target.checked}})}/>브리핑 변경</label><label className="pt-check"><input type="checkbox" checked={state.notificationPreferences.guideChanges} onChange={event=>void send({type:'notifications.set',preferences:{...state.notificationPreferences,guideChanges:event.target.checked}})}/>가이드 변경</label></>}
         <button disabled={!state.assignments.length} onClick={()=>void downloadCalendar()}>근무 달력과 알림 파일 다운로드</button><p>파일에는 근무 이름과 시간이 포함됩니다. 가져올 캘린더의 공개 범위를 확인하세요. 직접 달력 앱에 가져오세요. 이후 변경은 자동 반영되지 않으며 실제 알림 전달은 달력 앱 설정에 달려 있습니다.</p>
       </section>
       {!accountId&&<section><h2 data-heading="section"><span className="heading-marker" aria-hidden="true"/>계정 연결 전 자료 선택 검토</h2><p>모든 항목은 기본 선택 해제입니다. 체크해도 전송되지 않습니다. 체크리스트는 근무 달력도 선택해야 합니다.</p>{(Object.keys(selectionLabels) as (keyof SyncSelection)[]).map(key=><label key={key} className="pt-check"><input type="checkbox" checked={state.syncSelection[key]} disabled={key==='checklists'&&!state.syncSelection.calendar||key==='calendar'&&state.syncSelection.checklists} onChange={event=>void send({type:'sync.set',selection:{...state.syncSelection,[key]:event.target.checked}})}/>{selectionLabels[key]}</label>)}<details><summary>선택 자료의 로컬 검토 (전송 없음)</summary><pre>{JSON.stringify(personalSyncPreview(state),null,2)}</pre></details></section>}

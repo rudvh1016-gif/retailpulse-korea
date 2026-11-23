@@ -21,6 +21,7 @@ const LazyAirportGlance=dynamic(loadAirportGlance);
 const prepareAirportGlance=()=>{loadAirportGlance().catch(()=>{});};
 const MonthlyRecordsView=dynamic(()=>import('./monthly-records').then(module=>module.MonthlyRecordsView));
 const SiteShare=dynamic(()=>import('./site-share').then(module=>module.SiteShare));
+const AccountToolsLink=dynamic(()=>import('./personal-tools/account-link').then(module=>module.AccountToolsLink));
 const TourismDeskView=dynamic(()=>import('./tourism-desk').then(module=>module.TourismDeskView));
 const PredictionEvidence=dynamic(()=>import('./prediction-evidence').then(module=>module.PredictionEvidence));
 // The Seoul signals (./live-signals) load with the today and business screens.
@@ -996,6 +997,7 @@ function MoreView({
         <button type="button" className="update-notice-trigger" aria-haspopup="dialog" onClick={()=>window.dispatchEvent(new Event(UPDATE_NOTICE_OPEN_EVENT))}>{localText(lang,{ko:'공지사항 보기',en:'View update notice',zh:'查看更新公告',ja:'更新のお知らせ'})}</button>
         {(lang === "ko" || lang === "zh") && <button type="button" className="update-notice-trigger" onClick={() => { const guide = document.getElementById("airport-usage-guide"); if (guide instanceof HTMLDetailsElement) { guide.open = true; guide.scrollIntoView({ behavior: "smooth", block: "start" }); } }}>{lang==='zh'?'仁川机场使用指南':'인천공항 이용 방법'}</button>}
         {(['airport-glance','airport','airport-countries','airport-prepare','business','about'] as const).map(item=><a key={item} href={item === 'business' ? businessHref : routeFor(lang,item,selected)} onPointerEnter={item==='business'?prepareBusinessView:undefined} onFocus={item==='business'?prepareBusinessView:undefined} onClick={event=>{if(event.button===0&&!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey){event.preventDefault();onNavigate(item);}}}>{copy[lang][item]}</a>)}
+        {lang === 'ko' && <AccountToolsLink />}
       </nav>
       <AnalyticsConsent lang={lang} />
       <SiteUsageGuide lang={lang} />

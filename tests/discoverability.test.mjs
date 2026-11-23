@@ -136,6 +136,13 @@ function healthySite(faults = {}) {
     if (!seoLocales.includes(locale)) return reply("not found", 404);
     const slug = segments[1] === "tourism-desk" ? "tourism-desk" : segments[1];
     if (faults.missingPaths?.includes(pathname)) return reply("not found", 404);
+    const destination = airportOnlyDestination(locale, slug);
+    if (destination) {
+      const { status = 308, location = destination } = faults.retiredRedirects?.[pathname] ?? {};
+      return init.redirect === "manual"
+        ? reply("", status, { location })
+        : reply(pageHtml(locale), 200, { "content-type": "text/html" });
+    }
     return reply(pageHtml(locale, slug, faults.pageOverrides?.(pathname) ?? {}), 200, { "content-type": "text/html" });
   };
 }
@@ -305,11 +312,24 @@ test("a description that merely repeats the title is caught", async () => {
   // The real defect this was written for: descriptions.predictions was a copy
   // of titles.predictions in all four locales, brand pipe included.
   const report = await run({
-    pageOverrides: (path) => (path === "/ko/where-to" ? { description: pageTitle("ko", "where-to") } : {}),
+    pageOverrides: (path) => (path === "/ko/business" ? { description: "운영 브리핑", title: "운영 브리핑" } : {}),
   });
   assert.equal(report.ok, false);
-  assert.ok(failing(report).includes("/ko/where-to description is not a copy of the title"));
-  assert.ok(failing(report).includes("/ko/where-to description is long enough to be a snippet"));
+  assert.ok(failing(report).includes("/ko/business description is not a copy of the title"));
+  assert.ok(failing(report).includes("/ko/business description is long enough to be a snippet"));
+});
+
+test("retired Seoul URLs must permanently redirect to the same-origin airport home", async () => {
+  const report = await run({
+    retiredRedirects: {
+      "/ko/where-to": { status: 302 },
+      "/ko/forecast": { location: "https://example.org/ko" },
+    },
+  });
+  assert.deepEqual(failing(report).filter((name) => name.includes("permanently redirects")), [
+    "/ko/where-to permanently redirects to /ko",
+    "/ko/forecast permanently redirects to /ko",
+  ]);
 });
 
 test("a stale edge serving another build's metadata is caught", async () => {

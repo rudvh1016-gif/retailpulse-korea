@@ -36,14 +36,27 @@ export function DepartureAlert({state,accountId,paused,onRefresh}:{
   useEffect(()=>{refresh.current=onRefresh;},[onRefresh]);
 
   useEffect(()=>{
-    if(!threshold||paused)return;
+    if(!threshold)return;
+    const syncPermission=()=>setAllowed(permission());
+    const initial=setTimeout(syncPermission,0);
+    window.addEventListener('focus',syncPermission);
+    document.addEventListener('visibilitychange',syncPermission);
+    return()=>{
+      clearTimeout(initial);
+      window.removeEventListener('focus',syncPermission);
+      document.removeEventListener('visibilitychange',syncPermission);
+    };
+  },[threshold]);
+
+  useEffect(()=>{
+    if(!threshold||paused||allowed!=='granted')return;
     let pending:AbortController|null=null;
     const check=async()=>{
       const access=permission();
-      setAllowed(access);
+      if(access!=='granted'){setAllowed(access);return;}
       const now=Date.now();
       const shift=activeDepartureShift(state,now);
-      if(access!=='granted'||document.visibilityState!=='visible'||pending||!shift)return;
+      if(document.visibilityState!=='visible'||pending||!shift)return;
       const keyForPoll=[accountId,shift.date,shift.pattern.id,shift.pattern.terminal,shift.pattern.side,threshold].join(':');
       if(lastPoll.current.key===keyForPoll&&now-lastPoll.current.at<checkEvery-1000)return;
       lastPoll.current={key:keyForPoll,at:now};
@@ -61,7 +74,7 @@ export function DepartureAlert({state,accountId,paused,onRefresh}:{
         const seen=await localMarker(accountId+':'+alert.shiftKey);
         await navigator.locks.request(key,{signal:request.signal},async()=>{
           const active=()=>!request.signal.aborted&&permission()==='granted'&&document.visibilityState==='visible'
-            &&!!activeDepartureShift(state,Date.now());
+            &&departureAlert(snapshot,state,Date.now())?.shiftKey===alert.shiftKey;
           if(!active()||localStorage.getItem(key)===seen)return;
           // Validate the private schedule once per eligible alert. Changes on any
           // device, including revocation, make the rendered document obsolete.
@@ -107,7 +120,7 @@ export function DepartureAlert({state,accountId,paused,onRefresh}:{
     finally{setTesting(false);}
   };
   if(!threshold)return null;
-  return <div className="pt-inset"><p>이 계정 화면이 열린 동안 근무표의 터미널에서 기준에 도달하면 이 브라우저에서 근무당 한 번 알립니다. T1은 근무표의 동편·서편 선택을 적용합니다.</p>
+  return <div className="pt-inset"><p>이 계정 화면이 보이는 동안 근무표의 터미널을 5분마다 확인합니다. 기준에 도달하면 이 브라우저에서 근무당 한 번 알립니다. T1은 근무표의 동편·서편 선택을 적용합니다.</p>
     {allowed==='default'&&<button type="button" onClick={()=>void request()}>이 브라우저에서 출국장 알림 허용</button>}
     {allowed==='denied'&&<p>브라우저 설정에서 코리테일 알림을 허용해 주세요.</p>}
     {allowed==='unavailable'&&<p>이 브라우저는 출국장 시스템 알림을 지원하지 않습니다.</p>}

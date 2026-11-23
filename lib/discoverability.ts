@@ -490,6 +490,24 @@ async function checkEntryRedirect(context: Context): Promise<void> {
   );
 }
 
+async function checkRetiredRedirect(context: Context, locale: SeoLocale, slug: SeoSlug): Promise<void> {
+  const path = seoPath(locale, slug);
+  const destination = airportOnlyDestination(locale, slug);
+  if (!destination) return;
+  const { origin } = context;
+  const response = await context.fetch(`${origin}${path}`, {
+    redirect: "manual",
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  const location = response.headers.get("location");
+  check(
+    context,
+    `${path} permanently redirects to ${destination}`,
+    [301, 308].includes(response.status) && (location === destination || location === `${origin}${destination}`),
+    `status ${response.status} -> ${location ?? "no Location"}`,
+  );
+}
+
 /**
  * Runs every discoverability check against one origin.
  *
@@ -510,9 +528,8 @@ export async function runDiscoverabilityChecks(options: { origin: string; fetch?
   const urls = await checkSitemap(context);
   if (urls.length > 0) await checkSitemapUrlsResolve(context, urls);
   for (const locale of seoLocales) await checkPageIdentity(context, locale);
-  for (const slug of ["airport", "where-to", "business", "forecast"] as SeoSlug[]) {
-    await checkPageIdentity(context, "ko", slug);
-  }
+  for (const slug of ["airport", "business"] as const) await checkPageIdentity(context, "ko", slug);
+  for (const slug of ["where-to", "forecast"] as const) await checkRetiredRedirect(context, "ko", slug);
   // An English title with a real "&", served as &amp;: once /en itself carried
   // one; since the home became the airport glance only sub-pages do.
   await checkPageIdentity(context, "en", "airport");

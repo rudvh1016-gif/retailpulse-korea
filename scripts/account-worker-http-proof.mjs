@@ -21,10 +21,9 @@ async function provider(request){
   assert.equal(body.get('client_id'),client);assert.equal(body.get('redirect_uri'),origin+'/api/account/google/callback');
   assert.equal(createHash('sha256').update(body.get('code_verifier')).digest('base64url'),challenge);
   const token=await new SignJWT({nonce:badNonce?'invalid':nonce,iss:'https://accounts.google.com',aud:client,sub:subject,iat:now/1000,exp:now/1000+3600}).setProtectedHeader({alg:'RS256',kid:'ephemeral-proof'}).sign(pair.privateKey);
-  return Response.json({access_token:'synthetic-token',token_type:'Bearer',id_token:token});
+  return Response.json({id_token:token});
  }
  if(url==='https://www.googleapis.com/oauth2/v3/certs')return Response.json({keys:[{...await exportJWK(pair.publicKey),kid:'ephemeral-proof',alg:'RS256'}]});
- if(url==='https://openidconnect.googleapis.com/v1/userinfo'){assert.equal(request.headers.get('authorization'),'Bearer synthetic-token');return Response.json({sub:subject});}
  throw Error('Unexpected outbound request blocked');
 }
 const bundled=await build({stdin:{contents:`import {handleAccountRequest} from './lib/account/service.ts'; export default {fetch(request,env){return handleAccountRequest(request,env,fetch,()=>${now});}};`,resolveDir:root,sourcefile:'synthetic-account-worker.ts',loader:'ts'},bundle:true,write:false,format:'esm',platform:'neutral',target:'es2022',conditions:['worker','browser'],external:['node:*']});
@@ -52,7 +51,8 @@ try{
  const schema=readFileSync(new URL('../db/account-migrations/0001.sql',import.meta.url),'utf8').replace(/--[^\n]*/g,'').replace(/CREATE TRIGGER[\s\S]+?END;/g,v=>v.replace(/\n/g,' ')).split('\n').map(v=>v.trim()).filter(Boolean).join('\n');await db.exec(schema);checks.push('original migration on local D1');
  assert.equal((await call('state')).status,401);checks.push('anonymous private read rejected');
  assert.equal((await call('google/start',{method:'POST',headers:{origin:'https://wrong.invalid'}})).status,403);assert.equal(providerCalls.length,0);checks.push('cross-origin start rejected without provider');
- const a=await login();checks.push('PKCE/browser-bound flow and RS256 callback in workerd');
+ const endpoints=['https://oauth2.googleapis.com/token','https://www.googleapis.com/oauth2/v3/certs'];
+ const a=await login();assert.deepEqual(providerCalls,endpoints);checks.push('PKCE/browser-bound flow and RS256 callback without provider user profile request');
  const callsBefore=providerCalls.length;const replay=await call(a.path,{session:a.flow});assert.match(replay.headers.get('location'),/auth=failed/);assert.equal(providerCalls.length,callsBefore);checks.push('callback replay rejected without provider');
  assert.equal((await (await call('state',a)).json()).revision,'empty');
  const savedResponse=await call('state',{...a,method:'POST',body:{type:'command',expectedRevision:'empty',command:{type:'note.add',id:'note',date:'2026-11-13',body:'synthetic-private-note',snapshot:null}}});assert.equal(savedResponse.status,200);const saved=await savedResponse.json();assert.equal(saved.notes[0].body,'synthetic-private-note');
@@ -62,7 +62,6 @@ try{
  assert.equal((await call('state',{...a,actor:'different-account'})).status,409);checks.push('actor binding rejected');
  subject='synthetic-user-b';const b=await login();assert.notEqual(b.actor,a.actor);assert.equal((await (await call('state',b)).json()).revision,'empty');checks.push('second account cannot read first document');
  const invalid=await begin();badNonce=true;const rejected=await call(invalid.path,{session:invalid.flow});badNonce=false;assert.match(rejected.headers.get('location'),/auth=failed/);assert.equal(cookie(rejected,'__Host-koretail_session'),undefined);checks.push('valid RSA token with wrong nonce rejected in workerd');
- const endpoints=['https://oauth2.googleapis.com/token','https://www.googleapis.com/oauth2/v3/certs','https://openidconnect.googleapis.com/v1/userinfo'];
  for(const [index,endpoint] of endpoints.entries()){
   const redirected=await begin();const beforeRedirect=providerCalls.length;redirectProvider=endpoint;
   const redirectFailure=await call(redirected.path,{session:redirected.flow});redirectProvider=null;

@@ -6,8 +6,10 @@ import { planRepeatedAssignments, type PersonalCommand, type PersonalState } fro
 const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
 export function RepeatShifts({ day, state, send }: { day: string; state: PersonalState; send: (command: PersonalCommand) => Promise<boolean> }) {
-  const [start, setStart] = useState(day);
-  const [end, setEnd] = useState(day);
+  const [startInput, setStart] = useState<string|null>(null);
+  const [endInput, setEnd] = useState<string|null>(null);
+  const start = startInput ?? day;
+  const end = endInput ?? start;
   const [selected, setSelected] = useState([1, 2, 3, 4, 5]);
   const [patternId, setPatternId] = useState('');
   let plan = null;
@@ -29,6 +31,10 @@ export function RepeatShifts({ day, state, send }: { day: string; state: Persona
           ? [...current,value] : current.filter(item=>item!==value))}/>{label}
       </label>)}</div>
       <p role="status">{plan?`새로 배정 ${plan.dates.length}일 · 이미 배정된 날짜 ${plan.skipped}일`:'31일 이내 날짜와 요일을 선택해 주세요.'}</p>
+      {!!plan?.dates.length&&<details>
+        <summary>새로 배정할 날짜</summary>
+        <ul>{plan.dates.map(date=><li key={date}><time dateTime={date}>{date}</time></li>)}</ul>
+      </details>}
       <button type="submit" disabled={!patternExists||!plan?.dates.length}>반복 근무 저장</button>
     </form>
   </details>;

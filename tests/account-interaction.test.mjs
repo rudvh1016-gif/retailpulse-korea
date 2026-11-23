@@ -11,17 +11,17 @@ const {default:Preview}=await import('../app/personal-tools/preview.tsx');
 const {default:Account}=await import('../app/personal-tools/account.tsx');
 const {emptyPersonalState,applyPersonalCommand}=await import('../lib/personal-tools/model.ts');
 const A='11111111-1111-4111-8111-111111111111';
-let state,root,container,writes,error,actor,counter,statusWaiter,logoutCode,requests;
+let state,root,container,writes,error,actor,counter,statusWaiter,statusCode,logoutCode,requests;
 globalThis.fetch=async(url,init={})=>{
  if(url==='/api/account/logout'){if(logoutCode===200)actor=null;return Response.json(logoutCode===200?{ok:true}:{error:logoutCode===401?'UNAUTHENTICATED':logoutCode===409?'ACCOUNT_CHANGED':'ACCOUNT_UNAVAILABLE'},{status:logoutCode});}
- if(url==='/api/account/status'){if(statusWaiter)await statusWaiter;return Response.json({enabled:true,authenticated:!!actor,...(actor?{accountId:actor}:{})});}
+ if(url==='/api/account/status'){if(statusWaiter)await statusWaiter;return Response.json({enabled:true,authenticated:!!actor,...(actor?{accountId:actor}:{})},{status:statusCode});}
  assert.equal(url,'/api/account/state');requests++;
  assert.equal(new Headers(init.headers).get('x-koretail-account'),A);
  if(error)return Response.json({error},{status:error==='UNAUTHENTICATED'?401:409});
  if(init.method==='POST'){writes++;const body=JSON.parse(init.body);if(body.expectedRevision!==state.revision)return Response.json({error:'CONFLICT'},{status:409});state=applyPersonalCommand(state,body.command,{revision:'server-'+(++counter),now:'2026-11-13T00:00:00Z'});}
  return Response.json(state);
 };
-beforeEach(()=>{state=emptyPersonalState();writes=counter=requests=0;error='';actor=A;statusWaiter=null;logoutCode=200;container=document.createElement('div');document.body.append(container);});
+beforeEach(()=>{state=emptyPersonalState();writes=counter=requests=0;error='';actor=A;statusWaiter=null;statusCode=logoutCode=200;container=document.createElement('div');document.body.append(container);});
 afterEach(async()=>{if(root)await act(async()=>root.unmount());root=null;container.remove();dom.window.history.replaceState({},'','/ko/account');});
 after(()=>{dom.window.close();for(const [key,value] of originals){if(value)Object.defineProperty(globalThis,key,value);else delete globalThis[key];}});
 async function settled(predicate){for(let i=0;i<100;i++){await act(async()=>{await new Promise(r=>setTimeout(r,5));});if(predicate())return;}assert.fail('UI did not settle');}
@@ -40,6 +40,31 @@ test('five feature editors persist through remote adapter and remount without lo
  assert.equal(state.notes[0].body,'Cloud note');assert.equal(state.favorites.length,1);assert.equal(state.runs.length,1);assert.ok(writes>=7);
  await act(async()=>root.unmount());root=null;await mount();assert.match(container.textContent,/Cloud note/);assert.equal(input('근무 전 알림').value,'30');
 });
+test('repeat shifts preview exact additions and preserve an occupied day',async()=>{
+ const opening={id:'opening',label:'Open',terminal:'T1',side:null,open:'07:00',close:'15:00'};
+ const closing={id:'closing',label:'Close',terminal:'T2',side:null,open:'14:00',close:'22:00'};
+ for(const command of [
+  {type:'pattern.upsert',pattern:opening},{type:'pattern.upsert',pattern:closing},
+  {type:'assignment.set',date:'2026-12-02',patternId:closing.id},
+ ])state=applyPersonalCommand(state,command,{revision:'seed-'+(++counter),now:'2026-11-13T00:00:00Z'});
+ await mount();await fill('근무 날짜','2026-12-02');
+ assert.equal(input('반복 시작일').value,'2026-12-02');assert.equal(input('반복 종료일').value,'2026-12-02');
+ await fill('반복 종료일','2026-12-03');await fill('반복할 패턴',opening.id);
+ assert.match(container.textContent,/새로 배정 1일 · 이미 배정된 날짜 1일/);
+ assert.deepEqual([...container.querySelectorAll('time')].map(row=>row.dateTime),['2026-12-03']);
+ await click('반복 근무 저장');
+ assert.deepEqual(state.assignments,[{date:'2026-12-02',patternId:closing.id},{date:'2026-12-03',patternId:opening.id}]);
+});
+test('snippet language reaches assistive technology and a changed reread revokes removal',async()=>{
+ const snippet={id:'guide',label:'안내',body:'请往前走',language:'zh'};
+ state=applyPersonalCommand(state,{type:'snippet.upsert',snippet},{revision:'seed',now:'2026-11-13T00:00:00Z'});
+ await mount();assert.equal(container.querySelector('p[lang="zh"]').textContent,snippet.body);
+ await click('삭제');assert.ok(button('이 문구 삭제'));
+ state=applyPersonalCommand(state,{type:'snippet.upsert',snippet:{...snippet,body:'请往右转'}},{revision:'updated',now:'2026-11-13T00:00:00Z'});
+ await click('최신 자료 다시 읽기');assert.ok(button('삭제'));assert.equal(container.querySelector('p[lang="zh"]').textContent,'请往右转');
+ assert.equal(writes,0);
+ await click('삭제');await click('이 문구 삭제');assert.equal(state.guideSnippets.length,0);
+});
 test('ordinary conflict preserves unsaved draft and never automatically repeats write',async()=>{
  await mount();await fill('메모','Unsaved draft');error='CONFLICT';const before=requests;await click('브리핑 없이 메모 저장');assert.equal(input('메모').value,'Unsaved draft');assert.equal(writes,0);assert.equal(requests,before+1);
 });
@@ -57,6 +82,15 @@ test('cross-tab session marker invalidates private content immediately',async()=
 });
 test('failed callback explains failure without showing provider diagnostics',async()=>{
  window.history.replaceState({},'','/ko/account?auth=failed');actor=null;await act(async()=>{root=createRoot(container);root.render(createElement(Account));});await settled(()=>container.textContent.includes('Google 로그인을 완료하지 못했습니다'));assert.ok(button('Google로 가입 / 로그인'));
+});
+test('recovers the verification message after a transient failure',async()=>{
+ await mount(Account);statusCode=503;
+ await act(async()=>window.dispatchEvent(new dom.window.Event('focus')));
+ await settled(()=>container.textContent.includes('계정을 확인하지 못해'));
+ assert.ok(!container.querySelector('[data-private-account]'));
+ statusCode=200;await click('계정 다시 확인');
+ await settled(()=>container.textContent.includes('Google 계정으로 로그인했습니다.'));
+ assert.doesNotMatch(container.textContent,/계정을 확인하지 못해/);
 });
 
 for(const code of [401,409,503])test('logout intent hides private data even when server returns '+code,async()=>{

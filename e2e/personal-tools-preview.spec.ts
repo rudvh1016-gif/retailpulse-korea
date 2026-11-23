@@ -1,6 +1,25 @@
 import {expect,test} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
 
+test('Korean More links to personal tools only after a public availability check',async({page})=>{
+  let enabled=false;
+  await page.route('**/api/account/status',async route=>{
+    expect(route.request().method()).toBe('GET');
+    expect(route.request().headers().cookie).toBeUndefined();
+    await route.fulfill({status:enabled?200:404,json:enabled?{enabled:true,authenticated:false}:{error:'ACCOUNT_DISABLED'}});
+  });
+  const accountLink=page.getByRole('link',{name:'내 계정 · 개인 근무 도구'});
+  let checked=page.waitForResponse('**/api/account/status');
+  await page.goto('/ko/more');
+  expect((await checked).status()).toBe(404);
+  await expect(accountLink).toHaveCount(0);
+  enabled=true;
+  checked=page.waitForResponse('**/api/account/status');
+  await page.reload();
+  expect((await checked).status()).toBe(200);
+  await expect(accountLink).toHaveAttribute('href','/ko/account');
+});
+
 test('local personal tools retain five feature selections and explicit backup/wipe without account transmission',async({page})=>{
   test.skip(process.env.PLAYWRIGHT_PRODUCTION_SERVER==='true','This screen is intentionally 404 in production; built-response tests cover all four locales.');
   const apiRequests:string[]=[];
