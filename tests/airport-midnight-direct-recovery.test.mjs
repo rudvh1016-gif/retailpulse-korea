@@ -330,6 +330,9 @@ test('A1 observer identifies an older receipted lock without touching the ledger
     });
     assert.equal(db.calls.length-before, 1);
     assert.ok(db.calls.slice(before).every(sql=>sql.trim().startsWith('SELECT')));
+    const plan = db.raw.prepare('EXPLAIN QUERY PLAN '+db.calls[before]).all(A1_SOURCE,A1_RECOVERY_WORKFLOW);
+    assert.ok(plan.some(row=>/SEARCH e USING (?:COVERING )?INDEX .*\(event_id=\?\)/.test(row.detail)),
+      JSON.stringify(plan));
     assert.equal((await memory.inFlightControlled()).length, 1);
     db.raw.prepare("UPDATE operational_incident_events SET run_id=run_id||'-unmatched' WHERE run_id LIKE '%-receipt'").run();
     assert.deepEqual(await observeAirportA1Locks(memory, '2026-10-11T16:23:00Z'), {

@@ -152,7 +152,9 @@ export class OperationalMemory {
   async readOpenControlledAttemptMetadata(sourceId: string, logicalJob: string):
     Promise<Array<{ targetDate: string; startedAt: string; receipted: boolean }>> {
     const rows = (await this.db.prepare(`SELECT a.target_date,a.started_at,
-      EXISTS(SELECT 1 FROM operational_incident_events e WHERE e.fingerprint=a.fingerprint
+      EXISTS(SELECT 1 FROM operational_incident_events e
+        WHERE e.event_id=a.fingerprint||'|RECOVERY_STARTED|'||substr(a.attempt_id,length(a.execution_id)+2)||'-receipt'
+        AND e.fingerprint=a.fingerprint AND e.source_id=a.source_id AND e.logical_job=a.logical_job
         AND e.kind='RECOVERY_STARTED'
         AND e.run_id=substr(a.attempt_id,length(a.execution_id)+2)||'-receipt') AS receipted
       FROM operational_recovery_attempts a
