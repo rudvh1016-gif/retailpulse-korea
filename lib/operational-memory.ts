@@ -148,6 +148,23 @@ export class OperationalMemory {
   }
 
   /** Controlled attempts holding a lock right now, whatever their age. Read-only. */
+  /** Bounded read-only diagnosis. No execution IDs, evidence text, or terminal claim. */
+  async readOpenControlledAttemptMetadata(sourceId: string, logicalJob: string):
+    Promise<Array<{ targetDate: string; startedAt: string; receipted: boolean }>> {
+    const rows = (await this.db.prepare(`SELECT a.target_date,a.started_at,
+      EXISTS(SELECT 1 FROM operational_incident_events e WHERE e.fingerprint=a.fingerprint
+        AND e.kind='RECOVERY_STARTED'
+        AND e.run_id=substr(a.attempt_id,length(a.execution_id)+2)||'-receipt') AS receipted
+      FROM operational_recovery_attempts a
+      WHERE a.source_id=? AND a.logical_job=? AND a.completed_at IS NULL AND a.mode='CONTROLLED'
+      ORDER BY a.started_at LIMIT 11`).bind(identity(sourceId),identity(logicalJob)).all<Row>()).results;
+    if (!rows || rows.length > 10) throw Error('operational_open_attempts_unmeasured');
+    return rows.map(row => {
+      if (row.receipted !== 0 && row.receipted !== 1) throw Error('operational_receipt_unmeasured');
+      return { targetDate: String(row.target_date), startedAt: String(row.started_at), receipted: row.receipted === 1 };
+    });
+  }
+
   async inFlightControlled(): Promise<Array<{ sourceId: string; logicalJob: string; executionId: string; startedAt: string }>> {
     const rows = (await this.db.prepare(`SELECT source_id,logical_job,execution_id,started_at
       FROM operational_recovery_attempts WHERE completed_at IS NULL AND mode='CONTROLLED'

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { observeAirportA1Locks } from '../lib/a1-lock-observation.ts';
 import { SqliteD1 } from './helpers/operational-sqlite.mjs';
 import { expandRealtimeCadence } from './helpers/realtime-cycle.mjs';
 import { OperationalMemory } from '../lib/operational-memory.ts';
@@ -314,4 +315,26 @@ test('reusable graph preserves the entire realtime cycle lock and keeps A1 outsi
   assert.doesNotMatch(witness, /executeAirportMidnightRecovery|dispatchAirportMidnightRecovery|activation\s*:/);
   const entry = readFileSync('scripts/collect-airport-midnight-direct.ts', 'utf8');
   assert.doesNotMatch(entry, /activation\s*:|collectHolidays|pruneOperationalHistory|airport_enrichment/);
+});
+
+test('A1 observer identifies an older receipted lock without touching the ledger or exposing IDs', async () => {
+  const {db, deps, memory} = setup({collectA1: async () => ({...RESULT, status:'ERROR', executionUncertain:true})});
+  try {
+    assert.equal((await execute(deps)).state, 'HUMAN_REVIEW_UNCERTAIN_CHILD');
+    assert.deepEqual(await observeAirportA1Locks(memory, NOW), {
+      state:'OPEN', open:1, sameDay:1, priorDay:0, receipted:1, staleReceipted:0, oldestAgeMinutes:0, terminalState:'UNVERIFIED',
+    });
+    const before = db.calls.length;
+    assert.deepEqual(await observeAirportA1Locks(memory, '2026-10-11T16:23:00Z'), {
+      state:'OPEN', open:1, sameDay:0, priorDay:1, receipted:1, staleReceipted:1, oldestAgeMinutes:1441, terminalState:'UNVERIFIED',
+    });
+    assert.equal(db.calls.length-before, 1);
+    assert.ok(db.calls.slice(before).every(sql=>sql.trim().startsWith('SELECT')));
+    assert.equal((await memory.inFlightControlled()).length, 1);
+    db.raw.prepare("UPDATE operational_incident_events SET run_id=run_id||'-unmatched' WHERE run_id LIKE '%-receipt'").run();
+    assert.deepEqual(await observeAirportA1Locks(memory, '2026-10-11T16:23:00Z'), {
+      state:'OPEN', open:1, sameDay:0, priorDay:1, receipted:0, staleReceipted:0, oldestAgeMinutes:1441, terminalState:'UNVERIFIED',
+    });
+    assert.deepEqual(await observeAirportA1Locks({readOpenControlledAttemptMetadata: async () => { throw Error('secret'); }}, NOW), {state:'UNAVAILABLE'});
+  } finally { db.raw.close(); }
 });
