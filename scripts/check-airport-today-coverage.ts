@@ -3,6 +3,8 @@ import { failureText } from '../lib/airport-midnight-direct-recovery';
 import { CloudflareD1RestDatabase } from '../lib/d1-rest';
 import { readAirportTodayCoverage } from '../lib/airport-today-coverage';
 import { resolveProductionDatabaseConfig } from './production-database';
+import { observeAirportA1Locks } from '../lib/a1-lock-observation';
+import { OperationalMemory } from '../lib/operational-memory';
 import { checkAirportMidnightCandidate } from './airport-midnight-recovery';
 import { reportProductionD1StorageHeadroom } from './report-d1-storage-headroom';
 import { appendFileSync } from 'node:fs';
@@ -17,6 +19,11 @@ try {
   console.log(JSON.stringify({ airportMidnightCandidate: candidate, providerRequests: 0, writes: 0 }));
   if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT,
     `a1_recovery_eligible=${candidate.eligible}\na1_target_date=${candidate.targetDate}\n`);
+  // A stale receipt is an operator clue only, not a verified terminal result.
+  if (candidate.reason === 'INFLIGHT_LOCK' || candidate.reason === 'DAILY_ATTEMPT_ALREADY_SPENT') {
+    const airportA1LockObservation = await observeAirportA1Locks(new OperationalMemory(db as unknown as D1Database), nowIso);
+    console.log(JSON.stringify({ airportA1LockObservation, providerRequests: 0, writes: 0 }));
+  }
   if (coverage.alert) {
     console.error('Today airport coverage is late; inspect the early/daily runs and guarded fallback disposition.');
     process.exitCode = 1;
