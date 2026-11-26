@@ -12,7 +12,7 @@ test.beforeEach(async({page},info)=>{
  await page.route('**/api/live/airport-passenger-stats*',r=>r.fulfill({json:{status:'READY',month:'2026-07',previousMonth:null,current:{ROUTE_COUNTRY_PASSENGERS:{...base,operationId:'ROUTE_COUNTRY_PASSENGERS',rows:[...Array.from({length:info.titlePath.includes('notice passenger journey')?58:1},(_,i)=>({label:'일본',region:'일본',departures:31000,arrivals:0,total:null,aggregate:false,startHour:null,endHour:null,...(i?{label:'Test country '+i}: {})}))]},TIME_BAND_PASSENGERS:{...base,operationId:'TIME_BAND_PASSENGERS',rows:Array.from({length:24},(_,h)=>({label:String(h),region:null,departures:31000,arrivals:0,total:null,aggregate:false,startHour:h,endHour:h+1}))}},previous:{}}}));
  if(info.titlePath.includes('notice passenger journey'))await page.route('**/api/live/airport-passenger-comparison*',r=>r.fulfill({json:{status:'READY',availableMonths:['2026-06','2026-07'],selected:null,baseline:null}}));
 });
-test('the October notice opens despite prior-release dismissal and preserves those preferences',async({page})=>{
+test('the airport work update leads the notice and preserves earlier dismissal preferences',async({page})=>{
  await page.addInitScript(()=>{
   sessionStorage.setItem('koretail-notice:airport-period-20261028-v1:closed','1');
   localStorage.setItem('koretail-notice:airport-period-20261028-v1:until',String(Date.UTC(2099,0,1)));
@@ -20,10 +20,11 @@ test('the October notice opens despite prior-release dismissal and preserves tho
  await page.goto('/ko');
  const dialog=page.getByRole('dialog');
  await expect(dialog).toBeVisible();
- await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-11-06');
+ await expect(dialog.locator('time')).toHaveAttribute('datetime','2026-11-26');
  await expect(dialog.locator('[data-notice-item="shift-briefing"]')).toContainText('내 근무 브리핑');
- await expect(dialog.locator('[data-notice-item="shift-briefing"]')).toContainText('터미널 전체 출발편·주요 출발 목적지');
- expect(await dialog.locator('.update-notice-items>section').evaluateAll(items=>items.map(item=>item.getAttribute('data-notice-item')))).toEqual(['october-passengers','shift-briefing','shopping-report']);
+ await expect(dialog.locator('[data-notice-item="shift-briefing"]')).toContainText('가장 붐빌 시간과 한산할 시간');
+ expect(await dialog.locator('.update-notice-items>section').evaluateAll(items=>items.map(item=>item.getAttribute('data-notice-item')))).toEqual(['shift-briefing','october-passengers','shopping-report']);
+ await expect(dialog.locator('[data-notice-item="shift-briefing"]')).toContainText('하루 전체');
  await expect(dialog).toContainText('외국인은 뭘 살까?');
  await expect(dialog).toContainText('판판면세점 6개 매장');
  expect(await page.evaluate(()=>sessionStorage.getItem('koretail-notice:airport-period-20261028-v1:closed'))).toBe('1');
@@ -105,7 +106,7 @@ for(const [width,height]of [[1440,1000],[320,568],[360,568],[390,844],[430,700],
  await expect(dialog.locator('[data-notice-item="october-passengers"]')).toContainText('104,109명 → 110,110명');
  await expect(dialog.locator('[data-notice-item="october-passengers"]')).toContainText('상대 공항');
  await expect(dialog).toContainText('내 근무 브리핑');
- await expect(dialog).toContainText('매장 준비사항과 직원 공유 문구');
+ await expect(dialog).toContainText('오래됐거나 없으면 T1·T2 공식 대기 링크');
  await expect(dialog).toContainText('외국인은 뭘 살까?');
  await expect(dialog).toContainText('구매 품목·쇼핑 장소');
  await expect(dialog).toContainText('판매 구성');
@@ -114,7 +115,7 @@ for(const [width,height]of [[1440,1000],[320,568],[360,568],[390,844],[430,700],
  const box=await dialog.boundingBox();expect(box!.x).toBeGreaterThanOrEqual(0);expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.width).toBeLessThanOrEqual(width);expect(box!.height).toBeLessThanOrEqual(height);
  expect(await dialog.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
  await page.screenshot({path:testInfo.outputPath('notice-no-top-close.png')});
- await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'인천공항 공식 통계 · 2026년 11월 6일 확인'})).toBeFocused();
+ await page.keyboard.press('Shift+Tab');await expect(dialog.getByRole('button',{name:'닫기',exact:true})).toBeFocused();await page.keyboard.press('Tab');await expect(dialog.getByRole('link',{name:'브리핑 보기 →',exact:true})).toBeFocused();
  await page.keyboard.press('Escape');await expect(dialog).not.toBeVisible();expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');
  await page.reload();await expect(dialog).not.toBeVisible();expect(await page.evaluate(key=>sessionStorage.getItem(key),UPDATE_NOTICE_SESSION_KEY)).toBe('1');expect(errors).toEqual([]);
 });
@@ -130,7 +131,7 @@ test('week hiding lasts exactly seven days across reload and another tab',async(
 for(const lang of ['ko','en','zh','ja'])test(`report shortcut remains after the briefing and opens the complete report ${lang}`,async({page})=>{
  await page.goto(`/${lang}`);const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();
  await expect(dialog.locator('.update-notice-items>section')).toHaveCount(lang==='ko'?3:2);
- await expect(dialog.locator('time')).toHaveAttribute('datetime',lang==='ko'?'2026-11-06':'2026-11-02');
+ await expect(dialog.locator('time')).toHaveAttribute('datetime',lang==='ko'?'2026-11-26':'2026-11-02');
  const shortcut=dialog.locator('[data-notice-item="shopping-report"]>a');await expect(shortcut).toHaveAttribute('href','/shopping-report/index.html');
  if(lang==='en')expect(await dialog.innerText()).not.toMatch(/[가-힣]/);
  await shortcut.click();await expect(page).toHaveURL(/\/shopping-report\/(?:index\.html)?$/);
