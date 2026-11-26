@@ -33,6 +33,7 @@ declare module "cloudflare:workers" {
   export const env: {
     DB?: D1Database;
     APP_ENV?: string;
+    KORETAIL_PUBLIC_PRIVACY_POLICY?: string;
     ENABLE_BETA_SIGNUPS?: string;
     DATA_GO_KR_SERVICE_KEY?: string;
     SEOUL_OPEN_DATA_KEY?: string;

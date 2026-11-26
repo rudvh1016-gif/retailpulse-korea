@@ -299,6 +299,7 @@ type RetailPulseProps = {
   initialView?: View;
   initialArea?: AreaId;
   initialRoute?: boolean;
+  privacyPolicyHref?: '/ko/privacy';
   /**
    * "airport-home" is `/{lang}`: the airport glance start page.
    * "home" is a legacy component scope; explicit Seoul routes use "area".
@@ -362,7 +363,7 @@ function routeFor(lang: Lang, view: View, area: AreaId) {
   return `${base}/${view}`;
 }
 
-export default function Home({ initialLang = "ko", initialView = "airport-glance", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief, WhereToView = OnDemandWhereToView, ConsumptionView = OnDemandConsumptionView }: RetailPulseProps = {}) {
+export default function Home({ initialLang = "ko", initialView = "airport-glance", initialArea = "myeongdong", initialRoute = false, initialScope = "home", todayAnswer = null, AirportView = OnDemandAirportView, AirportGlance = LazyAirportGlance, AirportPreparation = LazyAirportPreparation, IndustryGuide = OnDemandIndustryGuide, BusinessPrep = OnDemandBusinessPrep, TodaySignals = OnDemandTodaySignals, DateNavigator = OnDemandDateNavigator, AreaCurrentBrief = OnDemandAreaCurrentBrief, WhereToView = OnDemandWhereToView, ConsumptionView = OnDemandConsumptionView, privacyPolicyHref }: RetailPulseProps = {}) {
   const bottomNavigationRef = useBottomNavigationViewport();
   // Airport routes already carry the airport code; only the on-demand copy needs preparing.
   const prepareAirport = AirportView === OnDemandAirportView ? prepareAirportView : undefined;
@@ -661,6 +662,7 @@ export default function Home({ initialLang = "ko", initialView = "airport-glance
             <a href={routeFor(lang, "airport", selected)}>{t.airport}</a>
             <a href={navigationHref("business")}>{t.business}</a>
             <a href={routeFor(lang, "about", selected)}>{t.about}</a>
+            {privacyPolicyHref && lang === 'ko' && <a href={privacyPolicyHref}>개인정보처리방침</a>}
           </nav>
           <span>{lang === "ko" ? "코리테일 KORETAIL" : "KORETAIL"} · RETAIL DEMAND SIGNALS FOR KOREA</span>
         </footer>

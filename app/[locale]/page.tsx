@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import RetailPulseApp from "../retailpulse-app";
 import {AirportFocusGlance as AirportGlancePreview} from "../airport-focus-production";
 import { buildMetadata, pageStructuredData, seoLocales, type SeoLocale } from "../seo-config";
+import { getPublicPrivacyPolicy, publicPrivacyPath } from '../../lib/public-privacy-policy';
 
 /**
  * Starts the summary request from the HTML head, so it overlaps the JS
@@ -35,9 +36,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LocaleHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!seoLocales.includes(locale as SeoLocale)) notFound();
+  const privacyPolicyHref = locale === 'ko' && await getPublicPrivacyPolicy() ? publicPrivacyPath : undefined;
   preloadLiveSummary();
   return <>
-    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport-glance" initialScope="airport-home" AirportGlance={AirportGlancePreview} />
+    <RetailPulseApp initialLang={locale as SeoLocale} initialRoute initialView="airport-glance" initialScope="airport-home" AirportGlance={AirportGlancePreview} privacyPolicyHref={privacyPolicyHref} />
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(locale as SeoLocale)) }} />
   </>;
 }
