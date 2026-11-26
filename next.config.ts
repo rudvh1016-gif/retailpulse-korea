@@ -43,7 +43,11 @@ const nextConfig: NextConfig = {
       ],
     // vinext applies the first matching value for each header, so exact document
     // policies precede the unchanged catch-all policy in the returned array.
-    }))].reverse();
+    })), ...['/:locale/account', '/api/account/:path*'].map(source=>({source,headers:[
+      {key:'Cache-Control',value:'private, no-store, max-age=0'},
+      {key:'Referrer-Policy',value:'no-referrer'},
+      {key:'X-Robots-Tag',value:'noindex, nofollow, noarchive'},
+    ]}))].reverse();
   },
 };
 

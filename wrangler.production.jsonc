@@ -10,7 +10,7 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
-  "observability": { "enabled": true },
+  "observability": { "enabled": true, "redact_query_string": true },
   "vars": {
     "APP_ENV": "development",
     "ENABLE_BETA_SIGNUPS": "false"

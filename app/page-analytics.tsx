@@ -12,7 +12,8 @@ export default function PageAnalytics() {
   const { ready, enabled } = useAnalyticsConsent();
   useEffect(() => {
     if (!ready) return;
-    setAnalyticsConsent(enabled);
+    const privatePage=/\/(account|personal-tools-preview)(?:\/|$)/.test(pathname??'');
+    setAnalyticsConsent(enabled&&!privatePage);
     if (pathname) trackPageView(pathname);
   }, [ready, enabled, pathname]);
   return null;

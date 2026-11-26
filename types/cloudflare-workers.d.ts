@@ -32,6 +32,13 @@ interface D1Database {
 declare module "cloudflare:workers" {
   export const env: {
     DB?: D1Database;
+    PERSONAL_DB?: D1Database;
+    ACCOUNTS_ENABLED?: string;
+    ACCOUNT_ORIGIN?: string;
+    ACCOUNT_PRIVACY_VERSION?: string;
+    GOOGLE_CLIENT_ID?: string;
+    GOOGLE_CLIENT_SECRET?: string;
+    PERSONAL_DATA_KEY?: string;
     APP_ENV?: string;
     ENABLE_BETA_SIGNUPS?: string;
     DATA_GO_KR_SERVICE_KEY?: string;

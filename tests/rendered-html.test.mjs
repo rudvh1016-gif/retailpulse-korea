@@ -1164,3 +1164,29 @@ test("every asset the rendered head links exists in the client build", async () 
     }
   }
 });
+
+for(const locale of ['ko','en','zh','ja'])test(`personal tools preparation stays unavailable in production for ${locale}`,async()=>{
+  const response=await renderPath(`/${locale}/personal-tools-preview`,locale==='zh'?'zh-CN':locale);
+  assert.equal(response.status,404);
+  const html=await response.text();
+  assert.doesNotMatch(html,/개인 도구 준비 화면|Google 로그인 준비 중|DELETE PERSONAL TOOLS/);
+});
+
+test('anonymous home does not download personal-tools preview styles in its shared CSS',async()=>{
+  const response=await renderPath('/ko');assert.equal(response.status,200);
+  const html=await response.text();assert.doesNotMatch(html,/href="[^"]*personal-tools-preview\.css/);
+  const styles=Array.from(html.matchAll(/<link\b[^>]*>/g)).map(match=>match[0]).filter(tag=>/rel="stylesheet"/.test(tag)).map(tag=>tag.match(/href="([^"]+)"/)?.[1]).filter(Boolean);
+  assert.ok(styles.length>0,'inspect the actual rendered home stylesheets');
+  let inspected=0;
+  for(const href of styles){
+    const pathname=new URL(href,'http://localhost').pathname;
+    if(!pathname.startsWith('/assets/'))continue;
+    const css=await read(`../dist/client${pathname}`);
+    inspected++;assert.equal(/\.pt-(?:shell|metrics|inset)/.test(css),false,`personal preview styles leaked into ${pathname}`);
+  }
+  assert.ok(inspected>0,'at least one built stylesheet must be checked');
+});
+
+for(const locale of ['ko','en','zh','ja'])test(`accounts fail closed without complete private configuration for ${locale}`,async()=>{
+ const response=await renderPath(`/${locale}/account`,locale==='zh'?'zh-CN':locale);assert.equal(response.status,404);assert.match(response.headers.get('cache-control')??'',/no-store/);assert.equal(response.headers.get('referrer-policy'),'no-referrer');assert.doesNotMatch(await response.text(),/Google로 가입|DELETE KORETAIL ACCOUNT/);
+});
